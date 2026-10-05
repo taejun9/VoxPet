@@ -6,6 +6,8 @@
 | source | url | scope | checked_at | used_for |
 |---|---|---|---|---|
 | Microsoft WPF Overview | https://learn.microsoft.com/en-us/dotnet/desktop/wpf/overview/ | Windows UI | 2026-10-05 | WPF Windows 실행 제한, XAML/바인딩/애니메이션 |
+| WPF ScrollViewer Source | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Controls/ScrollViewer.cs | 휠 입력 | 2026-10-05 | 내측 OnMouseWheel의 handled 처리 확인; 단일 scroll 영역과 실제 routed-event 검사 |
+| WPF SystemParameters Source | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/SystemParameters.cs | 초기 창 bounds | 2026-10-05 | WorkArea의 pixel→logical 변환 확인; 주 화면 작업 영역에 초기 크기 제한 |
 | Microsoft WPF Threading Model | https://learn.microsoft.com/en-us/dotnet/desktop/wpf/advanced/threading-model | UI 스레드 | 2026-10-05 | Dispatcher 경계, UI thread 작업량 제한 |
 | Microsoft .NET Support Policy | https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core | SDK/runtime 수명 | 2026-10-05 | .NET 10 LTS 선택 및 .NET 8 지원 종료 확인 |
 | NAudio 공식 저장소 | https://github.com/naudio/NAudio | 오디오 라이브러리 | 2026-10-05 | WASAPI 지원, NAudio 3 net9.0 이상 요구와 2.x 구분 |
@@ -17,8 +19,14 @@
 | Microsoft single-file deployment | https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview | 배포 | 2026-10-05 | 자체 포함 win-x64 단일 실행파일과 native extraction 옵션 |
 | xunit 2.9.3 NuGet | https://www.nuget.org/packages/xunit/2.9.3 | 테스트 패키지 | 2026-10-05 | pinned 테스트 프레임워크 |
 | Microsoft.NET.Test.Sdk 17.14.1 NuGet | https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/17.14.1 | 테스트 패키지 | 2026-10-05 | pinned 테스트 호스트 |
-
 | Microsoft Window.Owner | https://learn.microsoft.com/en-us/dotnet/api/system.windows.window.owner?view=windowsdesktop-10.0 | WPF 창 수명 | 2026-10-05 | 소유 창 최소화 시 방송창도 최소화됨; 독립 창과 명시적 종료 선택 |
+| OBS Portable Mode | https://obsproject.com/kb/portable-mode | QA 설치 격리 | 2026-10-05 | disposable Windows runner의 portable config |
+| OBS Launch Parameters | https://obsproject.com/kb/launch-parameters | QA 실행 | 2026-10-05 | 실행 working directory와 업데이트/외부 플러그인 억제 옵션 |
+| OBS Remote Control Guide | https://obsproject.com/kb/remote-control-guide | 테스트 제어 | 2026-10-05 | 로컬 인증 WebSocket; 생산 앱에는 미사용 |
+| OBS WebSocket Protocol | https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md | 캡처 QA API | 2026-10-05 | Window Capture property 조회, Source Screenshot/Chroma Key/상태 확인 |
+| OBS 32.2.2 Release | https://github.com/obsproject/obs-studio/releases/tag/32.2.2 | QA binary | 2026-10-05 | 공식 x64 ZIP SHA256 검증, OBS 32.2.2/WS 5.7.4 실제 실행 |
+| WPF Window Template | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/Themes/XAML/Window.xaml | 방송창 resize | 2026-10-05 | ResizeGrip 영역을 유지하고 표시만 숨김 |
+| WPF Window Source | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Window.cs | native hit test | 2026-10-05 | WM_NCHITTEST와 HTBOTTOMRIGHT 회귀 검사 |
 
 ## 남은 근거와 실기 확인
 

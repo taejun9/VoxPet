@@ -14,7 +14,7 @@ plan-001은 저장소 기반이다. [plan-002-desktop-app](../exec_plans/complet
 구현 시작 전 .NET 지원 수명, 사용할 Windows 빌드, NAudio 2.x 버전을 다시 확인한다.
 .NET 10 전환을 택하면 IDE·target framework·NAudio API 변경을 함께 계획에 기록한다.
 독자 제작 CC0 기본 PNG 자산과 GitHub Actions Windows QA 경로를 확보했다.
-실제 마이크/OBS/장시간 환경은 아직 확보하지 못했으며 [검증 기록](../quality/windows-checklist.md)을 따른다.
+실제 마이크/사용자 GPU/물리 DPI 환경은 아직 확보하지 못했으며 [검증 기록](../quality/windows-checklist.md)을 따른다. OBS 합성 데모와 장시간 UI의 CI 결과는 아래 plan004에 기록한다.
 
 확장 순서는 방송창 검증 → 캐릭터 에디터 → Live2D/Spine 검토이며,
 Pitch/STT/감정은 실제 필요와 음성 데이터 경계를 별도 설계한 뒤 검토한다.
@@ -26,3 +26,6 @@ Pitch/STT/감정은 실제 필요와 음성 데이터 경계를 별도 설계한
 
 [plan-003-broadcast-lifetime](../exec_plans/completed/plan-003-broadcast-lifetime.md)에서 설정창 최소화 시 방송창이 숨겨지는 버그를 수정했다.
 Windows UI 회귀 검증을 추가했으며 실제 마이크/OBS/장시간 조건은 계속 미완료다.
+
+[plan-004-obs-validation](../exec_plans/completed/plan-004-obs-validation.md)에서 실제 OBS 32.2.2의 WGC 합성 캡처/Chroma Key/native alpha와60.17분 자원·프레임 변화 검증을 추가했다.
+BitBlt는 이 CI 환경에서 유효한 프레임을 얻지 못했다. 실제 마이크/사용자 GPU/물리 DPI/실제 입력 장시간은 계속 미완료다.

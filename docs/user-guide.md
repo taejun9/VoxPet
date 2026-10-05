@@ -11,6 +11,9 @@ Windows x64에서 배포 폴더의 `VoxPet.exe`를 실행한다. 자체 포함 �
 빌드와 UI smoke 통과 여부는 [검증 기록](quality/windows-checklist.md)에서 확인한다.
 개발 실행/배포 명령은 [개발 환경](quality/development.md)에 있다.
 
+설정창은 기본 크기를 주 화면의 작업 영역에 맞춰 연다. 좁거나 낮은 창에서는 조작 영역을 위에 두는 한 열 배치로 전환한다.
+마우스 휠/스크롤 막대로 조정값과 미리보기를 볼 수 있다. 최소 크기는 480×320 논리 단위이며, 실제 모니터 DPI 변경은 [검증 기록](quality/windows-checklist.md)에서 별도로 확인한다.
+
 1. 마이크를 선택한다. 연결 후 목록에 없으면 ↻로 새로고침한다.
 2. Start를 누르고 말한다. 분석 중 상태와 선택 장치가 하단에 표시된다.
 3. 캐릭터가 너무 자주 반응하면 Noise Gate를 높인다. 말할 때 반응이 약하면 Sensitivity를 올린다. 아주 작은 입력은 고급 입력 반응 범위에서 낮은 입력과 Gate를 함께 낮춘다.
@@ -30,8 +33,10 @@ Gate는 음성과 키보드 같은 소음을 의미적으로 구별하지 못한
 방송창을 드래그해 이동하고 우측 하단에서 크기를 조절한다. Esc 또는 우클릭 메뉴로 닫는다.
 
 OBS에 Window Capture 소스를 추가해 `VoxPet Character`를 선택한다.
+캡처 방식은 Windows Graphics Capture(OBS에서 Windows 10 이상 방식)를 먼저 시도한다. OBS 32.2.2/Windows Server 2025의 합성 데모 검증에서 이 방식은 통과했고 BitBlt는 유효한 프레임을 얻지 못했다. 사용자 GPU/Windows 조합은 별도 확인한다.
 초록 배경을 켜고 OBS의 Chroma Key 필터에서 Green을 선택하면 배경을 제거할 수 있다.
 초록 배경을 끄면 WPF 창이 투명해지지만, OBS 캡처에서 alpha가 보존되는지는 버전/방식에 따라 실기 검증이 필요하다.
+위 OBS 32.2.2/WGC 합성 시험에서는 native alpha도 보존됐다. 사용자 환경에서 검은 배경이나 캡처 실패가 보이면 초록 배경과 Chroma Key를 사용한다.
 최소화/가림/스케일/장시간 캡처는 [체크리스트](quality/windows-checklist.md)로 확인한다.
 
 ## 오류 해결과 저장 설정
