@@ -28,7 +28,26 @@ public partial class App : Application
     {
         base.OnStartup(e);
         if (e.Args.Contains("--smoke-test")) RunSmokeAsync();
+        else if (e.Args.Contains("--qa-demo")) RunQaDemoAsync(e.Args.Contains("--qa-transparent"));
         else { var main = new MainWindow(); MainWindow = main; main.Show(); }
+    }
+    // Test fixture only: synthetic numeric levels, no microphone and no personal settings.
+    private async void RunQaDemoAsync(bool transparent)
+    {
+        try
+        {
+            var main = new MainWindow(smoke: true); MainWindow = main; main.Show();
+            await main.Ready;
+            main.Model.GreenBackground = !transparent;
+            main.Model.DemoCommand.Execute(null);
+            main.ShowCharacter();
+            main.WindowState = WindowState.Minimized;
+        }
+        catch (Exception ex)
+        {
+            File.WriteAllText(QaPath("voxpet-qa-error.txt"), ex.GetType().Name);
+            Shutdown(1);
+        }
     }
     private async void RunSmokeAsync()
     {
