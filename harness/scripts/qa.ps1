@@ -23,7 +23,7 @@ try {
     if ($Smoke) {
         $exe = if ($Publish) { 'artifacts/win-x64/VoxPet.exe' } else { 'src/VoxPet.App/bin/Release/net10.0-windows/win-x64/VoxPet.exe' }
         $process = Start-Process $exe -ArgumentList '--smoke-test' -PassThru
-        if (-not $process.WaitForExit(30000)) {
+        if (-not $process.WaitForExit(60000)) {
             $process.Kill()
             throw 'WPF smoke timed out'
         }

@@ -12,7 +12,7 @@
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
       <Border x:Name="PreviewCard" Background="#1B2738" CornerRadius="18" Padding="24">
         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <TextBlock Text="캐릭터 미리보기" FontWeight="SemiBold" Foreground="#8FA4BC"/>
+          <TextBlock Text="{Binding Character.Name}" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="#8FA4BC"/>
           <Image Grid.Row="1" Source="{Binding Character.Sprite}" Stretch="Uniform" Margin="0,18,0,18" RenderOptions.BitmapScalingMode="HighQuality"><Image.RenderTransform><TranslateTransform Y="{Binding Character.Bounce}"/></Image.RenderTransform></Image>
           <StackPanel Grid.Row="2">
             <TextBlock Text="VOICE LEVEL" FontSize="11" Foreground="#8FA4BC"/>
@@ -27,9 +27,12 @@
           <TextBlock Text="마이크" FontWeight="SemiBold" Margin="0,0,0,10"/>
           <DockPanel><Button DockPanel.Dock="Right" Content="↻" ToolTip="마이크 장치 새로고침" Command="{Binding RefreshCommand}" Margin="8,0,0,0"/><ComboBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" DisplayMemberPath="Name" IsEnabled="{Binding CanChooseDevice}" MinHeight="38" VerticalContentAlignment="Center" AutomationProperties.Name="마이크 선택"/></DockPanel>
           <WrapPanel Margin="0,12,0,24"><Button Content="Start" Command="{Binding StartCommand}" Background="{StaticResource Accent}" Foreground="#112C25" MinWidth="100"/><Button Content="Stop" Command="{Binding StopCommand}" MinWidth="100"/><Button Content="{Binding DemoLabel}" Command="{Binding DemoCommand}" FontSize="11" Padding="10,10"/></WrapPanel>
+          <CheckBox Content="캐릭터 음소거" IsChecked="{Binding CharacterMuted}"/>
+          <TextBlock Text="{Binding MuteHint}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,0,0,12"/>
           <Border Background="#1B2738" CornerRadius="12" Padding="18">
             <StackPanel>
               <DockPanel><TextBlock Text="반응 조정" FontWeight="SemiBold"/><Button Content="기본값" Command="{Binding ResetCommand}" Padding="8,4" FontSize="11" HorizontalAlignment="Right" Margin="0"/></DockPanel>
+              <WrapPanel Margin="0,12,0,0"><Button Content="일반 대화" Command="{Binding ConversationCommand}" Padding="8,6" FontSize="11"/><Button Content="조용한 목소리" Command="{Binding SoftVoiceCommand}" Padding="8,6" FontSize="11"/><Button Content="빠른 반응" Command="{Binding SnappyCommand}" Padding="8,6" FontSize="11"/></WrapPanel>
               <DockPanel Margin="0,18,0,0"><TextBlock Text="Noise Gate"/><TextBlock Text="{Binding NoiseGate, StringFormat={}{0:F0} dBFS}" HorizontalAlignment="Right" Foreground="{StaticResource Accent}"/></DockPanel>
               <Slider Value="{Binding NoiseGate}" Minimum="-90" Maximum="-10" TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="Noise Gate"/>
               <DockPanel><TextBlock Text="Sensitivity"/><TextBlock Text="{Binding Sensitivity, StringFormat={}{0:F2} ×}" HorizontalAlignment="Right" Foreground="{StaticResource Accent}"/></DockPanel>
@@ -50,6 +53,9 @@
             </StackPanel>
           </Expander>
           <WrapPanel Margin="0,12,0,0"><CheckBox Content="방송창 항상 위" IsChecked="{Binding Topmost}"/><CheckBox Content="초록 배경 (OBS)" IsChecked="{Binding GreenBackground}"/></WrapPanel>
+          <TextBlock Text="{Binding Character.Name}" Foreground="{StaticResource Accent}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+          <WrapPanel><Button Content="PNG 시트 불러오기" Command="{Binding ImportCharacterCommand}"/><Button Content="기본 캐릭터" Command="{Binding DefaultCharacterCommand}"/></WrapPanel>
+          <TextBlock Text="3열: 닫힘·중간·열림 / 2행: 일반·눈감음. 같은 위치의 투명 PNG를 사용하세요." TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,0,0,16"/>
           <TextBlock Text="장치 변경은 Stop 후 선택하세요. Gate는 소음을 의미적으로 구별하지 않습니다." Foreground="#8FA4BC" FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0"/>
         </StackPanel>
     </Grid>

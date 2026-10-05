@@ -24,6 +24,11 @@ public partial class MainWindow : Window
         ContentViewport.SizeChanged += (_, _) => UpdateResponsiveLayout();
         SizeChanged += (_, _) => UpdateResponsiveLayout();
         Model.OpenBroadcast += () => ShowCharacter();
+        Model.ChooseCharacterSheet += () =>
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 PNG 시트 선택 (3열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
+            return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+        };
         Loaded += async (_, _) => { await Model.InitializeAsync(); ready.TrySetResult(); };
         Closing += OnClosing;
     }

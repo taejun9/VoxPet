@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Threading;
 using VoxPet.App.Services;
@@ -19,7 +21,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly DispatcherTimer timer;
     private AudioSettings settings;
     private AudioDevice? selected;
-    private bool busy, demo, closing, topmost, green;
+    private bool busy, demo, closing, topmost, green, muted, characterBusy;
     private string status = "마이크를 선택하고 Start를 누르세요.";
     private string metrics = "RMS 0.0000   Peak 0.0000   -120.0 dBFS";
     private double level, raw;
@@ -32,6 +34,12 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand ResetCommand { get; }
     public RelayCommand DemoCommand { get; }
     public RelayCommand BroadcastCommand { get; }
+    public AsyncCommand ImportCharacterCommand { get; }
+    public RelayCommand DefaultCharacterCommand { get; }
+    public RelayCommand ConversationCommand { get; }
+    public RelayCommand SoftVoiceCommand { get; }
+    public RelayCommand SnappyCommand { get; }
+    public event Func<string?>? ChooseCharacterSheet;
     public event Action? OpenBroadcast;
 
     public MainViewModel(bool persistSettings = true)
@@ -44,6 +52,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ResetCommand = new(Reset);
         DemoCommand = new(ToggleDemo, () => CanChooseDevice);
         BroadcastCommand = new(() => OpenBroadcast?.Invoke());
+        ImportCharacterCommand = new(async () =>
+        {
+            var path = ChooseCharacterSheet?.Invoke();
+            if (path != null) await ImportCharacterAsync(path);
+        }, () => !closing && !characterBusy);
+        DefaultCharacterCommand = new(() => Character.RestoreDefault(), () => !closing && !characterBusy);
+        ConversationCommand = new(() => ApplyPreset(ReactionPreset.Conversation));
+        SoftVoiceCommand = new(() => ApplyPreset(ReactionPreset.SoftVoice));
+        SnappyCommand = new(() => ApplyPreset(ReactionPreset.Snappy));
         timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(1000.0 / 60) };
         timer.Tick += Tick; timer.Start();
     }
@@ -53,6 +70,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string Metrics { get => metrics; private set => Set(ref metrics, value); }
     public double VoiceLevel { get => level; private set => Set(ref level, value); }
     public double RawLevel { get => raw; private set => Set(ref raw, value); }
+    public bool CharacterMuted
+    {
+        get => muted;
+        set
+        {
+            if (!Set(ref muted, value)) return;
+            Notify(nameof(MuteHint)); processor.Reset(); VoiceLevel = 0;
+            Character.Update(animator.Update(0, clock.Elapsed.TotalSeconds));
+        }
+    }
+    public string MuteHint => CharacterMuted ? "입 반응을 잠시 멈췄습니다. 마이크 해제는 Stop을 누르세요." : "음소거는 캐릭터 입만 멈춥니다. 마이크 입력은 계속 표시됩니다.";
     public bool Topmost { get => topmost; set => Set(ref topmost, value); }
     public bool GreenBackground { get => green; set { if (Set(ref green, value)) Notify(nameof(BroadcastBackground)); } }
     public Brush BroadcastBackground => GreenBackground ? Brushes.Lime : Brushes.Transparent;
@@ -85,6 +113,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         Notify(nameof(CanChooseDevice)); Notify(nameof(DemoLabel));
         StartCommand.Refresh(); StopCommand.Refresh(); RefreshCommand.Refresh(); DemoCommand.Refresh();
+        ImportCharacterCommand.Refresh(); DefaultCharacterCommand.Refresh();
     }
     public async Task InitializeAsync() => await RefreshDevicesAsync();
     private async Task RefreshDevicesAsync()
@@ -123,9 +152,33 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         demo = true; ResetLevels(); RefreshCommands(); Status = "합성 데모 · 마이크를 사용하지 않습니다. Stop으로 종료하세요.";
     }
-    private void Reset()
+    public async Task<bool> ImportCharacterAsync(string path)
     {
-        settings = new();
+        if (closing || characterBusy) return false;
+        characterBusy = true; RefreshCommands();
+        try
+        {
+            var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
+            if (closing) return false;
+            Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path));
+            Status = "캐릭터 적용 완료 · 미리보기와 방송창에 함께 적용됩니다.";
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException)
+        {
+            if (!closing) Status = "시트를 불러오지 못했습니다. 16MB 이하 RGBA PNG와 3열×2행 크기를 확인하세요. 기존 캐릭터를 유지합니다.";
+            return false;
+        }
+        finally { characterBusy = false; RefreshCommands(); }
+    }
+    private void ApplyPreset(ReactionPreset preset)
+    {
+        settings = ReactionPresets.Create(preset);
+        NotifyAudioSettings();
+    }
+    private void Reset() => ApplyPreset(ReactionPreset.Conversation);
+    private void NotifyAudioSettings()
+    {
         foreach (var property in new[] { nameof(NoiseGate), nameof(Sensitivity), nameof(AttackMs), nameof(ReleaseMs), nameof(NormalizeMin), nameof(NormalizeMax) }) Notify(property);
     }
     private void ResetLevels()
@@ -148,7 +201,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             measured = new(rms, rms, db);
         }
         var result = processor.Update(measured.Dbfs, dt, settings);
-        if (!running && !demo) processor.Reset();
+        if ((!running && !demo) || CharacterMuted) processor.Reset();
         VoiceLevel = processor.VoiceLevel; RawLevel = running || demo ? result.Raw : 0;
         Metrics = $"RMS {measured.Rms:F4}   Peak {measured.Peak:F4}   {measured.Dbfs:F1} dBFS{(measured.Peak >= 1 ? " · CLIP" : "")}";
         Character.Update(animator.Update(VoiceLevel, now));

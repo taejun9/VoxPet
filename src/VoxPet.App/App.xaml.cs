@@ -127,6 +127,7 @@ public partial class App : Application
             await closingWindow.Ready; closingWindow.Close();
             await Task.Delay(100);
             if (closingWindow.IsVisible) failures++;
+            await CharacterQa.RunAsync(main, Check);
             await LayoutQa.RunAsync(main, Check);
             var png = new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 730, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             png.Render(main);
