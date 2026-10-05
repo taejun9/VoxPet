@@ -14,7 +14,7 @@ OBS 32.2.2/obs-websocket 5.7.4, Windows Server 2025 build26100, Microsoft Basic 
 
 | 항목 | 현재 상태 | 확인 방법/합격 기준 |
 |---|---|---|
-| Core 수치·수명·캐릭터 자동 테스트 | 70/70 통과 (macOS/Windows) | 합성 입력과 fake input; 모든 테스트 통과 |
+| Core 수치·수명·캐릭터 자동 테스트 | 71/71 통과 (macOS/Windows, 4ad3180) | 합성 입력과 fake input; 모든 테스트 통과 |
 | WPF Release 교차 컴파일 | 통과, 경고/오류 0 | `dotnet build VoxPet.sln -c Release` |
 | win-x64 자체 포함 배포 | 통과 | 잠금 복원 후 publish, EXE/라이선스 확인 |
 | Windows WPF smoke | 통과 | UI 바인딩 오류 0, 이미지/별도 창/데모 반응/blink/입력 범위/reset/Stop/일반 창 종료 통과 |
@@ -23,6 +23,15 @@ OBS 32.2.2/obs-websocket 5.7.4, Windows Server 2025 build26100, Microsoft Basic 
 | OBS 합성 데모 | WGC 통과, BitBlt 유효 프레임 없음 | 설정창 최소화 중 Window Capture, 7개 서로 다른 프레임, Chroma Key 후 green0%/alpha66.0%/캐릭터 유지; 실제 PNG 확인 |
 | OBS 합성 장시간 UI | 통과 (d35f707) | 60.17분 RSS +1.58MiB/핸들 +0, 68회 변화 검사 및 최종 유효 프레임. 실제 마이크 장시간 시험과 구분 |
 | OBS 사용자 환경 | 미실행 | 아래 OBS 매트릭스 수행 |
+
+## 최종 통합 자동 QA와 실행 패키지
+
+plan004/005/006 통합4ad3180: [Windows CI](https://github.com/taejun9/VoxPet/actions/runs/37278367856) 및 [OBS CI](https://github.com/taejun9/VoxPet/actions/runs/37278367918) 통과.
+Core71/71, smoke 실패0, 4창크기×15컨트롤/3startup bounds/휠과 native 방송창 수명·resize를 확인했다.
+OBS32.2.2 WGC green+Chroma Key 및 native alpha65.1%/7프레임 변화 통과. BitBlt는 유효 프레임 없음.
+오디오 Stop 중 native Ended 오류의 누락을 재현·수정했고, 무음/자원정리/새 Start 복구 자동 회귀를 추가했다.
+Windows runner의 배포본은 로컬 `artifacts/VoxPet-win-x64-plan006.zip`, 증거와 SHA256은 `artifacts/qa/plan006/integrated/summary.json`에 보존한다.
+이 패키지의 실제 마이크/실제 DPI/실제 입력 장시간 검증은 아래 미실행 항목으로 남는다.
 
 ## 마이크/창 실기 매트릭스
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -35,10 +35,10 @@ QA → 자체 리뷰 → completed 이동/리뷰 미러 → main ff-only 병합/
 
 ## Implementation Plan
 
-- [ ] Stop 정리 도중 Ended 오류의 재현 검사
-- [ ] 정리 완료 이후 오류 상태 반영
-- [ ] 자원 없음/무음/새 Start 복구 및 기존 정상 Stop 회귀 검사
-- [ ] 기존 계획 통합 후 Windows QA/자체 리뷰/문서/완료 기록/Git 수명
+- [x] Stop 정리 도중 Ended 오류의 재현 검사
+- [x] 정리 완료 이후 오류 상태 반영
+- [x] 자원 없음/무음/새 Start 복구 및 기존 정상 Stop 회귀 검사
+- [x] 기존 계획 통합 후 Windows QA/자체 리뷰/문서/완료 기록; Git 수명은 완료 커밋 이후 지정 순서로 수행
 
 ## QA Plan
 
@@ -66,6 +66,15 @@ QA 이후 단일 에이전트 자체 리뷰. 입력 정리가 끝난 뒤 settled
 | 2026-10-05 | 검증 | 수정 후 macOS SDK10.0.401 locked restore/Release build 경고·오류0/Core71 통과. 새 회귀는 Faulted/오류 안내/자원없음/무음/새 Start 복구를 검사하며 기존 정상 Stop/정리 재시도 검사도 통과 |
 | 2026-10-05 | 검증 | c8c0313 [Windows CI37274793440](https://github.com/taejun9/VoxPet/actions/runs/37274793440) 통과. TRX total/passed=71, failed=0 및 smoke JSON failures=0 직접 확인. root artifacts/qa/plan006에 보존. plan004/005와의 통합 검증은 진행 예정 |
 
+| 2026-10-05 | 조율 | main의 완료 plan004/005를 정상 merge하여4ad3180 통합 checkpoint 생성. 이력 재작성 없이 Windows37278367856/OBS37278367918 실행 |
+| 2026-10-05 | 검증 | 통합 macOS Release build 경고·오류0/Core71 및 문서27개/자산/diff 검사 통과 |
+
+| 2026-10-05 | 검증 | 통합4ad3180 [Windows37278367856](https://github.com/taejun9/VoxPet/actions/runs/37278367856)와 [OBS37278367918](https://github.com/taejun9/VoxPet/actions/runs/37278367918) 모두 통과. TRX71/71, smoke failures0, 4크기×15controls/3startup bounds/wheel, green·transparent WGC와native alpha 결과JSON 및 PNG 직접 확인 |
+| 2026-10-05 | 심사 | QA 이후 단일 에이전트 자체 리뷰: Stop이 worker의 Ended 완료를 기다린 뒤 오류를 읽으며 정상Stop/timeout/자원정리/새Start 회귀71개 통과. 오디오 저장·전송이나 UI blocking 변경 없음 |
+| 2026-10-05 | 정리 | 통합 Windows runner의 자체 포함 EXE/라이선스/사용안내/manifest를 root artifacts/win-x64-plan006과VoxPet-win-x64-plan006.zip으로 보존. PE AMD64/필수파일/ZIP CRC/SHA256 검증. 누적 증거는 artifacts/qa/plan006/integrated에 보존 |
+
 ## Completion Notes
 
-진행 중. 실제 Windows 마이크의 전체 실사용 검증은 여전히 미완료다.
+Stop 오류 누락 수정과 누적 자동 QA를 완료했다. settled native 오류는 Faulted/오류 안내로 전달되며 자원 정리와 무음, 새 Start 복구를 유지한다.
+계획은 completed로 이동하고 리뷰 미러를 남겼다. 완료 커밋 후 main ff-only 병합/push와 branch/worktree 정리를 수행한다.
+실제 Windows11 마이크/권한 거부/USB 제거/실제 DPI 전환/실제 입력60분은 미검증이다. OBS60.17분 합성 자원 결과는 plan004 d35f707 버전이다. 전체 사용자의 목표는 실기 증거 없이 완료로 표시하지 않는다.
