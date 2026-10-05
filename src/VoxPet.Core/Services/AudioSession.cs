@@ -86,6 +86,8 @@ public sealed class AudioSession : IAsyncDisposable
             var run = Volatile.Read(ref current);
             if (run is { Ended: not 0 }) Volatile.Write(ref error, Describe(run.Error));
             await CleanupAsync().ConfigureAwait(false);
+            // A native Stop error can arrive through Ended while cleanup awaits the worker.
+            if (run?.Error is { } endedError) Volatile.Write(ref error, Describe(endedError));
             Volatile.Write(ref state, Error == null ? (int)CaptureState.Stopped : (int)CaptureState.Faulted);
         }
         catch (Exception ex)

@@ -62,6 +62,8 @@ QA 이후 단일 에이전트 자체 리뷰. 입력 정리가 끝난 뒤 settled
 | date | role | note |
 |---|---|---|
 | 2026-10-05 | 지도 | main/원격 동기화 확인 후 지정 branch/worktree 생성 |
+| 2026-10-05 | 검증 | 수정 전 targeted Core 회귀가 Expected Faulted / Actual Stopped로 실패. fake Stop은 Ended(IOException)를 보낸 뒤 정상 완료하여 native completion 오류 전달 누락을 재현 |
+| 2026-10-05 | 검증 | 수정 후 macOS SDK10.0.401 locked restore/Release build 경고·오류0/Core71 통과. 새 회귀는 Faulted/오류 안내/자원없음/무음/새 Start 복구를 검사하며 기존 정상 Stop/정리 재시도 검사도 통과 |
 
 ## Completion Notes
 
