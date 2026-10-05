@@ -65,6 +65,8 @@ Windows CI: restore/build/test/publish, headless WPF smoke. 실제 마이크·�
 
 | 2026-10-05 | QA Python을 UTF-8로 실행, 기본 캐릭터를 보라색으로 변경 | Windows CI의 cp1252 한국어 출력 실패 수정; green screen과 캐릭터 색상 간섭 예방 |
 
+| 2026-10-05 | NAudio AudioClient를 사용하는 bounded capture worker로 종료 오류 처리 보완 | 공식 WasapiCapture 소스의 finally client.Stop 예외가 장치 제거 후 completion을 건너뛸 수 있어, capture/stop 모두 catch 후 완료 이벤트를 보장 |
+
 ## Progress Log
 
 | date | role | note |

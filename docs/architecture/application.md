@@ -93,7 +93,10 @@ Core의 AudioSession은 IAudioInput을 주입받고 SemaphoreSlim으로 Start/St
 각 세션에 별도 숫자 snapshot과 콜백 closure를 두어 이전 입력이 다음 세션으로 새지 않는다.
 공유 최신값은 Volatile로 전달하며, 250ms 이상 오래된 입력은 무음으로 바꾼다.
 Stop은 callback 종료까지 기다린 뒤 이벤트를 해제하고 캡처/endpoint를 dispose한다.
-WASAPI 생성은 Task.Run에서 수행해 NAudio가 UI SynchronizationContext를 캡처하지 않게 한다.
+WASAPI 생성/초기화는 Task.Run에서 수행하고 native capture는 전용 worker에서만 실행한다.
+NAudio AudioClient/AudioCaptureClient의 shared-mode 20ms 버퍼를 사용한다.
+CaptureLoop가 capture와 native Stop 예외를 모두 completion 상태로 보고해 장치 제거 후 종료 예외가 작업 스레드 밖으로 빠지지 않게 한다.
+native 프레임은 반드시 ReleaseBuffer하며 PCM 메모리는 dispose에서 지운다.
 Stop 이벤트가 5초 이내 오지 않으면 오류를 표시하고 자원을 유지한 채 재시도하도록 한다.
 
 MainViewModel은 DispatcherTimer 목표 60Hz에서 monotonic 경과시간으로 envelope와 blink를 업데이트한다.

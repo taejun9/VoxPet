@@ -106,7 +106,7 @@ public sealed class AudioSession : IAsyncDisposable
         await Task.Run(async () => await run.Input.DisposeAsync().ConfigureAwait(false)).ConfigureAwait(false);
         Volatile.Write(ref current, null);
     }
-    private static string Describe(Exception? ex) => ex is UnauthorizedAccessException
+    private static string Describe(Exception? ex) => ex is UnauthorizedAccessException || ex?.HResult == unchecked((int)0x80070005)
         ? "마이크 접근이 거부되었습니다. Windows 설정 → 개인정보 및 보안 → 마이크에서 데스크톱 앱 접근을 허용하세요."
         : ex is NotSupportedException
         ? "지원하지 않는 마이크 샘플 형식입니다. Windows 소리 설정에서 다른 형식이나 장치를 선택하세요."

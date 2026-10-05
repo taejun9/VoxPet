@@ -34,11 +34,11 @@ public partial class App : Application
             await Task.Delay(100);
             if (main.Model.VoiceLevel != 0) failures++;
             broadcast.Close();
-            await main.ShutdownAsync();
             var png = new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 730, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             png.Render(main);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(png));
             using (var stream = File.Create(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "voxpet-smoke.png"))) encoder.Save(stream);
+            await main.ShutdownAsync();
             Shutdown(failures == 0 ? 0 : 1);
         }
         catch (Exception ex)
