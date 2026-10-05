@@ -136,6 +136,9 @@ def main() -> int:
                 raw, metrics = get_valid_capture(rpc, name)
                 raw.save(args.output / f'{label}-raw.png')
                 result['raw'] = metrics
+                result['corner_green_ratio'] = classify(raw.crop((450, 450, 480, 480)))['green_ratio']
+                if result['corner_green_ratio'] < .995:
+                    raise RuntimeError('Broadcast corner contains unwanted controls')
                 hashes = {metrics['pixels_sha256']}
                 for _ in range(6):
                     time.sleep(.25)
@@ -151,6 +154,10 @@ def main() -> int:
                 result['keyed'] = keyed_metrics
                 if keyed_metrics['transparent_ratio'] < .2 or keyed_metrics['purple_ratio'] < metrics['purple_ratio'] * .65:
                     raise RuntimeError('Chroma Key did not preserve character and remove background')
+                corner = keyed.crop((450, 450, 480, 480))
+                result['corner_transparent_ratio'] = sum(pixel[3] < 20 for pixel in corner.getdata()) / 900
+                if result['corner_transparent_ratio'] < .95:
+                    raise RuntimeError('Broadcast corner contains unwanted controls')
                 result['passed'] = True
             except Exception as error:
                 result['passed'] = False
@@ -178,6 +185,7 @@ def main() -> int:
                     break
                 if len(samples) % 6 == 0:
                     print(f"Synthetic QA: {samples[-1]['seconds'] / 60:.1f} minutes elapsed", flush=True)
+                    get_valid_capture(rpc, name)
                 time.sleep(10)
             measured = [sample for sample in samples if sample['seconds'] >= 600]
             first, last = measured[0], measured[-1]

@@ -1,4 +1,4 @@
-param([int]$LongRunMinutes = 0)
+param([ValidateSet(0, 60)][int]$LongRunMinutes = 0)
 $ErrorActionPreference = 'Stop'
 Push-Location (Join-Path $PSScriptRoot '../..')
 $obsQaProcess = $null

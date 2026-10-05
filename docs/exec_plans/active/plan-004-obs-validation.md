@@ -64,12 +64,15 @@ Chroma Key 적용 후 초록 배경 alpha 제거와 캐릭터 픽셀 유지를 �
 |---|---|---|
 | 2026-10-05 | 실제 OBS를 remote Windows에서 합성 UI와 시험 | 마이크 환경은 없지만 방송 캡처 요구의 직접 실행 근거는 추가 확보 가능 |
 | 2026-10-05 | test-only branch push로 prototype 검증 | 새 workflow의 main 통합은 실제 QA/리뷰 이후에 수행 |
+| 2026-10-05 | 캡처에서 보인 resize grip을 제거하고 모서리 alpha 검사 추가 | 방송 이미지에 UI 표시가 남지 않도록 실제 OBS 증거에 따라 수정 |
+| 2026-10-05 | 검증 브랜치에서 10분 warmup + 60분 측정 실행, 완료 후 기본값 0 복구 | default branch 통합 전 장시간 증거 확보; 일반 CI는 짧은 검증 유지 |
 
 ## Progress Log
 
 | date | role | note |
 |---|---|---|
 | 2026-10-05 | 지도 | main/원격 동기화 및 plan-004 worktree 생성 |
+| 2026-10-05 | 검증 | e41194f: Core/WPF Windows QA 통과. OBS 32.2.2/WS 5.7.4, Windows Server 2025 build26100, Microsoft Basic Render Driver/D3D11에서 WGC 통과, BitBlt 유효 프레임 없음. 7개 서로 다른 프레임, keyed alpha66.0%, green0%, 캐릭터 유지. 실제 PNG 검사 후 resize grip 발견 |
 
 ## Completion Notes
 
