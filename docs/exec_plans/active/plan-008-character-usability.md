@@ -65,6 +65,8 @@ UI 스레드에서 파일 디코딩을 하지 않는다. 오디오는 계속 로
 
 - 2026-10-06: 최초 개인 시트 dispatch는 read-only 토큰으로 draft를 조회할 수 없어 입력 단계 실패(37337835219). GitHub 공식 문서 https://docs.github.com/en/rest/releases/releases#list-releases 에 따라 push 접근이 필요하다. contents:write를 추가하는 초안은 자동 승인 검토가 거부해 폐기했다. 모든 workflow는 contents:read를 유지한다. 생성한 draft의 단일 파일을 읽는 만료 URL만 임시 Actions secret으로 전달하고 QA 후 secret/draft/임시 화면 artifact를 정리한다. 장기 계정 토큰은 전달하지 않는다.
 
+- 2026-10-06: 새 수동 workflow는 default branch에 등록되기 전 dispatch할 수 없어 404였다. 기존 windows.yml의 수동 입력(use_personal_sheet)에 단일 파일 URL 읽기 경로를 넣는다. 일반 push QA는 이 입력을 사용하지 않고 모든 권한은 contents:read다.
+
 ## Progress Log
 
 2026-10-06: 로컬 문서·기본 자산 검사 통과. SDK 10.0.401 locked restore 및 Release 교차 빌드 통과. Core 84/84 통과. 기본 sandbox의 NuGet/IPC 제한은 승인된 실행으로 재검증했다. checkpoint d481b45의 기본 Windows 37337747211 및 OBS 37337747089 통과. 개인 시트 QA 입력 실패는 위 Decision Log에 기록했고 전용 workflow로 재시험한다.

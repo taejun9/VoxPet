@@ -4,6 +4,11 @@ on:
     branches: [main, 'codex/**']
   pull_request:
   workflow_dispatch:
+    inputs:
+      use_personal_sheet:
+        description: 'Use a temporary scoped image URL from VOXPET_QA_SHEET_URL for personal character QA'
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -20,6 +25,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Read temporary character fixture with a scoped expiring URL
+        if: github.event_name == 'workflow_dispatch' && inputs.use_personal_sheet
+        shell: pwsh
+        env:
+          QA_SHEET_URL: ${{ secrets.VOXPET_QA_SHEET_URL }}
+        run: |
+          $uri = [Uri]$env:QA_SHEET_URL
+          if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https' -or $uri.Host -ne 'release-assets.githubusercontent.com') { throw 'A scoped GitHub release asset URL is required' }
+          Invoke-WebRequest -Uri $uri -OutFile "$env:RUNNER_TEMP/늘보군.png" -MaximumRedirection 0
+          "VOXPET_QA_SHEET=$env:RUNNER_TEMP/늘보군.png" >> $env:GITHUB_ENV
       - name: Verify, build, test, publish and WPF smoke
         shell: pwsh
         run: ./harness/scripts/qa.ps1 -Publish -Smoke
@@ -41,4 +56,5 @@ jobs:
             ${{ runner.temp }}/voxpet-smoke-result.json
             ${{ runner.temp }}/voxpet-layout-*.png
             ${{ runner.temp }}/voxpet-layout-result.json
+            ${{ runner.temp }}/voxpet-personal-*.png
           if-no-files-found: warn
