@@ -40,7 +40,7 @@ public partial class MainWindow : Window
         {
             await ShutdownAsync();
             // Closing may finish synchronously; enqueue Close after the canceled event returns.
-            Dispatcher.BeginInvoke(() => { if (IsVisible) Close(); });
+            _ = Dispatcher.BeginInvoke(() => { if (IsVisible) Close(); });
         }
         catch { IsEnabled = true; shuttingDown = false; MessageBox.Show("마이크 종료에 실패했습니다. 잠시 후 다시 닫아주세요.", "VoxPet"); }
     }
