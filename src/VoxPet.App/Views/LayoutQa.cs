@@ -40,6 +40,16 @@ internal static class LayoutQa
     public static async Task RunAsync(MainWindow main, Action<bool, string> check)
     {
         var cases = new List<object>();
+        var startupCases = new List<object>();
+        foreach (var area in new[] { new Rect(10, 20, 960, 540), new Rect(10, 20, 640, 480), new Rect(10, 20, 480, 320) })
+        {
+            var startup = new MainWindow(smoke: true, initialWorkArea: area); startup.Show(); await startup.Ready;
+            bool inside = startup.Left >= area.Left && startup.Top >= area.Top && startup.Left + startup.ActualWidth <= area.Right + 1 && startup.Top + startup.ActualHeight <= area.Bottom + 1;
+            check(inside, $"layout_initial_work_area_{area.Width}x{area.Height}");
+            startupCases.Add(new { simulatedWorkArea = true, workArea = new { area.Left, area.Top, area.Width, area.Height }, startup.Left, startup.Top, startup.ActualWidth, startup.ActualHeight, inside });
+            startup.Close(); await Task.Delay(100);
+            check(!startup.IsVisible, "layout_fixture_closed");
+        }
         var root = (FrameworkElement)main.Content;
         foreach (var (width, height) in new[] { (1000, 730), (960, 540), (640, 480), (480, 320) })
         {
@@ -64,6 +74,7 @@ internal static class LayoutQa
             bool? wheelScroll = null;
             if (width < 870 || height < 600)
             {
+                check(controls.OfType<Button>().Where(button => Equals(button.Content, "Start") || Equals(button.Content, "Stop")).All(button => FullyVisible(button, root)), $"layout_start_stop_at_top_{width}x{height}");
                 double before = main.ContentViewport.VerticalOffset;
                 var start = controls.OfType<Button>().Single(button => Equals(button.Content, "Start"));
                 start.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, -120) { RoutedEvent = Mouse.MouseWheelEvent });
@@ -83,6 +94,6 @@ internal static class LayoutQa
             cases.Add(new { requestedWidth = width, requestedHeight = height, actualWidth = main.ActualWidth, actualHeight = main.ActualHeight, controls = controls.Length, invisible, wheelScroll });
         }
         main.Width = 1000; main.Height = 730; await Task.Delay(100); main.UpdateLayout();
-        File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "voxpet-layout-result.json"), JsonSerializer.Serialize(new { syntheticRenderScale = true, physicalDpiChange = false, cases }, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "voxpet-layout-result.json"), JsonSerializer.Serialize(new { syntheticRenderScale = true, physicalDpiChange = false, startupCases, cases }, new JsonSerializerOptions { WriteIndented = true }));
     }
 }

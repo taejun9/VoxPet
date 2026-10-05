@@ -63,6 +63,7 @@ QA 이후 단일 에이전트 자체 리뷰. scroll clipping/레이아웃 전환
 | 2026-10-05 | Windows QA용 checkpoint branch push 허용 | main 병합 전에 실제 WPF에서 재현/수정 근거 확보 |
 | 2026-10-05 | 마우스 휠 routed-event 검사 추가 | WPF 공식 ScrollViewer 소스는 내측 영역에서 wheel을 handled로 바꿈. logical BringIntoView 성공만으로 실제 스크롤 입력을 입증하지 못함 |
 | 2026-10-05 | 설정 영역을 하나의 ScrollViewer로 구성 | 중첩 wheel 가로채기를 제거하고 마우스/키보드/scrollbar가 같은 영역을 조작하도록 단순화 |
+| 2026-10-05 | 초기 크기를 primary 작업 영역의 논리 좌표에 맞춤 | 최소 크기만 낮춰도 기본1000×730이 높은 DPI의 작업 영역을 넘을 수 있음. 공식 WPF WorkArea pixel→logical 변환 확인; QA는 가상 작업 영역을 주입하되 실제 창 생성과 bounds를 검사 |
 
 ## Progress Log
 
@@ -71,6 +72,7 @@ QA 이후 단일 에이전트 자체 리뷰. scroll clipping/레이아웃 전환
 | 2026-10-05 | 지도 | main/원격 동기화 확인. 지정 branch/worktree 생성. 기존 MinWidth870/MinHeight680은 작은 논리 작업 영역을 초과함 |
 | 2026-10-05 | 검증 | dd8c7d1 [37270743596](https://github.com/taejun9/VoxPet/actions/runs/37270743596): Core70/빌드/publish 통과, 정확히 세 requested-size 실패. 960×540은 실제960×680, 640×480/480×320은 실제870×680. JSON 직접 확인 |
 | 2026-10-05 | 검증 | 31ab122 [37271000291](https://github.com/taejun9/VoxPet/actions/runs/37271000291): 크기/컨트롤 스크롤 가시성/기존 smoke 통과. 추가 입력 검토에서 nested wheel 처리 가능성 발견, routed-event 검사 보완 |
+| 2026-10-05 | 검증 | 302a858 [37271324428](https://github.com/taejun9/VoxPet/actions/runs/37271324428): 정확히 작은 창 세 wheel 입력 실패. da17bb9 [37271591812](https://github.com/taejun9/VoxPet/actions/runs/37271591812)는 중첩 제거 후 전체 Windows QA 통과 |
 
 ## Completion Notes
 
