@@ -89,6 +89,16 @@ def resource_sample(process: psutil.Process, started: float):
     return {'seconds': round(time.monotonic() - started, 2), 'rss': process.memory_info().rss, 'handles': process.num_handles()}
 
 
+def distinct_frames(rpc: ObsRpc, name: str, first_hash: str) -> int:
+    hashes = {first_hash}
+    for _ in range(6):
+        time.sleep(.25)
+        hashes.add(classify(rpc.screenshot(name))['pixels_sha256'])
+    if len(hashes) < 2:
+        raise RuntimeError('Character capture is frozen')
+    return len(hashes)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -139,13 +149,7 @@ def main() -> int:
                 result['corner_green_ratio'] = classify(raw.crop((450, 450, 480, 480)))['green_ratio']
                 if result['corner_green_ratio'] < .995:
                     raise RuntimeError('Broadcast corner contains unwanted controls')
-                hashes = {metrics['pixels_sha256']}
-                for _ in range(6):
-                    time.sleep(.25)
-                    hashes.add(classify(rpc.screenshot(name))['pixels_sha256'])
-                result['distinct_frames'] = len(hashes)
-                if len(hashes) < 2:
-                    raise RuntimeError('Character capture is frozen')
+                result['distinct_frames'] = distinct_frames(rpc, name, metrics['pixels_sha256'])
                 rpc.call('CreateSourceFilter', sourceName=name, filterName='VoxPet-QA-Key', filterKind=key_kind, filterSettings={'key_color_type': 'green', 'similarity': 400, 'smoothness': 80, 'spill': 100})
                 time.sleep(.5)
                 keyed = rpc.screenshot(name)
@@ -176,6 +180,7 @@ def main() -> int:
             process = psutil.Process(args.voxpet_pid)
             started = time.monotonic()
             samples = []
+            report['long_run'] = {'state': 'running', 'warmup_minutes': 10, 'requested_minutes': args.long_run_minutes, 'capture_method': passed_method, 'samples': samples, 'motion_checks': 0}
             baseline = None
             while True:
                 samples.append(resource_sample(process, started))
@@ -185,13 +190,16 @@ def main() -> int:
                     break
                 if len(samples) % 6 == 0:
                     print(f"Synthetic QA: {samples[-1]['seconds'] / 60:.1f} minutes elapsed", flush=True)
-                    get_valid_capture(rpc, name)
+                    _, current_metrics = get_valid_capture(rpc, name)
+                    distinct_frames(rpc, name, current_metrics['pixels_sha256'])
+                    report['long_run']['motion_checks'] += 1
+                    (args.output / 'result.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
                 time.sleep(10)
             measured = [sample for sample in samples if sample['seconds'] >= 600]
             first, last = measured[0], measured[-1]
             final_image, final_metrics = get_valid_capture(rpc, name)
             final_image.save(args.output / 'long-run-final.png')
-            report['long_run'] = {'warmup_minutes': 10, 'measured_minutes': (last['seconds'] - first['seconds']) / 60, 'capture_method': passed_method, 'final_capture': final_metrics, 'rss_growth': last['rss'] - first['rss'], 'handle_growth': last['handles'] - first['handles'], 'samples': samples}
+            report['long_run'].update({'state': 'completed', 'measured_minutes': (last['seconds'] - first['seconds']) / 60, 'final_capture': final_metrics, 'rss_growth': last['rss'] - first['rss'], 'handle_growth': last['handles'] - first['handles']})
             if last['rss'] - first['rss'] > 50 * 1024 * 1024 or last['handles'] - first['handles'] > 50:
                 raise RuntimeError('Synthetic UI resource growth exceeds planned threshold')
         report['passed'] = True

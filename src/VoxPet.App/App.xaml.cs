@@ -4,6 +4,8 @@ using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 using VoxPet.App.Views;
 
 namespace VoxPet.App;
@@ -19,6 +21,18 @@ public partial class App : Application
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsIconic(IntPtr window);
+    [DllImport("user32.dll")]
+    private static extern IntPtr SendMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
+    private static ResizeGrip? FindResizeGrip(DependencyObject element)
+    {
+        if (element is ResizeGrip grip) return grip;
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+        {
+            var found = FindResizeGrip(VisualTreeHelper.GetChild(element, i));
+            if (found != null) return found;
+        }
+        return null;
+    }
     private void Check(bool passed, string name)
     {
         if (passed) return;
@@ -71,6 +85,14 @@ public partial class App : Application
             }
             if (!reacted || !blinked) failures++;
             if (main.Model.Character.Sprite.Width <= 0 || !broadcast.IsVisible) failures++;
+            var grip = FindResizeGrip(broadcast);
+            Check(grip is { IsVisible: true, Opacity: 0 } && grip.ActualWidth > 0 && grip.ActualHeight > 0, "broadcast_grip_invisible_and_active");
+            if (grip != null)
+            {
+                var point = grip.PointToScreen(new Point(grip.ActualWidth / 2, grip.ActualHeight / 2));
+                var packed = new IntPtr(((int)point.X & 0xffff) | (((int)point.Y & 0xffff) << 16));
+                Check(SendMessage(new WindowInteropHelper(broadcast).Handle, 0x0084, IntPtr.Zero, packed).ToInt64() == 17, "broadcast_native_resize_hit");
+            }
             main.Model.NormalizeMin = -80; main.Model.NormalizeMax = -20;
             main.Model.NormalizeMin = -1;
             if (main.Model.NormalizeMin >= main.Model.NormalizeMax) failures++;

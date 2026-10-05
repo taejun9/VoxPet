@@ -66,6 +66,7 @@ Chroma Key 적용 후 초록 배경 alpha 제거와 캐릭터 픽셀 유지를 �
 | 2026-10-05 | test-only branch push로 prototype 검증 | 새 workflow의 main 통합은 실제 QA/리뷰 이후에 수행 |
 | 2026-10-05 | 캡처에서 보인 resize grip을 제거하고 모서리 alpha 검사 추가 | 방송 이미지에 UI 표시가 남지 않도록 실제 OBS 증거에 따라 수정 |
 | 2026-10-05 | 검증 브랜치에서 10분 warmup + 60분 측정 실행, 완료 후 기본값 0 복구 | default branch 통합 전 장시간 증거 확보; 일반 CI는 짧은 검증 유지 |
+| 2026-10-05 | 투명 창은 원래 resize grip 영역 유지, Opacity=0으로 표시만 제거 | 공식 WPF Window/ResizeGrip 소스의 native hit 처리 확인. Windows smoke에서 실제 WM_NCHITTEST=HTBOTTOMRIGHT를 검사하고 OBS에서 corner 픽셀 검사 |
 
 ## Progress Log
 
