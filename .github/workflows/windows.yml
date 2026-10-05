@@ -38,4 +38,5 @@ jobs:
             artifacts/test-results/
             ${{ runner.temp }}/voxpet-smoke.png
             ${{ runner.temp }}/voxpet-smoke-error.txt
+            ${{ runner.temp }}/voxpet-smoke-result.json
           if-no-files-found: warn
