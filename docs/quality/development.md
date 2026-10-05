@@ -37,6 +37,7 @@ NuGet/SDK 업데이트 시 잠금 파일을 갱신하고 전체 QA를 다시 수
 
 ```sh
 dotnet restore VoxPet.sln --locked-mode
+dotnet format VoxPet.sln --verify-no-changes --no-restore
 dotnet build VoxPet.sln --configuration Release
 dotnet test tests/VoxPet.Core.Tests/VoxPet.Core.Tests.csproj --configuration Release
 dotnet run --project src/VoxPet.App/VoxPet.App.csproj
@@ -54,7 +55,7 @@ Python 3.10+, Git, global.json의 .NET SDK가 필요하다. PowerShell에서:
 ./harness/scripts/qa.ps1 -Publish -Smoke
 ```
 
-문서/자산 검증 → locked restore → Release build → Core test → 자체 포함 publish → 마이크 없는 WPF smoke 순서다.
+문서/자산 검증 → locked restore → format/analyzer 검사 → Release build → Core test → 자체 포함 publish → 마이크 없는 WPF smoke 순서다.
 `.github/workflows/windows.yml`이 같은 명령을 Windows runner에서 실행하고 실행 폴더/테스트 결과/화면 PNG를 업로드한다.
 
 별도 `.github/workflows/obs.yml`은 `obs-qa.ps1`/`obs_capture_qa.py`로 마이크 없는 Window Capture와 Chroma Key를 검증한다.

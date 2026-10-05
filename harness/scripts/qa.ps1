@@ -10,6 +10,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Whitespace validation failed' }
     dotnet restore VoxPet.sln --locked-mode
     if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
+    dotnet format VoxPet.sln --verify-no-changes --no-restore
+    if ($LASTEXITCODE -ne 0) { throw 'Formatting/analyzer validation failed' }
     dotnet build VoxPet.sln -c Release --no-restore
     if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
     dotnet test tests/VoxPet.Core.Tests/VoxPet.Core.Tests.csproj -c Release --no-build --logger 'trx;LogFileName=core.trx' --results-directory artifacts/test-results

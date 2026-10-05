@@ -13,6 +13,7 @@ No Exec Plan, No Work. `docs/exec_plans/active/plan-NNN-<task>.md`를 먼저 작
 - `python3 harness/scripts/verify_base.py`: 필수 파일, 로컬 Markdown 링크 대상, 계획명/제목/상태, 완료 리뷰 미러, 공식 출처 URL·날짜, 미작성 표시 잔여를 확인.
 - `python3 harness/scripts/verify_app.py`: PNG/manifest/잠금/금지 API 계약 검사.
 - `dotnet build VoxPet.sln -c Release`: 컴파일과 XAML 검사.
+- `dotnet format VoxPet.sln --verify-no-changes --no-restore`: locked restore 후 C# 서식·스타일·analyzer 검사. 위반 시 SDK formatter로 수정하고 다시 검증한다.
 - `dotnet test tests/VoxPet.Core.Tests/VoxPet.Core.Tests.csproj -c Release`: 합성 수치·수명·캐릭터·설정 복구 검사.
 - `git diff --check`: 공백 오류 확인. 새 파일은 stage 후에도 검사한다.
 - 기존 README 보존과 기획 대비 범위를 사람이 확인한다.

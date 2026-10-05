@@ -14,13 +14,13 @@ public sealed class CharacterViewModel : ObservableObject
     {
         string[] names = ["closed", "half", "open"];
         for (int mouth = 0; mouth < 3; mouth++)
-        for (int eye = 0; eye < 2; eye++)
-        {
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.UriSource = new Uri($"pack://application:,,,/Assets/Characters/{names[mouth]}{(eye == 0 ? "-blink" : "")}.png");
-            bitmap.EndInit(); bitmap.Freeze(); sprites[mouth, eye] = bitmap;
-        }
+            for (int eye = 0; eye < 2; eye++)
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.UriSource = new Uri($"pack://application:,,,/Assets/Characters/{names[mouth]}{(eye == 0 ? "-blink" : "")}.png");
+                bitmap.EndInit(); bitmap.Freeze(); sprites[mouth, eye] = bitmap;
+            }
         sprite = sprites[0, 1];
     }
     public ImageSource Sprite { get => sprite; private set => Set(ref sprite, value); }

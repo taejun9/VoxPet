@@ -21,7 +21,7 @@ public sealed class SettingsStore(string? settingsPath = null)
             settings.Audio.Validate();
             return settings;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException )
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException)
         { return new(new()); }
     }
     public bool Save(UserSettings settings)

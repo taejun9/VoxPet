@@ -33,7 +33,8 @@ public sealed class SessionTests
         public void Push() => LevelAvailable?.Invoke(new(1, 1, 0));
         public void Fail() => Ended?.Invoke(new IOException("Fake device unplugged"));
     }
-    [Fact] public async Task StartStopRepeatAndOldCallbacksAreIsolated()
+    [Fact]
+    public async Task StartStopRepeatAndOldCallbacksAreIsolated()
     {
         await using var session = new AudioSession(); var first = new FakeInput();
         await session.StartAsync(() => first); first.Push();
@@ -48,14 +49,16 @@ public sealed class SessionTests
         second.Push(); Assert.Equal(1, session.ReadLevel(Stopwatch.GetTimestamp()).Rms);
         await session.StopAsync(); Assert.Equal(1, second.Disposals);
     }
-    [Fact] public async Task StaleInputReleasesAfter250Milliseconds()
+    [Fact]
+    public async Task StaleInputReleasesAfter250Milliseconds()
     {
         await using var session = new AudioSession(); var input = new FakeInput(); await session.StartAsync(() => input);
         input.Push(); var now = Stopwatch.GetTimestamp();
         Assert.Equal(1, session.ReadLevel(now).Rms);
         Assert.Equal(AudioLevel.Silence, session.ReadLevel(now + Stopwatch.Frequency));
     }
-    [Fact] public async Task StartFailureDisposesAndAllowsRestart()
+    [Fact]
+    public async Task StartFailureDisposesAndAllowsRestart()
     {
         await using var session = new AudioSession(); var input = new FakeInput { StartError = new UnauthorizedAccessException() };
         await session.StartAsync(() => input);
@@ -64,7 +67,8 @@ public sealed class SessionTests
         var next = new FakeInput(); await session.StartAsync(() => next);
         Assert.Equal(CaptureState.Running, session.State); Assert.Null(session.Error);
     }
-    [Fact] public async Task FactoryFailureAndUnexpectedEndAreRecoverable()
+    [Fact]
+    public async Task FactoryFailureAndUnexpectedEndAreRecoverable()
     {
         await using var session = new AudioSession(); await session.StartAsync(() => throw new IOException());
         Assert.Equal(CaptureState.Faulted, session.State);
@@ -72,7 +76,8 @@ public sealed class SessionTests
         Assert.True(session.HasInputEnded); Assert.Equal(AudioLevel.Silence, session.ReadLevel(Stopwatch.GetTimestamp()));
         await session.StopAsync(); Assert.Equal(CaptureState.Faulted, session.State); Assert.NotNull(session.Error); Assert.Equal(1, input.Disposals);
     }
-    [Fact] public async Task ConcurrentStopWaitsForStartingSession()
+    [Fact]
+    public async Task ConcurrentStopWaitsForStartingSession()
     {
         await using var session = new AudioSession();
         var barrier = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -81,21 +86,24 @@ public sealed class SessionTests
         barrier.SetResult(); await Task.WhenAll(start, stop);
         Assert.Equal(CaptureState.Stopped, session.State); Assert.Equal(1, input.Disposals);
     }
-    [Fact] public async Task DisposeQueuesBehindStartAndIsIdempotent()
+    [Fact]
+    public async Task DisposeQueuesBehindStartAndIsIdempotent()
     {
         var session = new AudioSession(); var input = new FakeInput();
         var start = session.StartAsync(() => input); var dispose = session.DisposeAsync().AsTask();
         await Task.WhenAll(start, dispose); await session.DisposeAsync();
         Assert.Equal(1, input.Disposals); Assert.Equal(AudioLevel.Silence, session.ReadLevel(Stopwatch.GetTimestamp()));
     }
-    [Fact] public async Task StopFailureRetainsInputForSafeRetry()
+    [Fact]
+    public async Task StopFailureRetainsInputForSafeRetry()
     {
         await using var session = new AudioSession(); var input = new FakeInput { FailStop = true };
         await session.StartAsync(() => input); await session.StopAsync();
         Assert.Equal(CaptureState.Faulted, session.State); Assert.Equal(0, input.Disposals); Assert.True(session.HasResources);
         input.FailStop = false; await session.StopAsync(); Assert.Equal(1, input.Disposals); Assert.False(session.HasResources);
     }
-    [Fact] public async Task NativeEndErrorDuringStopIsReportedAfterCleanupAndAllowsRestart()
+    [Fact]
+    public async Task NativeEndErrorDuringStopIsReportedAfterCleanupAndAllowsRestart()
     {
         await using var session = new AudioSession();
         var input = new FakeInput { EndDuringStopError = new IOException("Native Stop failed") };
@@ -107,16 +115,18 @@ public sealed class SessionTests
         await session.StartAsync(() => new FakeInput());
         Assert.Equal(CaptureState.Running, session.State); Assert.Null(session.Error);
     }
-    [Fact] public async Task StartingDisposedSessionCannotAcquireMicrophone()
+    [Fact]
+    public async Task StartingDisposedSessionCannotAcquireMicrophone()
     {
         var session = new AudioSession(); await session.DisposeAsync();
         await Assert.ThrowsAsync<ObjectDisposedException>(() => session.StartAsync(() => throw new Exception("Must not open")));
         Assert.Equal(CaptureState.Stopped, session.State); Assert.False(session.HasResources);
     }
-    [Fact] public async Task RepeatedConcurrentRequestsDoNotLeak()
+    [Fact]
+    public async Task RepeatedConcurrentRequestsDoNotLeak()
     {
         await using var session = new AudioSession(); var inputs = new List<FakeInput>();
-        for (int i=0; i<100; i++)
+        for (int i = 0; i < 100; i++)
         {
             await session.StartAsync(() => { var f = new FakeInput(); inputs.Add(f); return f; });
             await Task.WhenAll(session.StopAsync(), session.StopAsync());

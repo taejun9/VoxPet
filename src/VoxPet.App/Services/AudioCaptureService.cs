@@ -75,7 +75,8 @@ public sealed class AudioCaptureService : IAudioInput
         {
             try { Ended?.Invoke(ex); }
             finally { ended.TrySetResult(); }
-        })) { IsBackground = true, Name = "VoxPet microphone" };
+        }))
+        { IsBackground = true, Name = "VoxPet microphone" };
         try { worker.Start(); }
         catch { worker = null; throw; }
         return Task.CompletedTask;
