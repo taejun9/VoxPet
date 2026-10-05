@@ -86,6 +86,7 @@ public partial class App : Application
             await closingWindow.Ready; closingWindow.Close();
             await Task.Delay(100);
             if (closingWindow.IsVisible) failures++;
+            await LayoutQa.RunAsync(main, Check);
             var png = new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 730, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             png.Render(main);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(png));

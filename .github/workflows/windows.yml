@@ -39,4 +39,6 @@ jobs:
             ${{ runner.temp }}/voxpet-smoke.png
             ${{ runner.temp }}/voxpet-smoke-error.txt
             ${{ runner.temp }}/voxpet-smoke-result.json
+            ${{ runner.temp }}/voxpet-layout-*.png
+            ${{ runner.temp }}/voxpet-layout-result.json
           if-no-files-found: warn
