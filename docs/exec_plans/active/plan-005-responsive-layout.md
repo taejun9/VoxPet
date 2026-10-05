@@ -73,6 +73,8 @@ QA 이후 단일 에이전트 자체 리뷰. scroll clipping/레이아웃 전환
 | 2026-10-05 | 검증 | dd8c7d1 [37270743596](https://github.com/taejun9/VoxPet/actions/runs/37270743596): Core70/빌드/publish 통과, 정확히 세 requested-size 실패. 960×540은 실제960×680, 640×480/480×320은 실제870×680. JSON 직접 확인 |
 | 2026-10-05 | 검증 | 31ab122 [37271000291](https://github.com/taejun9/VoxPet/actions/runs/37271000291): 크기/컨트롤 스크롤 가시성/기존 smoke 통과. 추가 입력 검토에서 nested wheel 처리 가능성 발견, routed-event 검사 보완 |
 | 2026-10-05 | 검증 | 302a858 [37271324428](https://github.com/taejun9/VoxPet/actions/runs/37271324428): 정확히 작은 창 세 wheel 입력 실패. da17bb9 [37271591812](https://github.com/taejun9/VoxPet/actions/runs/37271591812)는 중첩 제거 후 전체 Windows QA 통과 |
+| 2026-10-05 | 검증 | 3dcded2 [37272421104](https://github.com/taejun9/VoxPet/actions/runs/37272421104): Core70/Release/publish/smoke와 실제 창4크기×15컨트롤/작은 창wheel/초기StartStop, 가상작업영역3case의 실제창bounds/종료 통과. JSON직접확인, 최소창PNG시각검사. 물리DPI시험으로 해석하지 않음 |
+| 2026-10-05 | 조율 | plan004 장시간 작업은 동일 run37269646209로 진행 중. 완료 결과를 main으로 통합한 뒤 이 브랜치에 main을 merge하고 전체 QA를 재검증한다. 이미 push한 checkpoint 이력은 rebase/force push로 덮어쓰지 않음 |
 
 ## Completion Notes
 

@@ -6,6 +6,8 @@
 | source | url | scope | checked_at | used_for |
 |---|---|---|---|---|
 | Microsoft WPF Overview | https://learn.microsoft.com/en-us/dotnet/desktop/wpf/overview/ | Windows UI | 2026-10-05 | WPF Windows 실행 제한, XAML/바인딩/애니메이션 |
+| WPF ScrollViewer Source | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Controls/ScrollViewer.cs | 휠 입력 | 2026-10-05 | 내측 OnMouseWheel의 handled 처리 확인; 단일 scroll 영역과 실제 routed-event 검사 |
+| WPF SystemParameters Source | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/SystemParameters.cs | 초기 창 bounds | 2026-10-05 | WorkArea의 pixel→logical 변환 확인; 주 화면 작업 영역에 초기 크기 제한 |
 | Microsoft WPF Threading Model | https://learn.microsoft.com/en-us/dotnet/desktop/wpf/advanced/threading-model | UI 스레드 | 2026-10-05 | Dispatcher 경계, UI thread 작업량 제한 |
 | Microsoft .NET Support Policy | https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core | SDK/runtime 수명 | 2026-10-05 | .NET 10 LTS 선택 및 .NET 8 지원 종료 확인 |
 | NAudio 공식 저장소 | https://github.com/naudio/NAudio | 오디오 라이브러리 | 2026-10-05 | WASAPI 지원, NAudio 3 net9.0 이상 요구와 2.x 구분 |
