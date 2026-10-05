@@ -13,7 +13,6 @@
 | NAudio 2.2.1 NuGet | https://www.nuget.org/packages/NAudio/2.2.1 | 패키지 후보 | 2026-10-05 | .NET 8 호환 후보 확인; 최신 2.x 선택은 구현 때 재검토 |
 | OBS Window Capture Sources | https://obsproject.com/kb/window-capture-sources | 방송 캡처 | 2026-10-05 | 창 단위 캡처와 방식 옵션; WPF alpha 보장 근거는 아님 |
 | Microsoft dotnet test | https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test | 테스트 CLI | 2026-10-05 | 후속 테스트 실행 경로; SDK/러너 옵션은 생성 후 확인 |
-
 | Microsoft .NET 10 Supported OS | https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md | OS/architecture | 2026-10-05 | 지원 중인 Windows edition/build 우선, 전체 Windows 10 보장 제외 |
 | Microsoft single-file deployment | https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview | 배포 | 2026-10-05 | 자체 포함 win-x64 단일 실행파일과 native extraction 옵션 |
 | xunit 2.9.3 NuGet | https://www.nuget.org/packages/xunit/2.9.3 | 테스트 패키지 | 2026-10-05 | pinned 테스트 프레임워크 |

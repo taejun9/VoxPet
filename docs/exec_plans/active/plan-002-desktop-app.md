@@ -67,6 +67,8 @@ Windows CI: restore/build/test/publish, headless WPF smoke. 실제 마이크·�
 
 | 2026-10-05 | NAudio AudioClient를 사용하는 bounded capture worker로 종료 오류 처리 보완 | 공식 WasapiCapture 소스의 finally client.Stop 예외가 장치 제거 후 completion을 건너뛸 수 있어, capture/stop 모두 catch 후 완료 이벤트를 보장 |
 
+| 2026-10-05 | 입력 반응 범위 고급 설정 노출 | 고정 normalize min=-50에서는 조용한 마이크(-65 dBFS 등)가 gate를 낮춰도 반응하지 않음; min/max 순서와 기본값 복구를 UI smoke로 검증 |
+
 ## Progress Log
 
 | date | role | note |

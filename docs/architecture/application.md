@@ -107,6 +107,7 @@ SettingsStore는 조정값과 방송창 topmost/background만 원자적 파일 �
 
 AudioSettings는 유한한 dBFS -120~0, normalize min<max, sensitivity 0~10, 시간 0~5000ms를 허용한다.
 UI는 gate -90~-10, sensitivity 0~4, attack 0~300, release 0~1000의 실용 범위를 제공한다.
+고급 입력 반응 범위는 normalize min -120~-1 / max -119~0을 제공하고 min<max가 유지되도록 상대 경계를 함께 조정한다.
 잘못된 float sample은 0으로 바꾸고 극단적인 full-scale 값은 ±16에서 제한한다. 일반 clipping은 진단에 보존한다.
 미지원/불완전 PCM 프레임은 오류로 종료해 잘못된 수치를 표시하지 않는다.
 

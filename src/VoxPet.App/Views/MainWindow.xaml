@@ -39,6 +39,15 @@
               <Slider Value="{Binding ReleaseMs}" Minimum="0" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" AutomationProperties.Name="Release" Margin="0,10,0,0"/>
             </StackPanel>
           </Border>
+          <Expander Header="작은 목소리: 입력 반응 범위" Foreground="#DDE4F0" Margin="0,12,0,0">
+            <StackPanel Margin="18,12,18,0">
+              <TextBlock Text="작은 목소리에 반응하지 않으면 낮은 입력과 Gate를 함께 낮추세요." TextWrapping="Wrap" Foreground="#8FA4BC" FontSize="12" Margin="0,0,0,12"/>
+              <DockPanel><TextBlock Text="낮은 입력"/><TextBlock Text="{Binding NormalizeMin, StringFormat={}{0:F0} dBFS}" HorizontalAlignment="Right"/></DockPanel>
+              <Slider Value="{Binding NormalizeMin}" Minimum="-120" Maximum="-1" TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="입력 범위 최소"/>
+              <DockPanel><TextBlock Text="높은 입력"/><TextBlock Text="{Binding NormalizeMax, StringFormat={}{0:F0} dBFS}" HorizontalAlignment="Right"/></DockPanel>
+              <Slider Value="{Binding NormalizeMax}" Minimum="-119" Maximum="0" TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="입력 범위 최대"/>
+            </StackPanel>
+          </Expander>
           <WrapPanel Margin="0,12,0,0"><CheckBox Content="방송창 항상 위" IsChecked="{Binding Topmost}"/><CheckBox Content="초록 배경 (OBS)" IsChecked="{Binding GreenBackground}"/></WrapPanel>
           <TextBlock Text="장치 변경은 Stop 후 선택하세요. Gate는 소음을 의미적으로 구별하지 않습니다." Foreground="#8FA4BC" FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0"/>
         </StackPanel>

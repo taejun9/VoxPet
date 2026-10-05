@@ -84,6 +84,19 @@ public sealed class AudioTests
     {
         Assert.Equal(expected, new AudioLevelProcessor().Update(db, .01, new(AttackMs: 0)).Raw);
     }
+    [Fact] public void QuietInputCanReactWithAdjustedNormalizationRange()
+    {
+        var p = new AudioLevelProcessor();
+        Assert.Equal(0,p.Update(-65,.1,new(NoiseGate:-70,AttackMs:0)).VoiceLevel);
+        Assert.Equal(.25,p.Update(-65,.1,new(NoiseGate:-70,NormalizeMin:-80,NormalizeMax:-20,AttackMs:0)).VoiceLevel);
+    }
+    [Fact] public void ReleaseIsPeriodIndependent()
+    {
+        var a = new AudioLevelProcessor(); var b = new AudioLevelProcessor(); var s = new AudioSettings(AttackMs:0);
+        a.Update(0,.01,s); b.Update(0,.01,s);
+        for(int i=0;i<60;i++) a.Update(-120,.14/60,s);
+        b.Update(-120,.14,s); Assert.Equal(b.VoiceLevel,a.VoiceLevel,12);
+    }
     [Fact] public void SensitivityCannotBypassGateAndZeroIsMute()
     {
         var p = new AudioLevelProcessor();

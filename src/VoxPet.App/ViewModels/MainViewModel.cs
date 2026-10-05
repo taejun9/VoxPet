@@ -58,6 +58,26 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public Brush BroadcastBackground => GreenBackground ? Brushes.Lime : Brushes.Transparent;
     public string DemoLabel => demo ? "데모 종료 (Stop)" : "마이크 없이 데모";
     public double NoiseGate { get => settings.NoiseGate; set { settings = settings with { NoiseGate = value }; Notify(); } }
+    public double NormalizeMin
+    {
+        get => settings.NormalizeMin;
+        set
+        {
+            double min = Math.Clamp(value, -120, -1);
+            settings = settings with { NormalizeMin = min, NormalizeMax = Math.Max(settings.NormalizeMax, min + 1) };
+            Notify(); Notify(nameof(NormalizeMax));
+        }
+    }
+    public double NormalizeMax
+    {
+        get => settings.NormalizeMax;
+        set
+        {
+            double max = Math.Clamp(value, -119, 0);
+            settings = settings with { NormalizeMax = max, NormalizeMin = Math.Min(settings.NormalizeMin, max - 1) };
+            Notify(); Notify(nameof(NormalizeMin));
+        }
+    }
     public double Sensitivity { get => settings.Sensitivity; set { settings = settings with { Sensitivity = value }; Notify(); } }
     public double AttackMs { get => settings.AttackMs; set { settings = settings with { AttackMs = value }; Notify(); } }
     public double ReleaseMs { get => settings.ReleaseMs; set { settings = settings with { ReleaseMs = value }; Notify(); } }
@@ -106,7 +126,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private void Reset()
     {
         settings = new();
-        foreach (var property in new[] { nameof(NoiseGate), nameof(Sensitivity), nameof(AttackMs), nameof(ReleaseMs) }) Notify(property);
+        foreach (var property in new[] { nameof(NoiseGate), nameof(Sensitivity), nameof(AttackMs), nameof(ReleaseMs), nameof(NormalizeMin), nameof(NormalizeMax) }) Notify(property);
     }
     private void ResetLevels()
     {

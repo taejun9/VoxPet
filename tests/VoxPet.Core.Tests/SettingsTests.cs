@@ -11,7 +11,7 @@ public sealed class SettingsTests : IDisposable
     [Fact] public void MissingSettingsUseDefaults() => Assert.Equal(new UserSettings(new()), new SettingsStore(FilePath).Load());
     [Fact] public void SaveAndReloadPreservesAdjustmentsOnly()
     {
-        var settings = new UserSettings(new(NoiseGate:-35,Sensitivity:1.7,AttackMs:50,ReleaseMs:200),false,false);
+        var settings = new UserSettings(new(NoiseGate:-35,NormalizeMin:-75,NormalizeMax:-15,Sensitivity:1.7,AttackMs:50,ReleaseMs:200),false,false);
         var store = new SettingsStore(FilePath); Assert.True(store.Save(settings)); Assert.Equal(settings, store.Load());
         var json = File.ReadAllText(FilePath);
         Assert.DoesNotContain("Device", json); Assert.DoesNotContain("Pcm", json); Assert.DoesNotContain("AudioLevel",json);

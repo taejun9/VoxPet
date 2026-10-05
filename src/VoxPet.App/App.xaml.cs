@@ -25,8 +25,24 @@ public partial class App : Application
             await main.Ready;
             main.Model.DemoCommand.Execute(null);
             var broadcast = main.ShowCharacter();
-            await Task.Delay(1200);
+            bool reacted = false, blinked = false;
+            var previewClock = Stopwatch.StartNew();
+            while (previewClock.Elapsed.TotalSeconds < 6.5)
+            {
+                await Task.Delay(20);
+                reacted |= main.Model.VoiceLevel >= .2;
+                blinked |= main.Model.Character.Sprite is System.Windows.Media.Imaging.BitmapImage bitmap && bitmap.UriSource.ToString().Contains("-blink");
+                if (!double.IsFinite(main.Model.VoiceLevel) || main.Model.VoiceLevel is < 0 or > 1) failures++;
+            }
+            if (!reacted || !blinked) failures++;
             if (main.Model.Character.Sprite.Width <= 0 || !broadcast.IsVisible) failures++;
+            main.Model.NormalizeMin = -80; main.Model.NormalizeMax = -20;
+            main.Model.NormalizeMin = -1;
+            if (main.Model.NormalizeMin >= main.Model.NormalizeMax) failures++;
+            main.Model.NormalizeMax = -119;
+            if (main.Model.NormalizeMin >= main.Model.NormalizeMax) failures++;
+            main.Model.ResetCommand.Execute(null);
+            if (main.Model.NormalizeMin != -50 || main.Model.NormalizeMax != -10) failures++;
             main.Model.GreenBackground = false;
             main.Model.Topmost = false;
             await Task.Delay(100);
@@ -34,6 +50,10 @@ public partial class App : Application
             await Task.Delay(100);
             if (main.Model.VoiceLevel != 0) failures++;
             broadcast.Close();
+            var closingWindow = new MainWindow(smoke: true); closingWindow.Show();
+            await closingWindow.Ready; closingWindow.Close();
+            await Task.Delay(100);
+            if (closingWindow.IsVisible) failures++;
             var png = new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 730, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             png.Render(main);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(png));

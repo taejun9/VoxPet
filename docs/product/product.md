@@ -18,7 +18,7 @@ Core/App/Tests C# 솔루션, WASAPI 캡처와 독자 제작 PNG 6장, 조정 UI�
 |---|---|
 | 입력 | 마이크 장치 선택, WASAPI 캡처, Start/Stop, 연결 해제 안내 |
 | 분석 | RMS, Peak, dBFS, raw normalized level, smoothed VoiceLevel |
-| 조정 | Noise Gate, Sensitivity, Attack, Release 슬라이더 |
+| 조정 | Noise Gate, Sensitivity, Attack, Release 슬라이더, 고급 입력 반응 min/max |
 | 캐릭터 | PNG 기반 idle, 입 닫힘/반 열림/전체 열림, 눈 깜빡임 |
 | 움직임 | VoiceLevel에 따른 제한된 상하 이동, 내부 MouthOpen 0~1 유지 |
 | UI | 장치 ComboBox, 분석값 표시, 조정값, 미리보기, 상태/오류 안내 |
