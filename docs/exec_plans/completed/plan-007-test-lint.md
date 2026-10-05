@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -35,10 +35,10 @@ QA → 자체 리뷰 → completed 이동/리뷰 미러 → main ff-only 병합/
 
 ## Implementation Plan
 
-- [ ] 현재 검증 명령/실제 UI QA 경로와 환경 확인
-- [ ] 로컬 전체 테스트·빌드·린트 실행 및 필요한 수정
-- [ ] Windows 실제 앱 창 smoke/layout 및 OBS 화면 실행·증거 확인
-- [ ] QA 이후 자체 리뷰·문서 완료 기록 및 Git 수명 완료
+- [x] 현재 검증 명령/실제 UI QA 경로와 환경 확인
+- [x] 로컬 전체 테스트·빌드·린트 실행 및 필요한 수정
+- [x] Windows 실제 앱 창 smoke/layout 및 OBS 화면 실행·증거 확인
+- [x] QA 이후 자체 리뷰·문서 완료 기록; 완료 커밋 뒤 지정된 Git 수명 절차 수행
 
 ## QA Plan
 
@@ -66,7 +66,17 @@ QA 이후 단일 에이전트 자체 리뷰로 변경 범위, 테스트 근거, 
 |---|---|---|
 | 2026-10-05 | 지도 | main clean 및 origin/main=11b8dee 확인. 첫 fetch의 sandbox FETCH_HEAD 제한은 승인된 실행으로 해결하고 전용 branch/worktree 생성 |
 | 2026-10-05 | 검증 | NuGet 네트워크/CLI home 및 테스트 소켓 sandbox 제한을 실행 환경 조정으로 해결. locked restore 통과, Release 경고/오류0, Core71/71 통과. 첫 format 검사에서 기존 공백 위반을 재현 |
+| 2026-10-05 | 제작 | C# 8개 파일의 WHITESPACE179건을 SDK formatter로 수정. 공백 제거 전후 내용 동일 확인. qa.ps1에 format/analyzer gate 추가, 개발·품질 명령 동기화 |
+| 2026-10-05 | 검증 | 수정 후 macOS SDK10.0.401 format report=[], Release 경고/오류0, Core71/71(실패0/skip0), 문서/자산/공백 및 Python 하네스 구문 검사 통과 |
+| 2026-10-05 | 검증 | 312916f [Windows37294330257](https://github.com/taejun9/VoxPet/actions/runs/37294330257) 통과: format/build/publish, Core71/71 TRX, WPF smoke failures0/failedChecks=[], 4창크기×15컨트롤/3startup bounds/작은창 wheel 검사 통과. 실제 WPF 생성 PNG4크기 직접 확인 |
+| 2026-10-05 | 검증 | 312916f [OBS37294330480](https://github.com/taejun9/VoxPet/actions/runs/37294330480) 통과: OBS32.2.2/WindowsServer2025 build26100 WGC green+Chroma Key(남은green0%/alpha66.04%) 및 native alpha65.08%/각7프레임 변화. native 캡처 PNG3장 직접 확인. BitBlt 유효 프레임 없음은 기존 제한으로 유지 |
+| 2026-10-05 | 심사 | QA 이후 단일 에이전트 자체 리뷰: 소스 변경은 공백만, 오디오 수명/렌더링/설정 동작 변경 없음. format 실패 시 qa.ps1이 빌드 전에 중단하며 검사 완화/의존성 갱신 없음. README 보존 및 개인정보 계약 유지 |
+| 2026-10-05 | 정리 | 증거는 root artifacts/qa/plan007에 TRX/format reports/Windows·OBS logs/화면 PNG/summary.json 보존. completed 계획과 review 미러 작성 |
 
 ## Completion Notes
 
-검증 진행 중. 실제 테스트 결과 및 남은 제한은 수행 후 기록한다.
+C# 서식179건을 수정하고 전체 format 검사를 반복 가능한 필수 QA에 추가했다.
+macOS/Windows Core71/71, 빌드 경고/오류0, format 및 문서/자산/공백 검사와 Windows 실제 WPF smoke/layout·OBS WGC 화면 검증을 통과했다.
+자동 QA와 실제 앱 화면 증거 검토를 완료했다. 완료 커밋 뒤 main ff-only 병합/push, branch -d/worktree 제거를 수행한다.
+실제 마이크/권한/USB제거/실제 DPI 변경/실제 입력60분은 이 작업에서 수행하지 않았다. BitBlt는 CI에서 유효 프레임이 없어 지원 경로 WGC와 구분한다.
+GitHub Actions의 기존 Node20/Node API deprecation 알림은 앱 빌드·린트 오류와 구분하며 action runtime 업그레이드는 별도 작업으로 남긴다.

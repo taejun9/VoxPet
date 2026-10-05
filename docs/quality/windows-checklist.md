@@ -35,6 +35,12 @@ Windows runner의 배포본은 로컬 `artifacts/VoxPet-win-x64-plan006.zip`, �
 
 ## 마이크/창 실기 매트릭스
 
+plan007의312916f에서 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37294330257)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37294330480)를 재실행했다.
+새 필수 format/analyzer 검사 통과, Core71/71, Release 경고/오류0, publish 및 실제 WPF smoke failures0을 확인했다.
+4창크기×15컨트롤/3startup bounds/작은창 wheel JSON과 실제 WPF PNG를 직접 확인했다.
+OBS WGC green+Chroma Key green0%/alpha66.04%, native alpha65.08% 및 각7프레임 변화와 캡처PNG를 확인했다.
+BitBlt 유효 프레임 없음과 아래 실제 마이크 미실행 상태는 유지한다. 증거: root artifacts/qa/plan007/summary.json.
+
 시험자는 OS edition/build, 앱 commit, 장치 종류/채널/샘플 형식, 화면 DPI, 결과/실패 증상을 기록한다.
 녹음·개인 장치 ID는 기록하지 않는다.
 
