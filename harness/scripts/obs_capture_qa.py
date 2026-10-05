@@ -129,7 +129,8 @@ def main() -> int:
         if scene not in [item['sceneName'] for item in rpc.call('GetSceneList')['scenes']]:
             rpc.call('CreateScene', sceneName=scene)
         rpc.call('SetCurrentProgramScene', sceneName=scene)
-        name = 'VoxPet-QA-Window'
+        # OBS may retain a removed source name until its deferred destruction finishes.
+        name = f'VoxPet-QA-{args.background.title()}-Window'
         if any(item['inputName'] == name for item in rpc.call('GetInputList')['inputs']):
             rpc.call('RemoveInput', inputName=name)
         rpc.call('CreateInput', sceneName=scene, inputName=name, inputKind='window_capture', inputSettings={'capture_audio': False, 'cursor': False, 'client_area': True}, sceneItemEnabled=True)

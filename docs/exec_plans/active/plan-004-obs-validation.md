@@ -69,6 +69,7 @@ Chroma Key 적용 후 초록 배경 alpha 제거와 캐릭터 픽셀 유지를 �
 | 2026-10-05 | 투명 창은 원래 resize grip 영역 유지, Opacity=0으로 표시만 제거 | 공식 WPF Window/ResizeGrip 소스의 native hit 처리 확인. Windows smoke에서 실제 WM_NCHITTEST=HTBOTTOMRIGHT를 검사하고 OBS에서 corner 픽셀 검사 |
 | 2026-10-05 | 장시간 실행을 유지하며 후속 짧은 QA에 투명 배경 독립 프로세스 추가 | 기존 green 프로세스를 정리한 뒤 WGC 캐릭터/변화를 검사하고 native alpha 보존 여부는 별도 Boolean으로 기록. 투명 alpha를 green/chroma 성공으로 대체하지 않음 |
 | 2026-10-05 | 기존 d35f707 장시간 실행은 그대로 두고 다음 push의 기본값을 0으로 복구 | 실행 중인 job의 checkout/인자를 바꾸지 않으며 별도 짧은 green/transparent QA를 먼저 실행. 모든 결과 이후 main 통합 |
+| 2026-10-05 | green/transparent 단계의 OBS input 이름 분리 | 첫 투명 시험은 CreateInput601(source name already exists)로 capture 전에 실패. 제거 직후 같은 이름 재사용을 피하고 각 단계의 독립 source를 검사 |
 
 ## Progress Log
 
