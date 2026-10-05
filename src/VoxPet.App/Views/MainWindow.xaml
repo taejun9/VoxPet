@@ -6,9 +6,9 @@
       <StackPanel><TextBlock Text="VoxPet" FontSize="32" FontWeight="Bold"/><TextBlock Text="목소리로 움직이는 작은 친구" Foreground="#8FA4BC" Margin="0,6,0,24"/></StackPanel>
       <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="#213B38" CornerRadius="12" Padding="12,7"><TextBlock Text="●  로컬 음량 분석" Foreground="{StaticResource Accent}"/></Border>
     </Grid>
-    <ScrollViewer x:Name="ContentViewport" Grid.Row="1" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled">
+    <ScrollViewer x:Name="ContentViewport" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <Grid x:Name="PanelsGrid">
-      <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="0"/></Grid.RowDefinitions>
+      <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="0"/></Grid.RowDefinitions>
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
       <Border x:Name="PreviewCard" Background="#1B2738" CornerRadius="18" Padding="24">
         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -23,8 +23,7 @@
           </StackPanel>
         </Grid>
       </Border>
-      <ScrollViewer x:Name="ControlsViewport" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel>
+        <StackPanel x:Name="ControlsPanel" Grid.Column="2">
           <TextBlock Text="마이크" FontWeight="SemiBold" Margin="0,0,0,10"/>
           <DockPanel><Button DockPanel.Dock="Right" Content="↻" ToolTip="마이크 장치 새로고침" Command="{Binding RefreshCommand}" Margin="8,0,0,0"/><ComboBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" DisplayMemberPath="Name" IsEnabled="{Binding CanChooseDevice}" MinHeight="38" VerticalContentAlignment="Center" AutomationProperties.Name="마이크 선택"/></DockPanel>
           <WrapPanel Margin="0,12,0,24"><Button Content="Start" Command="{Binding StartCommand}" Background="{StaticResource Accent}" Foreground="#112C25" MinWidth="100"/><Button Content="Stop" Command="{Binding StopCommand}" MinWidth="100"/><Button Content="{Binding DemoLabel}" Command="{Binding DemoCommand}" FontSize="11" Padding="10,10"/></WrapPanel>
@@ -53,7 +52,6 @@
           <WrapPanel Margin="0,12,0,0"><CheckBox Content="방송창 항상 위" IsChecked="{Binding Topmost}"/><CheckBox Content="초록 배경 (OBS)" IsChecked="{Binding GreenBackground}"/></WrapPanel>
           <TextBlock Text="장치 변경은 Stop 후 선택하세요. Gate는 소음을 의미적으로 구별하지 않습니다." Foreground="#8FA4BC" FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0"/>
         </StackPanel>
-      </ScrollViewer>
     </Grid>
     </ScrollViewer>
     <Border Grid.Row="2" Background="#1B2738" CornerRadius="10" Padding="14" Margin="0,20,0,0" MaxHeight="80"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="12"/></ScrollViewer></Border>

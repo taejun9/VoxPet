@@ -62,6 +62,7 @@ QA 이후 단일 에이전트 자체 리뷰. scroll clipping/레이아웃 전환
 | 2026-10-05 | 실제 DPI 시험과 논리 크기/raster scale 검증 구분 | CI의 고정된 화면만으로 사용자 다중 모니터/DPI 전환을 입증할 수 없음 |
 | 2026-10-05 | Windows QA용 checkpoint branch push 허용 | main 병합 전에 실제 WPF에서 재현/수정 근거 확보 |
 | 2026-10-05 | 마우스 휠 routed-event 검사 추가 | WPF 공식 ScrollViewer 소스는 내측 영역에서 wheel을 handled로 바꿈. logical BringIntoView 성공만으로 실제 스크롤 입력을 입증하지 못함 |
+| 2026-10-05 | 설정 영역을 하나의 ScrollViewer로 구성 | 중첩 wheel 가로채기를 제거하고 마우스/키보드/scrollbar가 같은 영역을 조작하도록 단순화 |
 
 ## Progress Log
 
