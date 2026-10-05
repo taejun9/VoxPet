@@ -1,6 +1,6 @@
 # 구현 로드맵
 
-plan-001은 저장소 기반이다. plan-002-desktop-app에서 아래 예시 단계의 MVP 구현을 통합 진행했다.
+plan-001은 저장소 기반이다. [plan-002-desktop-app](../exec_plans/completed/plan-002-desktop-app.md)에서 아래 예시 단계의 MVP 구현 및 자동 QA를 완료했다.
 단계명은 기존 예시이며 003~005 번호를 이미 사용한 계획으로 해석하지 않는다.
 작업 시작 때 순번 충돌을 확인하고 [계획 템플릿](../../harness/templates/exec-plan.md)을 복사한다.
 

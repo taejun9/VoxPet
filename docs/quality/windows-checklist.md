@@ -3,15 +3,16 @@
 ## 환경과 현재 증거
 
 2026-10-05, 구현 호스트 macOS arm64, SDK 10.0.401.
-Core 자동 테스트와 WPF 교차 컴파일은 실행했다. Windows GitHub Actions UI smoke 결과는 실행 후 아래 기록을 갱신한다.
+Core 자동 테스트와 WPF 교차 컴파일은 실행했다. Windows GitHub Actions에서도 70개 테스트와 WPF UI smoke를 통과했다.
+검증 commit ad1d266, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37265531490).
 아래 실기 항목은 실제 Windows 마이크/OBS 접근이 필요하며 아직 통과로 기록하지 않는다.
 
 | 항목 | 현재 상태 | 확인 방법/합격 기준 |
 |---|---|---|
-| Core 수치·수명·캐릭터 자동 테스트 | 53개 초기 통과; 추가 회귀 테스트 최종 결과는 계획 참조 | 합성 입력과 fake input; 모든 테스트 통과 |
+| Core 수치·수명·캐릭터 자동 테스트 | 70/70 통과 (macOS/Windows) | 합성 입력과 fake input; 모든 테스트 통과 |
 | WPF Release 교차 컴파일 | 통과, 경고/오류 0 | `dotnet build VoxPet.sln -c Release` |
-| win-x64 자체 포함 배포 | 검증 진행 중 | 잠금 복원 후 publish, EXE/라이선스 확인 |
-| Windows WPF smoke | CI 실행 준비 | UI 바인딩 오류 0, 이미지/별도 창/데모/Stop/종료 통과 |
+| win-x64 자체 포함 배포 | 통과 | 잠금 복원 후 publish, EXE/라이선스 확인 |
+| Windows WPF smoke | 통과 | UI 바인딩 오류 0, 이미지/별도 창/데모 반응/blink/입력 범위/reset/Stop/일반 창 종료 통과 |
 | 실제 마이크 | 미실행 | 아래 실기 매트릭스 수행 |
 | OBS | 미실행 | 아래 OBS 매트릭스 수행 |
 
