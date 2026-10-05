@@ -2,9 +2,9 @@ param([switch]$Publish, [switch]$Smoke)
 $ErrorActionPreference = 'Stop'
 Push-Location (Join-Path $PSScriptRoot '../..')
 try {
-    python harness/scripts/verify_base.py
+    python -X utf8 harness/scripts/verify_base.py
     if ($LASTEXITCODE -ne 0) { throw 'Document validation failed' }
-    python harness/scripts/verify_app.py
+    python -X utf8 harness/scripts/verify_app.py
     if ($LASTEXITCODE -ne 0) { throw 'Asset/privacy contract failed' }
     git diff --check
     if ($LASTEXITCODE -ne 0) { throw 'Whitespace validation failed' }

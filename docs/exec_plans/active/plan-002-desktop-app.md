@@ -63,6 +63,8 @@ Windows CI: restore/build/test/publish, headless WPF smoke. 실제 마이크·�
 
 | 2026-10-05 | Windows QA를 위한 작업 브랜치 checkpoint commit/push 허용 | main 통합 전 원격 runner에서 WPF 실행 근거를 얻어야 함; main 완료 절차는 QA/리뷰 이후 유지 |
 
+| 2026-10-05 | QA Python을 UTF-8로 실행, 기본 캐릭터를 보라색으로 변경 | Windows CI의 cp1252 한국어 출력 실패 수정; green screen과 캐릭터 색상 간섭 예방 |
+
 ## Progress Log
 
 | date | role | note |

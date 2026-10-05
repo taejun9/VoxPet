@@ -11,7 +11,7 @@ https://github.com/dotnet/runtime
 https://github.com/dotnet/wpf
 Self-contained releases include the runtime. Update the published application to receive runtime security updates.
 
-Mint Cat character artwork
+Violet Cat character artwork
 Original geometric artwork produced for VoxPet, dedicated to the public domain under CC0-1.0.
 https://creativecommons.org/publicdomain/zero/1.0/
 The asset manifest records source, dimensions and anchor. No attribution is required.
