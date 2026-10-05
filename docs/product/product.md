@@ -2,7 +2,8 @@
 
 사용자의 목소리 크기를 로컬에서 분석해 캐릭터의 입과 몸을 움직이는 Windows 방송용 프로그램.
 제품명은 VoxPet, 향후 Windows 실행 파일명은 VoxPet.exe를 목표로 한다.
-현재는 `$base` 개발 기반만 생성했으며 C# 솔루션·마이크 캡처·PNG 자산은 아직 없다.
+Core/App/Tests C# 솔루션, WASAPI 캡처와 독자 제작 PNG 6장, 조정 UI와 별도 방송창을 구현했다.
+실제 마이크/OBS 합격 여부는 [검증 기록](../quality/windows-checklist.md), 실행은 [사용 안내](../user-guide.md)를 따른다.
 
 ## 사용자와 성공 조건
 
@@ -39,10 +40,16 @@
 
 ## 기술 기준과 이후 기능
 
-기획 기준: Windows 10/11 x64, C#, .NET 8, WPF, MVVM, NAudio 2.x, WPF PNG 렌더링.
+기획 기준: Windows x64, C#, .NET 10 LTS, WPF, MVVM, NAudio.Wasapi 2.2.1, WPF PNG 렌더링.
 .NET 지원 수명·OS 빌드·패키지 확인은 [개발 환경](../quality/development.md)에 기록한다.
-투명/항상 위/클릭 통과/Green Screen/OBS Browser Capture는 다음 단계다.
+별도 방송창, 투명/항상 위/Green Screen 옵션은 구현했다. OBS 실기 검증은 남아 있다.
+클릭 통과/OBS Browser Capture는 다음 단계다.
 Pitch, STT, 키워드·감정 반응, Live2D, Spine, 캐릭터 에디터는 장기 후보이며 MVP 요구사항이 아니다.
 웹캠·얼굴 인식·오디오 재생/녹음 저장은 초기 범위에 없다.
 
 자세한 [설계](../architecture/application.md)와 [로드맵](roadmap.md)을 따른다.
+
+## 구현에 추가한 사용성
+
+마이크 없는 합성 데모, 오디오 조정값/방송창 옵션 로컬 저장, 기본값 복구를 제공한다.
+Windows 11 지원 중인 버전을 우선 검증한다. Windows 10은 .NET 10 공식 지원 edition/build와 실제 QA를 확인해야 한다.

@@ -1,20 +1,19 @@
-# 앱 설계 — 구현 예정
+# 앱 설계 — MVP 구현
 
-이 문서는 구현 계약이다. 아래 프로젝트와 클래스는 아직 생성하지 않았다.
+이 문서는 구현 계약과 구현 상태를 함께 기록한다. 아래 계층을 생성했으며 추가 수명/설정 구성은 하단에 기록한다.
 
 ## 계층과 폴더
 
 ```text
 VoxPet.sln
 src/
-  VoxPet.Core/                 # net8.0, UI/NAudio 의존성 없음
+  VoxPet.Core/                 # net10.0, UI/NAudio 의존성 없음
     Models/AudioLevel.cs
-    Models/CharacterState.cs
     Models/CharacterParameters.cs
     Models/AudioSettings.cs
     Services/AudioAnalyzer.cs
     Services/AudioLevelProcessor.cs
-  VoxPet.App/                  # net8.0-windows, WPF, x64, MVVM
+  VoxPet.App/                  # net10.0-windows, WPF, x64, MVVM
     Services/AudioCaptureService.cs
     ViewModels/MainViewModel.cs
     ViewModels/CharacterViewModel.cs
@@ -81,9 +80,34 @@ Stop 완료 전에 capture를 dispose하지 않고, Stop 완료 후 이벤트 �
 CharacterParameters는 MouthOpen, BodyBounce, HeadTilt, EarMotion, EyeOpen을 렌더러에 넘기는 계약이다.
 MVP의 MouthOpen은 VoiceLevel, body 이동 상한은 초기 제안 6 WPF DIP, head/ear는 0이다.
 blink/idle 시간은 음성 입력과 독립이다. 디버깅에서는 seeded random을 주입해 blink 시퀀스를 재현한다.
-PNG의 몸·눈·입 레이어 또는 같은 크기의 상태 이미지를 사용한다. 자산 manifest에 크기·anchor·저작권을 기록한다.
+512×512 RGBA PNG 6장(입 3단계 × 눈 2단계)의 같은 크기 상태 이미지를 사용한다. 자산 manifest에 크기·anchor·저작권을 기록한다.
 CharacterWindow는 MainWindow와 같은 파라미터 snapshot을 표시하고 오디오를 중복 캡처하지 않는다.
 
 투명 WPF 창이 OBS Window Capture에서 alpha를 유지한다는 보장은 없다.
 [OBS Window Capture 공식 설명](https://obsproject.com/kb/window-capture-sources)을 참고하고 Windows/OBS/캡처 방식별 실기로 검증한다.
 후속 실험에서 투명창·단색 배경/chroma key 중 확인된 경로만 사용자에게 지원한다고 안내한다.
+
+## 현재 수명과 표시 구현
+
+Core의 AudioSession은 IAudioInput을 주입받고 SemaphoreSlim으로 Start/Stop/Dispose를 직렬화한다.
+각 세션에 별도 숫자 snapshot과 콜백 closure를 두어 이전 입력이 다음 세션으로 새지 않는다.
+공유 최신값은 Volatile로 전달하며, 250ms 이상 오래된 입력은 무음으로 바꾼다.
+Stop은 callback 종료까지 기다린 뒤 이벤트를 해제하고 캡처/endpoint를 dispose한다.
+WASAPI 생성은 Task.Run에서 수행해 NAudio가 UI SynchronizationContext를 캡처하지 않게 한다.
+Stop 이벤트가 5초 이내 오지 않으면 오류를 표시하고 자원을 유지한 채 재시도하도록 한다.
+
+MainViewModel은 DispatcherTimer 목표 60Hz에서 monotonic 경과시간으로 envelope와 blink를 업데이트한다.
+UI 표시 주기 자체를 attack/release 상수로 사용하지 않는다. callback에서는 decode/숫자 분석만 수행한다.
+설정은 UI 소유 불변 record로 바꾸며 캡처 callback이 설정 객체를 읽거나 UI를 갱신하지 않는다.
+CharacterViewModel의 frozen PNG를 두 창이 공유하며 WPF Image를 유일한 렌더러로 사용한다.
+SettingsStore는 조정값과 방송창 topmost/background만 원자적 파일 교체로 저장한다.
+
+AudioSettings는 유한한 dBFS -120~0, normalize min<max, sensitivity 0~10, 시간 0~5000ms를 허용한다.
+UI는 gate -90~-10, sensitivity 0~4, attack 0~300, release 0~1000의 실용 범위를 제공한다.
+잘못된 float sample은 0으로 바꾸고 극단적인 full-scale 값은 ±16에서 제한한다. 일반 clipping은 진단에 보존한다.
+미지원/불완전 PCM 프레임은 오류로 종료해 잘못된 수치를 표시하지 않는다.
+
+별도 CharacterWindow의 초록 배경/투명/항상 위, 드래그/크기 조절/Esc/우클릭 닫기를 제공한다.
+기본 배경은 초록색이며 OBS alpha는 실기 통과 전 지원을 보장하지 않는다.
+기본 PNG는 generate_character.py의 독자 제작 도형 자산으로 manifest에 CC0 출처/anchor를 기록했다.
+실제 마이크/장시간/OBS 검증은 [체크리스트](../quality/windows-checklist.md)에 남아 있다.

@@ -1,7 +1,7 @@
 # Team Vox — VoxPet 에이전트 지도
 
 VoxPet은 마이크 음량으로 PNG 캐릭터가 반응하는 Windows 데스크톱 앱이다.
-현재 저장소는 설계와 개발 기반 단계이며 실행 가능한 앱은 아직 없다.
+현재 저장소에는 Windows WPF MVP 구현과 자동 검증 하네스가 있다. 실기 검증 상태는 docs/quality/windows-checklist.md를 따른다.
 상세 규칙은 docs/에 둔다. 사용자 보고는 한국어로 `<별칭>: <내용>` 형식을 쓴다.
 
 ## 역할

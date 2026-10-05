@@ -1,47 +1,68 @@
 # 개발 환경과 현재 실행 명령
 
-현재는 설계·하네스 저장소다. dotnet 프로젝트, NuGet 참조, 앱 실행 명령은 아직 없다.
+현재 Core/App/Tests 솔루션과 WASAPI/WPF MVP 구현이 있다. 실제 마이크·OBS 실기 상태는 [검증 기록](windows-checklist.md)을 따른다.
 기존 README는 보존했으며 개발 진입점은 [AGENTS.md](../../AGENTS.md)이다.
 
-## 지금 실행 가능
+## 문서와 자산 검증
 
 저장소 루트에서 Python 3.10 이상(표준 라이브러리만 사용):
 
 ```sh
 python3 harness/scripts/verify_base.py
+python3 harness/scripts/verify_app.py
 git diff --check
 ```
 
 첫 명령은 문서 구조 검증이다. 앱 빌드나 동작 성공을 의미하지 않는다.
 
-## 구현 시 확정할 환경
+## 확정한 빌드 환경
 
 | 항목 | 기획 기준 / 결정 상태 |
 |---|---|
-| OS/CPU | Windows 10/11 x64 기획; 실제 지원 빌드와 .NET OS 지원 정책 확인 필요 |
-| SDK/TFM | .NET 8, Core net8.0 / App net8.0-windows, WPF; 아직 global.json 없음 |
-| IDE | Visual Studio 2022 / VS Code 기획; 선택 SDK와 호환 버전은 scaffold 시 확인 |
-| 오디오 | .NET 8에서는 NAudio 2.x. 2.2.1은 공식 NuGet에서 확인한 호환 후보이며 최신 버전이라고 주장하지 않는다 |
+| OS/CPU | Windows 11 x64의 지원 중인 버전 우선; Windows 10은 edition/build별 별도 실기 필요 |
+| SDK/TFM | .NET SDK 10.0.401 고정, Core net10.0 / App net10.0-windows, win-x64, WPF |
+| IDE | 선택 SDK를 지원하는 Visual Studio 또는 dotnet CLI; 검증은 CLI로 수행 |
+| 오디오 | NAudio.Wasapi 2.2.1 + transitive NAudio.Core 2.2.1, packages.lock.json 고정 |
 | 렌더링 | 내장 WPF PNG 사용; SkiaSharp/Live2D 패키지는 필요 없음 |
-| MVVM | 작은 ViewModel/command 구현부터; 외부 MVVM/DI 패키지는 미선정 |
-| 테스트 | Core의 합성 신호 테스트; 테스트 SDK/프레임워크와 버전은 scaffold 시 고정 |
+| MVVM | 자체 ObservableObject/RelayCommand/AsyncCommand; 외부 MVVM/DI 없음 |
+| 테스트 | xunit 2.9.3, runner 3.0.2, Test SDK 17.14.1; packages.lock.json 고정 |
 
 [공식 근거](../references/official-sources.md): WPF는 Windows에서 실행한다.
-.NET 8의 공식 지원 종료는 **2026-11-10**이다. NAudio 3는 net9.0 이상을 요구한다.
-기획대로 .NET 8을 기록했지만 실제 새 앱 착수 전에 유지/현행 LTS 전환 결정을 남긴다.
+.NET 10 LTS로 전환한 근거는 공식 지원 정책과 실행 계획 Decision Log에 기록했다.
+NuGet/SDK 업데이트 시 잠금 파일을 갱신하고 전체 QA를 다시 수행한다.
 
-## 솔루션 생성 후 도입할 명령 — 지금은 실행 불가
+## 빌드와 테스트
 
-아래는 [설계](../architecture/application.md)의 폴더를 생성한 뒤 검증하여 등록할 예정인 명령이다.
+아래 CLI 명령은 생성한 솔루션에 적용한다. WPF 실행은 Windows에서만 가능하다.
 
 ```sh
-dotnet restore VoxPet.sln
+dotnet restore VoxPet.sln --locked-mode
 dotnet build VoxPet.sln --configuration Release
 dotnet test tests/VoxPet.Core.Tests/VoxPet.Core.Tests.csproj --configuration Release
 dotnet run --project src/VoxPet.App/VoxPet.App.csproj
 ```
 
-선택한 SDK/테스트 러너에 따라 옵션을 확인한다. 문서상 예시는 실행된 결과가 아니다.
-WPF 실행·WASAPI·OBS QA는 Windows 호스트에서 한다.
-현재 macOS 호스트에는 dotnet CLI가 없으며 SDK나 Windows 도구를 설치하지 않았다.
-순수 Core 테스트의 타 OS 실행은 솔루션 생성 후 검증한다.
+2026-10-05 macOS arm64에서 임시 SDK 설치 후 실제 restore/build/Core test를 수행했다.
+로컬 sandbox에서 MSBuild IPC가 제한되면 `-m:1 -p:UseSharedCompilation=false -nodeReuse:false` 또는 승인된 실행 환경을 사용한다.
+WPF 실행·WASAPI·OBS QA는 Windows에서 한다. Windows CI에는 실제 마이크/OBS가 없다.
+
+## Windows 전체 QA와 배포
+
+Python 3.10+, Git, global.json의 .NET SDK가 필요하다. PowerShell에서:
+
+```powershell
+./harness/scripts/qa.ps1 -Publish -Smoke
+```
+
+문서/자산 검증 → locked restore → Release build → Core test → 자체 포함 publish → 마이크 없는 WPF smoke 순서다.
+`.github/workflows/windows.yml`이 같은 명령을 Windows runner에서 실행하고 실행 폴더/테스트 결과/화면 PNG를 업로드한다.
+
+```sh
+dotnet publish src/VoxPet.App/VoxPet.App.csproj -c Release --no-restore -o artifacts/win-x64
+```
+
+win-x64/single-file/self-contained 설정은 csproj에 고정했다. 배포 폴더의 VoxPet.exe는 .NET 설치 없이 실행한다.
+Licenses/와 자산 manifest/USER-GUIDE.txt를 함께 배포한다. macOS에서는 생성은 가능하지만 EXE 실행은 불가능하다.
+실제 설치 가능한 정식 배포 판정에는 [Windows 체크리스트](windows-checklist.md)의 통과 기록이 필요하다.
+자체 포함 runtime의 보안 업데이트는 SDK 갱신과 앱 재배포로 적용한다.
+기본 PNG 재생성은 개발용 Pillow가 필요하다. 앱 실행/빌드에는 Pillow가 필요 없다.

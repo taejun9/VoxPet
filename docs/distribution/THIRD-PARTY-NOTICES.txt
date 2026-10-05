@@ -1,0 +1,17 @@
+VoxPet third-party notices
+
+NAudio.Core and NAudio.Wasapi 2.2.1
+Copyright (c) 2020 Mark Heath
+MIT license: see NAudio-LICENSE.txt.
+https://github.com/naudio/NAudio
+
+Microsoft .NET Runtime and Windows Desktop Runtime
+MIT license and third-party notices: see DOTNET-LICENSE.txt and DOTNET-THIRD-PARTY-NOTICES.txt.
+https://github.com/dotnet/runtime
+https://github.com/dotnet/wpf
+Self-contained releases include the runtime. Update the published application to receive runtime security updates.
+
+Mint Cat character artwork
+Original geometric artwork produced for VoxPet, dedicated to the public domain under CC0-1.0.
+https://creativecommons.org/publicdomain/zero/1.0/
+The asset manifest records source, dimensions and anchor. No attribution is required.
