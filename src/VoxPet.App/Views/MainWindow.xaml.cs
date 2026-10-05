@@ -15,9 +15,27 @@ public partial class MainWindow : Window
     {
         Model = new(persistSettings: !smoke);
         InitializeComponent(); DataContext = Model;
+        ContentViewport.SizeChanged += (_, _) => UpdateResponsiveLayout();
+        SizeChanged += (_, _) => UpdateResponsiveLayout();
         Model.OpenBroadcast += () => ShowCharacter();
         Loaded += async (_, _) => { await Model.InitializeAsync(); ready.TrySetResult(); };
         Closing += OnClosing;
+    }
+    private void UpdateResponsiveLayout()
+    {
+        bool compact = ActualWidth < 870 || ActualHeight < 600;
+        LayoutRoot.Margin = new Thickness(compact ? 16 : 28);
+        ContentViewport.VerticalScrollBarVisibility = compact ? System.Windows.Controls.ScrollBarVisibility.Auto : System.Windows.Controls.ScrollBarVisibility.Disabled;
+        ControlsViewport.VerticalScrollBarVisibility = compact ? System.Windows.Controls.ScrollBarVisibility.Disabled : System.Windows.Controls.ScrollBarVisibility.Auto;
+        PanelsGrid.Height = compact ? double.NaN : ContentViewport.ActualHeight;
+        PanelsGrid.RowDefinitions[0].Height = compact ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+        PanelsGrid.RowDefinitions[1].Height = compact ? GridLength.Auto : new GridLength(0);
+        PanelsGrid.ColumnDefinitions[1].Width = new GridLength(compact ? 0 : 24);
+        PanelsGrid.ColumnDefinitions[2].Width = compact ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        System.Windows.Controls.Grid.SetColumn(ControlsViewport, compact ? 0 : 2);
+        System.Windows.Controls.Grid.SetRow(PreviewCard, compact ? 1 : 0);
+        PreviewCard.Height = compact ? 400 : double.NaN;
+        PreviewCard.Margin = new Thickness(0, compact ? 20 : 0, 0, 0);
     }
     public CharacterWindow ShowCharacter()
     {
