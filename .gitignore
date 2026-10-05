@@ -1,0 +1,9 @@
+.worktree/
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+__pycache__/
+*.py[cod]
+.DS_Store
