@@ -28,7 +28,10 @@ internal static class CharacterQa
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(fixture));
         using (var file = File.Create(sheetPath)) encoder.Save(file);
         var initial = main.Model.Character.Sprite;
+        string micStatus = main.Model.Status;
         check(await main.Model.ImportCharacterAsync(sheetPath), "character_valid_sheet_import");
+        check(main.Model.Status == micStatus, "character_import_preserves_microphone_status");
+        check(ReferenceEquals(main.ShowCharacter().DataContext, main.Model), "character_import_shared_broadcast_model");
         var images = new HashSet<ImageSource>();
         foreach (var mouth in Enum.GetValues<MouthState>())
             foreach (double eyes in new[] { 0.0, 1.0 })
@@ -72,6 +75,9 @@ internal static class CharacterQa
         main.Model.ConversationCommand.Execute(null);
         check(main.Model.NoiseGate == -50 && main.Model.Sensitivity == 1, "preset_conversation");
         main.Model.DemoCommand.Execute(null);
+        // Import remains safe during live rendering and does not overwrite capture/demo status.
+        micStatus = main.Model.Status;
+        check(!await main.Model.ImportCharacterAsync(invalid) && main.Model.Status == micStatus, "character_import_during_demo_preserves_session_status");
         main.Model.CharacterMuted = true;
         bool rawContinues = false, blinkContinues = false;
         var end = DateTime.UtcNow.AddSeconds(6.5);

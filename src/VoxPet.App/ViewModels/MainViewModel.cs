@@ -23,6 +23,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private AudioDevice? selected;
     private bool busy, demo, closing, topmost, green, muted, characterBusy;
     private string status = "마이크를 선택하고 Start를 누르세요.";
+    private string characterStatus = "3열: 닫힘·중간·열림 / 2행: 일반·눈감음. 투명 PNG의 중앙·바닥을 자동 정렬합니다.";
     private string metrics = "RMS 0.0000   Peak 0.0000   -120.0 dBFS";
     private double level, raw;
     private double previousTime;
@@ -57,7 +58,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var path = ChooseCharacterSheet?.Invoke();
             if (path != null) await ImportCharacterAsync(path);
         }, () => !closing && !characterBusy);
-        DefaultCharacterCommand = new(() => Character.RestoreDefault(), () => !closing && !characterBusy);
+        DefaultCharacterCommand = new(() => { Character.RestoreDefault(); CharacterStatus = "기본 캐릭터로 복원했습니다."; }, () => !closing && !characterBusy);
         ConversationCommand = new(() => ApplyPreset(ReactionPreset.Conversation));
         SoftVoiceCommand = new(() => ApplyPreset(ReactionPreset.SoftVoice));
         SnappyCommand = new(() => ApplyPreset(ReactionPreset.Snappy));
@@ -67,6 +68,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public AudioDevice? SelectedDevice { get => selected; set { if (Set(ref selected, value)) RefreshCommands(); } }
     public bool CanChooseDevice => !busy && !closing && !session.HasResources && !demo;
     public string Status { get => status; private set => Set(ref status, value); }
+    public string CharacterStatus { get => characterStatus; private set => Set(ref characterStatus, value); }
     public string Metrics { get => metrics; private set => Set(ref metrics, value); }
     public double VoiceLevel { get => level; private set => Set(ref level, value); }
     public double RawLevel { get => raw; private set => Set(ref raw, value); }
@@ -155,18 +157,18 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public async Task<bool> ImportCharacterAsync(string path)
     {
         if (closing || characterBusy) return false;
-        characterBusy = true; RefreshCommands();
+        characterBusy = true; CharacterStatus = "캐릭터 시트를 읽는 중…"; RefreshCommands();
         try
         {
             var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
             if (closing) return false;
             Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path));
-            Status = "캐릭터 적용 완료 · 미리보기와 방송창에 함께 적용됩니다.";
+            CharacterStatus = "캐릭터 적용 완료 · 미리보기와 방송창에 함께 적용됩니다.";
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException)
         {
-            if (!closing) Status = "시트를 불러오지 못했습니다. 16MB 이하 RGBA PNG와 3열×2행 크기를 확인하세요. 기존 캐릭터를 유지합니다.";
+            if (!closing) CharacterStatus = "시트를 불러오지 못했습니다. 16MB 이하 RGBA PNG와 3열×2행 크기를 확인하세요. 기존 캐릭터를 유지합니다.";
             return false;
         }
         finally { characterBusy = false; RefreshCommands(); }

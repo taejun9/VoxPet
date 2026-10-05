@@ -1,0 +1,60 @@
+name: Private character QA
+on:
+  workflow_dispatch:
+    inputs:
+      use_personal_sheet:
+        description: 'Run with the temporary VOXPET_QA_SHEET_URL secret'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+jobs:
+  personal-character:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read temporary character fixture with a scoped expiring URL
+        if: inputs.use_personal_sheet
+        shell: pwsh
+        env:
+          QA_SHEET_URL: ${{ secrets.VOXPET_QA_SHEET_URL }}
+        run: |
+          $uri = [Uri]$env:QA_SHEET_URL
+          if (-not $uri.IsAbsoluteUri -or $uri.Scheme -ne 'https' -or $uri.Host -ne 'release-assets.githubusercontent.com') { throw 'A scoped GitHub release asset URL is required' }
+          Invoke-WebRequest -Uri $uri -OutFile "$env:RUNNER_TEMP/늘보군.png" -MaximumRedirection 0
+          "VOXPET_QA_SHEET=$env:RUNNER_TEMP/늘보군.png" >> $env:GITHUB_ENV
+      - name: Verify, build, test, publish and private character smoke
+        shell: pwsh
+        run: ./harness/scripts/qa.ps1 -Publish -Smoke
+      - name: Upload portable application without personal assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxPet-win-x64
+          path: artifacts/win-x64/
+          if-no-files-found: error
+      - name: Upload temporary personal QA evidence for local collection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Personal-character-QA-evidence
+          retention-days: 1
+          path: |
+            artifacts/test-results/
+            ${{ runner.temp }}/voxpet-smoke*.png
+            ${{ runner.temp }}/voxpet-smoke*.json
+            ${{ runner.temp }}/voxpet-smoke-error.txt
+            ${{ runner.temp }}/voxpet-layout-*.png
+            ${{ runner.temp }}/voxpet-layout-result.json
+            ${{ runner.temp }}/voxpet-personal-*.png
+          if-no-files-found: warn

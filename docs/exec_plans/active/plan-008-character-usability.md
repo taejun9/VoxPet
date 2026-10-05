@@ -61,9 +61,13 @@ UI 스레드에서 파일 디코딩을 하지 않는다. 오디오는 계속 로
 
 - 2026-10-06: Windows CI에는 커밋된 브랜치가 필요하므로 로컬 QA 이후 checkpoint 커밋/push를 허용한다. 전체 Windows QA와 자체 리뷰를 완료한 뒤 완료 기록 커밋 및 main 통합을 진행한다.
 
+- 2026-10-06: 진행 중 캡처 상태를 캐릭터 불러오기 안내가 덮어쓰지 않도록 별도 CharacterStatus 영역을 추가한다.
+
+- 2026-10-06: 최초 개인 시트 dispatch는 read-only 토큰으로 draft를 조회할 수 없어 입력 단계 실패(37337835219). GitHub 공식 문서 https://docs.github.com/en/rest/releases/releases#list-releases 에 따라 push 접근이 필요하다. contents:write를 추가하는 초안은 자동 승인 검토가 거부해 폐기했다. 모든 workflow는 contents:read를 유지한다. 생성한 draft의 단일 파일을 읽는 만료 URL만 임시 Actions secret으로 전달하고 QA 후 secret/draft/임시 화면 artifact를 정리한다. 장기 계정 토큰은 전달하지 않는다.
+
 ## Progress Log
 
-2026-10-06: 로컬 문서·기본 자산 검사 통과. SDK 10.0.401 locked restore 및 Release 교차 빌드 통과. Core 84/84 통과. 기본 sandbox의 NuGet/IPC 제한은 승인된 실행으로 재검증했다. Windows 실행은 진행 중.
+2026-10-06: 로컬 문서·기본 자산 검사 통과. SDK 10.0.401 locked restore 및 Release 교차 빌드 통과. Core 84/84 통과. 기본 sandbox의 NuGet/IPC 제한은 승인된 실행으로 재검증했다. checkpoint d481b45의 기본 Windows 37337747211 및 OBS 37337747089 통과. 개인 시트 QA 입력 실패는 위 Decision Log에 기록했고 전용 workflow로 재시험한다.
 
 ## Review Plan
 
