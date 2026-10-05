@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Input;
 
 namespace VoxPet.App.Views;
 
@@ -60,6 +61,17 @@ internal static class LayoutQa
             expander.IsExpanded = false;
             foreach (var scroll in Descendants(root).OfType<ScrollViewer>()) scroll.ScrollToTop();
             await Task.Delay(50); main.UpdateLayout();
+            bool? wheelScroll = null;
+            if (width < 870 || height < 600)
+            {
+                double before = main.ContentViewport.VerticalOffset;
+                var start = controls.OfType<Button>().Single(button => Equals(button.Content, "Start"));
+                start.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, -120) { RoutedEvent = Mouse.MouseWheelEvent });
+                await Task.Delay(50); main.UpdateLayout();
+                wheelScroll = main.ContentViewport.VerticalOffset > before;
+                check(wheelScroll.Value, $"layout_wheel_scroll_{width}x{height}");
+                main.ContentViewport.ScrollToTop(); await Task.Delay(50); main.UpdateLayout();
+            }
             foreach (double scale in new[] { 1.0, 1.5, 2.0 })
             {
                 var bitmap = new RenderTargetBitmap((int)Math.Ceiling(main.ActualWidth * scale), (int)Math.Ceiling(main.ActualHeight * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
@@ -68,7 +80,7 @@ internal static class LayoutQa
                 using var file = File.Create(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), $"voxpet-layout-{width}x{height}-{scale:F1}.png"));
                 encoder.Save(file);
             }
-            cases.Add(new { requestedWidth = width, requestedHeight = height, actualWidth = main.ActualWidth, actualHeight = main.ActualHeight, controls = controls.Length, invisible });
+            cases.Add(new { requestedWidth = width, requestedHeight = height, actualWidth = main.ActualWidth, actualHeight = main.ActualHeight, controls = controls.Length, invisible, wheelScroll });
         }
         main.Width = 1000; main.Height = 730; await Task.Delay(100); main.UpdateLayout();
         File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "voxpet-layout-result.json"), JsonSerializer.Serialize(new { syntheticRenderScale = true, physicalDpiChange = false, cases }, new JsonSerializerOptions { WriteIndented = true }));
