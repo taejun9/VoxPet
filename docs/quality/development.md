@@ -72,3 +72,11 @@ Licenses/와 자산 manifest/USER-GUIDE.txt를 함께 배포한다. macOS에서�
 실제 설치 가능한 정식 배포 판정에는 [Windows 체크리스트](windows-checklist.md)의 통과 기록이 필요하다.
 자체 포함 runtime의 보안 업데이트는 SDK 갱신과 앱 재배포로 적용한다.
 기본 PNG 재생성은 개발용 Pillow가 필요하다. 앱 실행/빌드에는 Pillow가 필요 없다.
+
+## 개인 캐릭터 Windows 합성 시험
+
+plan008의 smoke는 로컬 PNG 시트 불러오기/잘못된 파일 복구/행열 매핑과 정렬/프리셋/음소거를 마이크 없이 시험한다.
+실행 프로세스에 `VOXPET_QA_SHEET`를 지정하면 해당 개인 PNG도 적용해 여섯 상태와 실제 합성 반응 PNG를 runner temp에 기록한다.
+`windows.yml`의 수동 `use_personal_sheet` 입력은 임시 `VOXPET_QA_SHEET_URL` secret의 단일 GitHub release asset 만료 URL만 읽는다.
+모든 workflow는 contents:read이며 계정 토큰을 전달하지 않는다. 개인 시트는 Git/기본 배포에 넣지 않고, 로컬 증거 확보 후 임시 secret·draft 및 개인 이미지가 있는 QA artifact를 삭제한다.
+마이크 권한/물리 장치 검증이나 공용 캐릭터 배포 권한 확인을 대체하지 않는다.

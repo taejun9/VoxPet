@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -75,8 +75,15 @@ UI 스레드에서 파일 디코딩을 하지 않는다. 오디오는 계속 로
 
 ## Review Plan
 
-QA 완료 후 단일 에이전트 자체 리뷰를 수행한다.
+전체 QA 후 단일 에이전트 자체 리뷰 완료. 요구사항/회귀/스레드/오디오 수명/개인정보/라이선스/CI 권한과 실제 PNG를 확인했다. 별도 에이전트는 실행하지 않았다. 리뷰 미러는 docs/reviews/plan-008-character-usability-review.md에 둔다.
 
 ## Completion Notes
 
-현재 구현·검증 진행 중이며 검증 완료 후 결과를 기록한다.
+- 완료: 로컬 PNG 시트/기본 복원, 반응 프리셋, 캐릭터 음소거, 별도 캐릭터 안내, 넓은 창 미리보기 정렬.
+- QA: verify_base/verify_app/diff 통과, locked restore/format/analyzer/Release 경고·오류0, macOS 및 Windows Core84/84.
+- 최종 코드 f5f1757: 기본 Windows37338899300, 늘보군37338981751, OBS37338899198 모두 성공. WPF smoke failures0, 4크기×21컨트롤/3startup bounds/휠/미리보기 검사 통과.
+- 늘보군: 내장 imagegen 시트1536×1024 RGBA, 입3×눈2, 실제 Windows 합성 반응 및 PNG 확인. 최종 프롬프트/출처/PNG는 무시된 artifacts/characters/neulbo/에 보존한다.
+- OBS 기본 캐릭터 WGC: green+Chroma Key/native alpha65.08%/7프레임 변화 통과. BitBlt는 유효 프레임 없음.
+- 임시 단일 이미지 URL secret/draft와 수집한 개인 화면 artifact는 정리했다. 로컬 증거와 개인 실행 ZIP을 artifacts/qa/plan008/ 및 artifacts/VoxPet-win-x64-neulbo-plan008.zip에 보존한다.
+- 제한: 실제 마이크/권한/제거/물리 DPI/사용자 GPU/실제 입력 장시간 미실행. 늘보군의 공개 배포 이용 권리는 미확인으로 유지하며 기본 공개 자산을 교체하지 않는다.
+- 사용자 README와 기본 CC0 PNG는 보존했다. 완료 문서/리뷰 검증 후 main fast-forward 병합/push, branch -d, worktree 제거 순서로 통합한다.

@@ -87,3 +87,21 @@ plan004 통합 후87e14a6의 [Windows CI](https://github.com/taejun9/VoxPet/acti
 UI 60Hz는 타이머 목표이며 성능 측정 결과가 아니다.
 실기에서 발화→표시 지연, CPU, 메모리, 핸들을 측정하고 목표 기준을 먼저 결정한다.
 지연은 녹음 파일 대신 테스트 신호와 화면 시각을 사용해 측정한다.
+
+## plan008 캐릭터와 편의 기능 검증
+
+2026-10-06 코드 f5f1757의 [기본 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37338899300),
+[늘보군 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37338981751),
+[OBS 회귀 QA](https://github.com/taejun9/VoxPet/actions/runs/37338899198)가 모두 통과했다.
+Core84/84, Release 경고/오류0, format/analyzer, 자체 포함 publish, 실제 WPF smoke failures0을 확인했다.
+로컬 증거는 `artifacts/qa/plan008/summary.json`과 `final-personal/`에 보존했다. 개인 이미지가 있는 원격 QA artifact와 임시 입력/secret은 수집 후 삭제했다.
+
+- PNG 시트: 6상태 매핑, 작업 스레드 로드와 Freeze, 자동 중앙/바닥 정렬, 파일 점유 해제, 빈/불투명/잘못된/과대/없는 파일 복구 및 기존 캐릭터 보존 통과.
+- 편의 기능: 조용한 목소리/빠른 반응/일반 대화 프리셋, 음소거 중 입 0 및 입력/blink 유지, 해제 후 반응, Stop reset, 마이크 상태 표시 보존 통과.
+- 레이아웃: 4창크기×21컨트롤 모두 접근 가능, 3startup bounds, 작은 창 휠, 1/1.5/2배 합성 렌더, 넓은 창 미리보기 전체 가시성 통과.
+- 늘보군: 사용자 참고 이미지에서 만든 개인 RGBA 시트 적용, 여섯 상태 PNG와 실제 합성 반응/미리보기 PNG 확인. 마이크를 캡처하지 않았다.
+- OBS32.2.2: 기본 캐릭터 WGC의 7프레임 변화, green Chroma Key 및 native alpha65.08% 유지 통과. BitBlt는 기존처럼 유효한 캐릭터 프레임 없음.
+
+배포본과 개인 시트를 묶은 로컬 파일은 `artifacts/VoxPet-win-x64-neulbo-plan008.zip`이다.
+기본 공개 배포는 CC0 고양이를 유지하며 늘보군은 이용 권리 미확인 개인 시험 팩이다.
+실제 마이크/권한/제거, 사용자 GPU/OBS, 물리 DPI 변경, 실제 입력 장시간 시험은 위 미실행 상태를 유지한다.

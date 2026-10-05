@@ -126,3 +126,15 @@ UI는 gate -90~-10, sensitivity 0~4, attack 0~300, release 0~1000의 실용 범�
 설정과 미리보기는 한 ScrollViewer를 사용해 내측 스크롤 영역이 마우스 휠을 가로채지 않도록 한다. 버튼 그룹은 WrapPanel로 줄바꿈한다.
 작은 창은 제목/상태 영역을 줄이며 긴 상태는 별도 스크롤로 읽는다. 마이크 세션/숫자 처리/방송창에는 영향이 없다.
 LayoutQa는 실제 WPF 창의 논리 크기/컨트롤 가시성/휠 routed event와 고해상도 render를 검사한다. 실제 OS DPI 변경과 구분한다.
+
+## 사용자 캐릭터와 반응 편의 기능
+
+plan008의 CharacterSheetLoader는 작업 스레드에서 16MB 이하 파일을 읽고 PNG signature/IHDR의 8비트 RGBA 및 셀 크기(128~1024px, 정사각형 3열×2행)를 디코딩 전에 확인한다.
+OnLoad로 원본 파일을 해제하고 각 셀을 BGRA로 변환해 알파 영역 기준 중앙/바닥을 정렬한 뒤 Freeze한다. 빈 셀 또는 투명 여백이 없는 셀은 거부한다.
+입 열림 3단계와 눈 뜸/감음 2단계의 완전한 배열을 모두 만들고 난 뒤 UI에서 한 번에 교체하므로 오류 시 이전 캐릭터가 유지된다.
+닫기 중 도착한 결과는 적용하지 않는다. 외부 파일 경로와 캐릭터는 영구 설정에 저장하지 않는다.
+CharacterStatus는 마이크 Status와 분리돼 적용/실패 안내가 Running/Stop 안내를 덮어쓰지 않는다.
+
+Core의 ReactionPresets가 일반 대화·조용한 목소리·빠른 반응의 불변 AudioSettings를 제공한다. UI는 preset 적용 후 전체 조정값을 통지하며 개별 슬라이더 조정을 계속 허용한다.
+CharacterMuted는 envelope와 VoiceLevel만 즉시 초기화한다. RAW/RMS/Peak와 마이크 세션은 유지하고 blink/idle은 독립적으로 계속된다.
+음소거 상태를 해제하면 현재 입력부터 반응하고, Stop은 기존대로 캡처와 레벨을 해제한다. 음소거 상태도 영구 저장하지 않는다.

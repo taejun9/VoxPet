@@ -29,3 +29,8 @@ Windows UI 회귀 검증을 추가했으며 실제 마이크/OBS/장시간 조�
 
 [plan-004-obs-validation](../exec_plans/completed/plan-004-obs-validation.md)에서 실제 OBS 32.2.2의 WGC 합성 캡처/Chroma Key/native alpha와60.17분 자원·프레임 변화 검증을 추가했다.
 BitBlt는 이 CI 환경에서 유효한 프레임을 얻지 못했다. 실제 마이크/사용자 GPU/물리 DPI/실제 입력 장시간은 계속 미완료다.
+
+
+[plan-008-character-usability](../exec_plans/completed/plan-008-character-usability.md)에서 로컬 PNG 캐릭터 시트 불러오기와 기본 복원,
+반응 프리셋, 캐릭터 음소거, 마이크 상태 안내 보존 및 늘보군 개인 합성 데모를 완료했다.
+Core84/84와 실제 Windows/OBS 회귀를 통과했다. 실제 마이크 조건은 [검증 기록](../quality/windows-checklist.md)의 미실행 항목으로 남는다.
