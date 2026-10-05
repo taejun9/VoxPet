@@ -15,6 +15,12 @@ from PIL import Image
 import psutil
 
 
+class ObsRequestError(RuntimeError):
+    def __init__(self, method: str, code: int):
+        self.code = code
+        super().__init__(f'OBS {method} failed, code {code}')
+
+
 class ObsRpc:
     def __init__(self, password: str):
         self.socket = websocket.create_connection('ws://127.0.0.1:4455', timeout=8, http_no_proxy=['127.0.0.1'])
@@ -38,7 +44,7 @@ class ObsRpc:
             if message['op'] == 7 and message['d']['requestId'] == request_id:
                 data = message['d']
                 if not data['requestStatus']['result']:
-                    raise RuntimeError(f"OBS {method} failed, code {data['requestStatus']['code']}")
+                    raise ObsRequestError(method, data['requestStatus']['code'])
                 return data.get('responseData', {})
 
     def screenshot(self, name: str) -> Image.Image:
@@ -120,7 +126,16 @@ def main() -> int:
                 time.sleep(1)
         if rpc is None:
             raise RuntimeError('OBS WebSocket unavailable; inspect OBS renderer/startup state')
-        version = rpc.call('GetVersion')
+        # Authentication can finish before the OBS frontend accepts requests.
+        deadline = time.monotonic() + 60
+        while True:
+            try:
+                version = rpc.call('GetVersion')
+                break
+            except ObsRequestError as error:
+                if error.code != 207 or time.monotonic() >= deadline:
+                    raise
+                time.sleep(.5)
         report['obs_version'] = version['obsVersion']
         report['websocket_version'] = version['obsWebSocketVersion']
         if rpc.call('GetRecordStatus')['outputActive'] or rpc.call('GetStreamStatus')['outputActive']:

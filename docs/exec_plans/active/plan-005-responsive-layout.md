@@ -64,6 +64,7 @@ QA 이후 단일 에이전트 자체 리뷰. scroll clipping/레이아웃 전환
 | 2026-10-05 | 마우스 휠 routed-event 검사 추가 | WPF 공식 ScrollViewer 소스는 내측 영역에서 wheel을 handled로 바꿈. logical BringIntoView 성공만으로 실제 스크롤 입력을 입증하지 못함 |
 | 2026-10-05 | 설정 영역을 하나의 ScrollViewer로 구성 | 중첩 wheel 가로채기를 제거하고 마우스/키보드/scrollbar가 같은 영역을 조작하도록 단순화 |
 | 2026-10-05 | 초기 크기를 primary 작업 영역의 논리 좌표에 맞춤 | 최소 크기만 낮춰도 기본1000×730이 높은 DPI의 작업 영역을 넘을 수 있음. 공식 WPF WorkArea pixel→logical 변환 확인; QA는 가상 작업 영역을 주입하되 실제 창 생성과 bounds를 검사 |
+| 2026-10-05 | OBS frontend NotReady207만 제한된 준비 대기로 처리 | 통합 UI QA는 성공했으나 OBS가 authentication 후 frontend 초기화 전에 GetVersion을 거부. 다른 API 오류는 숨기지 않고 최대60초 대기 후 실패 |
 
 ## Progress Log
 
@@ -75,6 +76,7 @@ QA 이후 단일 에이전트 자체 리뷰. scroll clipping/레이아웃 전환
 | 2026-10-05 | 검증 | 302a858 [37271324428](https://github.com/taejun9/VoxPet/actions/runs/37271324428): 정확히 작은 창 세 wheel 입력 실패. da17bb9 [37271591812](https://github.com/taejun9/VoxPet/actions/runs/37271591812)는 중첩 제거 후 전체 Windows QA 통과 |
 | 2026-10-05 | 검증 | 3dcded2 [37272421104](https://github.com/taejun9/VoxPet/actions/runs/37272421104): Core70/Release/publish/smoke와 실제 창4크기×15컨트롤/작은 창wheel/초기StartStop, 가상작업영역3case의 실제창bounds/종료 통과. JSON직접확인, 최소창PNG시각검사. 물리DPI시험으로 해석하지 않음 |
 | 2026-10-05 | 조율 | plan004 장시간 작업은 동일 run37269646209로 진행 중. 완료 결과를 main으로 통합한 뒤 이 브랜치에 main을 merge하고 전체 QA를 재검증한다. 이미 push한 checkpoint 이력은 rebase/force push로 덮어쓰지 않음 |
+| 2026-10-05 | 검증 | ff1a6d5: plan004 통합 후 Windows37277127843 success. OBS37277127758은 첫 GetVersion207(NotReady)로 캡처 전에 실패. bounded frontend 준비 대기를 보완하여 실제 캡처 재검증 |
 
 ## Completion Notes
 
