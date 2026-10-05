@@ -44,7 +44,7 @@ dotnet run --project src/VoxPet.App/VoxPet.App.csproj
 
 2026-10-05 macOS arm64에서 임시 SDK 설치 후 실제 restore/build/Core test를 수행했다.
 로컬 sandbox에서 MSBuild IPC가 제한되면 `-m:1 -p:UseSharedCompilation=false -nodeReuse:false` 또는 승인된 실행 환경을 사용한다.
-WPF 실행·WASAPI·OBS QA는 Windows에서 한다. Windows CI에는 실제 마이크/OBS가 없다.
+WPF 실행·WASAPI·OBS QA는 Windows에서 한다. Windows CI에는 실제 마이크가 없다. 별도 OBS workflow는 공식 portable OBS를 일회용 runner에서 실행해 합성 데모 이미지만 시험한다.
 
 ## Windows 전체 QA와 배포
 
@@ -56,6 +56,11 @@ Python 3.10+, Git, global.json의 .NET SDK가 필요하다. PowerShell에서:
 
 문서/자산 검증 → locked restore → Release build → Core test → 자체 포함 publish → 마이크 없는 WPF smoke 순서다.
 `.github/workflows/windows.yml`이 같은 명령을 Windows runner에서 실행하고 실행 폴더/테스트 결과/화면 PNG를 업로드한다.
+
+별도 `.github/workflows/obs.yml`은 `obs-qa.ps1`/`obs_capture_qa.py`로 마이크 없는 Window Capture와 Chroma Key를 검증한다.
+`OBS-QA-evidence`에 캡처 PNG/결과 JSON/선별한 renderer 정보만 보관한다. OBS 설치·설정·인증 암호는 업로드하지 않는다.
+`obs-qa.ps1`은 일회용 GitHub runner로 실행을 제한한다. 실제 사용자 OBS 설정을 변경하는 명령으로 사용하지 않는다.
+장시간 검증은 10분 warmup 후 60분 합성 UI의 RSS/핸들과 매분 캡처 변화만 측정하며 실제 마이크 장시간 검증과 구분한다.
 
 ```sh
 dotnet publish src/VoxPet.App/VoxPet.App.csproj -c Release --no-restore -o artifacts/win-x64

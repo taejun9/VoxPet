@@ -49,7 +49,7 @@ OBS는 disposable GitHub runner에서만 다운로드/실행하고 loopback RPC�
 실제 창 식별자는 OBS property API에서 얻으며 VoxPet Character만 선택한다.
 캡처 PNG가 빈/검은 프레임이 아니고 초록 배경 및 보라색 캐릭터가 보이며 시간에 따라 캐릭터 픽셀이 변해야 한다.
 Chroma Key 적용 후 초록 배경 alpha 제거와 캐릭터 픽셀 유지를 확인한다.
-설정창을 최소화해도 OBS의 방송창 픽셀이 유지되어야 한다. renderer/OBS/OS/build/캡처 방식을 결과 JSON에 기록한다.
+설정창을 최소화해도 OBS의 방송창 픽셀이 유지되어야 한다. OBS/OS/캡처 방식은 결과 JSON, renderer는 선별한 로그, build는 CI commit/배포 SHA256으로 기록한다.
 장시간 합성 UI를 수행할 경우 10분 warmup 후 60분 RSS 증가 50MiB 이하, handle 증가 50 이하를 기준으로 한다. 실제 마이크 장시간 합격으로 해석하지 않는다.
 기존 Core 70개/WPF smoke, verify_base.py/verify_app.py/diff 검증을 유지한다.
 
@@ -67,6 +67,8 @@ Chroma Key 적용 후 초록 배경 alpha 제거와 캐릭터 픽셀 유지를 �
 | 2026-10-05 | 캡처에서 보인 resize grip을 제거하고 모서리 alpha 검사 추가 | 방송 이미지에 UI 표시가 남지 않도록 실제 OBS 증거에 따라 수정 |
 | 2026-10-05 | 검증 브랜치에서 10분 warmup + 60분 측정 실행, 완료 후 기본값 0 복구 | default branch 통합 전 장시간 증거 확보; 일반 CI는 짧은 검증 유지 |
 | 2026-10-05 | 투명 창은 원래 resize grip 영역 유지, Opacity=0으로 표시만 제거 | 공식 WPF Window/ResizeGrip 소스의 native hit 처리 확인. Windows smoke에서 실제 WM_NCHITTEST=HTBOTTOMRIGHT를 검사하고 OBS에서 corner 픽셀 검사 |
+| 2026-10-05 | 장시간 실행을 유지하며 후속 짧은 QA에 투명 배경 독립 프로세스 추가 | 기존 green 프로세스를 정리한 뒤 WGC 캐릭터/변화를 검사하고 native alpha 보존 여부는 별도 Boolean으로 기록. 투명 alpha를 green/chroma 성공으로 대체하지 않음 |
+| 2026-10-05 | 기존 d35f707 장시간 실행은 그대로 두고 다음 push의 기본값을 0으로 복구 | 실행 중인 job의 checkout/인자를 바꾸지 않으며 별도 짧은 green/transparent QA를 먼저 실행. 모든 결과 이후 main 통합 |
 
 ## Progress Log
 
@@ -74,6 +76,9 @@ Chroma Key 적용 후 초록 배경 alpha 제거와 캐릭터 픽셀 유지를 �
 |---|---|---|
 | 2026-10-05 | 지도 | main/원격 동기화 및 plan-004 worktree 생성 |
 | 2026-10-05 | 검증 | e41194f: Core/WPF Windows QA 통과. OBS 32.2.2/WS 5.7.4, Windows Server 2025 build26100, Microsoft Basic Render Driver/D3D11에서 WGC 통과, BitBlt 유효 프레임 없음. 7개 서로 다른 프레임, keyed alpha66.0%, green0%, 캐릭터 유지. 실제 PNG 검사 후 resize grip 발견 |
+| 2026-10-05 | 제작 | e7fe742의 장시간 실행은 resize 영역 보존 검증을 보완하기 위해 취소. 최종 방식은 CanResizeWithGrip + Opacity=0이며 영역은 유지 |
+| 2026-10-05 | 검증 | d35f707 Windows QA [37269646190](https://github.com/taejun9/VoxPet/actions/runs/37269646190) 통과: Core70/빌드/publish/WPF smoke, native resize hit 포함. OBS 장시간 [37269646209](https://github.com/taejun9/VoxPet/actions/runs/37269646209)는 진행 중이며 아직 합격 기록 없음 |
+| 2026-10-05 | 검증 | Windows artifact TRX의 total/passed=70, failed=0과 smoke JSON failures=0을 직접 확인. AMD64 PE/배포 필수 파일/ZIP CRC 확인 후 root artifacts/에 plan004-preview 배포본 및 SHA256 요약 보존. 실제 마이크와 장시간 결과는 미검증 상태 유지 |
 
 ## Completion Notes
 

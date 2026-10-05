@@ -18,6 +18,8 @@ Stop/장치 오류/종료 때 이전 음량을 초기화합니다.
 종료 지연 안내가 나오면 잠시 후 Stop/앱 종료를 다시 시도하세요.
 
 캐릭터 방송창 열기 → OBS Window Capture에서 VoxPet Character 선택.
+캡처 방식은 Windows Graphics Capture(Windows 10 이상 방식)를 먼저 시도하세요.
+OBS 32.2.2 합성 데모에서는 WGC가 통과했고 BitBlt는 유효 프레임을 얻지 못했습니다.
 초록 배경 + OBS Chroma Key 필터(Green)를 사용할 수 있습니다.
 투명 배경은 Windows 창의 투명도이며 OBS alpha 보존을 보장하지 않습니다.
 방송창 드래그로 이동, 우측 하단으로 크기 조절, Esc/우클릭 메뉴로 닫기.

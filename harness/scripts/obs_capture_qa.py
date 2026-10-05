@@ -72,17 +72,17 @@ def select_window(rpc: ObsRpc, name: str):
     raise RuntimeError('VoxPet Character is not available to OBS Window Capture')
 
 
-def get_valid_capture(rpc: ObsRpc, name: str):
+def get_valid_capture(rpc: ObsRpc, name: str, green: bool = True):
     for _ in range(20):
         try:
             image = rpc.screenshot(name)
             metrics = classify(image)
-            if metrics['purple_ratio'] > .03 and metrics['green_ratio'] > .2:
+            if metrics['purple_ratio'] > .03 and (not green or metrics['green_ratio'] > .2):
                 return image, metrics
         except RuntimeError:
             pass
         time.sleep(.5)
-    raise RuntimeError('No usable green-screen character frame from this capture method')
+    raise RuntimeError('No usable character frame from this capture method')
 
 
 def resource_sample(process: psutil.Process, started: float):
@@ -104,11 +104,12 @@ def main() -> int:
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--voxpet-pid', type=int, required=True)
     parser.add_argument('--long-run-minutes', type=int, default=0)
+    parser.add_argument('--background', choices=['green', 'transparent'], default='green')
     args = parser.parse_args()
     if os.name != 'nt':
         parser.error('This QA requires disposable Windows and OBS processes')
     args.output.mkdir(parents=True, exist_ok=True)
-    report = {'os': platform.platform(), 'synthetic_only': True, 'recording': False, 'streaming': False, 'methods': [], 'errors': []}
+    report = {'os': platform.platform(), 'source_commit': os.environ.get('GITHUB_SHA'), 'background': args.background, 'synthetic_only': True, 'recording': False, 'streaming': False, 'methods': [], 'errors': []}
     rpc = None
     try:
         for _ in range(60):
@@ -129,6 +130,8 @@ def main() -> int:
             rpc.call('CreateScene', sceneName=scene)
         rpc.call('SetCurrentProgramScene', sceneName=scene)
         name = 'VoxPet-QA-Window'
+        if any(item['inputName'] == name for item in rpc.call('GetInputList')['inputs']):
+            rpc.call('RemoveInput', inputName=name)
         rpc.call('CreateInput', sceneName=scene, inputName=name, inputKind='window_capture', inputSettings={'capture_audio': False, 'cursor': False, 'client_area': True}, sceneItemEnabled=True)
         inputs = rpc.call('GetInputList')['inputs']
         if any(item['inputKind'] in ('wasapi_input_capture', 'wasapi_output_capture', 'wasapi_process_output_capture') for item in inputs):
@@ -138,18 +141,23 @@ def main() -> int:
         key_kind = next((kind for kind in kinds if kind.startswith('chroma_key_filter')), None)
         if key_kind is None:
             raise RuntimeError('Chroma Key filter unavailable')
-        for method_id, label in ((1, 'BitBlt'), (2, 'WGC')):
+        methods = ((1, 'BitBlt'), (2, 'WGC')) if args.background == 'green' else ((2, 'WGC'),)
+        for method_id, label in methods:
             result = {'method': label}
             report['methods'].append(result)
             try:
                 rpc.call('SetInputSettings', inputName=name, inputSettings={'window': window_value, 'method': method_id, 'capture_audio': False, 'cursor': False, 'client_area': True}, overlay=True)
-                raw, metrics = get_valid_capture(rpc, name)
+                raw, metrics = get_valid_capture(rpc, name, green=args.background == 'green')
                 raw.save(args.output / f'{label}-raw.png')
                 result['raw'] = metrics
+                result['distinct_frames'] = distinct_frames(rpc, name, metrics['pixels_sha256'])
+                if args.background == 'transparent':
+                    result['native_alpha_preserved'] = metrics['transparent_ratio'] > .2
+                    result['passed'] = True
+                    continue
                 result['corner_green_ratio'] = classify(raw.crop((450, 450, 480, 480)))['green_ratio']
                 if result['corner_green_ratio'] < .995:
                     raise RuntimeError('Broadcast corner contains unwanted controls')
-                result['distinct_frames'] = distinct_frames(rpc, name, metrics['pixels_sha256'])
                 rpc.call('CreateSourceFilter', sourceName=name, filterName='VoxPet-QA-Key', filterKind=key_kind, filterSettings={'key_color_type': 'green', 'similarity': 400, 'smoothness': 80, 'spill': 100})
                 time.sleep(.5)
                 keyed = rpc.screenshot(name)
@@ -203,6 +211,8 @@ def main() -> int:
             if last['rss'] - first['rss'] > 50 * 1024 * 1024 or last['handles'] - first['handles'] > 50:
                 raise RuntimeError('Synthetic UI resource growth exceeds planned threshold')
         report['passed'] = True
+        if rpc.call('GetRecordStatus')['outputActive'] or rpc.call('GetStreamStatus')['outputActive']:
+            raise RuntimeError('Unexpected recording or streaming activity at completion')
         return 0
     except Exception as error:
         report['passed'] = False

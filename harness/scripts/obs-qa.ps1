@@ -59,6 +59,11 @@ AuxDevice4=disabled
     $obsQaProcess = Start-Process (Join-Path $obsQaBin 'obs64.exe') -WorkingDirectory $obsQaBin -ArgumentList '--portable','--disable-updater','--disable-missing-files-check','--only-bundled-plugins','--profile','VoxPetQA','--collection','VoxPetQA' -PassThru
     python -X utf8 harness/scripts/obs_capture_qa.py --output artifacts/obs-qa --voxpet-pid $voxQaProcess.Id --long-run-minutes $LongRunMinutes
     if ($LASTEXITCODE -ne 0) { throw 'OBS capture QA did not pass' }
+    $null = $voxQaProcess.CloseMainWindow()
+    if (-not $voxQaProcess.WaitForExit(5000)) { $voxQaProcess.Kill(); $voxQaProcess.WaitForExit() }
+    $voxQaProcess = Start-Process 'artifacts/obs-app/VoxPet.exe' -ArgumentList '--qa-demo','--qa-transparent' -PassThru
+    python -X utf8 harness/scripts/obs_capture_qa.py --output artifacts/obs-qa/transparent --voxpet-pid $voxQaProcess.Id --background transparent
+    if ($LASTEXITCODE -ne 0) { throw 'Transparent window character capture failed; inspect evidence separately from native alpha support' }
 } finally {
     if ($voxQaProcess -and -not $voxQaProcess.HasExited) { $null = $voxQaProcess.CloseMainWindow(); if (-not $voxQaProcess.WaitForExit(5000)) { $voxQaProcess.Kill() } }
     if ($obsQaProcess -and -not $obsQaProcess.HasExited) { $null = $obsQaProcess.CloseMainWindow(); if (-not $obsQaProcess.WaitForExit(5000)) { $obsQaProcess.Kill() } }

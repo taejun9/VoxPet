@@ -6,7 +6,9 @@
 Core 자동 테스트와 WPF 교차 컴파일은 실행했다. Windows GitHub Actions에서도 70개 테스트와 WPF UI smoke를 통과했다.
 초기 검증 commit ad1d266, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37265531490).
 방송창 수명 회귀: ddbaee7, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37266740645).
-아래 실기 항목은 실제 Windows 마이크/OBS 접근이 필요하며 아직 통과로 기록하지 않는다.
+OBS 합성 캡처: e41194f, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37268938486).
+OBS 32.2.2/obs-websocket 5.7.4, Windows Server 2025 build26100, Microsoft Basic Render Driver/D3D11.
+실제 Windows 마이크와 사용자 GPU/OBS 조합은 아직 통과로 기록하지 않는다.
 
 | 항목 | 현재 상태 | 확인 방법/합격 기준 |
 |---|---|---|
@@ -16,7 +18,8 @@ Core 자동 테스트와 WPF 교차 컴파일은 실행했다. Windows GitHub Ac
 | Windows WPF smoke | 통과 | UI 바인딩 오류 0, 이미지/별도 창/데모 반응/blink/입력 범위/reset/Stop/일반 창 종료 통과 |
 | 방송창 최소화/복구/재열기/종료 | Windows CI 통과 | native 창 가시성/최소화 상태와 shared model, 메인 종료 후 창 닫힘 확인 |
 | 실제 마이크 | 미실행 | 아래 실기 매트릭스 수행 |
-| OBS | 미실행 | 아래 OBS 매트릭스 수행 |
+| OBS 합성 데모 | WGC 통과, BitBlt 유효 프레임 없음 | 설정창 최소화 중 Window Capture, 7개 서로 다른 프레임, Chroma Key 후 green0%/alpha66.0%/캐릭터 유지; 실제 PNG 확인 |
+| OBS 사용자 환경 | 미실행 | 아래 OBS 매트릭스 수행 |
 
 ## 마이크/창 실기 매트릭스
 
@@ -46,7 +49,7 @@ OS/OBS version, GPU/driver, 캡처 방식(자동/Windows Graphics Capture/BitBlt
 
 | 조합 | 합격 기준 | 결과 |
 |---|---|---|
-| 초록 배경 + Window Capture + Chroma Key | 배경 제거, 입/눈/몸 반응, UI가 송출되지 않음 | 미실행 |
+| 초록 배경 + Window Capture + Chroma Key | 배경 제거, 입/눈/몸 반응, UI가 송출되지 않음 | 위 CI 환경에서 WGC 합성 데모 통과. 실제 마이크/사용자 GPU 조합은 미실행 |
 | 투명 배경 + Window Capture | alpha 유지 여부를 측정, 실패 시 초록 배경 경로 사용 | 미실행 |
 | 방송창 가림/항상 위 해제/최소화 | 캡처 지속 조건과 제한 기록 | 미실행 |
 | 크기 조절/화면 DPI 변경 | OBS 화면에서 anchor/정렬 유지 | 미실행 |
