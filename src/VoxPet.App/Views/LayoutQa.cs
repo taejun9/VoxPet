@@ -71,6 +71,8 @@ internal static class LayoutQa
             expander.IsExpanded = false;
             foreach (var scroll in Descendants(root).OfType<ScrollViewer>()) scroll.ScrollToTop();
             await Task.Delay(50); main.UpdateLayout();
+            if (width >= 870 && height >= 600)
+                check(FullyVisible(main.PreviewCard, root), $"layout_preview_card_at_top_{width}x{height}");
             bool? wheelScroll = null;
             if (width < 870 || height < 600)
             {

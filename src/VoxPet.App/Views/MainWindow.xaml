@@ -10,7 +10,7 @@
     <Grid x:Name="PanelsGrid">
       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="0"/></Grid.RowDefinitions>
       <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <Border x:Name="PreviewCard" Background="#1B2738" CornerRadius="18" Padding="24">
+      <Border x:Name="PreviewCard" VerticalAlignment="Top" Background="#1B2738" CornerRadius="18" Padding="24">
         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
           <TextBlock Text="{Binding Character.Name}" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="#8FA4BC"/>
           <Image Grid.Row="1" Source="{Binding Character.Sprite}" Stretch="Uniform" Margin="0,18,0,18" RenderOptions.BitmapScalingMode="HighQuality"><Image.RenderTransform><TranslateTransform Y="{Binding Character.Bounce}"/></Image.RenderTransform></Image>

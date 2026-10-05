@@ -67,6 +67,8 @@ UI 스레드에서 파일 디코딩을 하지 않는다. 오디오는 계속 로
 
 - 2026-10-06: 새 수동 workflow는 default branch에 등록되기 전 dispatch할 수 없어 404였다. 기존 windows.yml의 수동 입력(use_personal_sheet)에 단일 파일 URL 읽기 경로를 넣는다. 일반 push QA는 이 입력을 사용하지 않고 모든 권한은 contents:read다.
 
+- 2026-10-06: Windows 화면 QA에서 늘어난 controls 높이 때문에 미리보기 Border가 Auto 행 중앙으로 밀려 하단이 첫 화면에서 잘리는 회귀를 발견했다. PreviewCard를 상단 정렬하고 넓은 창에서 카드 전체가 viewport 안에 있는지 실제 레이아웃 검사를 추가한다.
+
 ## Progress Log
 
 2026-10-06: 로컬 문서·기본 자산 검사 통과. SDK 10.0.401 locked restore 및 Release 교차 빌드 통과. Core 84/84 통과. 기본 sandbox의 NuGet/IPC 제한은 승인된 실행으로 재검증했다. checkpoint d481b45의 기본 Windows 37337747211 및 OBS 37337747089 통과. 개인 시트 QA 입력 실패는 위 Decision Log에 기록했고 전용 workflow로 재시험한다.
