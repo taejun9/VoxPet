@@ -7,7 +7,9 @@ Core 자동 테스트와 WPF 교차 컴파일은 실행했다. Windows GitHub Ac
 초기 검증 commit ad1d266, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37265531490).
 방송창 수명 회귀: ddbaee7, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37266740645).
 OBS 합성 캡처: e41194f, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37268938486).
+최종 green/transparent 캡처: 86374ad, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37276105483). WGC의 투명 배경 alpha65.1%/캐릭터 유지/7프레임 변화 확인.
 OBS 32.2.2/obs-websocket 5.7.4, Windows Server 2025 build26100, Microsoft Basic Render Driver/D3D11.
+장시간 합성 데모: d35f707, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37269646209). 10분 warmup 후 실제60.17분 측정, RSS 증가1.58MiB/핸들 증가0/68회 프레임 변화 검사 통과.
 실제 Windows 마이크와 사용자 GPU/OBS 조합은 아직 통과로 기록하지 않는다.
 
 | 항목 | 현재 상태 | 확인 방법/합격 기준 |
@@ -19,6 +21,7 @@ OBS 32.2.2/obs-websocket 5.7.4, Windows Server 2025 build26100, Microsoft Basic 
 | 방송창 최소화/복구/재열기/종료 | Windows CI 통과 | native 창 가시성/최소화 상태와 shared model, 메인 종료 후 창 닫힘 확인 |
 | 실제 마이크 | 미실행 | 아래 실기 매트릭스 수행 |
 | OBS 합성 데모 | WGC 통과, BitBlt 유효 프레임 없음 | 설정창 최소화 중 Window Capture, 7개 서로 다른 프레임, Chroma Key 후 green0%/alpha66.0%/캐릭터 유지; 실제 PNG 확인 |
+| OBS 합성 장시간 UI | 통과 (d35f707) | 60.17분 RSS +1.58MiB/핸들 +0, 68회 변화 검사 및 최종 유효 프레임. 실제 마이크 장시간 시험과 구분 |
 | OBS 사용자 환경 | 미실행 | 아래 OBS 매트릭스 수행 |
 
 ## 마이크/창 실기 매트릭스
@@ -50,10 +53,10 @@ OS/OBS version, GPU/driver, 캡처 방식(자동/Windows Graphics Capture/BitBlt
 | 조합 | 합격 기준 | 결과 |
 |---|---|---|
 | 초록 배경 + Window Capture + Chroma Key | 배경 제거, 입/눈/몸 반응, UI가 송출되지 않음 | 위 CI 환경에서 WGC 합성 데모 통과. 실제 마이크/사용자 GPU 조합은 미실행 |
-| 투명 배경 + Window Capture | alpha 유지 여부를 측정, 실패 시 초록 배경 경로 사용 | 미실행 |
+| 투명 배경 + Window Capture | alpha 유지 여부를 측정, 실패 시 초록 배경 경로 사용 | 위 CI의 WGC에서 alpha65.1%/캐릭터 유지/7프레임 변화 통과. 사용자 GPU 조합은 미실행 |
 | 방송창 가림/항상 위 해제/최소화 | 캡처 지속 조건과 제한 기록 | 미실행 |
 | 크기 조절/화면 DPI 변경 | OBS 화면에서 anchor/정렬 유지 | 미실행 |
-| 60분 캡처 | 프레임 정지/핸들·메모리 누적 증가 없음 | 미실행 |
+| 60분 캡처 | 프레임 정지/핸들·메모리 누적 증가 없음 | 위 CI의 합성 데모60.17분/68회 변화 검사 통과. 실제 마이크/사용자 GPU 조합은 미실행 |
 
 ## 성능 측정
 

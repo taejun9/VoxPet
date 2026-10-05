@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -37,11 +37,11 @@ OBS는 disposable GitHub runner에서만 다운로드/실행하고 loopback RPC�
 
 ## Implementation Plan
 
-- [ ] 공식 OBS 버전/asset/API 및 runner 환경 확인
-- [ ] 마이크 없는 QA 데모 모드와 loopback OBS 테스트 하네스
-- [ ] 실제 Window Capture/Chroma Key 스크린샷 및 환경 증거
-- [ ] 합성 장시간 자원 검증 가능성 확인 및 실행
-- [ ] QA 후 자체 리뷰/문서/완료 또는 제한 기록과 Git 절차
+- [x] 공식 OBS 버전/asset/API 및 runner 환경 확인
+- [x] 마이크 없는 QA 데모 모드와 loopback OBS 테스트 하네스
+- [x] 실제 Window Capture/Chroma Key 스크린샷 및 환경 증거
+- [x] 합성 장시간 자원 검증 가능성 확인 및 실행
+- [x] QA 후 자체 리뷰/문서/완료 기록. 아래 Git 수명 절차를 이어서 수행
 
 ## QA Plan
 
@@ -80,7 +80,17 @@ Chroma Key 적용 후 초록 배경 alpha 제거와 캐릭터 픽셀 유지를 �
 | 2026-10-05 | 제작 | e7fe742의 장시간 실행은 resize 영역 보존 검증을 보완하기 위해 취소. 최종 방식은 CanResizeWithGrip + Opacity=0이며 영역은 유지 |
 | 2026-10-05 | 검증 | d35f707 Windows QA [37269646190](https://github.com/taejun9/VoxPet/actions/runs/37269646190) 통과: Core70/빌드/publish/WPF smoke, native resize hit 포함. OBS 장시간 [37269646209](https://github.com/taejun9/VoxPet/actions/runs/37269646209)는 진행 중이며 아직 합격 기록 없음 |
 | 2026-10-05 | 검증 | Windows artifact TRX의 total/passed=70, failed=0과 smoke JSON failures=0을 직접 확인. AMD64 PE/배포 필수 파일/ZIP CRC 확인 후 root artifacts/에 plan004-preview 배포본 및 SHA256 요약 보존. 실제 마이크와 장시간 결과는 미검증 상태 유지 |
+| 2026-10-05 | 검증 | d35f707 장시간 run37269646209 success. 결과 JSON직접확인: measured60.1667분, RSS+1.578125MiB, handles+0, motion_checks68, samples409, 최종Frame유효. WGC rawcornergreen1/keyedcorneralpha1 및7프레임변화. root artifacts/qa/plan004/long 보존. 실제마이크 아님 |
+| 2026-10-05 | 검증 | 73e37f8 WindowsQA success. 추가transparent단계는 CreateInput601 이름충돌로 실패하여 alpha에 대한 판정은 아직 하지 않음. 단계별이름분리로 수정/재검증 진행 |
+| 2026-10-05 | 검증 | 86374ad WindowsQA37276105532 및 OBS37276105483 success. 투명WGC alpha65.0825%, purple28.0282%, 7프레임/녹화·방송false. 결과JSON/PNG직접확인 |
+| 2026-10-05 | 심사 | QA이후 자체리뷰: 합성fixture는 개인설정/마이크캡처를 사용하지 않음, OBS설치/RPC는일회용runner, capture_audiofalse/오디오source없음/녹화·방송미시작. grip nativehit영역 유지, 실제마이크/사용자GPU/DPI 미검증 조건 유지 |
 
 ## Completion Notes
 
-진행 중. 실제 마이크 환경 질의는 미응답이며 전체 실사용 목표는 미완료다.
+이 계획의 OBS 합성 검증과 방송창 표시 수정은 완료했다. 전체 실사용 목표는 실제 마이크 환경 질의가 미응답이며 미완료다.
+
+- d35f707: Windows Core70/Release/publish/WPF native smoke 및 OBS60.17분 측정 통과, RSS+1.58MiB/handles+0/68회 변화검사. 실제마이크아님.
+- 86374ad: Windows Core70/UI/publish 및 green/transparent WGC 캡처 통과. BitBlt는 환경상 유효frame없음. source 이름601충돌은 하네스 수정 후 해결.
+- 문서/자산/diff 검증 통과. 완료 이동/리뷰 미러 후 다시 검사하고 main ff-only/push 및 local branch/worktree 정리를 이어간다.
+- plan005의 작은 화면/plan006의 Stop오류 수정은 별도브랜치에서 검증됐으며 이 계획의 main 통합 후 누적 회귀를 거쳐 이어서 병합한다.
+- 실제 마이크/권한/USB제거/사용자GPU/물리DPI/실제입력장시간은 합격으로 대체하지 않는다.
