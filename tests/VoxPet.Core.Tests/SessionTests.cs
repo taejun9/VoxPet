@@ -14,6 +14,7 @@ public sealed class SessionTests
         public int Starts, Stops, Disposals;
         public Exception? StartError;
         public bool FailStop;
+        public Exception? EndDuringStopError;
         public TaskCompletionSource? StartBarrier;
         public Action<AudioLevel>? SavedCallback;
         public async Task StartAsync()
@@ -26,7 +27,7 @@ public sealed class SessionTests
         {
             Stops++;
             if (FailStop) throw new IOException("Fake stop failure");
-            Ended?.Invoke(null); return Task.CompletedTask;
+            Ended?.Invoke(EndDuringStopError); return Task.CompletedTask;
         }
         public ValueTask DisposeAsync() { Disposals++; Assert.True(Stops > 0); return ValueTask.CompletedTask; }
         public void Push() => LevelAvailable?.Invoke(new(1, 1, 0));
@@ -93,6 +94,18 @@ public sealed class SessionTests
         await session.StartAsync(() => input); await session.StopAsync();
         Assert.Equal(CaptureState.Faulted, session.State); Assert.Equal(0, input.Disposals); Assert.True(session.HasResources);
         input.FailStop = false; await session.StopAsync(); Assert.Equal(1, input.Disposals); Assert.False(session.HasResources);
+    }
+    [Fact] public async Task NativeEndErrorDuringStopIsReportedAfterCleanupAndAllowsRestart()
+    {
+        await using var session = new AudioSession();
+        var input = new FakeInput { EndDuringStopError = new IOException("Native Stop failed") };
+        await session.StartAsync(() => input); input.Push();
+        await session.StopAsync();
+        Assert.Equal(CaptureState.Faulted, session.State); Assert.NotNull(session.Error);
+        Assert.False(session.HasResources); Assert.Equal(1, input.Disposals);
+        Assert.Equal(AudioLevel.Silence, session.ReadLevel(Stopwatch.GetTimestamp()));
+        await session.StartAsync(() => new FakeInput());
+        Assert.Equal(CaptureState.Running, session.State); Assert.Null(session.Error);
     }
     [Fact] public async Task StartingDisposedSessionCannotAcquireMicrophone()
     {
