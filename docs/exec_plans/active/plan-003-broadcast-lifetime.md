@@ -24,7 +24,7 @@ project_lead / quality_runner / review_judge
 ## Context Map
 
 MainWindow.ShowCharacter의 Owner 설정, ShutdownAsync의 명시적 방송창 종료, App.RunSmokeAsync, Windows CI.
-Microsoft Window.Owner 공식 설명은 owner 최소화 시 owned 창도 최소화됨을 명시한다.
+[Microsoft Window.Owner](https://learn.microsoft.com/en-us/dotnet/api/system.windows.window.owner?view=windowsdesktop-10.0) 공식 설명은 owner 최소화 시 owned 창도 최소화됨을 명시한다.
 
 ## Constraints
 
@@ -35,8 +35,8 @@ README 보존. 오디오/개인정보 계약 유지. 미검증 실기 상태를 
 
 ## Implementation Plan
 
-- [ ] Win32 가시성/최소화 확인으로 기존 방송창 문제 재현
-- [ ] 독립 방송창 및 명시적 종료/재열기 구현 검토와 수정
+- [x] Win32 가시성/최소화 확인으로 기존 방송창 문제 재현
+- [x] 독립 방송창 및 명시적 종료/재열기 구현 검토와 수정
 - [ ] Windows 회귀/기존 70개 테스트/배포 검증
 - [ ] 자체 리뷰/문서 동기화/완료 기록과 Git 정리
 
@@ -59,11 +59,15 @@ QA 후 단일 에이전트 자체 리뷰. Owner 제거 시 자동 close 의존�
 | 2026-10-05 | 다음 MVP 버그 수정은 plan-003에 둠 | plan-002는 구현/자동 QA 범위 완료이며 실제 남은 문제를 새로운 계획으로 추적 |
 | 2026-10-05 | 작업 브랜치 checkpoint push로 Windows 재현/수정 검증 | macOS 로컬에서 WPF 실행 불가, main 통합은 Windows QA/리뷰 이후 |
 
+| 2026-10-05 | 이미 최소화된 방송창에서 열기 명령은 Normal 복구 후 Activate | 열기 명령으로 사용자가 기존 방송창을 다시 볼 수 있도록 함; 실제 native 가시성 검사 추가 |
+
 ## Progress Log
 
 | date | role | note |
 |---|---|---|
 | 2026-10-05 | 지도 | 깨끗하고 origin/main과 같은 main 확인 후 지정 worktree 생성 |
+| 2026-10-05 | 검증 | [수정 전 CI](https://github.com/taejun9/VoxPet/actions/runs/37266351482): 70개 테스트/build/publish 통과, native UI 검사 중 broadcast_survives_main_minimize만 실패 |
+| 2026-10-05 | 제작 | Owner 관계 제거. 기존 ShutdownAsync 명시적 종료 및 상태 공유 유지 |
 
 ## Completion Notes
 

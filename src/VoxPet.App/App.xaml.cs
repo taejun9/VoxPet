@@ -70,6 +70,11 @@ public partial class App : Application
             Check(IsWindowVisible(broadcastHandle) && !IsIconic(broadcastHandle), "broadcast_survives_main_minimize");
             main.WindowState = WindowState.Normal;
             await Task.Delay(100);
+            broadcast.WindowState = WindowState.Minimized;
+            await Task.Delay(100);
+            var restored = main.ShowCharacter();
+            await Task.Delay(100);
+            Check(ReferenceEquals(restored, broadcast) && IsWindowVisible(broadcastHandle) && !IsIconic(broadcastHandle), "broadcast_open_restores_minimized_window");
             main.Model.StopCommand.Execute(null);
             await Task.Delay(100);
             if (main.Model.VoiceLevel != 0) failures++;

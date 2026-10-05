@@ -18,6 +18,8 @@
 | xunit 2.9.3 NuGet | https://www.nuget.org/packages/xunit/2.9.3 | 테스트 패키지 | 2026-10-05 | pinned 테스트 프레임워크 |
 | Microsoft.NET.Test.Sdk 17.14.1 NuGet | https://www.nuget.org/packages/Microsoft.NET.Test.Sdk/17.14.1 | 테스트 패키지 | 2026-10-05 | pinned 테스트 호스트 |
 
+| Microsoft Window.Owner | https://learn.microsoft.com/en-us/dotnet/api/system.windows.window.owner?view=windowsdesktop-10.0 | WPF 창 수명 | 2026-10-05 | 소유 창 최소화 시 방송창도 최소화됨; 독립 창과 명시적 종료 선택 |
+
 ## 남은 근거와 실기 확인
 
 - 정확한 Windows 10/11 빌드와 .NET 지원 OS 매트릭스, SDK/Visual Studio 버전 조합.

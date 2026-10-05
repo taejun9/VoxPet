@@ -23,11 +23,16 @@ public partial class MainWindow : Window
     {
         if (character == null)
         {
-            character = new CharacterWindow { DataContext = Model, Owner = this };
+            // Keep broadcast output visible when the settings window is minimized.
+            character = new CharacterWindow { DataContext = Model };
             character.Closed += (_, _) => character = null;
             character.Show();
         }
-        else character.Activate();
+        else
+        {
+            if (character.WindowState == WindowState.Minimized) character.WindowState = WindowState.Normal;
+            character.Activate();
+        }
         return character;
     }
     private async void OnClosing(object? sender, CancelEventArgs e)

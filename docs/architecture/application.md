@@ -115,3 +115,6 @@ UI는 gate -90~-10, sensitivity 0~4, attack 0~300, release 0~1000의 실용 범�
 기본 배경은 초록색이며 OBS alpha는 실기 통과 전 지원을 보장하지 않는다.
 기본 PNG는 generate_character.py의 독자 제작 도형 자산으로 manifest에 CC0 출처/anchor를 기록했다.
 실제 마이크/장시간/OBS 검증은 [체크리스트](../quality/windows-checklist.md)에 남아 있다.
+
+방송창은 설정창과 Win32 소유 관계를 만들지 않는 독립 top-level 창이다. 설정창 최소화가 방송창을 숨기지 않아야 한다.
+메인 종료는 MainWindow.ShutdownAsync에서 캡처 종료 뒤 방송창을 명시적으로 닫는다.
