@@ -36,8 +36,13 @@ public partial class MainWindow : Window
         e.Cancel = true;
         if (shuttingDown) return;
         shuttingDown = true; IsEnabled = false;
-        try { await ShutdownAsync(); allowClose = true; Close(); }
+        try
+        {
+            await ShutdownAsync();
+            // Closing may finish synchronously; enqueue Close after the canceled event returns.
+            Dispatcher.BeginInvoke(() => { if (IsVisible) Close(); });
+        }
         catch { IsEnabled = true; shuttingDown = false; MessageBox.Show("마이크 종료에 실패했습니다. 잠시 후 다시 닫아주세요.", "VoxPet"); }
     }
-    public async Task ShutdownAsync() { await Model.DisposeAsync(); character?.Close(); }
+    public async Task ShutdownAsync() { await Model.DisposeAsync(); character?.Close(); allowClose = true; }
 }
