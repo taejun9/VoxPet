@@ -43,6 +43,7 @@ Core/App/Tests C# 솔루션, WASAPI 캡처와 독자 제작 PNG 6장, 조정 UI�
 기획 기준: Windows x64, C#, .NET 10 LTS, WPF, MVVM, NAudio.Wasapi 2.2.1, WPF PNG 렌더링.
 .NET 지원 수명·OS 빌드·패키지 확인은 [개발 환경](../quality/development.md)에 기록한다.
 별도 방송창, 투명/항상 위/Green Screen 옵션은 구현했다. OBS 실기 검증은 남아 있다.
+OBS 32.2.2/Windows Server2025/Basic Render Driver의 WGC 합성 데모는 green+chroma/native alpha와60.17분 자원·변화 시험을 통과했다. 실제 마이크와 사용자 GPU/OBS 조합은 별도 조건으로 남긴다.
 클릭 통과/OBS Browser Capture는 다음 단계다.
 Pitch, STT, 키워드·감정 반응, Live2D, Spine, 캐릭터 에디터는 장기 후보이며 MVP 요구사항이 아니다.
 웹캠·얼굴 인식·오디오 재생/녹음 저장은 초기 범위에 없다.

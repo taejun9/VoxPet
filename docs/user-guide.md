@@ -33,8 +33,10 @@ Gate는 음성과 키보드 같은 소음을 의미적으로 구별하지 못한
 방송창을 드래그해 이동하고 우측 하단에서 크기를 조절한다. Esc 또는 우클릭 메뉴로 닫는다.
 
 OBS에 Window Capture 소스를 추가해 `VoxPet Character`를 선택한다.
+캡처 방식은 Windows Graphics Capture(OBS에서 Windows 10 이상 방식)를 먼저 시도한다. OBS 32.2.2/Windows Server 2025의 합성 데모 검증에서 이 방식은 통과했고 BitBlt는 유효한 프레임을 얻지 못했다. 사용자 GPU/Windows 조합은 별도 확인한다.
 초록 배경을 켜고 OBS의 Chroma Key 필터에서 Green을 선택하면 배경을 제거할 수 있다.
 초록 배경을 끄면 WPF 창이 투명해지지만, OBS 캡처에서 alpha가 보존되는지는 버전/방식에 따라 실기 검증이 필요하다.
+위 OBS 32.2.2/WGC 합성 시험에서는 native alpha도 보존됐다. 사용자 환경에서 검은 배경이나 캡처 실패가 보이면 초록 배경과 Chroma Key를 사용한다.
 최소화/가림/스케일/장시간 캡처는 [체크리스트](quality/windows-checklist.md)로 확인한다.
 
 ## 오류 해결과 저장 설정

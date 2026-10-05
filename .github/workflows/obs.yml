@@ -1,0 +1,43 @@
+name: OBS synthetic capture QA
+on:
+  push:
+    branches: [main, 'codex/**']
+    paths:
+      - 'src/**'
+      - 'harness/scripts/obs*'
+      - '.github/workflows/obs.yml'
+  workflow_dispatch:
+    inputs:
+      long_run_minutes:
+        description: 'Measured synthetic UI minutes after 10 minute warmup (0 or 60)'
+        default: '0'
+        required: true
+permissions:
+  contents: read
+jobs:
+  obs:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      OBS_QA_MINUTES: ${{ inputs.long_run_minutes || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: OBS capture and Chroma Key QA with no microphone
+        shell: pwsh
+        run: ./harness/scripts/obs-qa.ps1 -LongRunMinutes ([int]$env:OBS_QA_MINUTES)
+      - name: Capture QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OBS-QA-evidence
+          path: |
+            artifacts/obs-qa/
+            ${{ runner.temp }}/voxpet-qa-error.txt
+          if-no-files-found: warn
