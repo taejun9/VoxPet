@@ -1,7 +1,7 @@
 # 구현 로드맵
 
 plan-001은 저장소 기반이다. [plan-002-desktop-app](../exec_plans/completed/plan-002-desktop-app.md)에서 아래 예시 단계의 MVP 구현 및 자동 QA를 완료했다.
-단계명은 기존 예시이며 003~005 번호를 이미 사용한 계획으로 해석하지 않는다.
+아래 단계명은 기존 예시이다. 실제 plan-003은 방송창 수명 버그 수정 계획이며 예시 plan-003-audio-engine과 구분한다.
 작업 시작 때 순번 충돌을 확인하고 [계획 템플릿](../../harness/templates/exec-plan.md)을 복사한다.
 
 | 순서 / 계획 이름 예시 | 산출물 | 완료 근거 |
@@ -23,3 +23,6 @@ Pitch/STT/감정은 실제 필요와 음성 데이터 경계를 별도 설계한
 
 실제 Windows 마이크·권한·제거·DPI/장시간·OBS 매트릭스 통과가 실사용 목표의 남은 조건이다.
 코드 빌드 및 UI smoke를 통과해도 이 실기 조건을 통과했다고 간주하지 않는다.
+
+[plan-003-broadcast-lifetime](../exec_plans/completed/plan-003-broadcast-lifetime.md)에서 설정창 최소화 시 방송창이 숨겨지는 버그를 수정했다.
+Windows UI 회귀 검증을 추가했으며 실제 마이크/OBS/장시간 조건은 계속 미완료다.

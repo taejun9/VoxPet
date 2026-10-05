@@ -4,7 +4,8 @@
 
 2026-10-05, 구현 호스트 macOS arm64, SDK 10.0.401.
 Core 자동 테스트와 WPF 교차 컴파일은 실행했다. Windows GitHub Actions에서도 70개 테스트와 WPF UI smoke를 통과했다.
-검증 commit ad1d266, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37265531490).
+초기 검증 commit ad1d266, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37265531490).
+방송창 수명 회귀: ddbaee7, [CI 실행 결과](https://github.com/taejun9/VoxPet/actions/runs/37266740645).
 아래 실기 항목은 실제 Windows 마이크/OBS 접근이 필요하며 아직 통과로 기록하지 않는다.
 
 | 항목 | 현재 상태 | 확인 방법/합격 기준 |
@@ -13,6 +14,7 @@ Core 자동 테스트와 WPF 교차 컴파일은 실행했다. Windows GitHub Ac
 | WPF Release 교차 컴파일 | 통과, 경고/오류 0 | `dotnet build VoxPet.sln -c Release` |
 | win-x64 자체 포함 배포 | 통과 | 잠금 복원 후 publish, EXE/라이선스 확인 |
 | Windows WPF smoke | 통과 | UI 바인딩 오류 0, 이미지/별도 창/데모 반응/blink/입력 범위/reset/Stop/일반 창 종료 통과 |
+| 방송창 최소화/복구/재열기/종료 | Windows CI 통과 | native 창 가시성/최소화 상태와 shared model, 메인 종료 후 창 닫힘 확인 |
 | 실제 마이크 | 미실행 | 아래 실기 매트릭스 수행 |
 | OBS | 미실행 | 아래 OBS 매트릭스 수행 |
 
@@ -32,7 +34,8 @@ Core 자동 테스트와 WPF 교차 컴파일은 실행했다. Windows GitHub Ac
 | 장치 Stop→교체→Start | 새 장치만 캡처, 이전 세션 값 없음 | 미실행 |
 | 작은 소음/말/침묵 | gate 조정, attack/release 반응, 침묵 후 입 닫힘 | 미실행 |
 | 100/150/200% DPI, 최소 창 크기 | 잘림 없이 조정/Start/Stop 접근, PNG 정렬 | 미실행 |
-| 창 최소화와 UI 조작 | 입력 callback 대기열 증가/화면 정지 없음 | 미실행 |
+| 설정창 최소화 중 방송창/복구/재열기 | 방송창 가시성 유지, 열기 명령 복구, 재열기와 메인 종료 정리 | Windows CI 통과 |
+| 실제 입력 중 창 최소화와 UI 조작 | 입력 callback 대기열 증가/화면 정지 없음 | 미실행 |
 | 설정 저장/손상/읽기 전용 | 정상 보존/기본값 복구/앱 종료 가능 | 미실행 |
 | 60분 캡처 | 메모리/핸들 누적 증가 없음, 마이크 오류 없이 응답 | 미실행 |
 

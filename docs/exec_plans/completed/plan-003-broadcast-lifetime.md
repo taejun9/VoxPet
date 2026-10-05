@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -37,8 +37,8 @@ README 보존. 오디오/개인정보 계약 유지. 미검증 실기 상태를 
 
 - [x] Win32 가시성/최소화 확인으로 기존 방송창 문제 재현
 - [x] 독립 방송창 및 명시적 종료/재열기 구현 검토와 수정
-- [ ] Windows 회귀/기존 70개 테스트/배포 검증
-- [ ] 자체 리뷰/문서 동기화/완료 기록과 Git 정리
+- [x] Windows 회귀/기존 70개 테스트/배포 검증
+- [x] 자체 리뷰/문서 동기화/완료 기록
 
 ## QA Plan
 
@@ -58,7 +58,6 @@ QA 후 단일 에이전트 자체 리뷰. Owner 제거 시 자동 close 의존�
 |---|---|---|
 | 2026-10-05 | 다음 MVP 버그 수정은 plan-003에 둠 | plan-002는 구현/자동 QA 범위 완료이며 실제 남은 문제를 새로운 계획으로 추적 |
 | 2026-10-05 | 작업 브랜치 checkpoint push로 Windows 재현/수정 검증 | macOS 로컬에서 WPF 실행 불가, main 통합은 Windows QA/리뷰 이후 |
-
 | 2026-10-05 | 이미 최소화된 방송창에서 열기 명령은 Normal 복구 후 Activate | 열기 명령으로 사용자가 기존 방송창을 다시 볼 수 있도록 함; 실제 native 가시성 검사 추가 |
 
 ## Progress Log
@@ -71,4 +70,12 @@ QA 후 단일 에이전트 자체 리뷰. Owner 제거 시 자동 close 의존�
 
 ## Completion Notes
 
-진행 중. 실제 Windows 마이크/OBS/장시간 환경에 대한 사용자 답변은 아직 없으며 전체 목표는 미완료다.
+방송창 수명 수정 범위를 완료했다. 전체 실사용 목표의 실제 마이크/OBS/장시간 검증은 미완료다.
+
+- 수정 전 380aed4: [Windows CI](https://github.com/taejun9/VoxPet/actions/runs/37266351482)에서 build/publish/70 Core tests 통과, `broadcast_survives_main_minimize` 한 검사만 실패. 결과 JSON을 직접 확인했다.
+- 수정 후 ddbaee7: [Windows CI](https://github.com/taejun9/VoxPet/actions/runs/37266740645)에서 locked restore/build/70 tests/publish/WPF smoke 모두 통과. 설정창 native 최소화, 방송창 가시성 유지, 최소화된 방송창 복구, 닫기/재열기/모델 공유/메인 종료 정리 확인. JSON failures=0.
+- macOS: Release 교차 빌드 경고/오류 0, Core 70/70 통과, verify_base.py/verify_app.py/diff 공백 검사 통과.
+- QA 이후 자체 리뷰: Owner 제거 후 자동 종료에 의존하지 않으며 ShutdownAsync에서 오디오 정리 뒤 방송창을 닫는다. 방송창만 닫아도 모델/캡처를 중복 생성하지 않는다. native 검사 로그는 음성/장치 ID를 포함하지 않는다.
+- 사용자 안내/설계/공식 근거/실기 기록 동기화. README 보존.
+- main ff-only 병합/push 후 local branch/worktree를 정리하고 Windows 검증 배포본을 별도 plan003 ZIP으로 보존한다. Git 실패 시 이후 단계를 중단한다.
+- 실제 Windows 마이크/OBS 환경 질의는 아직 미응답이며 전체 목표를 완료로 표시하지 않는다.
