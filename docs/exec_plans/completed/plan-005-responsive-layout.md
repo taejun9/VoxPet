@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -37,10 +37,10 @@ QA → 자체 리뷰 → completed 이동/리뷰 미러 → main ff-only 병합/
 
 ## Implementation Plan
 
-- [ ] Windows에서 기존 최소 크기 문제를 재현하는 검사
-- [ ] 좁은 창의 단일 열/스크롤/버튼 줄바꿈과 넓은 창의 기존 두 열 배치
-- [ ] 실제 WPF 논리 크기/컨트롤 가시성/PNG 배치와 render 증거
-- [ ] plan004 통합 이후 QA/자체 리뷰/문서/완료 기록/Git 수명
+- [x] Windows에서 기존 최소 크기 문제를 재현하는 검사
+- [x] 좁은 창의 단일 열/스크롤/버튼 줄바꿈과 넓은 창의 기존 두 열 배치
+- [x] 실제 WPF 논리 크기/컨트롤 가시성/PNG 배치와 render 증거
+- [x] plan004 통합 이후 QA/자체 리뷰/문서/완료 기록. 아래 Git 수명 절차를 이어서 수행
 
 ## QA Plan
 
@@ -77,7 +77,14 @@ QA 이후 단일 에이전트 자체 리뷰. scroll clipping/레이아웃 전환
 | 2026-10-05 | 검증 | 3dcded2 [37272421104](https://github.com/taejun9/VoxPet/actions/runs/37272421104): Core70/Release/publish/smoke와 실제 창4크기×15컨트롤/작은 창wheel/초기StartStop, 가상작업영역3case의 실제창bounds/종료 통과. JSON직접확인, 최소창PNG시각검사. 물리DPI시험으로 해석하지 않음 |
 | 2026-10-05 | 조율 | plan004 장시간 작업은 동일 run37269646209로 진행 중. 완료 결과를 main으로 통합한 뒤 이 브랜치에 main을 merge하고 전체 QA를 재검증한다. 이미 push한 checkpoint 이력은 rebase/force push로 덮어쓰지 않음 |
 | 2026-10-05 | 검증 | ff1a6d5: plan004 통합 후 Windows37277127843 success. OBS37277127758은 첫 GetVersion207(NotReady)로 캡처 전에 실패. bounded frontend 준비 대기를 보완하여 실제 캡처 재검증 |
+| 2026-10-05 | 검증 | 87e14a6: Windows37277539708/OBS37277539743 success. UI JSON failures0, 4크기×15컨트롤/3startup bounds/작은창wheel 통과. green/transparent WGC/nativealpha 통과. root artifacts/qa/plan005/integrated에 증거 보존 |
+| 2026-10-05 | 심사 | QA이후 자체리뷰: 단일scroll로 wheel차단 제거, 작은창StartStop가시성/긴상태scroll/작업영역clamp, 기존nativegrip·broadcast수명과OBS유지. 실제DPI/마이크 미검증 구분 유지 |
 
 ## Completion Notes
 
-진행 중. 실제 마이크/사용자 DPI 환경의 전체 실사용 목표는 여전히 미완료다.
+이 계획의 작은 화면 대응과 누적 UI/OBS 검증은 완료했다. 실제 마이크/사용자 DPI 환경의 전체 실사용 목표는 여전히 미완료다.
+
+- 고정 minimum 문제를 실제 Windows에서 세 요청 크기의 실패로 재현하고 수정했다. 추가 wheel 검사는 세 작은 창에서 실패를 재현한 뒤 단일 scroll 영역으로 수정했다.
+- 87e14a6의 누적 Core70/Release/publish/WPF smoke/native resize/4크기×15컨트롤/작은창wheel/초기StartStop/3가상작업영역 실제bounds/green·transparent WGC 통과.
+- 100/150/200% PNG는 raster 검증이며 실제 모니터 DPI 전환을 입증하지 않는다. 기존60.17분 합성 자원 증거는 plan004/d35f707 범위로 유지한다.
+- 문서/자산/diff 검증 후 완료 이동/리뷰 미러/main ff-only·push/로컬branch·worktree 정리를 이어간다. plan006의 Stop 오류 수정은 다음 통합 단계다.

@@ -61,7 +61,8 @@ OS/OBS version, GPU/driver, 캡처 방식(자동/Windows Graphics Capture/BitBlt
 ## 작은 창 자동 검사 범위
 
 plan005의 LayoutQa는 실제 WPF 창을 1000×730, 960×540, 640×480, 480×320 논리 크기로 조절한다.
-3dcded2, [Windows CI](https://github.com/taejun9/VoxPet/actions/runs/37272421104)에서 Core70/기존 smoke와 함께 통과했다. plan004 통합 후 최종 회귀 검증은 계획에서 이어간다.
+3dcded2, [Windows CI](https://github.com/taejun9/VoxPet/actions/runs/37272421104)에서 Core70/기존 smoke와 함께 통과했다.
+plan004 통합 후87e14a6의 [Windows CI](https://github.com/taejun9/VoxPet/actions/runs/37277539708) 및 [OBS CI](https://github.com/taejun9/VoxPet/actions/runs/37277539743)에서도 native resize/배치/green·transparent 캡처가 통과했다.
 마이크 선택/Start/Stop/데모/6개 슬라이더/기본값/방송창 열기/방송 옵션 등 15개 컨트롤이 scroll viewport 안에 들어오는지 확인한다.
 작은 창의 휠 routed event, 초기 Start/Stop 가시성, 가상 작업 영역을 주입한 실제 창의 초기 bounds/종료도 검사한다.
 100/150/200% PNG는 raster 출력 검사다. 실제 모니터 배율 변경/다중 모니터 이동/사용자 GPU 결과로 기록하지 않는다.
