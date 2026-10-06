@@ -9,7 +9,7 @@ using System.Windows.Input;
 
 namespace VoxPet.App.Views;
 
-/// <summary>Windows smoke fixture; exercises real layout/scrolling without a microphone.</summary>
+/// <summary>마이크 없이 실제 Windows WPF 배치와 스크롤을 시험하는 smoke fixture. 물리 DPI 변경 시험과 구분한다.</summary>
 internal static class LayoutQa
 {
     private static IEnumerable<FrameworkElement> Descendants(DependencyObject parent)
@@ -22,6 +22,9 @@ internal static class LayoutQa
         }
     }
 
+    /// <summary>
+    /// 자신의 IsVisible뿐 아니라 조상 viewport에 의해 잘리는지 확인한다. 소수점 배치 오차는 0.5 DIP까지 허용한다.
+    /// </summary>
     private static bool FullyVisible(FrameworkElement element, FrameworkElement root)
     {
         if (!element.IsVisible || element.ActualWidth <= 0 || element.ActualHeight <= 0) return false;
@@ -41,6 +44,7 @@ internal static class LayoutQa
     {
         var cases = new List<object>();
         var startupCases = new List<object>();
+        // 가상 작업 영역을 주입해 최초 창 위치/크기가 화면 안에 들어가는지 확인한다.
         foreach (var area in new[] { new Rect(10, 20, 960, 540), new Rect(10, 20, 640, 480), new Rect(10, 20, 480, 320) })
         {
             var startup = new MainWindow(smoke: true, initialWorkArea: area); startup.Show(); await startup.Ready;
@@ -62,6 +66,7 @@ internal static class LayoutQa
             var invisible = new List<string>();
             foreach (var control in controls)
             {
+                // 스크롤로 접근할 수 있는지 시험한다. 최초 화면의 Start/Stop 가시성은 아래에서 별도로 검사한다.
                 control.BringIntoView(); await Task.Delay(50); main.UpdateLayout();
                 string label = control is ContentControl content ? content.Content?.ToString() ?? control.GetType().Name : System.Windows.Automation.AutomationProperties.GetName(control);
                 bool visible = FullyVisible(control, root);
@@ -85,6 +90,7 @@ internal static class LayoutQa
                 check(wheelScroll.Value, $"layout_wheel_scroll_{width}x{height}");
                 main.ContentViewport.ScrollToTop(); await Task.Delay(50); main.UpdateLayout();
             }
+            // 래스터 렌더 배율만 바꾼 증거 PNG다. 실제 OS DPI나 다중 모니터 이동 결과로 기록하지 않는다.
             foreach (double scale in new[] { 1.0, 1.5, 2.0 })
             {
                 var bitmap = new RenderTargetBitmap((int)Math.Ceiling(main.ActualWidth * scale), (int)Math.Ceiling(main.ActualHeight * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);

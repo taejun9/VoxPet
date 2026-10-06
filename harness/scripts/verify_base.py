@@ -10,6 +10,7 @@ import re
 from urllib.parse import unquote, urlparse
 
 
+# 문서 계약은 명시적 목록으로 고정한다. 실행 계획/리뷰 내용의 진실성은 자동 판정하지 않는다.
 REQUIRED = (
     "AGENTS.md", "README.md",
     "docs/architecture/harness.md", "docs/architecture/application.md",
@@ -33,6 +34,7 @@ PLAN_SECTIONS = (
 REVIEW_SECTIONS = ("Summary", "QA", "Findings", "Residual Risk", "Follow-Ups")
 
 
+# 파일 존재·링크·역할 지도·계획 수명·출처 형식을 검사하고 모든 실패를 한 번에 모은다.
 def verify(root: Path) -> tuple[list[str], int]:
     root = root.resolve()
     errors: list[str] = []
@@ -91,6 +93,7 @@ def verify(root: Path) -> tuple[list[str], int]:
     ids: set[str] = set()
     completed: set[str] = set()
     plan_count = 0
+    # 계획 번호는 상태 폴더를 넘어 유일해야 한다. 완료 계획에는 완료 리뷰 미러가 있어야 한다.
     for state in ("active", "completed"):
         for path in sorted((root / f"docs/exec_plans/{state}").glob("*.md")):
             plan_count += 1
@@ -130,6 +133,7 @@ def verify(root: Path) -> tuple[list[str], int]:
             if f"## {section}\n" not in content:
                 errors.append(f"리뷰 섹션 없음: {path.name}: {section}")
 
+    # 외부 URL에 접속하지 않고 HTTPS 및 확인일 형식만 검사한다. 근거 최신성은 리뷰 책임이다.
     sources = texts.get(root / "docs/references/official-sources.md", "")
     rows = [line for line in sources.splitlines() if line.startswith("| ")]
     if len(rows) < 2:
@@ -149,6 +153,7 @@ def verify(root: Path) -> tuple[list[str], int]:
     return errors, len(paths)
 
 
+# --root로 별도 checkout도 검사할 수 있다. 종료 코드 0/1을 QA 스크립트에 전달한다.
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])

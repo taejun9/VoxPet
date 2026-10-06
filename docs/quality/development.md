@@ -1,7 +1,7 @@
 # 개발 환경과 현재 실행 명령
 
 현재 Core/App/Tests 솔루션과 WASAPI/WPF MVP 구현이 있다. 실제 마이크·OBS 실기 상태는 [검증 기록](windows-checklist.md)을 따른다.
-기존 README는 보존했으며 개발 진입점은 [AGENTS.md](../../AGENTS.md)이다.
+프로젝트 개요와 구조는 [README](../../README.md), 작업 규칙은 [AGENTS.md](../../AGENTS.md), 사용자 조작은 [사용 설명서](../user-guide.md)를 따른다.
 
 ## 문서와 자산 검증
 

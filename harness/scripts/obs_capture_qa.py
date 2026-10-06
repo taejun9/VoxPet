@@ -21,6 +21,7 @@ class ObsRequestError(RuntimeError):
         super().__init__(f'OBS {method} failed, code {code}')
 
 
+# obs-websocket v5의 로컬 RPC 래퍼. 일회용 runner의 암호를 인증에만 사용하며 저장하지 않는다.
 class ObsRpc:
     def __init__(self, password: str):
         self.socket = websocket.create_connection('ws://127.0.0.1:4455', timeout=8, http_no_proxy=['127.0.0.1'])
@@ -35,6 +36,7 @@ class ObsRpc:
             raise RuntimeError('OBS identification failed')
         self.sequence = 0
 
+    # 요청 ID로 해당 응답을 찾아 다른 메시지와 혼동하지 않고 OBS 오류 코드를 호출자에게 전달한다.
     def call(self, method: str, **params):
         self.sequence += 1
         request_id = str(self.sequence)
@@ -55,6 +57,8 @@ class ObsRpc:
         self.socket.close()
 
 
+# 기본 보라색 고양이의 유지·초록 배경 제거·alpha 비율과 프레임 hash를 측정한다.
+# 개인 캐릭터의 보편적인 이미지 품질 판정으로 사용하지 않는다.
 def classify(image: Image.Image) -> dict:
     pixels = list(image.getdata())
     n = len(pixels)
@@ -70,7 +74,7 @@ def classify(image: Image.Image) -> dict:
 def select_window(rpc: ObsRpc, name: str):
     for _ in range(20):
         items = rpc.call('GetInputPropertiesListPropertyItems', inputName=name, propertyName='window')['propertyItems']
-        # Never collect or write titles of unrelated applications.
+        # 다른 앱의 제목은 수집·기록하지 않고 VoxPet Character에 해당하는 항목만 사용한다.
         matches = [item for item in items if 'VoxPet Character' in str(item.get('itemName', '')) and not item.get('itemEnabled') is False]
         if matches:
             return matches[0]['itemValue']
@@ -78,6 +82,7 @@ def select_window(rpc: ObsRpc, name: str):
     raise RuntimeError('VoxPet Character is not available to OBS Window Capture')
 
 
+# OBS 소스 생성 직후의 빈 프레임을 재시도하고 실제 고양이가 있는 프레임만 증거로 채택한다.
 def get_valid_capture(rpc: ObsRpc, name: str, green: bool = True):
     for _ in range(20):
         try:
@@ -95,6 +100,7 @@ def resource_sample(process: psutil.Process, started: float):
     return {'seconds': round(time.monotonic() - started, 2), 'rss': process.memory_info().rss, 'handles': process.num_handles()}
 
 
+# 시간을 두고 픽셀 hash를 비교해 이미지가 표시되지만 애니메이션이 정지한 실패도 확인한다.
 def distinct_frames(rpc: ObsRpc, name: str, first_hash: str) -> int:
     hashes = {first_hash}
     for _ in range(6):
@@ -126,7 +132,7 @@ def main() -> int:
                 time.sleep(1)
         if rpc is None:
             raise RuntimeError('OBS WebSocket unavailable; inspect OBS renderer/startup state')
-        # Authentication can finish before the OBS frontend accepts requests.
+        # WebSocket 인증 후에도 OBS UI 초기화가 끝나지 않을 수 있어 초기화 중 코드 207만 재시도한다.
         deadline = time.monotonic() + 60
         while True:
             try:
@@ -144,7 +150,7 @@ def main() -> int:
         if scene not in [item['sceneName'] for item in rpc.call('GetSceneList')['scenes']]:
             rpc.call('CreateScene', sceneName=scene)
         rpc.call('SetCurrentProgramScene', sceneName=scene)
-        # OBS may retain a removed source name until its deferred destruction finishes.
+        # 이전 소스 해제가 지연될 수 있으므로 배경별 이름을 사용하고 기존 동일 이름은 먼저 제거한다.
         name = f'VoxPet-QA-{args.background.title()}-Window'
         if any(item['inputName'] == name for item in rpc.call('GetInputList')['inputs']):
             rpc.call('RemoveInput', inputName=name)
@@ -157,6 +163,7 @@ def main() -> int:
         key_kind = next((kind for kind in kinds if kind.startswith('chroma_key_filter')), None)
         if key_kind is None:
             raise RuntimeError('Chroma Key filter unavailable')
+        # green은 BitBlt와 WGC를 비교하며 transparent는 WGC를 검사한다. 합격 결과와 alpha 지표는 별도로 기록한다.
         methods = ((1, 'BitBlt'), (2, 'WGC')) if args.background == 'green' else ((2, 'WGC'),)
         for method_id, label in methods:
             result = {'method': label}
@@ -206,6 +213,7 @@ def main() -> int:
             samples = []
             report['long_run'] = {'state': 'running', 'warmup_minutes': 10, 'requested_minutes': args.long_run_minutes, 'capture_method': passed_method, 'samples': samples, 'motion_checks': 0}
             baseline = None
+            # 10분 warmup 이후부터 자원 증가를 측정하고 매분 캡처 변화도 확인한다. 실제 마이크 장시간 시험은 아니다.
             while True:
                 samples.append(resource_sample(process, started))
                 if baseline is None and samples[-1]['seconds'] >= 600:
@@ -235,6 +243,7 @@ def main() -> int:
         report['errors'].append(str(error))
         print(f'OBS QA failed: {error}', flush=True)
         return 1
+    # 실패해도 결과 JSON을 남기고 RPC 연결을 닫는다. 녹화/송출을 시작하는 코드는 없다.
     finally:
         (args.output / 'result.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
         if rpc is not None:

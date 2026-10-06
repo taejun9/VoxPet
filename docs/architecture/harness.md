@@ -30,4 +30,4 @@ force push, `branch -D`, `worktree remove --force`, 사용자 변경 삭제로 �
 - [리뷰](../../harness/templates/review.md)
 
 검증 명령과 구현 후 예정 명령은 [개발 환경](../quality/development.md), 합격 기준은 [품질 규칙](../quality/rules.md)에 둔다.
-README는 사용자 기존 내용을 보존한다. 다음 명시적인 문서 수정 요청 때 앱의 실제 명령과 안내를 동기화한다.
+README는 사용자 기존 내용을 보존하며, 명시적인 문서 수정 요청에 따라 갱신할 때 앱의 실제 명령과 사용 설명서를 함께 동기화한다.

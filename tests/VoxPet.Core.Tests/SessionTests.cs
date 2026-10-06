@@ -5,8 +5,10 @@ using Xunit;
 
 namespace VoxPet.Core.Tests;
 
+/// <summary>가짜 입력으로 세션의 동시 요청·콜백 격리·오류 복구·해제 순서를 재현한다.</summary>
 public sealed class SessionTests
 {
+    // 실제 장치 대신 시작 지연·Stop 실패·늦은 콜백을 주입하고 해제 횟수를 기록한다.
     private sealed class FakeInput : IAudioInput
     {
         public event Action<AudioLevel>? LevelAvailable;
@@ -34,6 +36,7 @@ public sealed class SessionTests
         public void Fail() => Ended?.Invoke(new IOException("Fake device unplugged"));
     }
     [Fact]
+    // 해제 전 저장한 이전 콜백을 새 세션 시작 후 일부러 호출해 snapshot 격리를 검증한다.
     public async Task StartStopRepeatAndOldCallbacksAreIsolated()
     {
         await using var session = new AudioSession(); var first = new FakeInput();
@@ -50,6 +53,7 @@ public sealed class SessionTests
         await session.StopAsync(); Assert.Equal(1, second.Disposals);
     }
     [Fact]
+    // 실제 Sleep 대신 미래 Stopwatch 값을 전달해 오래된 입력의 무음 전환을 결정적으로 검사한다.
     public async Task StaleInputReleasesAfter250Milliseconds()
     {
         await using var session = new AudioSession(); var input = new FakeInput(); await session.StartAsync(() => input);
@@ -77,6 +81,7 @@ public sealed class SessionTests
         await session.StopAsync(); Assert.Equal(CaptureState.Faulted, session.State); Assert.NotNull(session.Error); Assert.Equal(1, input.Disposals);
     }
     [Fact]
+    // StartBarrier가 시작 완료를 지연시켜 Start와 Stop의 경쟁을 재현한다.
     public async Task ConcurrentStopWaitsForStartingSession()
     {
         await using var session = new AudioSession();
@@ -95,6 +100,7 @@ public sealed class SessionTests
         Assert.Equal(1, input.Disposals); Assert.Equal(AudioLevel.Silence, session.ReadLevel(Stopwatch.GetTimestamp()));
     }
     [Fact]
+    // 종료 실패 시 Dispose하지 않고 자원을 보존한 뒤 두 번째 Stop에서 해제해야 한다.
     public async Task StopFailureRetainsInputForSafeRetry()
     {
         await using var session = new AudioSession(); var input = new FakeInput { FailStop = true };
@@ -103,6 +109,7 @@ public sealed class SessionTests
         input.FailStop = false; await session.StopAsync(); Assert.Equal(1, input.Disposals); Assert.False(session.HasResources);
     }
     [Fact]
+    // Stop 대기 중 Ended로 도착하는 오류가 정리 후에도 사용자 상태에 남는 회귀 검사다.
     public async Task NativeEndErrorDuringStopIsReportedAfterCleanupAndAllowsRestart()
     {
         await using var session = new AudioSession();

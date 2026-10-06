@@ -7,6 +7,9 @@ using VoxPet.Core.Models;
 
 namespace VoxPet.App.Views;
 
+/// <summary>
+/// 합성 PNG로 시트 규격·정렬·실패 복구·프리셋·음소거를 검증하는 Windows smoke fixture.
+/// </summary>
 internal static class CharacterQa
 {
     private static string QaPath(string name) => Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), name);
@@ -15,6 +18,7 @@ internal static class CharacterQa
         main.Model.StopCommand.Execute(null); await Task.Delay(100);
         main.Model.Character.Update(new(0, 0, 0, 0, 1, MouthState.Closed));
         string sheetPath = QaPath("voxpet-character-fixture.png");
+        // 셀별 색상과 위치를 다르게 만들어 행/열 매핑과 자동 중앙·바닥 정렬 오류를 구별한다.
         var pixels = new byte[384 * 256 * 4];
         for (int row = 0; row < 2; row++)
             for (int col = 0; col < 3; col++)
@@ -46,6 +50,7 @@ internal static class CharacterQa
                 check(sample[0] == 40 + (int)mouth * 70 && sample[1] == (eyes == 1 ? 70 : 180), "character_sheet_row_column_mapping");
             }
         check(images.Count == 6 && images.All(image => image.IsFrozen && image.Width == 128), "character_six_frozen_states");
+        // 잘못된 입력을 순차 적용해 기존 시트 보존, 디코딩 전 제한, 빈/불투명 셀 거부를 확인한다.
         string invalid = QaPath("voxpet-character-invalid.png"); File.WriteAllText(invalid, "invalid PNG");
         check(!await main.Model.ImportCharacterAsync(invalid) && images.Contains(main.Model.Character.Sprite), "character_failed_import_preserves_previous");
         check(!await main.Model.ImportCharacterAsync(invalid + ".missing"), "character_missing_file_recovers");
@@ -75,10 +80,11 @@ internal static class CharacterQa
         main.Model.ConversationCommand.Execute(null);
         check(main.Model.NoiseGate == -50 && main.Model.Sensitivity == 1, "preset_conversation");
         main.Model.DemoCommand.Execute(null);
-        // Import remains safe during live rendering and does not overwrite capture/demo status.
+        // 데모 갱신 중에도 로딩 실패가 마이크/데모 상태 안내를 덮어쓰지 않아야 한다.
         micStatus = main.Model.Status;
         check(!await main.Model.ImportCharacterAsync(invalid) && main.Model.Status == micStatus, "character_import_during_demo_preserves_session_status");
         main.Model.CharacterMuted = true;
+        // 음소거는 입 반응만 막아야 한다. RAW와 blink가 계속되는지 합성 데모로 확인한다.
         bool rawContinues = false, blinkContinues = false;
         var end = DateTime.UtcNow.AddSeconds(6.5);
         while (DateTime.UtcNow < end)
@@ -94,7 +100,7 @@ internal static class CharacterQa
         check(reacted, "unmute_resumes_reaction");
         main.Model.StopCommand.Execute(null); await Task.Delay(100);
         check(main.Model.VoiceLevel == 0 && main.Model.RawLevel == 0, "stop_after_unmute_resets");
-        // Optional PRIVATE test sheet injected through a manual dispatch; never part of the public default assets.
+        // 수동 QA에서 주입한 개인 시트만 선택적으로 검사한다. 기본 공개 자산에 포함하지 않는다.
         string? personal = Environment.GetEnvironmentVariable("VOXPET_QA_SHEET");
         if (!string.IsNullOrWhiteSpace(personal))
         {

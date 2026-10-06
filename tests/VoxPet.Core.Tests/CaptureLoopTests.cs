@@ -3,6 +3,7 @@ using Xunit;
 
 namespace VoxPet.Core.Tests;
 
+/// <summary>native 캡처/Stop의 실패 조합에서 최초 원인 보존과 완료 호출 순서를 확인한다.</summary>
 public sealed class CaptureLoopTests
 {
     [Fact]

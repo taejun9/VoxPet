@@ -4,6 +4,7 @@ using Xunit;
 
 namespace VoxPet.Core.Tests;
 
+/// <summary>프리셋의 실제 반응 차이와 PNG 디코딩 전 셀 크기 제한을 검증한다.</summary>
 public sealed class UsabilityTests
 {
     [Fact]
@@ -15,11 +16,12 @@ public sealed class UsabilityTests
         Assert.True(new AudioLevelProcessor().Update(-55, 1, quiet).VoiceLevel > .2);
     }
     [Fact]
+    // 목표 레벨 조건을 같게 맞추고 Attack/Release 시정수 차이만 비교한다.
     public void SnappyPresetOpensAndClosesFaster()
     {
         var quick = ReactionPresets.Create(ReactionPreset.Snappy); quick.Validate();
         var standard = ReactionPresets.Create(ReactionPreset.Conversation);
-        // Compare the time constants with identical target levels.
+        // 동일한 목표 레벨에서 시정수만 비교한다.
         standard = standard with { NoiseGate = quick.NoiseGate, NormalizeMin = quick.NormalizeMin };
         var a = new AudioLevelProcessor(); var b = new AudioLevelProcessor();
         Assert.True(a.Update(-10, .02, quick).VoiceLevel > b.Update(-10, .02, standard).VoiceLevel);

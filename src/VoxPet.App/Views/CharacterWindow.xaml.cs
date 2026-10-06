@@ -3,6 +3,9 @@ using System.Windows.Input;
 
 namespace VoxPet.App.Views;
 
+/// <summary>
+/// 공유 ViewModel을 표시하는 방송창. 입력 장치를 직접 열지 않으며 닫아도 마이크 세션은 계속된다.
+/// </summary>
 public partial class CharacterWindow : Window
 {
     public CharacterWindow()
@@ -10,6 +13,7 @@ public partial class CharacterWindow : Window
         InitializeComponent();
         KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
     }
+    // 테두리 없는 창이므로 캐릭터/배경의 좌클릭 드래그를 WPF 창 이동으로 연결한다.
     private void DragCharacter(object sender, MouseButtonEventArgs e)
     {
         if (e.LeftButton == MouseButtonState.Pressed) DragMove();

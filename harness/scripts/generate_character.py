@@ -7,8 +7,10 @@ from PIL import Image, ImageDraw
 ROOT = Path(__file__).resolve().parents[2]
 TARGET = ROOT / "src/VoxPet.App/Assets/Characters"
 TARGET.mkdir(parents=True, exist_ok=True)
+# 3배 해상도로 도형을 그린 뒤 축소해 512px PNG의 경계를 부드럽게 만든다.
 SCALE = 3
 
+# 몸/발 anchor는 모든 상태에서 같고 눈과 입 도형만 달라진다. 외부 이미지를 사용하지 않는다.
 def sprite(mouth, blink):
     im = Image.new("RGBA", (512 * SCALE, 512 * SCALE))
     d = ImageDraw.Draw(im)
@@ -17,7 +19,7 @@ def sprite(mouth, blink):
     def polygon(points, fill): d.polygon([(int(x*SCALE), int(y*SCALE)) for x,y in points], fill)
     def line(points, fill, width=4): d.line([(int(x*SCALE), int(y*SCALE)) for x,y in points], fill, width*SCALE)
     ink, fur, light = "#28364C", "#BFA7F1", "#F0E7FA"
-    # Tail, feet, belly, ears and head share fixed anchors across all states.
+    # 꼬리·발·몸·귀·머리 좌표를 모든 상태에서 공유해 PNG 전환 시 캐릭터가 튀지 않게 한다.
     d.arc(coords((302,280,450,443)), 230, 520, fill=ink, width=32*SCALE)
     d.arc(coords((302,280,450,443)), 230, 520, fill=fur, width=23*SCALE)
     ellipse((143,382,243,465), fur, ink); ellipse((271,382,371,465), fur, ink)
@@ -47,6 +49,7 @@ def sprite(mouth, blink):
     ellipse((181,311,219,345), fur, ink); ellipse((293,311,331,345), fur, ink)
     return im.resize((512,512), Image.Resampling.LANCZOS)
 
+# 개발용 재생성 명령은 기존 PNG 6장과 manifest를 덮어쓴다. 일반 빌드/앱 실행에는 호출하지 않는다.
 for mouth in ("closed", "half", "open"):
     for blink in (False, True):
         sprite(mouth, blink).save(TARGET / f"{mouth}{'-blink' if blink else ''}.png")

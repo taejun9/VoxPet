@@ -1,13 +1,16 @@
+# Windows 전체 QA 진입점. Publish는 자체 포함 배포, Smoke는 실제 WPF의 마이크 없는 합성 시험을 추가한다.
 param([switch]$Publish, [switch]$Smoke)
 $ErrorActionPreference = 'Stop'
 Push-Location (Join-Path $PSScriptRoot '../..')
 try {
+    # 외부 명령은 PowerShell 예외만으로 실패가 감지되지 않아 단계마다 LASTEXITCODE를 명시적으로 검사한다.
     python -X utf8 harness/scripts/verify_base.py
     if ($LASTEXITCODE -ne 0) { throw 'Document validation failed' }
     python -X utf8 harness/scripts/verify_app.py
     if ($LASTEXITCODE -ne 0) { throw 'Asset/privacy contract failed' }
     git diff --check
     if ($LASTEXITCODE -ne 0) { throw 'Whitespace validation failed' }
+    # 잠금 파일 그대로 복원하고 서식/analyzer → 빌드 → 기존 Core 회귀 순서로 수행한다.
     dotnet restore VoxPet.sln --locked-mode
     if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
     dotnet format VoxPet.sln --verify-no-changes --no-restore
@@ -20,6 +23,7 @@ try {
         dotnet publish src/VoxPet.App/VoxPet.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:RestoreLockedMode=true -o artifacts/win-x64
         if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
     }
+    # 자동 시험 프로세스에만 60초 상한을 적용한다. 실제 사용자의 앱/마이크 시험을 종료하는 명령이 아니다.
     if ($Smoke) {
         $exe = if ($Publish) { 'artifacts/win-x64/VoxPet.exe' } else { 'src/VoxPet.App/bin/Release/net10.0-windows/win-x64/VoxPet.exe' }
         $process = Start-Process $exe -ArgumentList '--smoke-test' -PassThru

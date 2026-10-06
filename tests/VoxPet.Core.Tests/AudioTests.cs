@@ -5,14 +5,17 @@ using Xunit;
 
 namespace VoxPet.Core.Tests;
 
+/// <summary>실제 마이크 없이 PCM 디코딩, 수학적 기준값, Gate 경계와 시간 독립성을 검증한다.</summary>
 public sealed class AudioTests
 {
+    // 합성 float를 Windows PCM과 같은 little-endian 바이트 배열로 만들어 디코딩 경로까지 시험한다.
     private static byte[] FloatBuffer(params float[] samples)
     {
         byte[] result = new byte[samples.Length * 4];
         for (int i = 0; i < samples.Length; i++) BinaryPrimitives.WriteInt32LittleEndian(result.AsSpan(i * 4), BitConverter.SingleToInt32Bits(samples[i]));
         return result;
     }
+    // 합성 float를 Windows PCM과 같은 little-endian 바이트 배열로 만들어 디코딩 경로까지 시험한다.
     private static AudioLevel Float(params float[] samples) => AudioAnalyzer.Analyze(FloatBuffer(samples), new(SampleEncoding.Float, 32, 1));
     [Fact]
     public void EmptyAndSilenceAreFinite()
@@ -20,18 +23,21 @@ public sealed class AudioTests
         Assert.Equal(AudioLevel.Silence, Float()); Assert.Equal(AudioLevel.Silence, Float(0, 0, 0));
     }
     [Fact]
+    // full scale은 0 dBFS이고 2배 입력은 약 +6.0206 dBFS다. 진단값을 1로 잘라서는 안 된다.
     public void FullScaleAndClipping()
     {
         Assert.Equal(new AudioLevel(1, 1, 0), Float(1, -1));
         var clipped = Float(2, -2); Assert.Equal(2, clipped.Peak); Assert.Equal(6.0206, clipped.Dbfs, 4);
     }
     [Fact]
+    // 1kHz full-scale 사인파의 RMS는 1/√2, dBFS는 약 -3.0103이다.
     public void SineHasExpectedRms()
     {
         var sine = Enumerable.Range(0, 48000).Select(i => (float)Math.Sin(i * Math.PI * 2 * 1000 / 48000)).ToArray();
         var level = Float(sine); Assert.Equal(Math.Sqrt(.5), level.Rms, 6); Assert.Equal(-3.0103, level.Dbfs, 4);
     }
     [Fact]
+    // 좌우 채널 값의 단순 평균은 0이 되지만 채널별 제곱 에너지는 유지되어야 한다.
     public void OppositePhaseChannelsDoNotCancel()
     {
         var level = AudioAnalyzer.Analyze(FloatBuffer(1, -1, 1, -1), new(SampleEncoding.Float, 32, 2));
@@ -45,7 +51,7 @@ public sealed class AudioTests
     public void SignedPcmDecodesNegativeFullScale(int bits)
     {
         byte[] bytes = new byte[bits / 8];
-        if (bits != 8) bytes[^1] = 128; // unsigned 8-bit zero is -1
+        if (bits != 8) bytes[^1] = 128; // unsigned 8비트의 0은 정규화하면 -1이다.
         Assert.Equal(1, AudioAnalyzer.Analyze(bytes, new(SampleEncoding.Pcm, bits, 1)).Rms);
     }
     [Theory]
@@ -63,6 +69,7 @@ public sealed class AudioTests
         Assert.Equal(expected, AudioAnalyzer.Analyze(bytes, new(SampleEncoding.Pcm, bits, 1)).Rms, 9);
     }
     [Fact]
+    // 24비트 0xC00000은 -0.5다. 부호 확장 없이 양수로 해석하는 회귀를 잡는다.
     public void Pcm24SignExtensionForMinusHalf()
     {
         Assert.Equal(.5, AudioAnalyzer.Analyze([0, 0, 192], new(SampleEncoding.Pcm, 24, 1)).Rms);
@@ -88,6 +95,7 @@ public sealed class AudioTests
         Assert.Throws<NotSupportedException>(() => AudioAnalyzer.Analyze([], new((SampleEncoding)999, 16, 1)));
     }
     [Fact]
+    // Gate 바로 아래는 닫히고 Gate와 같은 값은 통과한다. 높은 감도도 원본 dBFS 판정을 바꾸지 않는다.
     public void GateUsesOriginalDbAndIncludesBoundary()
     {
         var settings = new AudioSettings(NoiseGate: -40, Sensitivity: 4, AttackMs: 0);
@@ -114,6 +122,7 @@ public sealed class AudioTests
         Assert.Equal(.25, p.Update(-65, .1, new(NoiseGate: -70, NormalizeMin: -80, NormalizeMax: -20, AttackMs: 0)).VoiceLevel);
     }
     [Fact]
+    // 같은 총 경과 시간을 여러 번 나누거나 한 번에 적용해도 Release 결과가 같아야 한다.
     public void ReleaseIsPeriodIndependent()
     {
         var a = new AudioLevelProcessor(); var b = new AudioLevelProcessor(); var s = new AudioSettings(AttackMs: 0);
@@ -129,6 +138,7 @@ public sealed class AudioTests
         Assert.Equal(0, p.Update(0, 1, new(Sensitivity: 0)).VoiceLevel);
     }
     [Fact]
+    // 시정수 한 번 동안 증가분은 1-e^-1, 감소 후 잔여는 e^-1이다. ms를 완료 시간으로 취급하지 않는다.
     public void AttackReleaseUseTimeConstants()
     {
         var p = new AudioLevelProcessor(); var s = new AudioSettings();
@@ -143,6 +153,7 @@ public sealed class AudioTests
     [InlineData(30)]
     [InlineData(60)]
     [InlineData(120)]
+    // 10/30/60/120Hz 모두 동일한 1초 누적 결과를 가져야 한다.
     public void SmoothingIsPeriodIndependent(int hz)
     {
         var p = new AudioLevelProcessor(); var reference = new AudioLevelProcessor();
@@ -170,6 +181,7 @@ public sealed class AudioTests
         Assert.Equal(1, new AudioLevelProcessor().Update(double.MaxValue, 1, new(AttackMs: 0)).VoiceLevel);
     }
     [Fact]
+    // 무음 → 짧은 음절 → 유지 발화 → 무음 순서를 숫자 배열로 재현한다.
     public void SyntheticUtteranceRemainsBoundedAndReturnsToSilence()
     {
         var p = new AudioLevelProcessor();
@@ -178,6 +190,7 @@ public sealed class AudioTests
         Assert.Equal(0, p.VoiceLevel);
     }
     [Fact]
+    // 고정 seed의 다양한 입력으로 결과의 유한한 0~1 계약을 반복 확인한다.
     public void FuzzLevelsAndIntervalsAreFinite()
     {
         var r = new Random(7); var p = new AudioLevelProcessor();

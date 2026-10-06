@@ -16,7 +16,7 @@ No Exec Plan, No Work. `docs/exec_plans/active/plan-NNN-<task>.md`를 먼저 작
 - `dotnet format VoxPet.sln --verify-no-changes --no-restore`: locked restore 후 C# 서식·스타일·analyzer 검사. 위반 시 SDK formatter로 수정하고 다시 검증한다.
 - `dotnet test tests/VoxPet.Core.Tests/VoxPet.Core.Tests.csproj -c Release`: 합성 수치·수명·캐릭터·설정 복구 검사.
 - `git diff --check`: 공백 오류 확인. 새 파일은 stage 후에도 검사한다.
-- 기존 README 보존과 기획 대비 범위를 사람이 확인한다.
+- README의 사용자 작성 내용 보존 또는 명시적으로 요청된 갱신, 기획 대비 범위를 사람이 확인한다.
 
 검증기는 외부 링크의 최신성, 음성 처리 정확도, 실제 테스트 수행, 리뷰의 독립성을 판정하지 않는다.
 미작성 표시는 템플릿에만 허용. 아직 결정하지 않은 항목은 이유와 다음 확인 단계를 적는다.

@@ -4,6 +4,7 @@ using Xunit;
 
 namespace VoxPet.Core.Tests;
 
+/// <summary>입 임계값, 레벨/이동량 상한과 음성에 독립적인 blink/idle을 검증한다.</summary>
 public sealed class CharacterTests
 {
     [Theory]
@@ -13,6 +14,7 @@ public sealed class CharacterTests
     [InlineData(.59999, MouthState.Half)]
     [InlineData(.6, MouthState.Open)]
     [InlineData(1, MouthState.Open)]
+    // 0.2와 0.6의 정확한 경계를 포함한 경우를 확인한다.
     public void MouthThresholds(double level, MouthState expected)
     {
         var state = new CharacterAnimator(new Random(1)).Update(level, 0);
@@ -25,6 +27,7 @@ public sealed class CharacterTests
         Assert.True(double.IsFinite(state.BodyBounce)); Assert.InRange(state.BodyBounce, 0, 6);
     }
     [Fact]
+    // 같은 Random seed로 30초를 진행해 무음에서도 이동/눈감음이 있고 상태가 재현되는지 검사한다.
     public void BlinkAndIdleContinueInSilenceAndAreReproducible()
     {
         var a = new CharacterAnimator(new Random(3)); var b = new CharacterAnimator(new Random(3));

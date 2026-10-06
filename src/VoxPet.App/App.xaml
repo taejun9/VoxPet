@@ -1,4 +1,5 @@
 <Application x:Class="VoxPet.App.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- 앱 전체 색상과 기본 컨트롤 스타일. 오디오/캐릭터 상태는 스타일에 포함하지 않는다. -->
   <Application.Resources>
     <SolidColorBrush x:Key="Accent" Color="#66E3C4"/>
     <Style TargetType="TextBlock"><Setter Property="Foreground" Value="#DDE4F0"/><Setter Property="FontSize" Value="14"/></Style>
