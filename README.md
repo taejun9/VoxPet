@@ -16,6 +16,8 @@
 
 ## 빠른 시작
 
+**처음 사용하는 분은 [설치 방법](docs/guides/installation.md) → [사용 방법](docs/guides/usage.md) → [설정 방법](docs/guides/settings.md) 순서로 읽어 주세요.** 다운로드와 압축 풀기부터 실제 버튼을 누르는 순서까지 설명합니다. 프로그래밍 지식이나 명령어 입력은 필요 없습니다.
+
 1. Windows x64용 자체 포함 배포 폴더를 모두 풀고 `VoxPet.exe`를 실행합니다. 별도 .NET 설치는 필요 없습니다. `Licenses/`, `Assets/Characters/manifest.json`, `USER-GUIDE.txt`도 함께 보관합니다.
 2. **마이크 없이 데모**로 캐릭터를 확인하거나, 마이크를 선택하고 **Start**를 누른 뒤 말합니다.
 3. **조용한 목소리** 등의 프리셋으로 반응을 맞춥니다. 마이크를 해제하려면 **Stop**을 누릅니다.

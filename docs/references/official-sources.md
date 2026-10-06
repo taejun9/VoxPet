@@ -1,6 +1,6 @@
 # 공식 자료 레지스트리
 
-확인일은 사용자 시간대 기준 2026-10-05. 사용자 첨부는 제품 요구사항이며 API/호환성의 공식 근거와 구분한다.
+확인일은 아래 표에 사용자 시간대 기준으로 기록한다. 사용자 첨부는 제품 요구사항이며 API/호환성의 공식 근거와 구분한다.
 링크는 실제 확인한 페이지이며 사용되는 수식·폴더·기본값은 VoxPet의 설계 결정이다.
 
 | source | url | scope | checked_at | used_for |
@@ -13,7 +13,7 @@
 | NAudio 공식 저장소 | https://github.com/naudio/NAudio | 오디오 라이브러리 | 2026-10-05 | WASAPI 지원, NAudio 3 net9.0 이상 요구와 2.x 구분 |
 | NAudio 2.x WasapiCapture | https://github.com/naudio/NAudio/blob/release/2.x/NAudio.Wasapi/WasapiCapture.cs | 캡처 API | 2026-10-05 | 기획의 WasapiCapture는 2.x 계열 API임을 확인 |
 | NAudio 2.2.1 NuGet | https://www.nuget.org/packages/NAudio/2.2.1 | 패키지 후보 | 2026-10-05 | .NET 8 호환 후보 확인; 최신 2.x 선택은 구현 때 재검토 |
-| OBS Window Capture Sources | https://obsproject.com/kb/window-capture-sources | 방송 캡처 | 2026-10-05 | 창 단위 캡처와 방식 옵션; WPF alpha 보장 근거는 아님 |
+| OBS Window Capture Sources | https://obsproject.com/kb/window-capture-sources | 방송 캡처 | 2026-10-06 | 창 단위 캡처와 방식 옵션; 초보자 OBS 안내, WPF alpha 보장 근거는 아님 |
 | Microsoft dotnet test | https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test | 테스트 CLI | 2026-10-05 | 후속 테스트 실행 경로; SDK/러너 옵션은 생성 후 확인 |
 | Microsoft .NET 10 Supported OS | https://github.com/dotnet/core/blob/main/release-notes/10.0/supported-os.md | OS/architecture | 2026-10-05 | 지원 중인 Windows edition/build 우선, 전체 Windows 10 보장 제외 |
 | Microsoft single-file deployment | https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview | 배포 | 2026-10-05 | 자체 포함 win-x64 단일 실행파일과 native extraction 옵션 |
@@ -27,6 +27,11 @@
 | OBS 32.2.2 Release | https://github.com/obsproject/obs-studio/releases/tag/32.2.2 | QA binary | 2026-10-05 | 공식 x64 ZIP SHA256 검증, OBS 32.2.2/WS 5.7.4 실제 실행 |
 | WPF Window Template | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/Themes/XAML/Window.xaml | 방송창 resize | 2026-10-05 | ResizeGrip 영역을 유지하고 표시만 숨김 |
 | WPF Window Source | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Window.cs | native hit test | 2026-10-05 | WM_NCHITTEST와 HTBOTTOMRIGHT 회귀 검사 |
+| GitHub Downloading Workflow Artifacts | https://docs.github.com/en/actions/how-tos/manage-workflow-runs/download-workflow-artifacts?tool=webui | 실행 파일 다운로드 | 2026-10-06 | 웹 로그인·실행 결과 Artifacts 다운로드·파일 만료 안내 |
+| Microsoft Windows 마이크 권한 | https://support.microsoft.com/ko-kr/windows/privacy/turn-on-app-permissions-for-your-microphone-in-windows | 마이크 설정 | 2026-10-06 | Windows 11 개인정보 및 보안과 데스크톱 앱 마이크 접근 |
+| Microsoft Fix Microphone Problems | https://support.microsoft.com/en-us/windows/hardware/drivers/fix-microphone-problems | 입력 장치·볼륨 | 2026-10-06 | Windows 소리 설정의 입력 선택과 입력 볼륨 |
+| Microsoft 파일 압축 및 압축 해제 | https://support.microsoft.com/ko-kr/windows/experience/storage-filemanagement/zip-and-unzip-files | ZIP 압축 풀기 | 2026-10-06 | 초보자 설치 안내의 마우스 오른쪽 메뉴·전체 추출 |
+| Microsoft 32-bit and 64-bit Windows FAQ | https://support.microsoft.com/en-gb/windows/experience/compatibility/32-bit-and-64-bit-windows-frequently-asked-questions | 컴퓨터 종류 확인 | 2026-10-06 | 설정 → 시스템 → 정보의 시스템 종류 확인 경로 |
 
 ## 남은 근거와 실기 확인
 
