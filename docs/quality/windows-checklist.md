@@ -105,3 +105,15 @@ Core84/84, Release 경고/오류0, format/analyzer, 자체 포함 publish, 실�
 배포본과 개인 시트를 묶은 로컬 파일은 `artifacts/VoxPet-win-x64-neulbo-plan008.zip`이다.
 기본 공개 배포는 CC0 고양이를 유지하며 늘보군은 이용 권리 미확인 개인 시험 팩이다.
 실제 마이크/권한/제거, 사용자 GPU/OBS, 물리 DPI 변경, 실제 입력 장시간 시험은 위 미실행 상태를 유지한다.
+
+## plan009 문서·주석 회귀 검증
+
+2026-10-06 checkpoint246a61e의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37413935262) 및
+[OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37413935334)가 통과했다.
+README·사용 설명서·배포 안내와 한국어 코드 주석만 보강했으며 실행 로직·자산·의존성·workflow는 변경하지 않았다.
+
+- Windows: locked restore/format/analyzer/Release/publish, Core84/84, 경고·오류0, WPF smoke failures0.
+- 배치: 4창크기×21컨트롤, 3startup bounds, 작은 창 스크롤 통과.
+- OBS WGC: green+Chroma Key와 native alpha65.08%, 각7프레임 변화 통과. BitBlt 유효 프레임 없음 유지.
+- 증거: root artifacts/qa/plan009/windows/ 및 obs/. 로컬 주석 제외 실행 내용 동등성 및 XML summary 검사 통과.
+- 실제 마이크·사용자 GPU/OBS·물리 DPI·실제 입력 장시간 시험의 기존 미실행 상태는 유지한다.

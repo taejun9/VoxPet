@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -40,7 +40,7 @@ QA → 자체 리뷰 → completed 이동/리뷰 미러 → main 병합/push →
 - [x] 실제 UI와 소스에 맞춘 프로젝트 개요·폴더 구조·개발 진입점을 README에 작성한다.
 - [x] 빠른 시작, 반응 조정, PNG, 방송창, 설정, 문제 해결을 사용 설명서와 배포용 안내에 정리한다.
 - [x] Core·App의 주요 클래스/메서드/계산/수명 처리와 테스트·하네스의 검증 의도에 한국어 주석을 추가한다.
-- [ ] 검증, 자체 리뷰, 문서 완료 및 Git 수명 절차를 수행한다.
+- [x] 검증, 자체 리뷰, 계획 완료 및 리뷰 미러를 기록한다. Git 통합은 아래 순서를 따른다.
 
 ## QA Plan
 
@@ -51,7 +51,7 @@ WPF 실행과 실제 마이크/OBS는 macOS에서 실행 불가이며 이번 작
 
 ## Review Plan
 
-QA 후 단일 에이전트 자체 리뷰. 요구사항 충족, 실제 동작과 설명 일치, 개인정보, 동작 변경 여부를 확인한다.
+전체 QA 후 단일 에이전트 자체 리뷰 완료. 요구사항 충족, 실제 동작과 설명 일치, 개인정보, 동작 변경 여부를 확인했다. 서브에이전트는 사용하지 않았다.
 
 ## Decision Log
 
@@ -71,6 +71,19 @@ QA 후 단일 에이전트 자체 리뷰. 요구사항 충족, 실제 동작과 
 | 2026-10-06 | 검증 | verify_base 33문서·verify_app·diff 통과. C# 주석 제외 코드, Python AST/토큰, XAML 트리, PowerShell 주석 제외 본문 동등성 통과. XML summary 전부 파싱 통과. |
 | 2026-10-06 | 심사 | 로컬 QA 후 예비 자체 리뷰: UI 라벨·프리셋·설정/PNG 계약·개인정보·기존 내용 보존을 대조했다. 이미지 Freeze와 애니메이션 시간축 주석을 더 정확하게 수정했다. 기능 변경 없음. |
 
+| 2026-10-06 | 검증 | Windows37413935262/OBS37413935334 성공. Core84/84, Release0경고/0오류, smoke0실패, WGC 합성 캡처 통과. |
+| 2026-10-06 | 심사 | 전체 QA 이후 자체 리뷰 완료. 문서와 주석이 구현 계약을 설명하며 새 기능/데이터 전송을 추가하지 않았다. |
+| 2026-10-06 | 조율 | 첫 checkpoint 커밋/push 호출은 자동 승인 검토에서 미확인 origin 전송으로 거부되어 실행되지 않았다. 원격 주소가 기존 공개 taejun9/VoxPet임을 읽기 전용으로 확인하고 변경 payload에 민감정보가 없음을 대조했다. 사용자 AGENTS.md의 Git 통합 지시와 근거를 제시한 재검토가 승인되어 246a61e를 작업 브랜치에 push했다. |
+
 ## Completion Notes
 
-문서와 주석 정리 후 실제 QA 결과와 남은 실행 환경 제한을 기록한다.
+- README: 기존 제목/문구를 보존하고 개요·기능·빠른 시작·폴더 구조·처리 흐름·개발 명령·검증 상태·문서 링크를 추가했다.
+- 설명서: docs/user-guide.md와 배포 USER-GUIDE.txt에 첫 실행·화면 항목·수치/단위·프리셋·PNG 제작/적용·OBS 연결·오류 해결·저장/초기화 범위를 정리했다.
+- 주석: Core/App 및 테스트 C#27개, XAML3개, Python4개, PowerShell2개 파일에 한국어 역할·계약·경계값·스레드/소유권·오류 복구·검증 의도를 보강했다. 실행 로직·자산·의존성·workflow 변경 없음.
+- 로컬 QA: verify_base/verify_app/diff 통과. 주석 제외 C# 코드, Python AST/토큰, XAML 요소/속성, PowerShell 본문 동일. XML summary 파싱 및 UI 라벨/프리셋 대조 통과.
+- checkpoint 246a61e: [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37413935262) 성공. locked restore/format/analyzer/Release build/publish 통과, 경고·오류0, Core84/84, smoke failures0, 4창크기×21컨트롤/3startup bounds/스크롤 통과.
+- [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37413935334) 성공. WGC green+Chroma Key 및 native alpha65.08%, 각7프레임 변화. BitBlt는 유효 프레임 없음으로 기존 제한 유지.
+- QA 이후 자체 리뷰: 요구사항·설명 정확성·실행 동등성·개인정보·기존 내용 보존 확인. 중요 미해결 발견 없음. 리뷰 미러: docs/reviews/plan-009-documentation-comments-review.md.
+- 실행 환경: 로컬 macOS에 고정 .NET SDK가 없어 앱 QA는 Windows CI에서 수행했다. 실제 마이크/사용자 GPU/물리 DPI/실제 입력 장시간 시험은 새로 수행하지 않았다.
+- 증거는 root artifacts/qa/plan009/windows 및 obs에 보존한다. 마지막 변경은 완료/리뷰/검증 기록 문서뿐이며 문서 QA를 재실행한다.
+- Git 통합: 완료 기록 커밋 → main 원격 상태 확인 → fast-forward 병합/push → detached 전환 → branch -d → worktree 제거 순서로 진행하며 실패 시 중단한다.
