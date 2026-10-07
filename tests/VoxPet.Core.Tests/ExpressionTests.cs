@@ -67,7 +67,8 @@ public sealed class ExpressionTests : IDisposable
     {
         var store = new ExpressionSlotStore(folder); store.Save(1, ExpressionProfile.Default(1), new byte[100]);
         Directory.CreateDirectory(Path.Combine(folder, "slot-1.json"));
-        Assert.Throws<IOException>(() => store.Save(0, ExpressionProfile.Default(0), new byte[100]));
+        var failure = Record.Exception(() => store.Save(0, ExpressionProfile.Default(0), new byte[100]));
+        Assert.True(failure is IOException or UnauthorizedAccessException);
         Assert.Single(Directory.GetFiles(folder, "*.png")); Assert.Empty(Directory.GetFiles(folder, "*.tmp"));
         Assert.NotNull(store.Load(1).SheetId);
     }

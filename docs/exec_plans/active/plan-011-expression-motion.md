@@ -72,6 +72,8 @@ QA 후 같은 에이전트가 요구사항·슬롯 데이터 경계·전환 중 
 | 2026-10-07 | 검증 | macOS SDK10.0.401 locked restore/Release build(경고0)/Core97/97 통과. 문서·36 PNG·개인정보 정적 검사 통과. 테스트 IPC는 승인 실행 환경을 사용했다. Windows fixture를 이어서 실행한다. |
 | 2026-10-07 | 심사 | 로컬 QA 이후 중간 자체 리뷰: 슬롯 초기 로드 바인딩 통지와 기존 JSON 파일 읽기 경계, 중도 전환 snapshot/모션 좌표를 확인·보완했다. 최종 리뷰는 Windows QA 이후 수행한다. |
 
+| 2026-10-07 | 검증 | Windows37576490136은 저장 실패 fixture의 macOS/Windows 예외 종류 차이로 Core96/97에서 중단. production은 두 오류를 이미 처리한다. fixture를 IOException/UnauthorizedAccessException 계약으로 수정. OBS37576490160 통과. |
+
 ## Completion Notes
 
 구현/QA 진행 중. 성공한 검증과 남은 실기 제한을 완료 단계에서 기록한다.

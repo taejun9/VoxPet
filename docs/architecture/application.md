@@ -80,7 +80,7 @@ Stop 완료 전에 capture를 dispose하지 않고, Stop 완료 후 이벤트 �
 CharacterParameters는 MouthOpen, BodyBounce, HeadTilt, EarMotion, EyeOpen을 렌더러에 넘기는 계약이다.
 MVP의 MouthOpen은 VoiceLevel, body 이동 상한은 초기 제안 6 WPF DIP, head/ear는 0이다.
 blink/idle 시간은 음성 입력과 독립이다. 디버깅에서는 seeded random을 주입해 blink 시퀀스를 재현한다.
-512×512 RGBA PNG 6장(입 3단계 × 눈 2단계)의 같은 크기 상태 이미지를 사용한다. 자산 manifest에 크기·anchor·저작권을 기록한다.
+512×512 RGBA PNG 6장(입 3단계 × 눈 2단계)을 표정별로 사용한다. plan011은 표정6종의 총36장으로 확장했다. 자산 manifest에 크기·anchor·저작권을 기록한다.
 CharacterWindow는 MainWindow와 같은 파라미터 snapshot을 표시하고 오디오를 중복 캡처하지 않는다.
 
 투명 WPF 창이 OBS Window Capture에서 alpha를 유지한다는 보장은 없다.
@@ -132,7 +132,7 @@ LayoutQa는 실제 WPF 창의 논리 크기/컨트롤 가시성/휠 routed event
 plan008의 CharacterSheetLoader는 작업 스레드에서 16MB 이하 파일을 읽고 PNG signature/IHDR의 8비트 RGBA 및 셀 크기(128~1024px, 정사각형 3열×2행)를 디코딩 전에 확인한다.
 OnLoad로 원본 파일을 해제하고 각 셀을 BGRA로 변환해 알파 영역 기준 중앙/바닥을 정렬한 뒤 Freeze한다. 빈 셀 또는 투명 여백이 없는 셀은 거부한다.
 입 열림 3단계와 눈 뜸/감음 2단계의 완전한 배열을 모두 만들고 난 뒤 UI에서 한 번에 교체하므로 오류 시 이전 캐릭터가 유지된다.
-닫기 중 도착한 결과는 적용하지 않는다. 외부 파일 경로와 캐릭터는 영구 설정에 저장하지 않는다.
+닫기 중 도착한 결과는 적용하지 않는다. 일반 불러오기의 외부 파일 경로와 캐릭터는 영구 설정에 저장하지 않는다. plan011 표정 슬롯에 명시적으로 저장하면 관리 PNG 복사본을 유지한다.
 CharacterStatus는 마이크 Status와 분리돼 적용/실패 안내가 Running/Stop 안내를 덮어쓰지 않는다.
 
 Core의 ReactionPresets가 일반 대화·조용한 목소리·빠른 반응의 불변 AudioSettings를 제공한다. UI는 preset 적용 후 전체 조정값을 통지하며 개별 슬라이더 조정을 계속 허용한다.
