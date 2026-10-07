@@ -86,3 +86,5 @@ plan008의 smoke는 로컬 PNG 시트 불러오기/잘못된 파일 복구/행�
 
 plan011의 ExpressionQa는 임시 저장소/메모리만 사용해 슬롯 JSON/관리 PNG 복사, 재시작과 손상 복구, 240ms 전환과 무음 눈물/blink를 검증한다. RegisterHotKey 충돌·해제와 실제 WM_HOTKEY는 합성 키 입력으로 검사하며 물리 키보드 실기와 구분한다. F12는 앱 내부 입력이다. 긴 이름/TextBox를 포함한 LayoutQa와 기존 음소거/창 수명 회귀도 실행한다.
 `Windows-QA-evidence`에는 voxpet-expression-preview.png/voxpet-expression-broadcast.png 및 기존 smoke/layout JSON을 포함한다. 음성/실제 사용자 PNG를 포함하지 않는 기본 fixture다.
+
+`VOXPET_QA_SHEET`를 지정한 실행은 슬롯 관리 복사본의 저장·재시작·원본 제거·손상 복구에도 그 개인 시트를 사용한다. 늘보군 평상/눈물 슬롯의 여섯 frozen 상태, 전환 시작/완료, 무음 blink·눈물과 두 창 공유를 검사하고 `voxpet-personal-expression-*.png`에 미리보기 및 초록/투명 방송창을 렌더한다. `voxpet-smoke-result.json`의 passedChecks/failedChecks로 개인 시험 실행 여부를 확인한다. 이 PNG는 개인 자료이므로 위 수집·삭제 절차를 동일하게 적용한다.

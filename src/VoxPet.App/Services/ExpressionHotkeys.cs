@@ -3,7 +3,7 @@ using System.Windows.Interop;
 
 namespace VoxPet.App.Services;
 
-/// <summary>설정창의 HWND에 전역 단축키를 연결한다. 키보드 훅이나 키 입력 기록은 사용하지 않는다.</summary>
+/// <summary>설정창 HWND에 Ctrl+Shift+F1~F11을 등록하고 해제한다. F12는 로컬 처리하며 키보드 훅/기록은 사용하지 않는다.</summary>
 public sealed class ExpressionHotkeys : IDisposable
 {
     private const int FirstId = 0x5100;
@@ -11,6 +11,7 @@ public sealed class ExpressionHotkeys : IDisposable
     private readonly Action<int> activate;
     private readonly HashSet<int> registered = [];
     private bool disposed;
+    /// <summary>전역 등록에 성공한 0기반 슬롯 번호. 실제 키는 F(slot+1)이다.</summary>
     public IReadOnlyCollection<int> Registered => registered;
     public List<int> Conflicts { get; } = [];
     [DllImport("user32.dll", SetLastError = true)]

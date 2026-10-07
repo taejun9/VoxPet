@@ -11,7 +11,7 @@ using VoxPet.Core.Models;
 
 namespace VoxPet.App.Views;
 
-/// <summary>실제 Windows에서 슬롯 저장/재시작, 전환, 무음 모션과 native 전역 키 수명을 검증한다.</summary>
+/// <summary>Windows WPF에서 슬롯 저장/재시작, 전환, 무음 모션과 합성 전역 키 입력을 검증한다. 물리 입력 실기와 구분한다.</summary>
 internal static class ExpressionQa
 {
     [DllImport("user32.dll")]
@@ -87,11 +87,15 @@ internal static class ExpressionQa
                         }
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(BitmapSource.Create(384, 256, 96, 96, PixelFormats.Bgra32, null, pixels, 384 * 4)));
             using (var file = File.Create(path)) encoder.Save(file);
+            // 개인 시트를 지정한 실행은 관리 복사본의 저장/재시작/손상 복구에도 같은 캐릭터를 사용한다.
+            string? personal = Environment.GetEnvironmentVariable("VOXPET_QA_SHEET");
+            if (!string.IsNullOrWhiteSpace(personal)) File.Copy(personal, path, true);
             check(await editor.ImportAsync(path), "expression_custom_sheet_import");
+            double importedWidth = editor.Selected.DraftSheet![0, 0].Width;
             await editor.SaveAsync(); File.Delete(path);
             await restart.CloseAsync(); restart = new ExpressionViewModel(character, persistent: true, folder); await restart.InitializeAsync();
             await restart.ActivateAsync(11);
-            check(character.Name.Contains("QA 눈물") && character.Sprite is BitmapSource { PixelWidth: 128 }, "expression_owned_copy_survives_original_removal");
+            check(character.Name.Contains("QA 눈물") && character.Sprite is BitmapSource bitmap && bitmap.PixelWidth == importedWidth, "expression_owned_copy_survives_original_removal");
             var customSprite = character.Sprite;
             File.WriteAllText(Path.Combine(folder, restart.Slots[11].Saved.SheetId + ".png"), "corrupt");
             await restart.ActivateAsync(11);
@@ -128,5 +132,52 @@ internal static class ExpressionQa
         main.Model.Expressions.Selected.Name = new string('표', 40);
         await main.Model.Expressions.SaveAsync();
         await main.Model.Expressions.ActivateAsync(0);
+        await RunPersonalAsync(main, check);
+    }
+
+    /// <summary>주입된 개인 시트로 실제 두 창의 슬롯 전환·무음 모션을 렌더한다. 원본 파일과 사용자 저장소는 수정하지 않는다.</summary>
+    private static async Task RunPersonalAsync(MainWindow main, Action<bool, string> check)
+    {
+        string? path = Environment.GetEnvironmentVariable("VOXPET_QA_SHEET");
+        if (string.IsNullOrWhiteSpace(path)) return;
+        var editor = main.Model.Expressions;
+        var character = main.Model.Character;
+        main.Model.StopCommand.Execute(null); await Task.Delay(100);
+        editor.Selected = editor.Slots[0]; editor.Selected.Name = "늘보군 평상";
+        check(await editor.ImportAsync(path), "personal_expression_neutral_import");
+        await editor.SaveAsync();
+        editor.Selected = editor.Slots[2]; editor.Selected.Name = "늘보군 눈물";
+        editor.Selected.Tears = true; editor.Selected.TearLeft = .41; editor.Selected.TearRight = .60; editor.Selected.TearTop = .25;
+        check(await editor.ImportAsync(path), "personal_expression_tears_import");
+        await editor.SaveAsync();
+        await editor.ActivateAsync(0); await Task.Delay(300);
+        var sprites = new HashSet<ImageSource>();
+        foreach (var mouth in Enum.GetValues<MouthState>())
+            foreach (double eyes in new[] { 0.0, 1.0 })
+            {
+                character.Update(new(0, 0, 0, 0, eyes, mouth)); sprites.Add(character.Sprite);
+            }
+        check(sprites.Count == 6 && sprites.All(image => image.IsFrozen), "personal_expression_six_frozen_states");
+        await editor.ActivateAsync(2);
+        check(character.Blend == 0 && character.PreviousSprite != null, "personal_expression_transition_started");
+        var blinking = new HashSet<ImageSource>(); bool tearsMove = false;
+        double initial = character.TearLeftY;
+        for (int i = 0; i < 325; i++)
+        {
+            await Task.Delay(20); blinking.Add(character.Sprite);
+            tearsMove |= Math.Abs(initial - character.TearLeftY) > 10 && character.TearLeftOpacity > .2;
+        }
+        check(character.Blend == 1 && character.PreviousSprite == null && character.Name.Contains("늘보군 눈물"), "personal_expression_transition_settles");
+        check(blinking.Count == 2 && tearsMove && main.Model.VoiceLevel == 0, "personal_expression_silent_blink_and_tears");
+        // 캡처에서 눈물의 실제 위치를 판독할 수 있도록 가시적인 프레임을 기다린다.
+        for (int i = 0; i < 70 && character.TearLeftOpacity < .7; i++) await Task.Delay(20);
+        main.Width = 1000; main.Height = 730; main.UpdateLayout();
+        SaveWindow(main, "voxpet-personal-expression-preview.png");
+        var broadcast = main.ShowCharacter(); main.Model.GreenBackground = true; broadcast.UpdateLayout();
+        check(ReferenceEquals(broadcast.DataContext, main.Model), "personal_expression_shared_broadcast_model");
+        SaveWindow(broadcast, "voxpet-personal-expression-broadcast-green.png");
+        main.Model.GreenBackground = false; broadcast.UpdateLayout();
+        SaveWindow(broadcast, "voxpet-personal-expression-broadcast-transparent.png");
+        check(File.Exists(path), "personal_expression_original_preserved");
     }
 }

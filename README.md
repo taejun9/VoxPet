@@ -11,6 +11,8 @@
 - 일반 대화·조용한 목소리·빠른 반응 프리셋, 캐릭터 음소거
 - 입 3단계와 눈 깜빡임, 대기 움직임을 표현하는 기본 CC0 고양이
 - 로컬 투명 PNG 시트 불러오기와 기본 캐릭터 복원
+- 12개 영구 표정 슬롯, 기본 표정 6종과 슬롯별 사용자 PNG, 눈물 모션·위치 조정
+- Ctrl+Shift+F1~F11 전역 전환과 약 240ms 표정 전환, F12는 앱 창 내부에서 사용
 - 설정 화면과 상태를 공유하는 별도 방송창, 초록 배경·투명 배경·항상 위 옵션
 - 마이크 없는 합성 데모, 오디오 조정값과 방송창 옵션의 로컬 저장
 
@@ -25,6 +27,8 @@
 
 캐릭터 음소거는 입 반응만 멈추고 마이크 캡처는 계속합니다. 장치 변경은 Stop 후에 합니다. 상세 조정, PNG 규격, OBS 연결 및 문제 해결은 **[사용 설명서](docs/user-guide.md)**에 있습니다. 배포 폴더에서도 [텍스트 설명서](docs/distribution/USER-GUIDE.txt)를 읽을 수 있습니다.
 
+개인 PNG는 **3열×2행 투명 RGBA 시트**(입 3단계 × 눈 뜸/감음)를 사용합니다. 일반 불러오기는 현재 실행에만 적용됩니다. **표정 · 단축키 슬롯**에서 PNG와 눈물 위치를 선택하고 **슬롯 저장**을 누르면 관리 복사본이 다음 실행에도 유지됩니다. 시작 시 F1 슬롯을 표시합니다. [표정 슬롯 사용법](docs/user-guide.md#표정-슬롯과-단축키)에 저장·단축키 충돌·F12 사용 조건을 설명했습니다.
+
 ## 프로젝트 구조
 
 ```text
@@ -38,10 +42,10 @@ VoxPet/
 │   │   └── Services/           # PCM 분석·평활화·세션·캡처 루프·애니메이션
 │   └── VoxPet.App/              # net10.0-windows: WPF 앱, win-x64
 │       ├── App.xaml[.cs]        # 공통 스타일·실행 진입점·Windows smoke QA
-│       ├── Services/           # WASAPI 입력·로컬 설정·PNG 시트 로딩
+│       ├── Services/           # WASAPI 입력·로컬 설정·PNG 시트 로딩·전역 단축키
 │       ├── ViewModels/         # UI 명령·표시 상태·공유 캐릭터·변경 알림
 │       ├── Views/              # 설정창·방송창 및 WPF QA
-│       └── Assets/Characters/  # 기본 PNG 6장과 출처·anchor manifest
+│       └── Assets/Characters/  # 기본 PNG 36장(표정6×입3×눈2)과 출처·anchor manifest
 ├── tests/VoxPet.Core.Tests/     # 합성 PCM·가짜 입력을 사용하는 xUnit 테스트
 ├── harness/
 │   ├── scripts/                # 문서·자산 검사, Windows/OBS QA, 자산 생성
@@ -104,7 +108,7 @@ Windows PowerShell에서 배포와 마이크 없는 WPF smoke를 포함한 전�
 
 ## 현재 검증 상태
 
-Windows WPF MVP와 자동 QA가 구현되어 있습니다. plan008의 기록에서는 Core 84개 테스트, Release 빌드, WPF smoke, 사용자 PNG 시트 및 OBS WGC 합성 데모가 통과했습니다. **실제 마이크·권한·장치 제거, 사용자 GPU/OBS, 물리 DPI 변경, 실제 입력 장시간 시험은 미실행**입니다. 자동 합성 시험을 실사용 환경의 통과로 해석하지 않습니다. 환경·커밋·증거는 [Windows 검증 기록](docs/quality/windows-checklist.md)을 확인합니다.
+Windows WPF MVP와 자동 QA가 구현되어 있습니다. plan011에서 Core 97개 테스트, format/analyzer, Release 빌드, WPF smoke, 표정 슬롯 저장·복구·전환·무음 모션·합성 단축키 및 OBS WGC 합성 데모가 통과했습니다. 늘보군 개인 시트의 Windows 화면은 plan008에서 확인했으며, 이후 재검증 결과는 [Windows 검증 기록](docs/quality/windows-checklist.md)에 남깁니다. **실제 마이크·권한·장치 제거, 사용자 GPU/OBS, 물리 키보드·DPI 변경, 실제 입력 장시간 시험은 미실행**입니다. 자동 합성 시험을 실사용 환경의 통과로 해석하지 않습니다.
 
 ## 문서 안내와 기여
 

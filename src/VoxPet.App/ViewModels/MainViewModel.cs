@@ -260,7 +260,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Character.Update(animator.Update(VoiceLevel, now), now);
     }
     /// <summary>
-    /// UI 타이머를 먼저 중단하고 캡처 해제 후 설정을 작업 스레드에서 저장한다.
+    /// UI 타이머를 먼저 중단하고 표정 IO·캡처 해제를 기다린 뒤 설정을 작업 스레드에서 저장한다.
     /// </summary>
     public async ValueTask DisposeAsync()
     {

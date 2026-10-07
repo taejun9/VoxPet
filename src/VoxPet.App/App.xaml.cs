@@ -17,6 +17,7 @@ public partial class App : Application
 {
     private int failures;
     private readonly List<string> failedChecks = [];
+    private readonly HashSet<string> passedChecks = [];
     // QA 증거를 runner temp에 기록해 사용자 문서나 영구 설정을 변경하지 않는다.
     private static string QaPath(string name) => Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), name);
     // WPF 속성뿐 아니라 native 창의 가시성·최소화·resize hit test도 smoke에서 확인한다.
@@ -41,6 +42,7 @@ public partial class App : Application
     }
     private void Check(bool passed, string name)
     {
+        if (passed) passedChecks.Add(name);
         if (passed) return;
         failures++; failedChecks.Add(name);
     }
@@ -151,7 +153,7 @@ public partial class App : Application
             using (var stream = File.Create(QaPath("voxpet-smoke.png"))) encoder.Save(stream);
             await main.ShutdownAsync();
             Check(!reopened.IsVisible, "broadcast_closed_on_main_shutdown");
-            File.WriteAllText(QaPath("voxpet-smoke-result.json"), JsonSerializer.Serialize(new { failures, failedChecks }, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(QaPath("voxpet-smoke-result.json"), JsonSerializer.Serialize(new { failures, failedChecks, passedChecks = passedChecks.Order().ToArray() }, new JsonSerializerOptions { WriteIndented = true }));
             Shutdown(failures == 0 ? 0 : 1);
         }
         catch (Exception ex)

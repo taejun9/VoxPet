@@ -34,4 +34,4 @@ for name in ('src/VoxPet.App/packages.lock.json', 'tests/VoxPet.Core.Tests/packa
 if errors:
     for error in errors: print(f'FAIL: {error}')
     sys.exit(1)
-print('PASS: 36 aligned PNG states, pinned packages, no recording/network/blocking UI APIs')
+print('PASS: 36 RGBA PNG headers, pinned packages, no recording/network/blocking UI APIs')

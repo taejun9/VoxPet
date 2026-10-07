@@ -11,6 +11,7 @@ public sealed class ExpressionSlotStore(string folder)
         if (slot is < 0 or >= 12) throw new ArgumentOutOfRangeException(nameof(slot));
         return Path.Combine(folder, $"slot-{slot + 1}.json");
     }
+    /// <summary>슬롯 JSON이 없거나 4KiB를 넘거나 손상·접근 오류가 있으면 해당 슬롯의 기본값으로 복구한다.</summary>
     public ExpressionProfile Load(int slot)
     {
         string path = SlotPath(slot);
@@ -27,6 +28,7 @@ public sealed class ExpressionSlotStore(string folder)
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException)
         { return ExpressionProfile.Default(slot); }
     }
+    /// <summary>검증한 GUID의 16MB 이하 관리 복사본을 읽는다. PNG 내용 검증은 App의 시트 로더가 수행한다.</summary>
     public byte[] ReadSheet(ExpressionProfile profile)
     {
         profile.Validate();
