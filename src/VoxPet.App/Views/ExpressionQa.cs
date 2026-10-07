@@ -147,7 +147,7 @@ internal static class ExpressionQa
         check(await editor.ImportAsync(path), "personal_expression_neutral_import");
         await editor.SaveAsync();
         editor.Selected = editor.Slots[2]; editor.Selected.Name = "늘보군 눈물";
-        editor.Selected.Tears = true; editor.Selected.TearLeft = .41; editor.Selected.TearRight = .60; editor.Selected.TearTop = .25;
+        editor.Selected.Tears = true; editor.Selected.TearLeft = .41; editor.Selected.TearRight = .60; editor.Selected.TearTop = .38;
         check(await editor.ImportAsync(path), "personal_expression_tears_import");
         await editor.SaveAsync();
         await editor.ActivateAsync(0); await Task.Delay(300);
@@ -158,6 +158,8 @@ internal static class ExpressionQa
                 character.Update(new(0, 0, 0, 0, eyes, mouth)); sprites.Add(character.Sprite);
             }
         check(sprites.Count == 6 && sprites.All(image => image.IsFrozen), "personal_expression_six_frozen_states");
+        // 여섯 상태를 수동 순회한 마지막 입 모양을 닫아 무음 blink 표본에 열린 입이 섞이지 않게 한다.
+        character.Update(new(0, 0, 0, 0, 1, MouthState.Closed));
         await editor.ActivateAsync(2);
         check(character.Blend == 0 && character.PreviousSprite != null, "personal_expression_transition_started");
         var blinking = new HashSet<ImageSource>(); bool tearsMove = false;

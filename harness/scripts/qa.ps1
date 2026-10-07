@@ -23,13 +23,14 @@ try {
         dotnet publish src/VoxPet.App/VoxPet.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:RestoreLockedMode=true -o artifacts/win-x64
         if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
     }
-    # 자동 시험 프로세스에만 60초 상한을 적용한다. 실제 사용자의 앱/마이크 시험을 종료하는 명령이 아니다.
+    # 자동 시험의 상한: 기본 60초, 개인 시트의 추가 모션/저장/화면 시험은 90초. 실제 사용자 앱에는 적용하지 않는다.
     if ($Smoke) {
         $exe = if ($Publish) { 'artifacts/win-x64/VoxPet.exe' } else { 'src/VoxPet.App/bin/Release/net10.0-windows/win-x64/VoxPet.exe' }
         $process = Start-Process $exe -ArgumentList '--smoke-test' -PassThru
-        if (-not $process.WaitForExit(60000)) {
+        $smokeTimeoutMs = if ([string]::IsNullOrWhiteSpace($env:VOXPET_QA_SHEET)) { 60000 } else { 90000 }
+        if (-not $process.WaitForExit($smokeTimeoutMs)) {
             $process.Kill()
-            throw 'WPF smoke timed out'
+            throw "WPF smoke timed out after $smokeTimeoutMs ms"
         }
         if ($process.ExitCode -ne 0) { throw "WPF smoke failed: $($process.ExitCode)" }
     }

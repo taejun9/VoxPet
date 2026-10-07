@@ -78,7 +78,7 @@ Licenses/와 자산 manifest/USER-GUIDE.txt를 함께 배포한다. macOS에서�
 plan008의 smoke는 로컬 PNG 시트 불러오기/잘못된 파일 복구/행열 매핑과 정렬/프리셋/음소거를 마이크 없이 시험한다.
 실행 프로세스에 `VOXPET_QA_SHEET`를 지정하면 해당 개인 PNG도 적용해 여섯 상태와 실제 합성 반응 PNG를 runner temp에 기록한다.
 `windows.yml`의 수동 `use_personal_sheet` 입력은 임시 `VOXPET_QA_SHEET_URL` secret의 단일 GitHub release asset 만료 URL만 읽는다.
-모든 workflow는 contents:read이며 계정 토큰을 전달하지 않는다. 개인 시트는 Git/기본 배포에 넣지 않고, 로컬 증거 확보 후 임시 secret·draft 및 개인 이미지가 있는 QA artifact를 삭제한다.
+모든 workflow는 contents:read이며 계정 토큰을 전달하지 않는다. 개인 시트는 Git/기본 배포에 넣지 않는다. 외부 전송은 명시 승인을 받고, 로컬 증거 확보 후 임시 URL secret을 제거한다. 개인 draft/화면 artifact의 보존·삭제는 사용자 요청을 따른다. plan012는 직접 시험에도 사용하도록 늘보군을 삭제하지 말라는 요청에 따라 원본·private draft·화면 증거·개인 테스트 패키지를 보존한다.
 마이크 권한/물리 장치 검증이나 공용 캐릭터 배포 권한 확인을 대체하지 않는다.
 
 
@@ -88,3 +88,5 @@ plan011의 ExpressionQa는 임시 저장소/메모리만 사용해 슬롯 JSON/�
 `Windows-QA-evidence`에는 voxpet-expression-preview.png/voxpet-expression-broadcast.png 및 기존 smoke/layout JSON을 포함한다. 음성/실제 사용자 PNG를 포함하지 않는 기본 fixture다.
 
 `VOXPET_QA_SHEET`를 지정한 실행은 슬롯 관리 복사본의 저장·재시작·원본 제거·손상 복구에도 그 개인 시트를 사용한다. 늘보군 평상/눈물 슬롯의 여섯 frozen 상태, 전환 시작/완료, 무음 blink·눈물과 두 창 공유를 검사하고 `voxpet-personal-expression-*.png`에 미리보기 및 초록/투명 방송창을 렌더한다. `voxpet-smoke-result.json`의 passedChecks/failedChecks로 개인 시험 실행 여부를 확인한다. 이 PNG는 개인 자료이므로 위 수집·삭제 절차를 동일하게 적용한다.
+
+자동 smoke 프로세스의 상한은 기본60초, 개인 시트 추가 시험은90초다. 시험 항목과 판정 기준은 동일하게 유지하며 추가 개인 시트 저장/모션/캡처 시간만 확보한다. 실제 사용자 앱 실행에는 이 상한을 적용하지 않는다.
