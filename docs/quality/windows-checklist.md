@@ -1,12 +1,18 @@
 # Windows 실사용 검증 기록
 
-## plan012 재점검 진행 상태
+## plan012 전체 재점검과 늘보군 화면 검증
 
-2026-10-07, 코드1d8cd05의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37612609047)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37612608423) 통과. macOS/Windows Core97/97, locked restore/format/analyzer/Release build/publish, WPF smoke failures0/명명 검사200개,4창크기×45컨트롤과 작은 창 스크롤을 확인했다. 구형 Actions Node20 경고를 공식 Node24 Actions로 갱신하여 workflow/의존성 deprecation/빌드 경고·오류0을 확인했다. C#35파일의XML doc100블록, XAML4개/Python4개 구문도 통과했다. 실제 WPF 기본 캐릭터의 슬픔/눈물과480×320 PNG를 직접 확인했다.
+2026-10-07, 최종 코드8fdfd36의 [기본 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37637240867), [늘보군 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37637826804), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37637240816) 통과. macOS/Windows Core97/97, locked restore/format/analyzer/Release build/publish, WPF smoke failures0을 확인했다. 늘보군 실행은 명명 검사210개,4창크기×45컨트롤/3startup bounds/작은 창 스크롤을 통과했다. workflow/의존성 deprecation/빌드 경고·오류0이며 C#35파일의XML doc100블록, XAML4개/Python4개 구문도 통과했다.
 
-OBS32.2.2 WGC green+Chroma Key와 native alpha 및 각7프레임 변화는 통과한다. BitBlt 유효 프레임 없음은 기존 runner 제한이다. 로컬 증거는 root `artifacts/qa/plan012/summary.json`과 `windows-clean/`, `obs-clean/`에 보관한다.
+늘보군3×2 시트의 입3×눈2 상태, 합성 반응, 슬롯 관리 복사본 저장/재시작/원본 제거/손상 복구, 전환 시작·완료, 무음 blink·눈물 및 두 창 공유를 확인했다. 실제 WPF 데모 미리보기(Voice Level38%), 눈물 미리보기, 초록/투명 방송창과 작은 창 PNG를 직접 확인했다. 눈물 시작점을 눈 아래로 조정했으며 원본 PNG의 SHA256은 기존 manifest와 동일하다. UI의 실제 모션 시간축은 자동 합성 입력으로 시험했고 물리 마이크·키보드 실기와 구분한다.
 
-**이번 늘보군 화면 시험은 개인 PNG 외부 전송의 명시 승인 대기이며 미실행이다.** 개인 PNG를 전송하거나 임시 draft/secret을 생성하지 않았다. 추가한 개인 슬롯 저장/재시작·모션·두 창 캡처 fixture는 승인 후 Windows에서 실행한다. plan012는 아직 active이며 최종 리뷰/main 통합은 그 시험 이후다. 아래 과거 늘보군 기록을 이번 코드의 개인 화면 검증으로 해석하지 않는다. 실제 물리 마이크/키보드/DPI와 사용자 OBS 실기 상태도 유지한다.
+첫 개인 실행37636070658은 추가 개인 시험 때문에 기존60초 상한에 걸려 마지막 작은 창 검사 중 종료됐다. 기본60초를 유지하고 개인 시험만90초로 조정했으며 시험 항목을 줄이지 않았다. 두 번째37637307666은 단일 자산 URL의 jwt:expired로 입력 단계에서 중단되어 새 만료 URL로 동일 코드37637826804를 재실행했다. 최종 실행은 전체 통과했다.
+
+OBS32.2.2의 기본 CC0 캐릭터 회귀는 WGC green+Chroma Key와 native alpha 및 각7프레임 변화 통과다. BitBlt 유효 프레임 없음은 기존 runner 제한이다. 로컬 증거는 root `artifacts/qa/plan012/summary.json`, `windows-neulbo/`, 기본 Windows/OBS 폴더에 보관한다.
+
+사용자의 명시적 전송 승인과 캐릭터 삭제 금지 요청에 따라 **늘보군 원본·private draft asset·개인 화면 증거·직접 시험 패키지를 보존**했다. 임시 URL secret만 제거했다. 개인 패키지는 root `artifacts/VoxPet-win-x64-neulbo-plan012.zip` 및 `artifacts/VoxPet-neulbo-plan012/`이다. Windows에서 압축을 모두 풀고 VoxPet.exe → PNG 시트 불러오기 → 개인 캐릭터/늘보군.png → 마이크 없이 데모 순서로 사용한다. 다음 실행에도 유지하려면 F1 표정 슬롯에 저장한다. 기본 공개 배포는 CC0 고양이를 유지한다.
+
+실제 물리 마이크/권한/장치 제거/키보드/DPI와 사용자 OBS/GPU/실제 입력 장시간은 별도 미실행 항목이다. 이번 자동 화면 시험을 그 실기 통과로 해석하지 않는다.
 
 ## 환경과 현재 증거
 

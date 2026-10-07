@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -35,8 +35,8 @@ project_lead / plan_keeper
 
 - [x] README와 코드·하네스 주석을 실제 구현과 비교하고 불일치 수정.
 - [x] 문서/자산/공백 검사, locked restore, format/analyzer, Release build, 전체 Core 테스트.
-- [ ] Windows 전체 QA와 늘보군 실제 WPF 화면·상태/표정 전환 검증, OBS 회귀 확인.
-- [ ] 결과 기록, QA 이후 자체 리뷰, Git 통합과 정리.
+- [x] Windows 전체 QA와 늘보군 실제 WPF 화면·상태/표정 전환 검증, OBS 회귀 확인.
+- [x] 결과 기록, QA 이후 자체 리뷰, 완료 이동과 리뷰 미러 생성.
 
 ## QA Plan
 
@@ -70,9 +70,15 @@ QA 이후 동일 에이전트가 주석의 설명/구현 일치, README의 기�
 | 2026-10-07 | 검증 | 1d8cd05 최종Windows37612609047/OBS37612608423 모두 통과. Windows Core97/97, format/analyzer/Release/publish/WPF smoke 실패0. workflow annotation·의존성 deprecation·빌드 경고/오류0 확인. 로컬 증거 root artifacts/qa/plan012/summary.json. |
 | 2026-10-07 | 심사 | 기본 QA 이후 중간 자체 리뷰: README 기존 링크 보존·97개/36장·12슬롯/F12·저장 경계 확인, 오디오 production 실행문 변경 없음. 새 개인 fixture는 임시 저장소/QA메모리만 사용하고 원본 보존. 기본 PNG의 실제 슬픔/눈물과480×320 화면 확인. 최종 리뷰와 완료 판정은 늘보군 실행 이후로 남김. |
 | 2026-10-07 | 검증 | 사용자 승인 후 private draft의 단일 자산 만료 URL로37636070658 실행. Core97/97/Release 경고0, 늘보군 여섯 상태·미리보기·두 방송창 PNG 확보. 기존60초 상한으로 마지막 배치 시험 중 timeout. 시험 항목을 줄이지 않고 개인 상한90초로 수정. 늘보군 원본 SHA256/manifest 일치 확인, 사진에서 눈물 시작 좌표 조정. |
+| 2026-10-07 | 검증 | 8fdfd36 기본Windows37637240867/OBS37637240816 통과. 개인37637307666은 기존 URL의 jwt:expired로 입력 단계에서 중단. 새 만료 URL을 설정해 동일 코드37637826804 재실행. |
+
+| 2026-10-07 | 검증 | 최종 개인37637826804 통과: Core97/97, smoke 실패0/명명 검사210개, 늘보군 실제 데모/모션/초록·투명 방송창/작은 창 PNG 직접 확인. 개인 패키지17파일/ZIP CRC/원본 SHA256 일치, URL secret 제거. 이미지·private draft·개인 증거 보존. |
+| 2026-10-07 | 심사 | 전체 QA 이후 최종 자체 리뷰 완료. 주석·README·CI/원본 보존·회귀·실기 한계 확인. completed 이동과 리뷰 미러 생성. |
 
 ## Completion Notes
 
-기본 자동 QA·주석·README 점검은 통과했다. [최종 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37612609047)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37612608423)의 로그/PNG/JSON을 로컬에 수집했다. OBS WGC는 통과하며 BitBlt 유효 프레임 없음은 기존 runner 제한이다.
+전체 자동 QA와 늘보군 실제 Windows WPF 합성 화면 검증을 완료했다. 최종 코드8fdfd36의 [기본 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37637240867), [늘보군 QA](https://github.com/taejun9/VoxPet/actions/runs/37637826804), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37637240816) 통과. Core97/97, format/analyzer/Release/publish, Windows 화면 검사210개, 경고·오류0. 주석XML100블록과 README 최신 기능/36자산/97테스트/기존 링크를 확인했다. QA 이후 [자체 리뷰](../../reviews/plan-012-full-qa-review.md)를 완료했다.
 
-초기 개인 전송은 자동 승인 검토에서 거부되었으나 사용자의 명시적 임시 전송 승인을 받았다. 늘보군을 삭제하지 말라는 추가 요청에 따라 원본·private draft asset·시험 증거·직접 시험용 패키지를 보존한다. Windows 개인 화면 시험을 진행 중이며 최종 리뷰와 main 통합은 성공 확인 이후다. 실제 물리 마이크·키보드·DPI와 사용자 OBS 실기는 별도 미실행 항목이다.
+사용자 승인과 보존 요청에 따라 늘보군 원본/private draft/개인 화면/직접 시험 ZIP을 보존하고 임시 URL secret만 제거했다. ZIP은 root artifacts/VoxPet-win-x64-neulbo-plan012.zip이며 Windows EXE/PNG/안내/화면 증거를 포함하고 CRC 검사를 통과했다. 기존 원본 SHA256은 변경하지 않았다.
+
+실제 마이크·물리 키보드/DPI·사용자 GPU/OBS·실제 입력 장시간은 별도 미실행 항목이다. OBS WGC는 통과하며 BitBlt는 기존 runner 제한이다. Git 통합/push/branch -d/worktree 정리 결과와 증거의 최종 summary는 사용자 보고 및 root artifacts/qa/plan012/summary.json에 기록한다.

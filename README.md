@@ -108,7 +108,7 @@ Windows PowerShell에서 배포와 마이크 없는 WPF smoke를 포함한 전�
 
 ## 현재 검증 상태
 
-Windows WPF MVP와 자동 QA가 구현되어 있습니다. plan011에서 Core 97개 테스트, format/analyzer, Release 빌드, WPF smoke, 표정 슬롯 저장·복구·전환·무음 모션·합성 단축키 및 OBS WGC 합성 데모가 통과했습니다. 늘보군 개인 시트의 Windows 화면은 plan008에서 확인했으며, 이후 재검증 결과는 [Windows 검증 기록](docs/quality/windows-checklist.md)에 남깁니다. **실제 마이크·권한·장치 제거, 사용자 GPU/OBS, 물리 키보드·DPI 변경, 실제 입력 장시간 시험은 미실행**입니다. 자동 합성 시험을 실사용 환경의 통과로 해석하지 않습니다.
+plan012에서 macOS/Windows Core **97개 테스트**, format/analyzer, Release 빌드와 자체 포함 배포, WPF smoke 및 OBS WGC 합성 데모가 통과했습니다. 늘보군 개인 시트로 입·눈 여섯 상태, 슬롯 저장·재실행·손상 복구, 표정 전환·무음 눈 깜빡임·눈물과 실제 Windows 미리보기/방송창 PNG를 확인했습니다. 빌드·CI 경고와 오류는 0건입니다. 늘보군은 사용자 요청에 따라 개인 시험 자료로 보존하며 기본 공개 배포는 CC0 고양이를 사용합니다. **실제 마이크·권한·장치 제거, 사용자 GPU/OBS, 물리 키보드·DPI 변경, 실제 입력 장시간 시험은 미실행**입니다. 환경·커밋·화면 증거와 시험 방법은 [Windows 검증 기록](docs/quality/windows-checklist.md)을 확인합니다.
 
 ## 문서 안내와 기여
 
