@@ -117,3 +117,20 @@ README·사용 설명서·배포 안내와 한국어 코드 주석만 보강했�
 - OBS WGC: green+Chroma Key와 native alpha65.08%, 각7프레임 변화 통과. BitBlt 유효 프레임 없음 유지.
 - 증거: root artifacts/qa/plan009/windows/ 및 obs/. 로컬 주석 제외 실행 내용 동등성 및 XML summary 검사 통과.
 - 실제 마이크·사용자 GPU/OBS·물리 DPI·실제 입력 장시간 시험의 기존 미실행 상태는 유지한다.
+
+
+## plan011 표정·단축키·모션 검증
+
+2026-10-07 c18a8c2의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37576998278) 및
+[OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37576998263) 통과.
+Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실제 WPF smoke 통과.
+
+- 표정: 내장6종×6상태, 12슬롯 로컬 저장/재시작/원본 PNG 제거 후 관리 복사본 적용, 손상 PNG의 기존 표시 보존과 내장 복구 확인.
+- 전환/모션: 240ms 중간·완료·중도 전환 snapshot, 연속 요청의 최신 우선, 마이크 없이 blink/tears 이동, blink 끄기, 눈물 위치 조정 확인. 미리보기/방송창 눈물 PNG를 직접 확인했다.
+- 단축키: 실제 RegisterHotKey/WM_HOTKEY + 합성 키 입력으로 F1~F11 등록, 충돌 안내, 메인 최소화 중 F3 전환, F12 앱 내부, 잘못된 modifier 무시, 해제 후 재등록 확인. 물리 키보드 시험과 구분한다.
+- 배치: 4창크기, 3startup bounds, 작은 창 스크롤, 40자 슬롯 이름/이름 TextBox 포함. 1/1.5/2배 PNG는 합성 렌더이며 물리 DPI 시험이 아니다.
+- OBS32.2.2 WGC green+Chroma Key 및 native alpha, 각7프레임 변화 통과. BitBlt는 기존처럼 유효 프레임 없음.
+- 첫 Windows QA의 저장 실패 테스트 예외 종류 차이는 수정 후 재검증했다. 앱 저장 오류 처리의 결함은 없었다.
+- 증거: root artifacts/qa/plan011/windows/ 및 final-obs/, 배포 ZIP artifacts/VoxPet-win-x64-plan011.zip.
+
+물리 키보드/다른 프로그램과의 실사용 충돌, 실제 마이크/권한/제거, 사용자 GPU/OBS, 물리 DPI, 실제 입력 장시간은 기존 미실행 조건으로 남는다.

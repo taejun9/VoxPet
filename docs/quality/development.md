@@ -80,3 +80,9 @@ plan008의 smoke는 로컬 PNG 시트 불러오기/잘못된 파일 복구/행�
 `windows.yml`의 수동 `use_personal_sheet` 입력은 임시 `VOXPET_QA_SHEET_URL` secret의 단일 GitHub release asset 만료 URL만 읽는다.
 모든 workflow는 contents:read이며 계정 토큰을 전달하지 않는다. 개인 시트는 Git/기본 배포에 넣지 않고, 로컬 증거 확보 후 임시 secret·draft 및 개인 이미지가 있는 QA artifact를 삭제한다.
 마이크 권한/물리 장치 검증이나 공용 캐릭터 배포 권한 확인을 대체하지 않는다.
+
+
+## 표정 슬롯 Windows 합성 시험
+
+plan011의 ExpressionQa는 임시 저장소/메모리만 사용해 슬롯 JSON/관리 PNG 복사, 재시작과 손상 복구, 240ms 전환과 무음 눈물/blink를 검증한다. RegisterHotKey 충돌·해제와 실제 WM_HOTKEY는 합성 키 입력으로 검사하며 물리 키보드 실기와 구분한다. F12는 앱 내부 입력이다. 긴 이름/TextBox를 포함한 LayoutQa와 기존 음소거/창 수명 회귀도 실행한다.
+`Windows-QA-evidence`에는 voxpet-expression-preview.png/voxpet-expression-broadcast.png 및 기존 smoke/layout JSON을 포함한다. 음성/실제 사용자 PNG를 포함하지 않는 기본 fixture다.

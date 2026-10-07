@@ -35,4 +35,4 @@ BitBlt는 이 CI 환경에서 유효한 프레임을 얻지 못했다. 실제 �
 반응 프리셋, 캐릭터 음소거, 마이크 상태 안내 보존 및 늘보군 개인 합성 데모를 완료했다.
 Core84/84와 실제 Windows/OBS 회귀를 통과했다. 실제 마이크 조건은 [검증 기록](../quality/windows-checklist.md)의 미실행 항목으로 남는다.
 
-plan-011-expression-motion은 단축키 표정 슬롯·자연스러운 전환·독립 눈물 모션 확장이다. 완료 근거는 완료 계획과 리뷰에 기록하며 물리 키보드/사용자 OBS 실기는 자동 시험과 구분한다.
+[plan-011-expression-motion](../exec_plans/completed/plan-011-expression-motion.md)에서 단축키 표정 슬롯·자연스러운 전환·독립 눈물 모션을 완료했다. Core97/97, Windows WPF/합성 전역 키 및 OBS 회귀를 통과했다. 물리 키보드/사용자 OBS 실기는 자동 시험과 구분한다.
