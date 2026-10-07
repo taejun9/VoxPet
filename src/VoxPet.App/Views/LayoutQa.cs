@@ -62,7 +62,7 @@ internal static class LayoutQa
             check(Math.Abs(main.ActualWidth - width) < 1 && Math.Abs(main.ActualHeight - height) < 1, $"layout_requested_size_{width}x{height}");
             var expander = Descendants(root).OfType<Expander>().Single();
             expander.IsExpanded = true; main.UpdateLayout();
-            var controls = Descendants(root).Where(element => element is Slider or CheckBox or ComboBox || element is Button { Command: not null }).ToArray();
+            var controls = Descendants(root).Where(element => element is Slider or CheckBox or ComboBox or TextBox || element is Button { Command: not null }).ToArray();
             var invisible = new List<string>();
             foreach (var control in controls)
             {

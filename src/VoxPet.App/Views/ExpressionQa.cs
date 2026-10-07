@@ -123,6 +123,10 @@ internal static class ExpressionQa
         hotkeys.Dispose();
         using (var reacquired = new ExpressionHotkeys(probe, _ => { }))
             check(reacquired.Registered.Count == 11, "expression_global_keys_released");
+        // 가장 긴 허용 이름으로 슬롯 버튼/TextBox의 작은 창 접근성을 이어지는 LayoutQa에서 확인한다.
+        main.Model.Expressions.Selected = main.Model.Expressions.Slots[11];
+        main.Model.Expressions.Selected.Name = new string('표', 40);
+        await main.Model.Expressions.SaveAsync();
         await main.Model.Expressions.ActivateAsync(0);
     }
 }

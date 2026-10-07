@@ -74,6 +74,8 @@ QA 후 같은 에이전트가 요구사항·슬롯 데이터 경계·전환 중 
 
 | 2026-10-07 | 검증 | Windows37576490136은 저장 실패 fixture의 macOS/Windows 예외 종류 차이로 Core96/97에서 중단. production은 두 오류를 이미 처리한다. fixture를 IOException/UnauthorizedAccessException 계약으로 수정. OBS37576490160 통과. |
 
+| 2026-10-07 | 심사 | 허용된40자 표정 이름이 작은 창의 슬롯 버튼을 넘치게 만들 수 있어 최대폭/말줄임/전체 이름 tooltip을 추가하고 실제 Windows 배치에40자 슬롯과 이름 TextBox를 포함했다. |
+
 ## Completion Notes
 
 구현/QA 진행 중. 성공한 검증과 남은 실기 제한을 완료 단계에서 기록한다.

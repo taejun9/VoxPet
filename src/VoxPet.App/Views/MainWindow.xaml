@@ -64,7 +64,7 @@
               <TextBlock Text="{Binding HotkeyStatus}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,8,0,8"/>
               <ItemsControl ItemsSource="{Binding Slots}">
                 <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate><DataTemplate><Button Content="{Binding Label}" Command="{Binding SwitchCommand}" Padding="8,6" FontSize="11" ToolTip="마지막 저장된 표정으로 전환"/></DataTemplate></ItemsControl.ItemTemplate>
+                <ItemsControl.ItemTemplate><DataTemplate><Button Command="{Binding SwitchCommand}" Padding="8,6" FontSize="11" MaxWidth="140" ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}"><TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis"/></Button></DataTemplate></ItemsControl.ItemTemplate>
               </ItemsControl>
               <StackPanel IsEnabled="{Binding CanEdit}">
                 <TextBlock Text="편집할 슬롯" Margin="0,12,0,4"/>
