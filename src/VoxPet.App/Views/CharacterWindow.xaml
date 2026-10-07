@@ -1,4 +1,4 @@
-<Window x:Class="VoxPet.App.Views.CharacterWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<Window x:Class="VoxPet.App.Views.CharacterWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:VoxPet.App.Views"
         Title="VoxPet Character" Width="480" Height="480" MinWidth="200" MinHeight="200" WindowStyle="None" AllowsTransparency="True" Background="{Binding BroadcastBackground}" Topmost="{Binding Topmost}" ResizeMode="CanResizeWithGrip" ShowInTaskbar="True">
   <Window.Resources>
     <!-- Opacity만 0으로 해 native 크기 조절 영역은 유지하고 OBS에 grip 픽셀이 보이지 않게 한다. -->
@@ -7,6 +7,6 @@
   <!-- 설정창의 DataContext를 공유한다. 배경과 항상 위 옵션은 ViewModel 바인딩으로 함께 갱신된다. -->
   <Grid Background="{Binding BroadcastBackground}" MouseLeftButtonDown="DragCharacter">
     <Grid.ContextMenu><ContextMenu><MenuItem Header="방송창 닫기 (Esc)" Click="CloseCharacter"/></ContextMenu></Grid.ContextMenu>
-    <Image Source="{Binding Character.Sprite}" Stretch="Uniform" Margin="12" RenderOptions.BitmapScalingMode="HighQuality"><Image.RenderTransform><TranslateTransform Y="{Binding Character.Bounce}"/></Image.RenderTransform></Image>
+    <local:CharacterView DataContext="{Binding Character}" Margin="12"/>
   </Grid>
 </Window>

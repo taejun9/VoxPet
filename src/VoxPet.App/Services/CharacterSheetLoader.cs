@@ -22,8 +22,14 @@ public static class CharacterSheetLoader
         using var file = File.OpenRead(path);
         if (file.Length is < 33 or > 16 * 1024 * 1024)
             throw new ArgumentException("PNG 파일은 16MB 이하여야 합니다.");
-        var data = new byte[(int)file.Length];
-        file.ReadExactly(data);
+        var data = new byte[(int)file.Length]; file.ReadExactly(data);
+        return Load(data);
+    }
+    /// <summary>관리 저장소의 제한된 바이트 복사본에도 동일한 PNG 검증을 적용한다.</summary>
+    public static ImageSource[,] Load(byte[] data)
+    {
+        if (data.Length is < 33 or > 16 * 1024 * 1024)
+            throw new ArgumentException("PNG 파일은 16MB 이하여야 합니다.");
         // PNG signature와 첫 IHDR의 길이·색 형식(6=RGBA)·비트 깊이를 디코딩 전에 검사한다.
         ReadOnlySpan<byte> header = data;
         if (!header[..8].SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }) ||

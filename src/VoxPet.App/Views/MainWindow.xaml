@@ -1,4 +1,4 @@
-<Window x:Class="VoxPet.App.Views.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+<Window x:Class="VoxPet.App.Views.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:VoxPet.App.Views"
         Title="VoxPet · 목소리로 움직이는 캐릭터" Width="1000" Height="730" MinWidth="480" MinHeight="320" Background="#111927" FontFamily="Segoe UI" WindowStartupLocation="CenterScreen">
   <Grid x:Name="LayoutRoot" Margin="28">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -15,7 +15,7 @@
       <Border x:Name="PreviewCard" VerticalAlignment="Top" Background="#1B2738" CornerRadius="18" Padding="24">
         <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
           <TextBlock Text="{Binding Character.Name}" TextWrapping="Wrap" FontWeight="SemiBold" Foreground="#8FA4BC"/>
-          <Image Grid.Row="1" Source="{Binding Character.Sprite}" Stretch="Uniform" Margin="0,18,0,18" RenderOptions.BitmapScalingMode="HighQuality"><Image.RenderTransform><TranslateTransform Y="{Binding Character.Bounce}"/></Image.RenderTransform></Image>
+          <local:CharacterView Grid.Row="1" DataContext="{Binding Character}" Margin="0,18,0,18"/>
           <StackPanel Grid.Row="2">
             <TextBlock Text="VOICE LEVEL" FontSize="11" Foreground="#8FA4BC"/>
             <ProgressBar Value="{Binding VoiceLevel, Mode=OneWay}" Minimum="0" Maximum="1" Height="8" Foreground="{StaticResource Accent}" Background="#303D53" BorderThickness="0" Margin="0,10,0,8"/>
@@ -58,6 +58,34 @@
           <TextBlock Text="{Binding Character.Name}" Foreground="{StaticResource Accent}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
           <WrapPanel><Button Content="PNG 시트 불러오기" Command="{Binding ImportCharacterCommand}"/><Button Content="기본 캐릭터" Command="{Binding DefaultCharacterCommand}"/></WrapPanel>
           <TextBlock Text="{Binding CharacterStatus}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,0,0,16"/>
+          <Border Background="#1B2738" CornerRadius="12" Padding="18" Margin="0,0,0,12" DataContext="{Binding Expressions}">
+            <StackPanel>
+              <TextBlock Text="표정 · 단축키 슬롯" FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding HotkeyStatus}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,8,0,8"/>
+              <ItemsControl ItemsSource="{Binding Slots}">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate><DataTemplate><Button Content="{Binding Label}" Command="{Binding SwitchCommand}" Padding="8,6" FontSize="11" ToolTip="마지막 저장된 표정으로 전환"/></DataTemplate></ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <StackPanel IsEnabled="{Binding CanEdit}">
+                <TextBlock Text="편집할 슬롯" Margin="0,12,0,4"/>
+                <ComboBox ItemsSource="{Binding Slots}" SelectedItem="{Binding Selected}" DisplayMemberPath="Label" MinHeight="32" AutomationProperties.Name="표정 슬롯"/>
+                <TextBlock Text="표정 이름" Margin="0,10,0,4"/>
+                <TextBox Text="{Binding Selected.Name, UpdateSourceTrigger=PropertyChanged}" MaxLength="40" Padding="6" AutomationProperties.Name="표정 이름"/>
+                <TextBlock Text="기본 표정" Margin="0,10,0,4"/>
+                <ComboBox ItemsSource="{Binding Kinds}" SelectedValue="{Binding Selected.Kind}" SelectedValuePath="Key" DisplayMemberPath="Value" MinHeight="32" AutomationProperties.Name="기본 표정"/>
+                <WrapPanel Margin="0,10,0,0"><CheckBox Content="눈 깜빡임" IsChecked="{Binding Selected.Blink}"/><CheckBox Content="눈물 모션" IsChecked="{Binding Selected.Tears}"/></WrapPanel>
+                <TextBlock Text="눈물 위치 · 왼쪽 / 오른쪽 / 높이" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC"/>
+                <Slider Value="{Binding Selected.TearLeft}" Minimum="0" Maximum="1" AutomationProperties.Name="눈물 왼쪽 위치"/>
+                <Slider Value="{Binding Selected.TearRight}" Minimum="0" Maximum="1" AutomationProperties.Name="눈물 오른쪽 위치"/>
+                <Slider Value="{Binding Selected.TearTop}" Minimum="0" Maximum="0.8" AutomationProperties.Name="눈물 높이"/>
+                <local:CharacterView DataContext="{Binding Character}" Height="160" Margin="0,0,0,8"/>
+                <TextBlock Text="{Binding Selected.SheetHint}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC"/>
+                <WrapPanel Margin="0,8,0,0"><Button Content="슬롯 PNG 선택" Command="{Binding ImportCommand}" Padding="8,6" FontSize="11"/><Button Content="내장 표정 사용" Command="{Binding BuiltinCommand}" Padding="8,6" FontSize="11"/></WrapPanel>
+                <WrapPanel><Button Content="표정 미리보기" Command="{Binding PreviewCommand}" Padding="8,6" FontSize="11"/><Button Content="슬롯 저장" Command="{Binding SaveCommand}" Padding="8,6" FontSize="11" Background="{StaticResource Accent}" Foreground="#112C25"/></WrapPanel>
+              </StackPanel>
+              <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,8,0,0"/>
+            </StackPanel>
+          </Border>
           <TextBlock Text="장치 변경은 Stop 후 선택하세요. Gate는 소음을 의미적으로 구별하지 않습니다." Foreground="#8FA4BC" FontSize="12" TextWrapping="Wrap" Margin="0,10,0,0"/>
         </StackPanel>
     </Grid>

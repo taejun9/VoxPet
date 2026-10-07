@@ -1,0 +1,12 @@
+<UserControl x:Class="VoxPet.App.Views.CharacterView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" IsHitTestVisible="False">
+  <!-- 동일한 512px 좌표계를 사용해 창 크기·DPI 변화에도 PNG와 눈물의 위치가 맞는다. -->
+  <UserControl.RenderTransform><TranslateTransform Y="{Binding Bounce}"/></UserControl.RenderTransform>
+  <Viewbox Stretch="Uniform">
+    <Canvas Width="512" Height="512">
+      <Image Width="512" Height="512" Source="{Binding PreviousSprite}" Opacity="{Binding PreviousOpacity}" RenderOptions.BitmapScalingMode="HighQuality"/>
+      <Image Width="512" Height="512" Source="{Binding Sprite}" Opacity="{Binding Blend}" RenderOptions.BitmapScalingMode="HighQuality"/>
+      <Path Data="M5,0 C4,5 0,8 0,12 C0,20 10,20 10,12 C10,8 6,5 5,0 Z" Fill="#9ADFFE" Stroke="#65BCEB" StrokeThickness="1" Canvas.Left="{Binding TearLeftX}" Canvas.Top="{Binding TearLeftY}" Opacity="{Binding TearLeftOpacity}"/>
+      <Path Data="M5,0 C4,5 0,8 0,12 C0,20 10,20 10,12 C10,8 6,5 5,0 Z" Fill="#9ADFFE" Stroke="#65BCEB" StrokeThickness="1" Canvas.Left="{Binding TearRightX}" Canvas.Top="{Binding TearRightY}" Opacity="{Binding TearRightOpacity}"/>
+    </Canvas>
+  </Viewbox>
+</UserControl>

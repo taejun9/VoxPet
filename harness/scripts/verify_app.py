@@ -12,7 +12,10 @@ assets = ROOT / 'src/VoxPet.App/Assets/Characters'
 manifest = json.loads((assets / 'manifest.json').read_text(encoding='utf-8'))
 if len(manifest['states']) != 6 or manifest['size'] != [512, 512]:
     errors.append('Character manifest must have six matching states')
-for name in manifest['states']:
+expressions = manifest.get('expressions', {})
+if set(expressions) != {'happy', 'sad', 'angry', 'surprised', 'sleepy'} or any(len(states) != 6 for states in expressions.values()):
+    errors.append('Expression manifest must have five variants with six states each')
+for name in manifest['states'] + [name for states in expressions.values() for name in states]:
     data = (assets / name).read_bytes()
     if data[:8] != b'\x89PNG\r\n\x1a\n' or struct.unpack('>II', data[16:24]) != (512, 512) or data[25] != 6:
         errors.append(f'Invalid RGBA PNG contract: {name}')
@@ -31,4 +34,4 @@ for name in ('src/VoxPet.App/packages.lock.json', 'tests/VoxPet.Core.Tests/packa
 if errors:
     for error in errors: print(f'FAIL: {error}')
     sys.exit(1)
-print('PASS: 6 aligned PNG states, pinned packages, no recording/network/blocking UI APIs')
+print('PASS: 36 aligned PNG states, pinned packages, no recording/network/blocking UI APIs')

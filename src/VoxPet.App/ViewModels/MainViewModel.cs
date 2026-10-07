@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Media;
+using System.Windows.Input;
 using System.Windows.Threading;
 using VoxPet.App.Services;
 using VoxPet.Core.Models;
@@ -34,6 +35,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private double previousTime;
     public ObservableCollection<AudioDevice> Devices { get; } = [];
     public CharacterViewModel Character { get; } = new();
+    public ExpressionViewModel Expressions { get; }
+    public Func<int, bool>? IsGlobalExpressionKey { get; set; }
+    /// <summary>예약/충돌 키만 앱 안에서 처리하고 전역 메시지와 중복 전환하지 않는다.</summary>
+    public bool HandleExpressionKey(Key key, ModifierKeys modifiers, bool repeat)
+    {
+        int slot = (int)key - (int)Key.F1;
+        if (modifiers != (ModifierKeys.Control | ModifierKeys.Shift) || slot is < 0 or >= 12) return false;
+        if (IsGlobalExpressionKey?.Invoke(slot) == true) return false;
+        if (!repeat) _ = Expressions.ActivateAsync(slot);
+        return true;
+    }
     public AsyncCommand StartCommand { get; }
     public AsyncCommand StopCommand { get; }
     public AsyncCommand RefreshCommand { get; }
@@ -55,6 +67,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public MainViewModel(bool persistSettings = true)
     {
         this.persistSettings = persistSettings;
+        Expressions = new(Character, persistSettings);
         var saved = persistSettings ? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         StartCommand = new(StartAsync, () => CanChooseDevice && SelectedDevice != null);
         StopCommand = new(StopAsync, () => !busy && !closing && (session.HasResources || demo));
@@ -93,7 +106,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (!Set(ref muted, value)) return;
             Notify(nameof(MuteHint)); processor.Reset(); VoiceLevel = 0;
-            Character.Update(animator.Update(0, clock.Elapsed.TotalSeconds));
+            Character.Update(animator.Update(0, clock.Elapsed.TotalSeconds), clock.Elapsed.TotalSeconds);
         }
     }
     public string MuteHint => CharacterMuted ? "입 반응을 잠시 멈췄습니다. 마이크 해제는 Stop을 누르세요." : "음소거는 캐릭터 입만 멈춥니다. 마이크 입력은 계속 표시됩니다.";
@@ -133,7 +146,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         StartCommand.Refresh(); StopCommand.Refresh(); RefreshCommand.Refresh(); DemoCommand.Refresh();
         ImportCharacterCommand.Refresh(); DefaultCharacterCommand.Refresh();
     }
-    public async Task InitializeAsync() => await RefreshDevicesAsync();
+    public async Task InitializeAsync() { await Expressions.InitializeAsync(); await RefreshDevicesAsync(); }
     /// <summary>
     /// 장치 열거는 UI 밖에서 수행한다. await 후 UI에서 목록을 교체하고 이전 선택을 가능하면 유지한다.
     /// </summary>
@@ -219,7 +232,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         processor.Reset(); VoiceLevel = 0; RawLevel = 0; Metrics = "RMS 0.0000   Peak 0.0000   -120.0 dBFS";
         previousTime = clock.Elapsed.TotalSeconds;
-        Character.Update(animator.Update(0, previousTime));
+        Character.Update(animator.Update(0, previousTime), previousTime);
     }
     /// <summary>
     /// DispatcherTimer의 UI 갱신. 입력 종료를 감지하면 중지하고, 나머지는 최신 측정값 한 개로 계산한다.
@@ -244,7 +257,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if ((!running && !demo) || CharacterMuted) processor.Reset();
         VoiceLevel = processor.VoiceLevel; RawLevel = running || demo ? result.Raw : 0;
         Metrics = $"RMS {measured.Rms:F4}   Peak {measured.Peak:F4}   {measured.Dbfs:F1} dBFS{(measured.Peak >= 1 ? " · CLIP" : "")}";
-        Character.Update(animator.Update(VoiceLevel, now));
+        Character.Update(animator.Update(VoiceLevel, now), now);
     }
     /// <summary>
     /// UI 타이머를 먼저 중단하고 캡처 해제 후 설정을 작업 스레드에서 저장한다.
@@ -253,7 +266,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         closing = true; timer.Stop(); timer.Tick -= Tick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
-        await session.DisposeAsync(); ResetLevels();
+        await session.DisposeAsync(); await Expressions.CloseAsync(); ResetLevels();
         bool saved = !persistSettings || await Task.Run(() => store.Save(new(settings, Topmost, GreenBackground)));
         if (!saved) Status = "설정을 저장하지 못했습니다. 다음 실행에서 기본값을 사용합니다.";
     }

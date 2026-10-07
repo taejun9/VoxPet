@@ -42,3 +42,7 @@
 
 외부 API/지원 정책이 바뀌는 작업에서는 확인일과 사용 범위를 갱신한다.
 기획의 Windows 10/11 목표를 모든 빌드에 대한 지원 보장으로 해석하지 않는다.
+
+| Microsoft RegisterHotKey | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey | 전역 단축키 | 2026-10-07 | MOD_NOREPEAT, 충돌 처리, F12 디버거 예약 |
+| Microsoft UnregisterHotKey | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-unregisterhotkey | 단축키 수명 | 2026-10-07 | 소유 thread/window에서 전역 등록 해제 |
+| Microsoft HwndSource.AddHook | https://learn.microsoft.com/en-us/dotnet/api/system.windows.interop.hwndsource.addhook?view=windowsdesktop-10.0 | WPF native 메시지 | 2026-10-07 | WM_HOTKEY 처리와 RemoveHook 정리 |

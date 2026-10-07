@@ -138,3 +138,14 @@ CharacterStatus는 마이크 Status와 분리돼 적용/실패 안내가 Running
 Core의 ReactionPresets가 일반 대화·조용한 목소리·빠른 반응의 불변 AudioSettings를 제공한다. UI는 preset 적용 후 전체 조정값을 통지하며 개별 슬라이더 조정을 계속 허용한다.
 CharacterMuted는 envelope와 VoiceLevel만 즉시 초기화한다. RAW/RMS/Peak와 마이크 세션은 유지하고 blink/idle은 독립적으로 계속된다.
 음소거 상태를 해제하면 현재 입력부터 반응하고, Stop은 기존대로 캡처와 레벨을 해제한다. 음소거 상태도 영구 저장하지 않는다.
+
+
+## 표정 슬롯·전환·모션 (plan011)
+
+Core의 ExpressionProfile은 표정 이름·내장 종류·blink/tears·정규화 눈물 좌표·관리 PNG GUID만 갖는다. ExpressionSlotStore는 슬롯별 4KiB 이하 JSON과 16MB 이하 PNG 복사본을 저장한다. 외부 파일 경로는 보관하지 않으며 GUID 검증으로 경로 이탈을 거부한다. 작업 스레드에서 새 PNG를 완성한 뒤 슬롯 JSON을 원자적으로 교체하고 이전 복사본을 정리한다. 실패하면 이전 저장값이 유지된다. 슬롯별 손상은 다른 슬롯에 영향을 주지 않는다.
+
+ExpressionViewModel은 편집 초안/마지막 저장값을 분리한다. 저장은 즉시 수행하며 시작 시 저장된 F1 표정을 적용한다. UI 타이머/오디오 callback에는 파일 IO를 추가하지 않는다. 시트 로딩/인코딩/저장은 작업 스레드, 표시 적용은 UI에서 한다. SemaphoreSlim과 요청 revision으로 로딩을 직렬화하고 연속 단축키 요청의 오래된 결과를 버린다. 종료 시 새 적용을 막고 진행 중 저장을 기다린다. QA는 사용자 폴더 대신 주입한 temp 저장소나 메모리를 사용한다.
+
+기본 고양이의 여섯 표정마다 입3×눈2 상태를 생성하여 총36장 frozen PNG를 공유한다. 사용자 슬롯은 독립적인 3×2 시트이며 내장 얼굴을 합성하지 않는다. CharacterViewModel은 누적 monotonic 초와 240ms smoothstep으로 표정을 전환한다. 진행 중 재전환은 현재 합성 이미지/눈물을 512px snapshot 한 장으로 고정해 이전 합성 참조가 쌓이지 않는다. CharacterView는 두 창에서 동일한 Viewbox/512px 좌표계로 PNG와 독립적인 두 눈물 방울을 표시한다. 눈물 위치는 슬롯별로 조정하며 Stop/음소거와 무관하게 시간축을 유지한다.
+
+ExpressionHotkeys는 설정창의 HwndSource에 RegisterHotKey(MOD_CONTROL|MOD_SHIFT|MOD_NOREPEAT)를 등록한다. F1~F11은 전역, F12는 Windows 예약 키이므로 두 창의 PreviewKeyDown fallback이다. 등록 충돌을 표시하고 충돌 키도 앱 안에서 전환한다. 전역 메시지와 로컬 키 이벤트가 중복 전환하지 않으며 키보드 훅/입력 로그를 만들지 않는다. 성공한 종료 또는 Closed에서 등록과 hook을 해제한다.

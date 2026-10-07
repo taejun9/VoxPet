@@ -1,5 +1,8 @@
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Input;
+using System.Windows.Interop;
+using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 
 namespace VoxPet.App.Views;
@@ -11,6 +14,7 @@ public partial class MainWindow : Window
 {
     public MainViewModel Model { get; }
     private CharacterWindow? character;
+    private ExpressionHotkeys? hotkeys;
     private bool allowClose, shuttingDown;
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     // Loaded 후 장치 목록 초기화가 끝나는 시점. Windows smoke가 UI 준비를 기다리는 용도다.
@@ -34,8 +38,34 @@ public partial class MainWindow : Window
             var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 PNG 시트 선택 (3열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
             return dialog.ShowDialog(this) == true ? dialog.FileName : null;
         };
+        Model.Expressions.ChooseSheet += () =>
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "슬롯 표정 PNG 시트 선택 (3열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
+            return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+        };
+        PreviewKeyDown += (_, e) =>
+        {
+            if (Model.HandleExpressionKey(e.Key, Keyboard.Modifiers, e.IsRepeat)) e.Handled = true;
+        };
+        SourceInitialized += (_, _) =>
+        {
+            if (!smoke) EnableExpressionHotkeys();
+            else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
+        };
+        Closed += (_, _) => hotkeys?.Dispose();
         Loaded += async (_, _) => { await Model.InitializeAsync(); ready.TrySetResult(); };
         Closing += OnClosing;
+    }
+    internal ExpressionHotkeys EnableExpressionHotkeys()
+    {
+        if (hotkeys != null) return hotkeys;
+        var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+        hotkeys = new(source, slot => _ = Model.Expressions.ActivateAsync(slot));
+        Model.IsGlobalExpressionKey = slot => hotkeys.Registered.Contains(slot);
+        Model.Expressions.HotkeyStatus = hotkeys.Conflicts.Count == 0
+            ? "Ctrl+Shift+F1~F11 전역 사용 · F12는 VoxPet 창 안에서 사용"
+            : $"단축키 등록 실패: {string.Join(", ", hotkeys.Conflicts.Select(i => $"F{i + 1}"))} · 다른 앱과 충돌할 수 있습니다. 앱 안의 키/버튼을 사용하세요. F12도 앱 안에서 사용합니다.";
+        return hotkeys;
     }
     /// <summary>
     /// 870 DIP 미만의 폭 또는 600 DIP 미만의 높이에서는 조작 영역을 먼저 보여 주는 한 열 배치로 전환한다.
@@ -97,5 +127,5 @@ public partial class MainWindow : Window
     /// <summary>
     /// 캡처 종료·설정 저장 후 방송창을 닫고 다음 Closing을 허용한다.
     /// </summary>
-    public async Task ShutdownAsync() { await Model.DisposeAsync(); character?.Close(); allowClose = true; }
+    public async Task ShutdownAsync() { await Model.DisposeAsync(); hotkeys?.Dispose(); character?.Close(); allowClose = true; }
 }
