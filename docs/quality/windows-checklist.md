@@ -1,5 +1,13 @@
 # Windows 실사용 검증 기록
 
+## plan012 재점검 진행 상태
+
+2026-10-07, 코드1d8cd05의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37612609047)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37612608423) 통과. macOS/Windows Core97/97, locked restore/format/analyzer/Release build/publish, WPF smoke failures0/명명 검사200개,4창크기×45컨트롤과 작은 창 스크롤을 확인했다. 구형 Actions Node20 경고를 공식 Node24 Actions로 갱신하여 workflow/의존성 deprecation/빌드 경고·오류0을 확인했다. C#35파일의XML doc100블록, XAML4개/Python4개 구문도 통과했다. 실제 WPF 기본 캐릭터의 슬픔/눈물과480×320 PNG를 직접 확인했다.
+
+OBS32.2.2 WGC green+Chroma Key와 native alpha 및 각7프레임 변화는 통과한다. BitBlt 유효 프레임 없음은 기존 runner 제한이다. 로컬 증거는 root `artifacts/qa/plan012/summary.json`과 `windows-clean/`, `obs-clean/`에 보관한다.
+
+**이번 늘보군 화면 시험은 개인 PNG 외부 전송의 명시 승인 대기이며 미실행이다.** 개인 PNG를 전송하거나 임시 draft/secret을 생성하지 않았다. 추가한 개인 슬롯 저장/재시작·모션·두 창 캡처 fixture는 승인 후 Windows에서 실행한다. plan012는 아직 active이며 최종 리뷰/main 통합은 그 시험 이후다. 아래 과거 늘보군 기록을 이번 코드의 개인 화면 검증으로 해석하지 않는다. 실제 물리 마이크/키보드/DPI와 사용자 OBS 실기 상태도 유지한다.
+
 ## 환경과 현재 증거
 
 2026-10-05, 구현 호스트 macOS arm64, SDK 10.0.401.

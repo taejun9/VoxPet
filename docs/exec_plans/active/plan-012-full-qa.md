@@ -65,7 +65,11 @@ QA 이후 동일 에이전트가 주석의 설명/구현 일치, README의 기�
 | 2026-10-07 | 제작 | README의84개/PNG6장 기록을97개/36장과 표정 슬롯 기능으로 동기화. 주석의 시간·좌표·저장/종료·키 범위를 보완. 정적 검사 성공 문구의 픽셀 정렬 주장을 헤더 검사로 정정. |
 | 2026-10-07 | 검증 | 초기 fixture 컴파일에서 private StopAsync 접근 오류를 발견하고 기존 StopCommand로 수정. 재실행한 locked restore/format/analyzer/Release build(경고0/오류0)/Core97/97 통과. C#28파일의XML doc93블록, XAML4개, Python4개 구문 통과. |
 | 2026-10-07 | 검증 | src/tests 전체35 C#파일의XML doc100블록 구문 통과. 93a74e5 기본Windows37611971009(97/97, smoke failures0/명명 검사200개,4크기×45컨트롤) 및OBS37611970944(WGC green/chroma/native alpha 각7프레임) 통과. Actions 런타임 경고 제거 뒤 다시 실행한다. |
+| 2026-10-07 | 검증 | 1d8cd05 최종Windows37612609047/OBS37612608423 모두 통과. Windows Core97/97, format/analyzer/Release/publish/WPF smoke 실패0. workflow annotation·의존성 deprecation·빌드 경고/오류0 확인. 로컬 증거 root artifacts/qa/plan012/summary.json. |
+| 2026-10-07 | 심사 | 기본 QA 이후 중간 자체 리뷰: README 기존 링크 보존·97개/36장·12슬롯/F12·저장 경계 확인, 오디오 production 실행문 변경 없음. 새 개인 fixture는 임시 저장소/QA메모리만 사용하고 원본 보존. 기본 PNG의 실제 슬픔/눈물과480×320 화면 확인. 최종 리뷰와 완료 판정은 늘보군 실행 이후로 남김. |
 
 ## Completion Notes
 
-진행 중. Windows 실제 실행과 늘보군 화면 확인 후 완료를 판정한다.
+기본 자동 QA·주석·README 점검은 통과했다. [최종 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37612609047)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37612608423)의 로그/PNG/JSON을 로컬에 수집했다. OBS WGC는 통과하며 BitBlt 유효 프레임 없음은 기존 runner 제한이다.
+
+늘보군 개인 PNG의 외부 전송이 자동 승인 검토에서 거부되어 명시 사용자 승인 대기다. 임시 draft/secret을 생성하지 않았고 개인 이미지를 전송하지 않았다. 늘보군 화면 시험을 통과로 기록하지 않는다. 계획 active/작업 브랜치를 보존하고 최종 리뷰·completed 이동·main 병합/push·정리를 보류한다. 승인 후 기존 개인 시트를 scoped URL로 주입한 Windows QA, 실제 캡처 확인, 개인 원격 자료 삭제를 수행한다. 실제 물리 마이크·키보드·DPI와 사용자 OBS 실기는 별도 미실행 항목이다.
