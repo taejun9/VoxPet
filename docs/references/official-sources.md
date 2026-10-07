@@ -46,3 +46,7 @@
 | Microsoft RegisterHotKey | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey | 전역 단축키 | 2026-10-07 | MOD_NOREPEAT, 충돌 처리, F12 디버거 예약 |
 | Microsoft UnregisterHotKey | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-unregisterhotkey | 단축키 수명 | 2026-10-07 | 소유 thread/window에서 전역 등록 해제 |
 | Microsoft HwndSource.AddHook | https://learn.microsoft.com/en-us/dotnet/api/system.windows.interop.hwndsource.addhook?view=windowsdesktop-10.0 | WPF native 메시지 | 2026-10-07 | WM_HOTKEY 처리와 RemoveHook 정리 |
+| GitHub actions/checkout v7.0.1 | https://github.com/actions/checkout/releases/tag/v7.0.1 | CI checkout | 2026-10-07 | 공식 릴리스와 v7 action.yml의 Node24 실행 확인 |
+| GitHub actions/setup-dotnet v6.0.0 | https://github.com/actions/setup-dotnet/releases/tag/v6.0.0 | SDK CI 설치 | 2026-10-07 | Node24/ESM 및 의존성 갱신, 기존 global-json-file 입력 유지 |
+| GitHub actions/setup-python v7.0.0 | https://github.com/actions/setup-python/releases/tag/v7.0.0 | Python CI 설치 | 2026-10-07 | Node24/ESM 및 의존성 갱신, 기존 python-version 입력 유지 |
+| GitHub actions/upload-artifact v7.0.1 | https://github.com/actions/upload-artifact/releases/tag/v7.0.1 | QA 증거 업로드 | 2026-10-07 | Node24 및 의존성 갱신, 기존 name/path/if-no-files-found 입력 유지 |

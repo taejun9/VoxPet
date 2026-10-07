@@ -54,6 +54,8 @@ QA 이후 동일 에이전트가 주석의 설명/구현 일치, README의 기�
 | 2026-10-07 | macOS의 Git metadata 쓰기 제한은 승인 실행으로 동일 명령 재시도 | FETCH_HEAD 쓰기 거부, 사용자 변경 없이 worktree 규칙 준수 |
 | 2026-10-07 | 로컬 QA 뒤 작업 브랜치 checkpoint commit/push로 Windows CI 실행 | 실제 WPF 실행에는 Windows runner가 필요, 완료 판정은 전체 QA 이후 |
 | 2026-10-07 | 개인 시트의 표정 슬롯 재시작·손상 복구와 두 창 캡처를 기존 smoke에 추가 | 이전 개인 시험은 일반 불러오기의 입 반응만 확인 |
+| 2026-10-07 | 개인 PNG 전송은 명시 승인 대기, 기본 QA와 경고 제거부터 진행 | 자동 승인 검토가 개인 외부 전송 승인 부족으로 거부. PUBLIC 저장소 확인, draft도 별도 승인 없이 생성하지 않음 |
+| 2026-10-07 | Windows/OBS Actions를 공식 Node24 버전 checkout7/dotnet6/python7/upload7로 갱신 | 첫 CI에서 Node20 및 의존성 deprecation 경고 확인. 공식 릴리스와 action.yml runtime 확인 |
 
 ## Progress Log
 
@@ -62,6 +64,7 @@ QA 이후 동일 에이전트가 주석의 설명/구현 일치, README의 기�
 | 2026-10-07 | 지도 | main/origin 동기화와 clean 상태 확인. plan012 worktree 생성. 기존 SDK와 늘보군 시트 확인. |
 | 2026-10-07 | 제작 | README의84개/PNG6장 기록을97개/36장과 표정 슬롯 기능으로 동기화. 주석의 시간·좌표·저장/종료·키 범위를 보완. 정적 검사 성공 문구의 픽셀 정렬 주장을 헤더 검사로 정정. |
 | 2026-10-07 | 검증 | 초기 fixture 컴파일에서 private StopAsync 접근 오류를 발견하고 기존 StopCommand로 수정. 재실행한 locked restore/format/analyzer/Release build(경고0/오류0)/Core97/97 통과. C#28파일의XML doc93블록, XAML4개, Python4개 구문 통과. |
+| 2026-10-07 | 검증 | src/tests 전체35 C#파일의XML doc100블록 구문 통과. 93a74e5 기본Windows37611971009(97/97, smoke failures0/명명 검사200개,4크기×45컨트롤) 및OBS37611970944(WGC green/chroma/native alpha 각7프레임) 통과. Actions 런타임 경고 제거 뒤 다시 실행한다. |
 
 ## Completion Notes
 
