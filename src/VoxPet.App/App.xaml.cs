@@ -109,6 +109,14 @@ public partial class App : Application
                 var packed = new IntPtr(((int)point.X & 0xffff) | (((int)point.Y & 0xffff) << 16));
                 Check(SendMessage(new WindowInteropHelper(broadcast).Handle, 0x0084, IntPtr.Zero, packed).ToInt64() == 17, "broadcast_native_resize_hit");
             }
+            main.Model.BroadcastWidth = 600; main.Model.BroadcastHeight = 360;
+            await Task.Delay(50);
+            Check(broadcast.ActualWidth == 600 && broadcast.ActualHeight == 360, "broadcast_size_controls_apply");
+            broadcast.SetCurrentValue(Window.WidthProperty, 520.0); broadcast.SetCurrentValue(Window.HeightProperty, 420.0); await Task.Delay(50);
+            Check(main.Model.BroadcastWidth == 520 && main.Model.BroadcastHeight == 420, "broadcast_resize_updates_controls");
+            main.Model.BroadcastWidth = double.NaN; main.Model.BroadcastHeight = 150;
+            Check(main.Model.BroadcastWidth == 480 && main.Model.BroadcastHeight == 200, "broadcast_size_bounds_finite");
+            main.Model.BroadcastWidth = 480; main.Model.BroadcastHeight = 480;
             main.Model.NormalizeMin = -80; main.Model.NormalizeMax = -20;
             main.Model.NormalizeMin = -1;
             if (main.Model.NormalizeMin >= main.Model.NormalizeMax) failures++;
@@ -140,6 +148,7 @@ public partial class App : Application
             var reopened = main.ShowCharacter();
             Check(!ReferenceEquals(broadcast, reopened) && IsWindowVisible(new WindowInteropHelper(reopened).Handle), "broadcast_reopens");
             Check(ReferenceEquals(reopened.DataContext, main.Model), "broadcast_shares_model");
+            Check(reopened.ActualWidth == main.Model.BroadcastWidth && reopened.ActualHeight == main.Model.BroadcastHeight, "broadcast_reopens_at_selected_size");
             var closingWindow = new MainWindow(smoke: true); closingWindow.Show();
             await closingWindow.Ready; closingWindow.Close();
             await Task.Delay(100);

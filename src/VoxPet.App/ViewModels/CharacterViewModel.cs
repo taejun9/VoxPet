@@ -2,6 +2,8 @@ using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using VoxPet.App.Services;
+using System.Runtime.InteropServices;
 using VoxPet.Core.Models;
 using VoxPet.Core.Services;
 
@@ -12,6 +14,8 @@ public sealed class CharacterViewModel : ObservableObject
 {
     private readonly Dictionary<ExpressionKind, ImageSource[,]> defaults = [];
     private ImageSource[,] sprites;
+    private ImageSource[,]? personalDefault;
+    private string defaultName = "Violet Cat";
     private CharacterParameters current = new(0, 0, 0, 0, 1, MouthState.Closed);
     private ExpressionProfile profile = ExpressionProfile.Default(0);
     private string name = "Violet Cat · 기본 캐릭터";
@@ -38,6 +42,18 @@ public sealed class CharacterViewModel : ObservableObject
             defaults.Add(expression, sheet);
         }
         sprites = defaults[ExpressionKind.Neutral]; sprite = sprites[0, 1];
+    }
+    /// <summary>개인 실행 폴더의 선택적 기본 PNG를 비동기로 읽는다. 실패해도 내장 캐릭터로 시작하며 원본과 저장 슬롯은 수정하지 않는다.</summary>
+    public async Task<bool> LoadDefaultAsync(string path)
+    {
+        try
+        {
+            var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
+            personalDefault = sheet; defaultName = Path.GetFileNameWithoutExtension(path);
+            RestoreDefault(); return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException)
+        { return false; }
     }
     public string Name { get => name; private set => Set(ref name, value); }
     public ImageSource Sprite { get => sprite; private set => Set(ref sprite, value); }
@@ -71,8 +87,8 @@ public sealed class CharacterViewModel : ObservableObject
         var snapshot = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32);
         snapshot.Render(visual); snapshot.Freeze();
         PreviousSprite = snapshot; transitionStart = now; Blend = 0;
-        profile = expression; sprites = sheet ?? defaults[expression.Kind];
-        Name = sheet == null ? $"Violet Cat · {expression.Name}" : $"{expression.Name} · 사용자 캐릭터";
+        profile = expression; sprites = sheet ?? personalDefault ?? defaults[expression.Kind];
+        Name = sheet == null ? $"{defaultName} · {expression.Name}" : $"{expression.Name} · 사용자 캐릭터";
         Notify(nameof(TearLeftX)); Notify(nameof(TearRightX)); Update(current, now);
     }
     private static void DrawTear(DrawingContext drawing, double x, double y, double opacity)

@@ -32,7 +32,7 @@ public partial class MainWindow : Window
         WindowStartupLocation = WindowStartupLocation.Manual;
         Left = initialWorkArea.Left + (initialWorkArea.Width - Width) / 2;
         Top = initialWorkArea.Top + (initialWorkArea.Height - Height) / 2;
-        ContentViewport.SizeChanged += (_, _) => UpdateResponsiveLayout();
+        SettingsTabs.SizeChanged += (_, _) => UpdateResponsiveLayout();
         SizeChanged += (_, _) => UpdateResponsiveLayout();
         Model.OpenBroadcast += () => ShowCharacter();
         Model.OpenMicrophonePrivacy += () =>
@@ -86,26 +86,20 @@ public partial class MainWindow : Window
             : "Ctrl+Shift+M 등록 실패 · 다른 앱과 충돌할 수 있습니다. VoxPet 창 안의 키 또는 체크박스를 사용하세요.";
         return muteHotkey;
     }
-    /// <summary>
-    /// 870 DIP 미만의 폭 또는 600 DIP 미만의 높이에서는 조작 영역을 먼저 보여 주는 한 열 배치로 전환한다.
-    /// 하나의 ScrollViewer가 전체 내용을 스크롤하므로 작은 창에서도 모든 조작에 접근할 수 있다.
-    /// </summary>
+    /// <summary>작은 창은 공통 미리보기를 숨기고 탭을 넓힌다. 캐릭터 탭에서는 항상 미리보기를 볼 수 있다.</summary>
     private void UpdateResponsiveLayout()
     {
         bool compact = ActualWidth < 870 || ActualHeight < 600;
-        LayoutRoot.Margin = new Thickness(compact ? 16 : 28);
-        TitleText.FontSize = compact ? 26 : 32;
-        SubtitleText.Margin = new Thickness(0, compact ? 2 : 6, 0, compact ? 8 : 24);
-        StatusCard.Padding = new Thickness(compact ? 10 : 14);
-        StatusCard.Margin = new Thickness(0, compact ? 12 : 20, 0, 0);
-        StatusCard.MaxHeight = compact ? 52 : 80;
-        PanelsGrid.RowDefinitions[1].Height = compact ? GridLength.Auto : new GridLength(0);
+        LayoutRoot.Margin = new Thickness(compact ? 12 : 28);
+        TitleText.FontSize = compact ? 22 : 32;
+        SubtitleText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        StatusCard.Padding = new Thickness(compact ? 8 : 14);
+        StatusCard.Margin = new Thickness(0, compact ? 8 : 16, 0, 0);
+        PreviewCard.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
         PanelsGrid.ColumnDefinitions[1].Width = new GridLength(compact ? 0 : 24);
         PanelsGrid.ColumnDefinitions[2].Width = compact ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
-        System.Windows.Controls.Grid.SetColumn(ControlsPanel, compact ? 0 : 2);
-        System.Windows.Controls.Grid.SetRow(PreviewCard, compact ? 1 : 0);
-        PreviewCard.Height = compact ? 400 : Math.Max(280, ContentViewport.ActualHeight);
-        PreviewCard.Margin = new Thickness(0, compact ? 20 : 0, 0, 0);
+        System.Windows.Controls.Grid.SetColumn(SettingsTabs, compact ? 0 : 2);
+        PreviewCard.Height = Math.Max(280, SettingsTabs.ActualHeight);
     }
     /// <summary>
     /// 하나의 방송창을 생성·복구·활성화한다. 닫힌 창은 다음 호출에서 새로 만든다.

@@ -11,6 +11,11 @@ public partial class CharacterWindow : Window
     public CharacterWindow()
     {
         InitializeComponent();
+        SizeChanged += (_, e) =>
+        {
+            if (IsLoaded && DataContext is VoxPet.App.ViewModels.MainViewModel model)
+            { model.BroadcastWidth = e.NewSize.Width; model.BroadcastHeight = e.NewSize.Height; }
+        };
         PreviewKeyDown += (_, e) =>
         {
             if (DataContext is VoxPet.App.ViewModels.MainViewModel model &&
@@ -22,6 +27,11 @@ public partial class CharacterWindow : Window
     private void DragCharacter(object sender, MouseButtonEventArgs e)
     {
         if (e.LeftButton == MouseButtonState.Pressed) DragMove();
+    }
+    private void ResizeCharacter(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.MenuItem { Tag: string size } && double.TryParse(size, out double value) && DataContext is VoxPet.App.ViewModels.MainViewModel model)
+        { model.BroadcastWidth = value; model.BroadcastHeight = value; }
     }
     private void CloseCharacter(object sender, RoutedEventArgs e) => Close();
 }

@@ -5,11 +5,11 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Input;
+using VoxPet.App.Services;
 
 namespace VoxPet.App.Views;
 
-/// <summary>마이크 없이 실제 Windows WPF 배치와 스크롤을 시험하는 smoke fixture. 물리 DPI 변경 시험과 구분한다.</summary>
+/// <summary>마이크 없이 실제 Windows WPF 탭 배치와 선택 상자 색상을 시험하는 smoke fixture. 물리 DPI 변경 시험과 구분한다.</summary>
 internal static class LayoutQa
 {
     private static IEnumerable<FrameworkElement> Descendants(DependencyObject parent)
@@ -40,6 +40,14 @@ internal static class LayoutQa
         return false;
     }
 
+    private static void Save(Window main, string name, double scale)
+    {
+        var bitmap = new RenderTargetBitmap((int)Math.Ceiling(main.ActualWidth * scale), (int)Math.Ceiling(main.ActualHeight * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
+        bitmap.Render(main);
+        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var file = File.Create(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), name));
+        encoder.Save(file);
+    }
     public static async Task RunAsync(MainWindow main, Action<bool, string> check)
     {
         var cases = new List<object>();
@@ -60,46 +68,53 @@ internal static class LayoutQa
             main.Width = width; main.Height = height;
             await Task.Delay(100); main.UpdateLayout();
             check(Math.Abs(main.ActualWidth - width) < 1 && Math.Abs(main.ActualHeight - height) < 1, $"layout_requested_size_{width}x{height}");
-            var expander = Descendants(root).OfType<Expander>().Single();
-            expander.IsExpanded = true; main.UpdateLayout();
-            var controls = Descendants(root).Where(element => element is Slider or CheckBox or ComboBox or TextBox || element is Button { Command: not null }).ToArray();
             var invisible = new List<string>();
-            foreach (var control in controls)
+            int count = 0;
+            double sensitivity = main.Model.Sensitivity;
+            var draft = main.Model.Expressions.Selected.Draft;
+            for (int tab = 0; tab < main.SettingsTabs.Items.Count; tab++)
             {
-                // 스크롤로 접근할 수 있는지 시험한다. 최초 화면의 Start/Stop 가시성은 아래에서 별도로 검사한다.
-                control.BringIntoView(); await Task.Delay(50); main.UpdateLayout();
-                string label = control is ContentControl content ? content.Content?.ToString() ?? control.GetType().Name : System.Windows.Automation.AutomationProperties.GetName(control);
-                bool visible = FullyVisible(control, root);
-                check(visible, $"layout_control_{width}x{height}_{label}");
-                if (!visible) invisible.Add(label);
+                main.SettingsTabs.SelectedIndex = tab;
+                await Task.Delay(50); main.UpdateLayout();
+                var controls = Descendants(root).Where(element => element.IsVisible &&
+                    (element is Slider or CheckBox or ComboBox or TextBox || element is Button { Command: not null })).ToArray();
+                count += controls.Length;
+                foreach (var control in controls)
+                {
+                    string label = control is ContentControl content ? content.Content?.ToString() ?? control.GetType().Name : System.Windows.Automation.AutomationProperties.GetName(control);
+                    bool visible = FullyVisible(control, root);
+                    check(visible, $"layout_tab_{tab}_{width}x{height}_{label}");
+                    if (!visible) invisible.Add(label);
+                }
+                check(Descendants(root).OfType<TabItem>().All(item => FullyVisible(item, root)), $"layout_tab_headers_{width}x{height}_{tab}");
+                check(Descendants(root).OfType<ScrollViewer>().Where(scroll => scroll.IsVisible).All(scroll => scroll.ScrollableHeight == 0 && scroll.ScrollableWidth == 0), $"layout_no_content_scroll_{width}x{height}_{tab}");
+                foreach (var combo in controls.OfType<ComboBox>())
+                {
+                    if (combo.Items.Count == 0)
+                    {
+                        main.Model.Devices.Add(new AudioDevice("qa-synthetic", "QA 마이크 · 긴 장치 이름"));
+                        main.Model.SelectedDevice = main.Model.Devices[0]; main.UpdateLayout();
+                    }
+                    check(combo.Foreground is SolidColorBrush foreground && foreground.Color == Colors.Black &&
+                        Descendants(combo).OfType<TextBlock>().Where(text => text.IsVisible && !string.IsNullOrWhiteSpace(text.Text)).All(text => text.Foreground is SolidColorBrush brush && brush.Color == Colors.Black), $"layout_select_black_{width}x{height}_{tab}");
+                    combo.IsDropDownOpen = true; await Task.Delay(30); combo.UpdateLayout();
+                    var item = combo.ItemContainerGenerator.ContainerFromIndex(0) as ComboBoxItem;
+                    check(item != null && item.Foreground is SolidColorBrush itemBrush && itemBrush.Color == Colors.Black &&
+                        Descendants(item).OfType<TextBlock>().Where(text => text.IsVisible).All(text => text.Foreground is SolidColorBrush brush && brush.Color == Colors.Black), $"layout_select_popup_black_{width}x{height}_{tab}");
+                    combo.IsDropDownOpen = false;
+                }
+                Save(main, $"voxpet-layout-{width}x{height}-tab-{tab}.png", 1);
             }
-            expander.IsExpanded = false;
-            foreach (var scroll in Descendants(root).OfType<ScrollViewer>()) scroll.ScrollToTop();
-            await Task.Delay(50); main.UpdateLayout();
+            check(main.Model.Sensitivity == sensitivity && main.Model.Expressions.Selected.Draft == draft, $"layout_tab_switch_preserves_edit_{width}x{height}");
+            main.SettingsTabs.SelectedIndex = 0; main.UpdateLayout();
             if (width >= 870 && height >= 600)
                 check(FullyVisible(main.PreviewCard, root), $"layout_preview_card_at_top_{width}x{height}");
-            bool? wheelScroll = null;
-            if (width < 870 || height < 600)
-            {
-                check(controls.OfType<Button>().Where(button => Equals(button.Content, "Start") || Equals(button.Content, "Stop")).All(button => FullyVisible(button, root)), $"layout_start_stop_at_top_{width}x{height}");
-                double before = main.ContentViewport.VerticalOffset;
-                var start = controls.OfType<Button>().Single(button => Equals(button.Content, "Start"));
-                start.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, -120) { RoutedEvent = Mouse.MouseWheelEvent });
-                await Task.Delay(50); main.UpdateLayout();
-                wheelScroll = main.ContentViewport.VerticalOffset > before;
-                check(wheelScroll.Value, $"layout_wheel_scroll_{width}x{height}");
-                main.ContentViewport.ScrollToTop(); await Task.Delay(50); main.UpdateLayout();
-            }
             // 래스터 렌더 배율만 바꾼 증거 PNG다. 실제 OS DPI나 다중 모니터 이동 결과로 기록하지 않는다.
             foreach (double scale in new[] { 1.0, 1.5, 2.0 })
             {
-                var bitmap = new RenderTargetBitmap((int)Math.Ceiling(main.ActualWidth * scale), (int)Math.Ceiling(main.ActualHeight * scale), 96 * scale, 96 * scale, PixelFormats.Pbgra32);
-                bitmap.Render(main);
-                var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-                using var file = File.Create(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), $"voxpet-layout-{width}x{height}-{scale:F1}.png"));
-                encoder.Save(file);
+                Save(main, $"voxpet-layout-{width}x{height}-{scale:F1}.png", scale);
             }
-            cases.Add(new { requestedWidth = width, requestedHeight = height, actualWidth = main.ActualWidth, actualHeight = main.ActualHeight, controls = controls.Length, invisible, wheelScroll });
+            cases.Add(new { requestedWidth = width, requestedHeight = height, actualWidth = main.ActualWidth, actualHeight = main.ActualHeight, controls = count, invisible, tabs = main.SettingsTabs.Items.Count, contentScroll = false });
         }
         main.Width = 1000; main.Height = 730; await Task.Delay(100); main.UpdateLayout();
         File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "voxpet-layout-result.json"), JsonSerializer.Serialize(new { syntheticRenderScale = true, physicalDpiChange = false, startupCases, cases }, new JsonSerializerOptions { WriteIndented = true }));

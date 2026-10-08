@@ -39,6 +39,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private string characterStatus = "3열: 닫힘·중간·열림 / 2행: 일반·눈감음. 투명 PNG의 중앙·바닥을 자동 정렬합니다.";
     private string metrics = "RMS 0.0000   Peak 0.0000   -120.0 dBFS";
     private double level, raw;
+    private double broadcastWidth = 480, broadcastHeight = 480;
     private double previousTime;
     public ObservableCollection<AudioDevice> Devices { get; } = [];
     public CharacterViewModel Character { get; } = new();
@@ -145,6 +146,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string MuteHotkeyStatus { get => muteHotkeyStatus; set => Set(ref muteHotkeyStatus, value); }
     public string CalibrationStatus { get => calibrationStatus; private set => Set(ref calibrationStatus, value); }
     public bool IsMeasuringNoise => calibration != null;
+    // 크기는 DIP 단위다. 모서리 드래그 결과도 공유하고 다시 열 때 이번 실행의 크기를 유지한다.
+    public double BroadcastWidth { get => broadcastWidth; set => Set(ref broadcastWidth, double.IsFinite(value) ? Math.Clamp(value, 200, 1200) : 480); }
+    public double BroadcastHeight { get => broadcastHeight; set => Set(ref broadcastHeight, double.IsFinite(value) ? Math.Clamp(value, 200, 1200) : 480); }
     public bool Topmost { get => topmost; set => Set(ref topmost, value); }
     public bool GreenBackground { get => green; set { if (Set(ref green, value)) Notify(nameof(BroadcastBackground)); } }
     public Brush BroadcastBackground => GreenBackground ? Brushes.Lime : Brushes.Transparent;
@@ -183,7 +187,17 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         MeasureNoiseCommand.Refresh(); CancelNoiseCommand.Refresh(); ApplyNoiseCommand.Refresh(); MicrophonePrivacyCommand.Refresh();
         Notify(nameof(IsMeasuringNoise));
     }
-    public async Task InitializeAsync() { await Expressions.InitializeAsync(); await RefreshDevicesAsync(); }
+    public async Task InitializeAsync()
+    {
+        // 개인 PNG는 사용자의 실행 폴더에만 동봉한다. 저장된 슬롯의 선택은 그대로 보존한다.
+        if (persistSettings)
+        {
+            string path = Path.Combine(AppContext.BaseDirectory, "Characters", "늘보군.png");
+            if (File.Exists(path) && !await Character.LoadDefaultAsync(path))
+                CharacterStatus = "기본 PNG를 읽지 못했습니다. 내장 캐릭터로 시작합니다. Characters/늘보군.png를 확인하세요.";
+        }
+        await Expressions.InitializeAsync(); await RefreshDevicesAsync();
+    }
     /// <summary>
     /// 장치 열거는 UI 밖에서 수행한다. await 후 UI에서 목록을 교체하고 이전 선택을 가능하면 유지한다.
     /// </summary>

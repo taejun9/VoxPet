@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using VoxPet.App.Services;
+using VoxPet.App.ViewModels;
 using VoxPet.Core.Models;
 
 namespace VoxPet.App.Views;
@@ -31,6 +32,16 @@ internal static class CharacterQa
         var fixture = BitmapSource.Create(384, 256, 96, 96, PixelFormats.Bgra32, null, pixels, 384 * 4);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(fixture));
         using (var file = File.Create(sheetPath)) encoder.Save(file);
+        // 별도 모델로 개인 기본 시작/복원과 내장 표정·잘못된 기본 파일 복구를 확인한다.
+        var personalDefault = new CharacterViewModel();
+        check(await personalDefault.LoadDefaultAsync(sheetPath), "character_personal_default_load");
+        var defaultSprite = personalDefault.Sprite;
+        personalDefault.Apply(ExpressionProfile.Default(2));
+        check(ReferenceEquals(defaultSprite, personalDefault.Sprite) && personalDefault.Name.Contains("fixture"), "character_personal_default_expression_keeps_character");
+        personalDefault.UseSheet(CharacterSheetLoader.Load(sheetPath), "다른 캐릭터");
+        personalDefault.RestoreDefault();
+        check(ReferenceEquals(defaultSprite, personalDefault.Sprite), "character_personal_default_restore");
+        check(!await personalDefault.LoadDefaultAsync(sheetPath + ".missing") && ReferenceEquals(defaultSprite, personalDefault.Sprite), "character_personal_default_failure_preserves_default");
         var initial = main.Model.Character.Sprite;
         string micStatus = main.Model.Status;
         check(await main.Model.ImportCharacterAsync(sheetPath), "character_valid_sheet_import");
