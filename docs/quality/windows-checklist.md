@@ -182,3 +182,19 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 증거: artifacts/qa/plan014/windows/ 및 obs/. 개인 패키지: artifacts/VoxPet-win-x64-neulbo-plan014.zip.
 
 실제 마이크·물리 DPI/입력·사용자 GPU/OBS 실기는 기존 미실행 상태를 유지한다.
+
+
+## plan015 상세 입8단계·늘보군 실제 표정 가족
+
+2026-10-08 9e89a07의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37776428922), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37776428945) 통과.
+
+- Core132/132, locked restore/format/analyzer/Release/publish 경고·오류0, Windows smoke 실패0/고유 명명 검사415개.
+- 합성8열PNG의16frozen상태/행열과 음량 프레임 선택, 기본6표정 가족/8열 인코딩/슬롯 저장 재시작/손상 표정의 평상 복구/기본 누락 시 기존 표시 보존. 기존3열·창 수명·입 음소거·탭·hotkey 회귀 통과.
+- Core는8단계 정확한 경계/비유한값/실제 dBFS sweep의8프레임 방문/작은 목소리/Gate와3열·8열 메모리 크기 제한을 검사했다.
+- 개인 늘보군은 내장 imagegen으로6실제 얼굴(평상/기쁨/슬픔/화남/놀람/졸림)×입8×눈2=96상태를 제작했다. 얼굴·가방·몸의 정체성, 깜빡임, 표정 차이를 직접 확인했다. 생성기의 배치/화남 입 반복/투명 경계는 도구로 수정하고 프레임은 독립 캐릭터로 추출·패딩·순서 정렬했다. 얼굴 픽셀을 수작업으로 그리지 않았다.
+- 로컬 시트는352px셀/2816×704 RGBA, 파일당16MB 이하,96개 고유 프레임과 표정별8개 입 면적 순서를 검사했다. 새 개인 ZIP18파일/CRC/시트 해시/기존 원본 SHA256 일치를 확인했다. 원본과 이전 ZIP은 보존했다.
+- 개인 PNG는 Git/공개 CI/공용 배포에 포함하지 않았다. 이번 개인 PNG를 Windows에서 실행한 화면은 수집하지 않았으며 합성 fixture와 로컬 자산 검사로 구분한다.
+- OBS32.2.2 WGC green/Chroma Key/native alpha 유지, 각각7프레임 변화 통과. BitBlt의 기존 유효 프레임 없음 유지.
+- 증거: artifacts/qa/plan015/windows/ 및 obs/, 개인 자산 artifacts/characters/neulbo-plan015/, 실행 ZIP artifacts/VoxPet-win-x64-neulbo-plan015.zip.
+
+실제 마이크/권한/장치 제거·물리 DPI/키보드·사용자 OBS/GPU의 기존 미실행 상태는 유지한다.
