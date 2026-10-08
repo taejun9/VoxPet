@@ -56,3 +56,5 @@ Pitch, STT, 키워드·감정 반응, Live2D, Spine, 캐릭터 에디터는 장�
 Windows 11 지원 중인 버전을 우선 검증한다. Windows 10은 .NET 10 공식 지원 edition/build와 실제 QA를 확인해야 한다.
 
 표정 확장(plan011): 로컬 영구 F1~F12 슬롯, 내장6종/슬롯별 사용자 PNG, Ctrl+Shift+F1~F11 전역 전환(F12 앱 내부), 240ms 전환과 설정 가능한 눈물 모션을 제공한다. 슬롯 사용은 [사용 안내](../user-guide.md)를 따른다.
+
+사용성 개선(plan013): Ctrl+Shift+M 전역 입 음소거, 3초 주변 소음 Gate 추천과 직접 적용/취소, Windows 마이크 권한 설정 바로가기를 추가했다. [사용자 기능 조사와 구현 격차](user-feature-research.md)에 18개 기능의 근거·구현 여부·우선순위를 기록했다. 자동 QA와 실기 상태는 검증 기록을 따른다.

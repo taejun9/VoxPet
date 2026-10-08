@@ -8,7 +8,8 @@
 
 - 마이크 선택·새로고침과 Start/Stop, RMS·Peak·dBFS 및 Voice Level 표시
 - Noise Gate, Sensitivity, Attack/Release, 고급 입력 범위 조정
-- 일반 대화·조용한 목소리·빠른 반응 프리셋, 캐릭터 음소거
+- 3초 주변 소음 측정으로 Gate 추천·직접 적용/취소, Windows 마이크 권한 설정 바로가기
+- 일반 대화·조용한 목소리·빠른 반응 프리셋, Ctrl+Shift+M 전역 캐릭터 입 음소거
 - 입 3단계와 눈 깜빡임, 대기 움직임을 표현하는 기본 CC0 고양이
 - 로컬 투명 PNG 시트 불러오기와 기본 캐릭터 복원
 - 12개 영구 표정 슬롯, 기본 표정 6종과 슬롯별 사용자 PNG, 눈물 모션·위치 조정
@@ -113,6 +114,7 @@ plan012에서 macOS/Windows Core **97개 테스트**, format/analyzer, Release �
 ## 문서 안내와 기여
 
 - 사용자: [사용 설명서](docs/user-guide.md), [개인정보 원칙](docs/privacy/principles.md)
+- 기능 조사: [사용자 기능 목록·구현 격차·우선순위](docs/product/user-feature-research.md)
 - 제품과 개발: [제품 정의](docs/product/product.md), [로드맵](docs/product/roadmap.md), [앱 설계](docs/architecture/application.md), [개발 환경](docs/quality/development.md)
 - 작업 절차: [AGENTS.md](AGENTS.md), [하네스와 Git](docs/architecture/harness.md), [QA·리뷰 규칙](docs/quality/rules.md)
 - 근거와 기록: [공식 자료](docs/references/official-sources.md), [실행 계획](docs/exec_plans/), [리뷰](docs/reviews/)

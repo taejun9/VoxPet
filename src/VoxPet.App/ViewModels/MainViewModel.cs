@@ -22,6 +22,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly AudioLevelProcessor processor = new();
     private readonly CharacterAnimator animator = new();
     private readonly SettingsStore store = new();
+    private readonly Func<IReadOnlyList<AudioDevice>> listDevices;
+    private readonly Func<string, IAudioInput> createInput;
+    private NoiseGateCalibration? calibration;
+    private long calibrationStarted;
+    private double? recommendedGate;
+    private string calibrationStatus = "Start 후 3초간 말하지 않고 주변 소음을 측정하세요. 추천값은 직접 적용합니다.";
+    private string muteHotkeyStatus = "Ctrl+Shift+M · 캐릭터 입 음소거";
     // 벽시계 변경에 영향을 받지 않는 시간축. envelope에는 경과 시간, blink에는 누적 시간을 전달한다.
     private readonly Stopwatch clock = Stopwatch.StartNew();
     private readonly DispatcherTimer timer;
@@ -37,6 +44,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public CharacterViewModel Character { get; } = new();
     public ExpressionViewModel Expressions { get; }
     public Func<int, bool>? IsGlobalExpressionKey { get; set; }
+    public Func<bool>? IsGlobalMuteKey { get; set; }
+    public bool HandleMuteKey(Key key, ModifierKeys modifiers, bool repeat)
+    {
+        if (closing || key != Key.M || modifiers != (ModifierKeys.Control | ModifierKeys.Shift) || IsGlobalMuteKey?.Invoke() == true) return false;
+        if (!repeat) CharacterMuted = !CharacterMuted;
+        return true;
+    }
     /// <summary>예약/충돌 키만 앱 안에서 처리하고 전역 메시지와 중복 전환하지 않는다.</summary>
     public bool HandleExpressionKey(Key key, ModifierKeys modifiers, bool repeat)
     {
@@ -57,16 +71,24 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand ConversationCommand { get; }
     public RelayCommand SoftVoiceCommand { get; }
     public RelayCommand SnappyCommand { get; }
+    public RelayCommand MeasureNoiseCommand { get; }
+    public RelayCommand CancelNoiseCommand { get; }
+    public RelayCommand ApplyNoiseCommand { get; }
+    public RelayCommand MicrophonePrivacyCommand { get; }
     public event Func<string?>? ChooseCharacterSheet;
     public event Action? OpenBroadcast;
+    public event Action? OpenMicrophonePrivacy;
 
     /// <summary>
     /// QA는 persistSettings=false로 실제 사용자 설정을 읽거나 덮어쓰지 않는다.
     /// 명령 활성 조건은 마이크 수명과 별도 PNG 로딩 상태를 기준으로 UI에서 평가한다.
     /// </summary>
-    public MainViewModel(bool persistSettings = true)
+    public MainViewModel(bool persistSettings = true) : this(persistSettings, AudioCaptureService.ListDevices, id => new AudioCaptureService(id)) { }
+    // Windows QA는 가짜 숫자 입력을 주입해 실제 마이크/사용자 설정에 접근하지 않는다.
+    internal MainViewModel(bool persistSettings, Func<IReadOnlyList<AudioDevice>> listDevices, Func<string, IAudioInput> createInput)
     {
         this.persistSettings = persistSettings;
+        this.listDevices = listDevices; this.createInput = createInput;
         Expressions = new(Character, persistSettings);
         var saved = persistSettings ? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         StartCommand = new(StartAsync, () => CanChooseDevice && SelectedDevice != null);
@@ -84,6 +106,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ConversationCommand = new(() => ApplyPreset(ReactionPreset.Conversation));
         SoftVoiceCommand = new(() => ApplyPreset(ReactionPreset.SoftVoice));
         SnappyCommand = new(() => ApplyPreset(ReactionPreset.Snappy));
+        MeasureNoiseCommand = new(BeginNoiseMeasurement, () => !busy && !closing && session.State == CaptureState.Running && calibration == null);
+        CancelNoiseCommand = new(() => ClearNoiseMeasurement("측정을 취소했습니다. 기존 설정을 유지합니다."), () => !closing && calibration != null);
+        ApplyNoiseCommand = new(() =>
+        {
+            if (recommendedGate is not { } gate) return;
+            NoiseGate = gate;
+            CalibrationStatus = $"Noise Gate {gate:F0} dBFS 적용 완료. 작은 목소리가 잘리는지 말해서 확인하세요.";
+            recommendedGate = null; RefreshCommands();
+        }, () => !closing && recommendedGate != null && calibration == null);
+        MicrophonePrivacyCommand = new(() => OpenMicrophonePrivacy?.Invoke(), () => !closing);
         // 60Hz는 목표 갱신 주기다. 지연된 프레임도 Tick의 실제 dt로 계산해 반응 시간이 늘어나지 않게 한다.
         timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(1000.0 / 60) };
         timer.Tick += Tick; timer.Start();
@@ -110,6 +142,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
     }
     public string MuteHint => CharacterMuted ? "입 반응을 잠시 멈췄습니다. 마이크 해제는 Stop을 누르세요." : "음소거는 캐릭터 입만 멈춥니다. 마이크 입력은 계속 표시됩니다.";
+    public string MuteHotkeyStatus { get => muteHotkeyStatus; set => Set(ref muteHotkeyStatus, value); }
+    public string CalibrationStatus { get => calibrationStatus; private set => Set(ref calibrationStatus, value); }
+    public bool IsMeasuringNoise => calibration != null;
     public bool Topmost { get => topmost; set => Set(ref topmost, value); }
     public bool GreenBackground { get => green; set { if (Set(ref green, value)) Notify(nameof(BroadcastBackground)); } }
     public Brush BroadcastBackground => GreenBackground ? Brushes.Lime : Brushes.Transparent;
@@ -145,6 +180,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Notify(nameof(CanChooseDevice)); Notify(nameof(DemoLabel));
         StartCommand.Refresh(); StopCommand.Refresh(); RefreshCommand.Refresh(); DemoCommand.Refresh();
         ImportCharacterCommand.Refresh(); DefaultCharacterCommand.Refresh();
+        MeasureNoiseCommand.Refresh(); CancelNoiseCommand.Refresh(); ApplyNoiseCommand.Refresh(); MicrophonePrivacyCommand.Refresh();
+        Notify(nameof(IsMeasuringNoise));
     }
     public async Task InitializeAsync() { await Expressions.InitializeAsync(); await RefreshDevicesAsync(); }
     /// <summary>
@@ -156,7 +193,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         try
         {
             string? old = SelectedDevice?.Id;
-            var devices = await Task.Run(AudioCaptureService.ListDevices);
+            var devices = await Task.Run(listDevices);
             Devices.Clear(); foreach (var device in devices) Devices.Add(device);
             SelectedDevice = Devices.FirstOrDefault(d => d.Id == old) ?? Devices.FirstOrDefault();
             Status = Devices.Count == 0 ? "사용 가능한 마이크가 없습니다. 장치를 연결한 뒤 새로고침하세요." : "마이크 준비 완료. Start를 누르면 로컬 분석을 시작합니다.";
@@ -174,7 +211,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         busy = true; Status = "마이크 시작 중…"; RefreshCommands(); ResetLevels();
         try
         {
-            await session.StartAsync(() => new AudioCaptureService(device.Id));
+            await session.StartAsync(() => createInput(device.Id));
             Status = session.State == CaptureState.Running ? $"분석 중 · {device.Name} · 오디오는 저장/전송되지 않습니다." : session.Error ?? "마이크 시작 실패";
         }
         finally { busy = false; RefreshCommands(); }
@@ -184,6 +221,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     private async Task StopAsync()
     {
+        ClearNoiseMeasurement("측정을 종료했습니다. 마이크를 다시 시작한 뒤 측정하세요.");
         busy = true; demo = false; RefreshCommands(); Status = "마이크 종료 중…";
         try { await session.StopAsync(); ResetLevels(); Status = session.Error ?? "중지됨 · 마이크 캡처가 해제되었습니다."; }
         finally { busy = false; RefreshCommands(); }
@@ -219,10 +257,42 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // 프리셋으로 불변 설정을 통째로 바꾼 뒤 모든 관련 바인딩을 다시 알린다.
     private void ApplyPreset(ReactionPreset preset)
     {
+        ClearNoiseMeasurement("프리셋을 적용했습니다. 필요하면 주변 소음을 다시 측정하세요.");
         settings = ReactionPresets.Create(preset);
         NotifyAudioSettings();
     }
     private void Reset() => ApplyPreset(ReactionPreset.Conversation);
+    private void BeginNoiseMeasurement()
+    {
+        if (!MeasureNoiseCommand.CanExecute(null)) return;
+        calibration = new(); recommendedGate = null; calibrationStarted = Stopwatch.GetTimestamp();
+        CalibrationStatus = "주변 소음 측정 중 · 3초간 말하지 마세요. 취소하거나 Stop으로 끝낼 수 있습니다.";
+        RefreshCommands();
+    }
+    private void ClearNoiseMeasurement(string message)
+    {
+        if (calibration == null && recommendedGate == null) return;
+        calibration = null; recommendedGate = null; CalibrationStatus = message; RefreshCommands();
+    }
+    private void UpdateNoiseMeasurement(AudioSnapshot? snapshot, long now)
+    {
+        if (calibration == null) return;
+        if (snapshot != null && snapshot.Timestamp > calibrationStarted)
+            calibration.AddSample(snapshot.Level.Dbfs, snapshot.Timestamp / (double)Stopwatch.Frequency);
+        double elapsed = (now - calibrationStarted) / (double)Stopwatch.Frequency;
+        if (elapsed < 3)
+        {
+            CalibrationStatus = $"주변 소음 측정 중 · 말하지 마세요 · 남은 시간 {Math.Ceiling(3 - elapsed):F0}초";
+            return;
+        }
+        if (snapshot != null && calibration.TryRecommend(out double gate))
+        {
+            recommendedGate = gate;
+            CalibrationStatus = $"추천 Noise Gate {gate:F0} dBFS · 추천값 적용 후 말해서 확인하세요. 말소리도 소음으로 측정됩니다.";
+        }
+        else CalibrationStatus = "추천값을 만들지 못했습니다. 무신호·입력 끊김·너무 큰 소음을 확인하고 조용히 다시 측정하세요. 기존 설정을 유지합니다.";
+        calibration = null; RefreshCommands();
+    }
     private void NotifyAudioSettings()
     {
         foreach (var property in new[] { nameof(NoiseGate), nameof(Sensitivity), nameof(AttackMs), nameof(ReleaseMs), nameof(NormalizeMin), nameof(NormalizeMax) }) Notify(property);
@@ -244,7 +314,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         double dt = Math.Max(0, now - previousTime); previousTime = now;
         if (session.HasInputEnded && !busy && !closing) { await StopAsync(); return; }
         bool running = session.State == CaptureState.Running;
-        var measured = session.ReadLevel(Stopwatch.GetTimestamp());
+        long timestamp = Stopwatch.GetTimestamp();
+        var snapshot = session.ReadSnapshot(timestamp);
+        UpdateNoiseMeasurement(snapshot, timestamp);
+        var measured = snapshot?.Level ?? AudioLevel.Silence;
         // 데모에서는 발화/침묵 구간을 흉내 낸 dB 값을 만든다. 마이크를 열거나 소리를 재생하지 않는다.
         if (demo)
         {
@@ -264,6 +337,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     public async ValueTask DisposeAsync()
     {
+        ClearNoiseMeasurement("앱 종료로 측정을 취소했습니다.");
         closing = true; timer.Stop(); timer.Tick -= Tick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
         await session.DisposeAsync(); await Expressions.CloseAsync(); ResetLevels();

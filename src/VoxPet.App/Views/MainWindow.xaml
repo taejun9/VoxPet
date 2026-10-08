@@ -28,8 +28,10 @@
         <StackPanel x:Name="ControlsPanel" Grid.Column="2">
           <TextBlock Text="마이크" FontWeight="SemiBold" Margin="0,0,0,10"/>
           <DockPanel><Button DockPanel.Dock="Right" Content="↻" ToolTip="마이크 장치 새로고침" Command="{Binding RefreshCommand}" Margin="8,0,0,0"/><ComboBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" DisplayMemberPath="Name" IsEnabled="{Binding CanChooseDevice}" MinHeight="38" VerticalContentAlignment="Center" AutomationProperties.Name="마이크 선택"/></DockPanel>
+          <Button Content="Windows 마이크 권한 설정 열기" Command="{Binding MicrophonePrivacyCommand}" HorizontalAlignment="Left" FontSize="11" Padding="8,6" Margin="0,8,0,0"/>
           <WrapPanel Margin="0,12,0,24"><Button Content="Start" Command="{Binding StartCommand}" Background="{StaticResource Accent}" Foreground="#112C25" MinWidth="100"/><Button Content="Stop" Command="{Binding StopCommand}" MinWidth="100"/><Button Content="{Binding DemoLabel}" Command="{Binding DemoCommand}" FontSize="11" Padding="10,10"/></WrapPanel>
           <CheckBox Content="캐릭터 음소거" IsChecked="{Binding CharacterMuted}"/>
+          <TextBlock Text="{Binding MuteHotkeyStatus}" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource Accent}" Margin="0,0,0,6"/>
           <TextBlock Text="{Binding MuteHint}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,0,0,12"/>
           <Border Background="#1B2738" CornerRadius="12" Padding="18">
             <StackPanel>
@@ -37,6 +39,8 @@
               <WrapPanel Margin="0,12,0,0"><Button Content="일반 대화" Command="{Binding ConversationCommand}" Padding="8,6" FontSize="11"/><Button Content="조용한 목소리" Command="{Binding SoftVoiceCommand}" Padding="8,6" FontSize="11"/><Button Content="빠른 반응" Command="{Binding SnappyCommand}" Padding="8,6" FontSize="11"/></WrapPanel>
               <DockPanel Margin="0,18,0,0"><TextBlock Text="Noise Gate"/><TextBlock Text="{Binding NoiseGate, StringFormat={}{0:F0} dBFS}" HorizontalAlignment="Right" Foreground="{StaticResource Accent}"/></DockPanel>
               <Slider Value="{Binding NoiseGate}" Minimum="-90" Maximum="-10" TickFrequency="1" IsSnapToTickEnabled="True" AutomationProperties.Name="Noise Gate"/>
+              <WrapPanel><Button Content="주변 소음 측정 (3초)" Command="{Binding MeasureNoiseCommand}" Padding="8,6" FontSize="11"/><Button Content="측정 취소" Command="{Binding CancelNoiseCommand}" Padding="8,6" FontSize="11"/><Button Content="추천값 적용" Command="{Binding ApplyNoiseCommand}" Padding="8,6" FontSize="11"/></WrapPanel>
+              <TextBlock Text="{Binding CalibrationStatus}" TextWrapping="Wrap" Foreground="#8FA4BC" FontSize="11" Margin="0,0,0,12"/>
               <DockPanel><TextBlock Text="Sensitivity"/><TextBlock Text="{Binding Sensitivity, StringFormat={}{0:F2} ×}" HorizontalAlignment="Right" Foreground="{StaticResource Accent}"/></DockPanel>
               <Slider Value="{Binding Sensitivity}" Minimum="0" Maximum="4" TickFrequency="0.05" IsSnapToTickEnabled="True" AutomationProperties.Name="Sensitivity"/>
               <DockPanel><TextBlock Text="Attack"/><TextBlock Text="{Binding AttackMs, StringFormat={}{0:F0} ms}" HorizontalAlignment="Right" Foreground="{StaticResource Accent}"/></DockPanel>

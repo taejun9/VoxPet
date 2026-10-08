@@ -50,3 +50,10 @@
 | GitHub actions/setup-dotnet v6.0.0 | https://github.com/actions/setup-dotnet/releases/tag/v6.0.0 | SDK CI 설치 | 2026-10-07 | Node24/ESM 및 의존성 갱신, 기존 global-json-file 입력 유지 |
 | GitHub actions/setup-python v7.0.0 | https://github.com/actions/setup-python/releases/tag/v7.0.0 | Python CI 설치 | 2026-10-07 | Node24/ESM 및 의존성 갱신, 기존 python-version 입력 유지 |
 | GitHub actions/upload-artifact v7.0.1 | https://github.com/actions/upload-artifact/releases/tag/v7.0.1 | QA 증거 업로드 | 2026-10-07 | Node24 및 의존성 갱신, 기존 name/path/if-no-files-found 입력 유지 |
+| veadotube mini usage | https://veado.tube/docs/usage/mini/ | PNG 방송 기능 | 2026-10-08 | 사용자 기능 비교: 이미지·표정·마이크·단축키·OBS |
+| veadotube data folder | https://veado.tube/docs/tech/data/ | 로컬 설정 | 2026-10-08 | 재시작 보존 비교 |
+| OBS Window Capture | https://obsproject.com/kb/window-capture-sources | 방송창 캡처 | 2026-10-08 | 별도 창과 캡처 방식 안내 |
+| Microsoft microphone permission | https://support.microsoft.com/en-us/windows/privacy/turn-on-app-permissions-for-your-microphone-in-windows | 권한 복구 | 2026-10-08 | 마이크 접근 사용자 안내 |
+| Microsoft settings URI | https://learn.microsoft.com/en-us/windows/apps/develop/launch/launch-settings | 설정 페이지 | 2026-10-08 | ms-settings:privacy-microphone 바로가기 |
+
+공개 사용자 사례는 [기능 조사](../product/user-feature-research.md)의 S2로 별도 기록한다. 공식 API 근거로 사용하지 않는다. Gate 추천의 수치와 키 선택은 VoxPet 설계 결정이다.

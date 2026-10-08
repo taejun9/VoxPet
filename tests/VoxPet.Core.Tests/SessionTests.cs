@@ -53,6 +53,19 @@ public sealed class SessionTests
         await session.StopAsync(); Assert.Equal(1, second.Disposals);
     }
     [Fact]
+    public async Task SnapshotDistinguishesMissingFromFreshInputAndExpires()
+    {
+        await using var session = new AudioSession(); var input = new FakeInput();
+        Assert.Null(session.ReadSnapshot(Stopwatch.GetTimestamp()));
+        await session.StartAsync(() => input); Assert.Null(session.ReadSnapshot(Stopwatch.GetTimestamp()));
+        input.Push(); var now = Stopwatch.GetTimestamp(); var snapshot = session.ReadSnapshot(now);
+        Assert.NotNull(snapshot); Assert.Equal(snapshot, session.ReadSnapshot(now));
+        Assert.Null(session.ReadSnapshot(snapshot.Timestamp - 1));
+        Assert.Null(session.ReadSnapshot(now + Stopwatch.Frequency));
+        input.Fail(); Assert.Null(session.ReadSnapshot(now));
+        await session.StopAsync(); Assert.Null(session.ReadSnapshot(now));
+    }
+    [Fact]
     // 실제 Sleep 대신 미래 Stopwatch 값을 전달해 오래된 입력의 무음 전환을 결정적으로 검사한다.
     public async Task StaleInputReleasesAfter250Milliseconds()
     {

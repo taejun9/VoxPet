@@ -90,3 +90,7 @@ plan011의 ExpressionQa는 임시 저장소/메모리만 사용해 슬롯 JSON/�
 `VOXPET_QA_SHEET`를 지정한 실행은 슬롯 관리 복사본의 저장·재시작·원본 제거·손상 복구에도 그 개인 시트를 사용한다. 늘보군 평상/눈물 슬롯의 여섯 frozen 상태, 전환 시작/완료, 무음 blink·눈물과 두 창 공유를 검사하고 `voxpet-personal-expression-*.png`에 미리보기 및 초록/투명 방송창을 렌더한다. `voxpet-smoke-result.json`의 passedChecks/failedChecks로 개인 시험 실행 여부를 확인한다. 이 PNG는 개인 자료이므로 위 수집·보존·정리 절차를 동일하게 적용한다.
 
 자동 smoke 프로세스의 상한은 기본60초, 개인 시트 추가 시험은90초다. 시험 항목과 판정 기준은 동일하게 유지하며 추가 개인 시트 저장/모션/캡처 시간만 확보한다. 실제 사용자 앱 실행에는 이 상한을 적용하지 않는다.
+
+## 주변 소음·입 음소거 사용성 합성 시험
+
+plan013의 UsabilityQa는 실제 마이크 대신 20ms 주기의 숫자 입력을 주입해 DispatcherTimer 기반 3초 측정/직접 적용/취소/Stop/프리셋/무신호/장치 중단/종료를 검사한다. ExpressionQa는 Ctrl+Shift+M 등록·충돌·최소화 중 WM_HOTKEY·해제 재등록을 기존 표정 키와 함께 검사한다. LayoutQa는 새 권한/측정/취소/적용 버튼까지 4창크기에서 접근성을 검사한다. 권한 버튼의 명령 전달은 OS 설정을 열지 않는 fixture에서 확인하며 실제 Settings 페이지와 물리 권한 변경은 실기 항목이다.

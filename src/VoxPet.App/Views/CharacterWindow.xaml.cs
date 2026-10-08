@@ -13,7 +13,8 @@ public partial class CharacterWindow : Window
         InitializeComponent();
         PreviewKeyDown += (_, e) =>
         {
-            if (DataContext is VoxPet.App.ViewModels.MainViewModel model && model.HandleExpressionKey(e.Key, Keyboard.Modifiers, e.IsRepeat)) e.Handled = true;
+            if (DataContext is VoxPet.App.ViewModels.MainViewModel model &&
+                (model.HandleMuteKey(e.Key, Keyboard.Modifiers, e.IsRepeat) || model.HandleExpressionKey(e.Key, Keyboard.Modifiers, e.IsRepeat))) e.Handled = true;
         };
         KeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
     }

@@ -36,3 +36,5 @@ BitBlt는 이 CI 환경에서 유효한 프레임을 얻지 못했다. 실제 �
 Core84/84와 실제 Windows/OBS 회귀를 통과했다. 실제 마이크 조건은 [검증 기록](../quality/windows-checklist.md)의 미실행 항목으로 남는다.
 
 [plan-011-expression-motion](../exec_plans/completed/plan-011-expression-motion.md)에서 단축키 표정 슬롯·자연스러운 전환·독립 눈물 모션을 완료했다. Core97/97, Windows WPF/합성 전역 키 및 OBS 회귀를 통과했다. 물리 키보드/사용자 OBS 실기는 자동 시험과 구분한다.
+
+사용자 기능 조사(plan013)는 [기능별 포함 여부와 우선순위](user-feature-research.md)에 기록했다. 전역 입 음소거·주변 소음 Gate 추천·권한 설정 바로가기를 우선 개선한다. 두 장 PNG 직접 적용, 키 사용자화/PTT/Stream Deck, GIF/레이어 편집, 클릭 통과·창 위치 복구·프레임율은 별도 설계 후보로 남긴다.

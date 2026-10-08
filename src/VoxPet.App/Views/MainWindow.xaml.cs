@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
@@ -15,6 +16,7 @@ public partial class MainWindow : Window
     public MainViewModel Model { get; }
     private CharacterWindow? character;
     private ExpressionHotkeys? hotkeys;
+    private MuteHotkey? muteHotkey;
     private bool allowClose, shuttingDown;
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     // Loaded 후 장치 목록 초기화가 끝나는 시점. Windows smoke가 UI 준비를 기다리는 용도다.
@@ -33,6 +35,12 @@ public partial class MainWindow : Window
         ContentViewport.SizeChanged += (_, _) => UpdateResponsiveLayout();
         SizeChanged += (_, _) => UpdateResponsiveLayout();
         Model.OpenBroadcast += () => ShowCharacter();
+        Model.OpenMicrophonePrivacy += () =>
+        {
+            try { Process.Start(new ProcessStartInfo("ms-settings:privacy-microphone") { UseShellExecute = true }); }
+            catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
+            { MessageBox.Show(this, "Windows 설정 → 개인정보 및 보안 → 마이크를 직접 열어 접근 권한을 확인하세요.", "VoxPet"); }
+        };
         Model.ChooseCharacterSheet += () =>
         {
             var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 PNG 시트 선택 (3열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
@@ -45,14 +53,14 @@ public partial class MainWindow : Window
         };
         PreviewKeyDown += (_, e) =>
         {
-            if (Model.HandleExpressionKey(e.Key, Keyboard.Modifiers, e.IsRepeat)) e.Handled = true;
+            if (Model.HandleMuteKey(e.Key, Keyboard.Modifiers, e.IsRepeat) || Model.HandleExpressionKey(e.Key, Keyboard.Modifiers, e.IsRepeat)) e.Handled = true;
         };
         SourceInitialized += (_, _) =>
         {
-            if (!smoke) EnableExpressionHotkeys();
+            if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); }
             else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
         };
-        Closed += (_, _) => hotkeys?.Dispose();
+        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); };
         Loaded += async (_, _) => { await Model.InitializeAsync(); ready.TrySetResult(); };
         Closing += OnClosing;
     }
@@ -66,6 +74,17 @@ public partial class MainWindow : Window
             ? "Ctrl+Shift+F1~F11 전역 사용 · F12는 VoxPet 창 안에서 사용"
             : $"단축키 등록 실패: {string.Join(", ", hotkeys.Conflicts.Select(i => $"F{i + 1}"))} · 다른 앱과 충돌할 수 있습니다. 앱 안의 키/버튼을 사용하세요. F12도 앱 안에서 사용합니다.";
         return hotkeys;
+    }
+    internal MuteHotkey EnableMuteHotkey()
+    {
+        if (muteHotkey != null) return muteHotkey;
+        var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+        muteHotkey = new(source, () => Model.CharacterMuted = !Model.CharacterMuted);
+        Model.IsGlobalMuteKey = () => muteHotkey.Registered;
+        Model.MuteHotkeyStatus = muteHotkey.Registered
+            ? "Ctrl+Shift+M · 다른 앱에서도 캐릭터 입 음소거 전환"
+            : "Ctrl+Shift+M 등록 실패 · 다른 앱과 충돌할 수 있습니다. VoxPet 창 안의 키 또는 체크박스를 사용하세요.";
+        return muteHotkey;
     }
     /// <summary>
     /// 870 DIP 미만의 폭 또는 600 DIP 미만의 높이에서는 조작 영역을 먼저 보여 주는 한 열 배치로 전환한다.
@@ -127,5 +146,5 @@ public partial class MainWindow : Window
     /// <summary>
     /// 캡처 종료·설정 저장 후 방송창을 닫고 다음 Closing을 허용한다.
     /// </summary>
-    public async Task ShutdownAsync() { await Model.DisposeAsync(); hotkeys?.Dispose(); character?.Close(); allowClose = true; }
+    public async Task ShutdownAsync() { await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); allowClose = true; }
 }

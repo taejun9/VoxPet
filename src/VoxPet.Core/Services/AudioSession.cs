@@ -54,13 +54,15 @@ public sealed class AudioSession : IAsyncDisposable
     /// Running의 최신 측정만 반환한다. 입력 종료 또는 250ms 초과의 오래된 snapshot은 무음으로 취급한다.
     /// 동일한 Stopwatch 시간축의 now를 받으며 이후 Release는 소비자의 Processor가 적용한다.
     /// </summary>
-    public AudioLevel ReadLevel(long now)
+    public AudioLevel ReadLevel(long now) => ReadSnapshot(now)?.Level ?? AudioLevel.Silence;
+    /// <summary>무신호와 실제 무음 표본을 구분하고 소비자가 동일 표본을 중복 집계하지 않도록 timestamp를 제공한다.</summary>
+    public AudioSnapshot? ReadSnapshot(long now)
     {
         var run = Volatile.Read(ref current);
-        if (run == null || State != CaptureState.Running || Volatile.Read(ref run.Ended) != 0) return AudioLevel.Silence;
+        if (run == null || State != CaptureState.Running || Volatile.Read(ref run.Ended) != 0) return null;
         var snapshot = Volatile.Read(ref run.Latest);
         double age = (now - snapshot.Timestamp) / (double)Stopwatch.Frequency;
-        return snapshot.Timestamp == 0 || age < 0 || age > StaleSeconds ? AudioLevel.Silence : snapshot.Level;
+        return snapshot.Timestamp == 0 || age < 0 || age > StaleSeconds ? null : snapshot;
     }
     public bool HasInputEnded => Volatile.Read(ref current) is { } run && Volatile.Read(ref run.Ended) != 0;
 

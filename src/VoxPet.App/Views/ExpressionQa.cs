@@ -116,9 +116,18 @@ internal static class ExpressionQa
         check(hotkeys.Registered.Count == 11 && !hotkeys.Registered.Contains(11), "expression_global_F1_F11_F12_reserved");
         using (var collision = new ExpressionHotkeys(probe, _ => { }))
             check(collision.Registered.Count == 0 && collision.Conflicts.Count == 11, "expression_global_conflicts_reported");
+        var mute = main.EnableMuteHotkey();
+        check(mute.Registered, "mute_global_key_registered");
+        using (var collision = new MuteHotkey(probe, () => { }))
+            check(!collision.Registered, "mute_global_conflict_detected");
         main.WindowState = WindowState.Minimized; await Task.Delay(100);
         Hotkey(0x72); await Task.Delay(300);
         check(character.Name.Contains("슬픔"), "expression_global_key_while_minimized");
+        main.Model.CharacterMuted = false;
+        Hotkey(0x4d); await Task.Delay(100);
+        check(main.Model.CharacterMuted && main.Model.VoiceLevel == 0, "mute_global_key_while_minimized");
+        Hotkey(0x4d); await Task.Delay(100);
+        check(!main.Model.CharacterMuted, "mute_global_key_unmutes");
         main.WindowState = WindowState.Normal;
         check(main.Model.HandleExpressionKey(Key.F12, ModifierKeys.Control | ModifierKeys.Shift, false), "expression_F12_local_fallback");
         await Task.Delay(100);
@@ -127,6 +136,9 @@ internal static class ExpressionQa
         hotkeys.Dispose();
         using (var reacquired = new ExpressionHotkeys(probe, _ => { }))
             check(reacquired.Registered.Count == 11, "expression_global_keys_released");
+        mute.Dispose();
+        using (var reacquired = new MuteHotkey(probe, () => { }))
+            check(reacquired.Registered, "mute_global_key_released");
         // 가장 긴 허용 이름으로 슬롯 버튼/TextBox의 작은 창 접근성을 이어지는 LayoutQa에서 확인한다.
         main.Model.Expressions.Selected = main.Model.Expressions.Slots[11];
         main.Model.Expressions.Selected.Name = new string('표', 40);

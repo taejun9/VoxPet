@@ -149,3 +149,9 @@ ExpressionViewModel은 편집 초안/마지막 저장값을 분리한다. 저장
 기본 고양이의 여섯 표정마다 입3×눈2 상태를 생성하여 총36장 frozen PNG를 공유한다. 사용자 슬롯은 독립적인 3×2 시트이며 내장 얼굴을 합성하지 않는다. CharacterViewModel은 누적 monotonic 초와 240ms smoothstep으로 표정을 전환한다. 진행 중 재전환은 현재 합성 이미지/눈물을 512px snapshot 한 장으로 고정해 이전 합성 참조가 쌓이지 않는다. CharacterView는 두 창에서 동일한 Viewbox/512px 좌표계로 PNG와 독립적인 두 눈물 방울을 표시한다. 눈물 위치는 슬롯별로 조정하며 Stop/음소거와 무관하게 시간축을 유지한다.
 
 ExpressionHotkeys는 설정창의 HwndSource에 RegisterHotKey(MOD_CONTROL|MOD_SHIFT|MOD_NOREPEAT)를 등록한다. F1~F11은 전역, F12는 Windows 예약 키이므로 두 창의 PreviewKeyDown fallback이다. 등록 충돌을 표시하고 충돌 키도 앱 안에서 전환한다. 전역 메시지와 로컬 키 이벤트가 중복 전환하지 않으며 키보드 훅/입력 로그를 만들지 않는다. 성공한 종료 또는 Closed에서 등록과 hook을 해제한다.
+
+## 주변 소음 추천과 입 음소거 단축키
+
+AudioSession.ReadSnapshot은 fresh 숫자 측정과 단조 timestamp만 제공하며 무신호/250ms 초과/종료 입력은 null이다. 기존 ReadLevel의 무음 timeout 계약은 유지한다. MainViewModel은 UI tick에서 중복 timestamp를 제외하고 NoiseGateCalibration에 숫자만 전달한다. 3초 측정 후 추천은 직접 적용하며 취소/Stop/프리셋/종료에 폐기한다. 캡처 worker에 IO나 UI 대기를 추가하지 않는다. 추천 수식/경계는 [기능 조사](../product/user-feature-research.md)에 기록했다.
+
+MuteHotkey는 RegisterHotKey의 MOD_NOREPEAT로 Ctrl+Shift+M만 등록한다. 충돌 시 MainViewModel.HandleMuteKey가 두 창 안의 대체 입력을 처리하며 등록 성공한 키는 중복 처리하지 않는다. Shutdown/Closed는 키를 해제한다. 입 음소거는 기존 CharacterMuted와 같은 동작이며 PCM 캡처를 해제하지 않는다.
