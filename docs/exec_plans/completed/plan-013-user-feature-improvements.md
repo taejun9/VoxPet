@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -34,8 +34,8 @@ No Exec Plan, No Work. codex/plan-013-user-feature-improvements 및 .worktree/pl
 
 - [x] 공식 제품 문서와 공개 사용자 요청 조사, 기능 목록과 구현 여부·우선순위 기록.
 - [x] 범위 결정과 Decision Log 기록 후 핵심 누락 구현·사용 안내 동기화.
-- [ ] 전체 자동 QA 및 Windows WPF/OBS 합성 회귀 실행·증거 확인.
-- [ ] QA 이후 자체 리뷰, 완료 계획/리뷰 미러와 Git 통합·정리.
+- [x] 전체 자동 QA 및 Windows WPF/OBS 합성 회귀 실행·증거 확인.
+- [x] QA 이후 자체 리뷰, 완료 계획/리뷰 미러와 Git 통합·정리.
 
 ## QA Plan
 
@@ -68,6 +68,13 @@ QA 이후 동일 에이전트가 요구사항/수명/스레드/설정 복구/개
 
 | 2026-10-08 | 제작 | 추천 완료 후에도 취소 버튼을 활성화해 대기 추천을 폐기하도록 보완. pending 추천 취소와 측정 도중 종료 fixture 추가. ReadSnapshot 실제 무음/무신호 구분 검사 보완. |
 
+| 2026-10-08 | 검증 | 수정 코드7297d02 Windows37743242592/OBS37743242633 통과. Core110/110, WPF239검사/4크기×49컨트롤/3startup bounds 실패0. 빌드 경고/오류·CI annotation0. 실제1000×730/480×320 화면과 결과 JSON 확인. ZIP9파일/CRC 확인. |
+| 2026-10-08 | 심사 | QA 이후 자체 리뷰로 수식·fresh snapshot/수명·키 등록/해제·설정/개인정보·문서/회귀 확인. 미해결 구현 결함 없음. 실기/장시간 제한과P2후속 기록 후 계획 completed 이동/리뷰 미러 작성. |
+
 ## Completion Notes
 
-조사·구현·QA·자체 리뷰 완료 후 결과와 실기 제한을 기록한다.
+18개 기능의 공식 근거/사용자 사례·포함 여부·우선순위를 [기능 목록](../../product/user-feature-research.md)에 기록하고 전역 입 음소거, 3초 주변 소음 Gate 추천/직접 적용/취소, Windows 마이크 권한 설정 바로가기를 개선했다. 최초 QA의 작은 창 Start/Stop 가시성 회귀를 수정하고 최종 코드7297d02의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37743242592)/[OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37743242633)를 모두 통과했다.
+
+macOS/Windows Core110/110, format/analyzer/Release/publish, WPF239검사 실패0·4창크기×49컨트롤 접근, OBS WGC green/chroma/native alpha 각7프레임 변화, 빌드/CI 경고·오류0. QA 이후 [자체 리뷰](../../reviews/plan-013-user-feature-improvements-review.md)를 완료했다. 증거 root artifacts/qa/plan013/ 및 배포 ZIP artifacts/VoxPet-win-x64-plan013.zip(9파일/CRC 통과)을 보존한다. 기존 늘보군 개인 자료를 수정하거나 외부 전송하지 않았다.
+
+물리 마이크/권한/키보드/DPI·사용자 GPU/OBS·실제 입력 장시간은 미실행이며 이번60분 합성 재시험도 하지 않았다. 다른 P2 후보는 기능 목록과 로드맵에 남겼다. main 통합/push/branch -d/worktree 제거 결과는 최종 보고와 root artifacts/qa/plan013/summary.json에 기록한다.

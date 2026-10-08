@@ -44,4 +44,4 @@ Ctrl+Shift+M은 입 반응을 전환한다. OBS나 Windows의 마이크 음소�
 
 권한 설정 버튼은 사용자 클릭 때 Windows의 마이크 설정 페이지만 연다. 접근 허용이나 자동 Start를 수행하지 않는다. 실제 OS 설정 페이지 열기와 물리 권한 변경은 실기 항목이며 자동 smoke는 UI 버튼과 명령 전달만 확인한다.
 
-전체 QA 결과는 [실행 계획](../exec_plans/active/plan-013-user-feature-improvements.md)에 기록한 뒤 완료 계획으로 이동한다.
+전체 QA를 통과했고 QA 이후 [자체 리뷰](../reviews/plan-013-user-feature-improvements-review.md)를 완료했다. 전체 결과는 [실행 계획](../exec_plans/completed/plan-013-user-feature-improvements.md)에 기록했다.

@@ -109,7 +109,9 @@ Windows PowerShell에서 배포와 마이크 없는 WPF smoke를 포함한 전�
 
 ## 현재 검증 상태
 
-plan012에서 macOS/Windows Core **97개 테스트**, format/analyzer, Release 빌드와 자체 포함 배포, WPF smoke 및 OBS WGC 합성 데모가 통과했습니다. 늘보군 개인 시트로 입·눈 여섯 상태, 슬롯 저장·재실행·손상 복구, 표정 전환·무음 눈 깜빡임·눈물과 실제 Windows 미리보기/방송창 PNG를 확인했습니다. 빌드·CI 경고와 오류는 0건입니다. 늘보군은 사용자 요청에 따라 개인 시험 자료로 보존하며 기본 공개 배포는 CC0 고양이를 사용합니다. **실제 마이크·권한·장치 제거, 사용자 GPU/OBS, 물리 키보드·DPI 변경, 실제 입력 장시간 시험은 미실행**입니다. 환경·커밋·화면 증거와 시험 방법은 [Windows 검증 기록](docs/quality/windows-checklist.md)을 확인합니다.
+plan013에서 macOS/Windows Core **110개 테스트**, format/analyzer, Release 빌드(경고·오류 0건), 자체 포함 배포, Windows WPF 화면 검사 **239개**와 OBS WGC 합성 캡처 회귀를 통과했습니다. 4개 창 크기에서 새 버튼을 포함한 49개 컨트롤의 접근성과 Start/Stop 위치를 확인했습니다. Ctrl+Shift+M과 3초 소음 추천·취소·종료는 합성 입력 시험이며 물리 마이크/권한/키보드 실기와 구분합니다. [기능 조사](docs/product/user-feature-research.md)에 18개 후보와 우선순위를 정리했습니다.
+
+이전 plan012에서 macOS/Windows Core **97개 테스트**, format/analyzer, Release 빌드와 자체 포함 배포, WPF smoke 및 OBS WGC 합성 데모가 통과했습니다. 늘보군 개인 시트로 입·눈 여섯 상태, 슬롯 저장·재실행·손상 복구, 표정 전환·무음 눈 깜빡임·눈물과 실제 Windows 미리보기/방송창 PNG를 확인했습니다. 빌드·CI 경고와 오류는 0건입니다. 늘보군은 사용자 요청에 따라 개인 시험 자료로 보존하며 기본 공개 배포는 CC0 고양이를 사용합니다. **실제 마이크·권한·장치 제거, 사용자 GPU/OBS, 물리 키보드·DPI 변경, 실제 입력 장시간 시험은 미실행**입니다. 환경·커밋·화면 증거와 시험 방법은 [Windows 검증 기록](docs/quality/windows-checklist.md)을 확인합니다.
 
 ## 문서 안내와 기여
 

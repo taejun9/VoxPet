@@ -1,5 +1,24 @@
 # Windows 실사용 검증 기록
 
+## plan013 사용자 기능 개선과 전체 회귀
+
+2026-10-08, 코드7297d02의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37743242592)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37743242633) 통과. macOS/Windows Core110/110, locked restore/format/analyzer/Release build(경고0/오류0)/자체 포함 publish를 통과했다. 실제 WPF smoke 실패0/명명 검사239개, 4창크기×49컨트롤/3startup bounds/작은 창 스크롤과 첫 화면 Start/Stop을 확인했다. CI annotation0이며 새 전역 키/측정 버튼과480×320 화면 PNG를 직접 확인했다.
+
+- 입 음소거: Ctrl+Shift+M 실제 RegisterHotKey/WM_HOTKEY + 합성 키 입력으로 등록·충돌·설정창 최소화 중 토글/해제·재등록을 확인. 로컬 키 대체/반복 무시/전역 키 중복 처리 방지, RAW/blink 유지도 통과했다.
+- 주변 소음: 가짜20ms 숫자 입력으로 실제 UI 타이머의3초 측정/명시 적용/Gate 외 설정 보존/측정 취소/대기 추천 취소/Stop/프리셋/무신호/장치 오류/측정 도중 종료를 확인했다. 실제 무음 snapshot과 무신호를 구분하며 중복 표본·비유한 값·표본 수/기간·과도한 소음·일시적 이상치·메모리 상한은 Core 테스트로 확인했다.
+- 권한 설정: 버튼 배치와 명령 이벤트 전달 통과. 자동 smoke에서 실제 Windows Settings를 열거나 권한을 변경하지 않았다.
+- 기존 시트/표정 저장·손상 복구·전환·눈물·방송창 수명 및 OBS32.2.2 WGC green+Chroma Key/native alpha·각7프레임 변화 회귀 통과. BitBlt 유효 프레임 없음은 기존 runner 제한이다. 새60분 장시간 시험은 실행하지 않았다.
+- 첫 Windows37742692699는480×320 초기 Start/Stop이 새 권한 버튼에 밀리는1건을 발견했다. 버튼을 Start/Stop 뒤로 이동했고 최종 실행에서 모든 검사 통과했다. 시험을 제외하거나 합격 기준을 낮추지 않았다.
+- 증거: root artifacts/qa/plan013/windows-final/, obs-final/, summary.json. Windows 자체 포함 배포본 artifacts/VoxPet-win-x64-plan013.zip은9파일/ZIP CRC를 확인했고 개인 PNG를 포함하지 않는다. 이전 늘보군 자료를 보존했다.
+
+| 추가 실기 시나리오 | 합격 기준 | 결과 |
+|---|---|---|
+| 권한 버튼과 거부/허용 복구 | 올바른 Windows 마이크 설정 페이지, 자동 권한/Start 없음, 허용 후 새로고침/Start 복구 | 미실행 |
+| 실제 주변 소음3초 측정 | 무음/팬/키보드 조건의 추천 후 작은 목소리와 일반 발화 확인, 말하면서 측정 시 재시도, Stop 캡처 해제 | 미실행 |
+| 게임/OBS 중 물리 Ctrl+Shift+M | 포커스/최소화/충돌/키 반복에서 입 토글1회, RAW/blink 유지, Stop으로 마이크 해제 | 미실행 |
+
+물리 마이크/권한/제거·키보드·DPI, 사용자 GPU/OBS, 실제 입력 장시간은 아래 기존 실기 매트릭스와 함께 미실행으로 남는다. 조사와 수식은 [사용자 기능 목록](../product/user-feature-research.md), QA 이후 [자체 리뷰](../reviews/plan-013-user-feature-improvements-review.md)를 따른다.
+
 ## plan012 전체 재점검과 늘보군 화면 검증
 
 2026-10-07, 최종 코드8fdfd36의 [기본 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37637240867), [늘보군 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37637826804), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37637240816) 통과. macOS/Windows Core97/97, locked restore/format/analyzer/Release build/publish, WPF smoke failures0을 확인했다. 늘보군 실행은 명명 검사210개,4창크기×45컨트롤/3startup bounds/작은 창 스크롤을 통과했다. workflow/의존성 deprecation/빌드 경고·오류0이며 C#35파일의XML doc100블록, XAML4개/Python4개 구문도 통과했다.
