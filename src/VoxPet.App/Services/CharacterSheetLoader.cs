@@ -8,7 +8,7 @@ using VoxPet.Core.Models;
 namespace VoxPet.App.Services;
 
 /// <summary>
-/// 로컬 사용자 PNG를 검증해 두 창이 공유할 frozen 상태 이미지 6개로 변환한다.
+/// 로컬 사용자 PNG를 검증해 두 창이 공유할 frozen 상태 이미지 6개 또는 16개로 변환한다.
 /// </summary>
 public static class CharacterSheetLoader
 {
@@ -45,8 +45,9 @@ public static class CharacterSheetLoader
         if (frame.PixelWidth != width || frame.PixelHeight != height)
             throw new ArgumentException("PNG 크기를 확인하세요.");
         // 파일 첫 행은 눈 뜸이지만 내부 eye 인덱스는 1이다. 행 순서를 뒤집어 기존 렌더러 계약에 맞춘다.
-        var sprites = new ImageSource[3, 2];
-        for (int mouth = 0; mouth < 3; mouth++)
+        int columns = width / cell;
+        var sprites = new ImageSource[columns, 2];
+        for (int mouth = 0; mouth < columns; mouth++)
             for (int eye = 0; eye < 2; eye++)
             {
                 var cropped = new CroppedBitmap(frame, new Int32Rect(mouth * cell, (eye == 1 ? 0 : 1) * cell, cell, cell));

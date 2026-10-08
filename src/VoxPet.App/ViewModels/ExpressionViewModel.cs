@@ -146,7 +146,7 @@ public sealed class ExpressionViewModel : ObservableObject
             slot.UseSheet(sheet); Status = "시트 적용 준비 완료 · 눈물 위치를 조정하고 미리보기·저장을 누르세요.";
             return true;
         }
-        catch (Exception ex) when (Expected(ex)) { if (!closing) Status = "PNG를 읽지 못했습니다. 16MB 이하 3열×2행 RGBA 시트를 확인하세요. 기존 슬롯을 유지합니다."; return false; }
+        catch (Exception ex) when (Expected(ex)) { if (!closing) Status = "PNG를 읽지 못했습니다. 16MB 이하 3열 또는8열×2행 RGBA 시트를 확인하세요. 기존 슬롯을 유지합니다."; return false; }
         finally { SetBusy(false); }
     }
     public async Task SaveAsync()

@@ -36,7 +36,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private AudioDevice? selected;
     private bool busy, demo, closing, topmost, green, muted, characterBusy;
     private string status = "마이크를 선택하고 Start를 누르세요.";
-    private string characterStatus = "3열: 닫힘·중간·열림 / 2행: 일반·눈감음. 투명 PNG의 중앙·바닥을 자동 정렬합니다.";
+    private string characterStatus = "입3열 또는 상세8열 / 눈2행: 일반·눈감음. 투명 PNG의 중앙·바닥을 자동 정렬합니다.";
     private string metrics = "RMS 0.0000   Peak 0.0000   -120.0 dBFS";
     private double level, raw;
     private double broadcastWidth = 480, broadcastHeight = 480;
@@ -193,8 +193,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (persistSettings)
         {
             string path = Path.Combine(AppContext.BaseDirectory, "Characters", "늘보군.png");
-            if (File.Exists(path) && !await Character.LoadDefaultAsync(path))
-                CharacterStatus = "기본 PNG를 읽지 못했습니다. 내장 캐릭터로 시작합니다. Characters/늘보군.png를 확인하세요.";
+            if (File.Exists(path))
+            {
+                if (await Character.LoadDefaultAsync(path))
+                    CharacterStatus = $"기본 캐릭터 · {Character.DefaultExpressionCount}개 표정 / 입{Character.MouthFrameCount}단계" +
+                        (Character.DefaultWarnings > 0 ? " · 일부 표정 파일을 읽지 못해 평상 시트를 사용합니다." : " · 표정 탭에서 얼굴을 전환하세요.");
+                else CharacterStatus = "기본 PNG를 읽지 못했습니다. 내장 캐릭터로 시작합니다. Characters/늘보군.png를 확인하세요.";
+            }
         }
         await Expressions.InitializeAsync(); await RefreshDevicesAsync();
     }
@@ -263,7 +268,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException)
         {
-            if (!closing) CharacterStatus = "시트를 불러오지 못했습니다. 16MB 이하 RGBA PNG와 3열×2행 크기를 확인하세요. 기존 캐릭터를 유지합니다.";
+            if (!closing) CharacterStatus = "시트를 불러오지 못했습니다. 16MB 이하 RGBA PNG와 3열 또는8열×2행 크기를 확인하세요. 기존 캐릭터를 유지합니다.";
             return false;
         }
         finally { characterBusy = false; RefreshCommands(); }

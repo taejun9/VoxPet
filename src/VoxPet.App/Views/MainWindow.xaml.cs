@@ -43,12 +43,12 @@ public partial class MainWindow : Window
         };
         Model.ChooseCharacterSheet += () =>
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 PNG 시트 선택 (3열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 PNG 시트 선택 (3열 또는8열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
             return dialog.ShowDialog(this) == true ? dialog.FileName : null;
         };
         Model.Expressions.ChooseSheet += () =>
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "슬롯 표정 PNG 시트 선택 (3열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "슬롯 표정 PNG 시트 선택 (3열 또는8열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
             return dialog.ShowDialog(this) == true ? dialog.FileName : null;
         };
         PreviewKeyDown += (_, e) =>

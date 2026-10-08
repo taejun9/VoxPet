@@ -1,16 +1,15 @@
 namespace VoxPet.Core.Models;
 
-/// <summary>입 3열 × 눈 2행의 정사각형 셀 규격. 이미지 디코딩 전 크기를 제한한다.</summary>
+/// <summary>기존 입3열 또는 상세 입8열 × 눈2행의 정사각형 셀. 디코딩 전에 크기와 메모리 상한을 검사한다.</summary>
 public static class SpriteSheetLayout
 {
-    /// <summary>
-    /// 전체 크기가 3×cell, 2×cell인지 검사하고 셀 한 변의 픽셀 수를 반환한다.
-    /// 128~1024px 제한으로 지나치게 작거나 큰 이미지의 로딩을 방지한다.
-    /// </summary>
     public static int Validate(int width, int height)
     {
-        if (width % 3 != 0 || height % 2 != 0 || width / 3 != height / 2 || width / 3 is < 128 or > 1024)
-            throw new ArgumentException("PNG는 정사각형 셀 3열×2행이어야 합니다 (셀 128~1024px).");
-        return width / 3;
+        int cell = height / 2;
+        if (height % 2 != 0 || cell is < 128 or > 1024 ||
+            (width != cell * 3 && (width != cell * 8 || cell > 512)))
+            throw new ArgumentException("PNG는 정사각형 셀 3열×2행(128~1024px) 또는 8열×2행(128~512px)이어야 합니다.");
+        return cell;
     }
+    public static int Columns(int width, int height) => width / Validate(width, height);
 }

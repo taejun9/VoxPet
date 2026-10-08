@@ -14,7 +14,10 @@ public sealed class CharacterViewModel : ObservableObject
 {
     private readonly Dictionary<ExpressionKind, ImageSource[,]> defaults = [];
     private ImageSource[,] sprites;
-    private ImageSource[,]? personalDefault;
+    private Dictionary<ExpressionKind, ImageSource[,]> personalDefaults = [];
+    public int DefaultExpressionCount => personalDefaults.Count == 0 ? defaults.Count : personalDefaults.Count;
+    public int MouthFrameCount => sprites.GetLength(0);
+    public int DefaultWarnings { get; private set; }
     private string defaultName = "Violet Cat";
     private CharacterParameters current = new(0, 0, 0, 0, 1, MouthState.Closed);
     private ExpressionProfile profile = ExpressionProfile.Default(0);
@@ -48,13 +51,35 @@ public sealed class CharacterViewModel : ObservableObject
     {
         try
         {
-            var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
-            personalDefault = sheet; defaultName = Path.GetFileNameWithoutExtension(path);
+            // 기본 PNG와 표정별 형제 파일은 UI 밖에서 읽고 완성된 frozen 가족만 적용한다.
+            var loaded = await Task.Run(() =>
+            {
+                var family = new Dictionary<ExpressionKind, ImageSource[,]> { [ExpressionKind.Neutral] = CharacterSheetLoader.Load(path) };
+                int warnings = 0;
+                string folder = Path.Combine(Path.GetDirectoryName(path)!, Path.GetFileNameWithoutExtension(path) + "-표정");
+                foreach (var kind in Enum.GetValues<ExpressionKind>().Where(kind => kind != ExpressionKind.Neutral))
+                {
+                    string variant = Path.Combine(folder, kind.ToString().ToLowerInvariant() + ".png");
+                    if (!File.Exists(variant)) continue;
+                    try
+                    {
+                        var sheet = CharacterSheetLoader.Load(variant);
+                        if (sheet.GetLength(0) != family[ExpressionKind.Neutral].GetLength(0) || sheet[0, 0].Width != family[ExpressionKind.Neutral][0, 0].Width)
+                            throw new ArgumentException("기본 표정 시트의 크기와 입 단계가 같아야 합니다.");
+                        family.Add(kind, sheet);
+                    }
+                    catch (Exception ex) when (Expected(ex)) { warnings++; }
+                }
+                return (Family: family, Warnings: warnings);
+            });
+            personalDefaults = loaded.Family; DefaultWarnings = loaded.Warnings;
+            defaultName = Path.GetFileNameWithoutExtension(path);
             RestoreDefault(); return true;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException)
+        catch (Exception ex) when (Expected(ex))
         { return false; }
     }
+    private static bool Expected(Exception ex) => ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException;
     public string Name { get => name; private set => Set(ref name, value); }
     public ImageSource Sprite { get => sprite; private set => Set(ref sprite, value); }
     public ImageSource? PreviousSprite { get => previousSprite; private set => Set(ref previousSprite, value); }
@@ -87,7 +112,10 @@ public sealed class CharacterViewModel : ObservableObject
         var snapshot = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32);
         snapshot.Render(visual); snapshot.Freeze();
         PreviousSprite = snapshot; transitionStart = now; Blend = 0;
-        profile = expression; sprites = sheet ?? personalDefault ?? defaults[expression.Kind];
+        profile = expression;
+        var builtin = personalDefaults.TryGetValue(expression.Kind, out var variant) ? variant :
+            personalDefaults.TryGetValue(ExpressionKind.Neutral, out var neutral) ? neutral : defaults[expression.Kind];
+        sprites = sheet ?? builtin;
         Name = sheet == null ? $"{defaultName} · {expression.Name}" : $"{expression.Name} · 사용자 캐릭터";
         Notify(nameof(TearLeftX)); Notify(nameof(TearRightX)); Update(current, now);
     }
@@ -105,7 +133,9 @@ public sealed class CharacterViewModel : ObservableObject
     public void Update(CharacterParameters state, double seconds)
     {
         current = state; now = seconds;
-        Sprite = sprites[(int)state.Mouth, profile.Blink && state.EyeOpen < .5 ? 0 : 1];
+        // 3열에서는 기존 MouthState 계약을 유지하고 8열은 연속 음량으로 세밀하게 고른다.
+        int mouth = sprites.GetLength(0) == MouthFrames.Count ? MouthFrames.Select(state.MouthOpen) : (int)state.Mouth;
+        Sprite = sprites[mouth, profile.Blink && state.EyeOpen < .5 ? 0 : 1];
         Bounce = -state.BodyBounce;
         Blend = PreviousSprite == null ? 1 : ExpressionMotion.Blend(now - transitionStart);
         if (Blend >= 1) PreviousSprite = null;
@@ -116,20 +146,22 @@ public sealed class CharacterViewModel : ObservableObject
         TearLeftOpacity = profile.Tears ? left.Opacity * Blend : 0;
         TearRightOpacity = profile.Tears ? right.Opacity * Blend : 0;
     }
-    /// <summary>저장용 3×2 RGBA PNG를 작업 스레드에서 인코딩한다. 모든 원본 이미지는 frozen이다.</summary>
+    /// <summary>저장용 3×2 또는 8×2 RGBA PNG를 작업 스레드에서 인코딩한다. 모든 원본 이미지는 frozen이다.</summary>
     public static byte[] EncodeSheet(ImageSource[,] sheet)
     {
         int cell = (int)sheet[0, 0].Width;
-        var pixels = new byte[cell * 3 * cell * 2 * 4];
-        for (int mouth = 0; mouth < 3; mouth++)
+        int columns = sheet.GetLength(0);
+        SpriteSheetLayout.Validate(cell * columns, cell * 2);
+        var pixels = new byte[cell * columns * cell * 2 * 4];
+        for (int mouth = 0; mouth < columns; mouth++)
             for (int row = 0; row < 2; row++)
             {
                 var image = new FormatConvertedBitmap((BitmapSource)sheet[mouth, row == 0 ? 1 : 0], PixelFormats.Bgra32, null, 0);
                 var source = new byte[cell * cell * 4]; image.CopyPixels(source, cell * 4, 0);
                 for (int y = 0; y < cell; y++)
-                    Buffer.BlockCopy(source, y * cell * 4, pixels, ((row * cell + y) * cell * 3 + mouth * cell) * 4, cell * 4);
+                    Buffer.BlockCopy(source, y * cell * 4, pixels, ((row * cell + y) * cell * columns + mouth * cell) * 4, cell * 4);
             }
-        var bitmap = BitmapSource.Create(cell * 3, cell * 2, 96, 96, PixelFormats.Bgra32, null, pixels, cell * 3 * 4);
+        var bitmap = BitmapSource.Create(cell * columns, cell * 2, 96, 96, PixelFormats.Bgra32, null, pixels, cell * columns * 4);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var stream = new MemoryStream(); encoder.Save(stream); return stream.ToArray();
     }
