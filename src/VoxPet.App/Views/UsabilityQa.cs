@@ -48,8 +48,12 @@ internal static class UsabilityQa
         check(model.IsMeasuringNoise && !model.MeasureNoiseCommand.CanExecute(null) && model.StopCommand.CanExecute(null), "noise_measure_running_allows_stop");
         await WaitAsync(() => !model.IsMeasuringNoise);
         check(model.ApplyNoiseCommand.CanExecute(null) && model.NoiseGate == original && model.Status == status, "noise_recommendation_requires_explicit_apply");
+        check(model.CancelNoiseCommand.CanExecute(null), "noise_pending_recommendation_can_cancel");
         model.ApplyNoiseCommand.Execute(null);
         check(model.NoiseGate == -54 && model.NormalizeMin == min && model.NormalizeMax == max && !model.ApplyNoiseCommand.CanExecute(null), "noise_apply_changes_gate_only");
+        model.MeasureNoiseCommand.Execute(null); await WaitAsync(() => !model.IsMeasuringNoise);
+        model.CancelNoiseCommand.Execute(null);
+        check(!model.ApplyNoiseCommand.CanExecute(null) && !model.CancelNoiseCommand.CanExecute(null) && model.NoiseGate == -54, "noise_cancel_discards_pending_recommendation");
         model.MeasureNoiseCommand.Execute(null); model.CancelNoiseCommand.Execute(null);
         check(!model.IsMeasuringNoise && !model.ApplyNoiseCommand.CanExecute(null) && model.NoiseGate == -54, "noise_cancel_preserves_settings");
         model.MeasureNoiseCommand.Execute(null); model.ConversationCommand.Execute(null);
@@ -69,7 +73,9 @@ internal static class UsabilityQa
         check(!model.HandleMuteKey(Key.M, ModifierKeys.Control, false) && model.CharacterMuted, "mute_wrong_modifiers_ignored");
         model.IsGlobalMuteKey = () => true;
         check(!model.HandleMuteKey(Key.M, ModifierKeys.Control | ModifierKeys.Shift, false) && model.CharacterMuted, "mute_global_key_not_processed_twice");
+        model.StartCommand.Execute(null); await WaitAsync(() => model.MeasureNoiseCommand.CanExecute(null));
+        model.MeasureNoiseCommand.Execute(null);
         await model.DisposeAsync();
-        check(!model.MeasureNoiseCommand.CanExecute(null) && !model.MicrophonePrivacyCommand.CanExecute(null), "usability_commands_disabled_after_shutdown");
+        check(!model.IsMeasuringNoise && !model.MeasureNoiseCommand.CanExecute(null) && !model.MicrophonePrivacyCommand.CanExecute(null), "usability_shutdown_cancels_and_disables_commands");
     }
 }

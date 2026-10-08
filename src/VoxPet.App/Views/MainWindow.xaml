@@ -28,8 +28,8 @@
         <StackPanel x:Name="ControlsPanel" Grid.Column="2">
           <TextBlock Text="마이크" FontWeight="SemiBold" Margin="0,0,0,10"/>
           <DockPanel><Button DockPanel.Dock="Right" Content="↻" ToolTip="마이크 장치 새로고침" Command="{Binding RefreshCommand}" Margin="8,0,0,0"/><ComboBox ItemsSource="{Binding Devices}" SelectedItem="{Binding SelectedDevice}" DisplayMemberPath="Name" IsEnabled="{Binding CanChooseDevice}" MinHeight="38" VerticalContentAlignment="Center" AutomationProperties.Name="마이크 선택"/></DockPanel>
-          <Button Content="Windows 마이크 권한 설정 열기" Command="{Binding MicrophonePrivacyCommand}" HorizontalAlignment="Left" FontSize="11" Padding="8,6" Margin="0,8,0,0"/>
           <WrapPanel Margin="0,12,0,24"><Button Content="Start" Command="{Binding StartCommand}" Background="{StaticResource Accent}" Foreground="#112C25" MinWidth="100"/><Button Content="Stop" Command="{Binding StopCommand}" MinWidth="100"/><Button Content="{Binding DemoLabel}" Command="{Binding DemoCommand}" FontSize="11" Padding="10,10"/></WrapPanel>
+          <Button Content="Windows 마이크 권한 설정 열기" Command="{Binding MicrophonePrivacyCommand}" HorizontalAlignment="Left" FontSize="11" Padding="8,6" Margin="0,0,0,12"/>
           <CheckBox Content="캐릭터 음소거" IsChecked="{Binding CharacterMuted}"/>
           <TextBlock Text="{Binding MuteHotkeyStatus}" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource Accent}" Margin="0,0,0,6"/>
           <TextBlock Text="{Binding MuteHint}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,0,0,12"/>

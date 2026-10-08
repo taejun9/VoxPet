@@ -64,6 +64,10 @@ QA 이후 동일 에이전트가 요구사항/수명/스레드/설정 복구/개
 
 | 2026-10-08 | 검증 | macOS SDK10.0.401 locked restore 및 Release build 경고0/오류0, Core110/110 통과. VSTest 로컬 소켓 제한은 승인 환경 동일 명령으로 통과. 문서45개/36 PNG 계약 통과. |
 
+| 2026-10-08 | 검증 | 341f1b4 Windows37742692699: Core110/110와 새 기능 fixture 통과, WPF237검사 중480×320 초기 Start/Stop 가시성1건 실패. 권한 버튼을 Start/Stop 뒤로 이동해 기존 상단 조작 접근 복원. OBS37742692659 WGC green/chroma/native alpha 각7프레임 통과; BitBlt 기존 runner 제한. |
+
+| 2026-10-08 | 제작 | 추천 완료 후에도 취소 버튼을 활성화해 대기 추천을 폐기하도록 보완. pending 추천 취소와 측정 도중 종료 fixture 추가. ReadSnapshot 실제 무음/무신호 구분 검사 보완. |
+
 ## Completion Notes
 
 조사·구현·QA·자체 리뷰 완료 후 결과와 실기 제한을 기록한다.

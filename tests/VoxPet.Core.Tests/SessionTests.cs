@@ -32,7 +32,7 @@ public sealed class SessionTests
             Ended?.Invoke(EndDuringStopError); return Task.CompletedTask;
         }
         public ValueTask DisposeAsync() { Disposals++; Assert.True(Stops > 0); return ValueTask.CompletedTask; }
-        public void Push() => LevelAvailable?.Invoke(new(1, 1, 0));
+        public void Push(AudioLevel? value = null) => LevelAvailable?.Invoke(value ?? new(1, 1, 0));
         public void Fail() => Ended?.Invoke(new IOException("Fake device unplugged"));
     }
     [Fact]
@@ -62,6 +62,9 @@ public sealed class SessionTests
         Assert.NotNull(snapshot); Assert.Equal(snapshot, session.ReadSnapshot(now));
         Assert.Null(session.ReadSnapshot(snapshot.Timestamp - 1));
         Assert.Null(session.ReadSnapshot(now + Stopwatch.Frequency));
+        input.Push(AudioLevel.Silence);
+        var silent = session.ReadSnapshot(Stopwatch.GetTimestamp());
+        Assert.NotNull(silent); Assert.Equal(AudioLevel.Silence, silent.Level);
         input.Fail(); Assert.Null(session.ReadSnapshot(now));
         await session.StopAsync(); Assert.Null(session.ReadSnapshot(now));
     }

@@ -107,7 +107,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         SoftVoiceCommand = new(() => ApplyPreset(ReactionPreset.SoftVoice));
         SnappyCommand = new(() => ApplyPreset(ReactionPreset.Snappy));
         MeasureNoiseCommand = new(BeginNoiseMeasurement, () => !busy && !closing && session.State == CaptureState.Running && calibration == null);
-        CancelNoiseCommand = new(() => ClearNoiseMeasurement("측정을 취소했습니다. 기존 설정을 유지합니다."), () => !closing && calibration != null);
+        CancelNoiseCommand = new(() => ClearNoiseMeasurement("측정을 취소했습니다. 기존 설정을 유지합니다."), () => !closing && (calibration != null || recommendedGate != null));
         ApplyNoiseCommand = new(() =>
         {
             if (recommendedGate is not { } gate) return;
