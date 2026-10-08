@@ -30,7 +30,7 @@ internal static class LayoutQa
         if (!element.IsVisible || element.ActualWidth <= 0 || element.ActualHeight <= 0) return false;
         for (DependencyObject? ancestor = element; ancestor != null; ancestor = VisualTreeHelper.GetParent(ancestor))
         {
-            if (ancestor is FrameworkElement viewport && (ReferenceEquals(viewport, root) || viewport is ScrollContentPresenter))
+            if (ancestor is FrameworkElement viewport && (ReferenceEquals(viewport, root) || viewport is ScrollContentPresenter or Viewbox or TabControl))
             {
                 var bounds = element.TransformToAncestor(viewport).TransformBounds(new Rect(element.RenderSize));
                 if (bounds.Left < -.5 || bounds.Top < -.5 || bounds.Right > viewport.ActualWidth + .5 || bounds.Bottom > viewport.ActualHeight + .5) return false;
@@ -76,34 +76,41 @@ internal static class LayoutQa
             {
                 main.SettingsTabs.SelectedIndex = tab;
                 await Task.Delay(50); main.UpdateLayout();
-                var controls = Descendants(root).Where(element => element.IsVisible &&
-                    (element is Slider or CheckBox or ComboBox or TextBox || element is Button { Command: not null })).ToArray();
-                count += controls.Length;
-                foreach (var control in controls)
+                var sectionTabs = Descendants(root).OfType<TabControl>().FirstOrDefault(control => !ReferenceEquals(control, main.SettingsTabs));
+                int pages = sectionTabs?.Items.Count ?? 1;
+                for (int page = 0; page < pages; page++)
                 {
-                    string label = control is ContentControl content ? content.Content?.ToString() ?? control.GetType().Name : System.Windows.Automation.AutomationProperties.GetName(control);
-                    bool visible = FullyVisible(control, root);
-                    check(visible, $"layout_tab_{tab}_{width}x{height}_{label}");
-                    if (!visible) invisible.Add(label);
-                }
-                check(Descendants(root).OfType<TabItem>().All(item => FullyVisible(item, root)), $"layout_tab_headers_{width}x{height}_{tab}");
-                check(Descendants(root).OfType<ScrollViewer>().Where(scroll => scroll.IsVisible).All(scroll => scroll.ScrollableHeight == 0 && scroll.ScrollableWidth == 0), $"layout_no_content_scroll_{width}x{height}_{tab}");
-                foreach (var combo in controls.OfType<ComboBox>())
-                {
-                    if (combo.Items.Count == 0)
+                    if (sectionTabs != null) sectionTabs.SelectedIndex = page;
+                    await Task.Delay(30); main.UpdateLayout();
+                    var controls = Descendants(root).Where(element => element.IsVisible &&
+                        (element is Slider or CheckBox or ComboBox or TextBox || element is Button { Command: not null })).ToArray();
+                    count += controls.Length;
+                    foreach (var control in controls)
                     {
-                        main.Model.Devices.Add(new AudioDevice("qa-synthetic", "QA 마이크 · 긴 장치 이름"));
-                        main.Model.SelectedDevice = main.Model.Devices[0]; main.UpdateLayout();
+                        string label = control is ContentControl content ? content.Content?.ToString() ?? control.GetType().Name : System.Windows.Automation.AutomationProperties.GetName(control);
+                        bool visible = FullyVisible(control, root);
+                        check(visible, $"layout_tab_{tab}_{width}x{height}_{label}");
+                        if (!visible) invisible.Add(label);
                     }
-                    check(combo.Foreground is SolidColorBrush foreground && foreground.Color == Colors.Black &&
-                        Descendants(combo).OfType<TextBlock>().Where(text => text.IsVisible && !string.IsNullOrWhiteSpace(text.Text)).All(text => text.Foreground is SolidColorBrush brush && brush.Color == Colors.Black), $"layout_select_black_{width}x{height}_{tab}");
-                    combo.IsDropDownOpen = true; await Task.Delay(30); combo.UpdateLayout();
-                    var item = combo.ItemContainerGenerator.ContainerFromIndex(0) as ComboBoxItem;
-                    check(item != null && item.Foreground is SolidColorBrush itemBrush && itemBrush.Color == Colors.Black &&
-                        Descendants(item).OfType<TextBlock>().Where(text => text.IsVisible).All(text => text.Foreground is SolidColorBrush brush && brush.Color == Colors.Black), $"layout_select_popup_black_{width}x{height}_{tab}");
-                    combo.IsDropDownOpen = false;
+                    check(Descendants(root).OfType<TabItem>().Where(item => item.IsVisible).All(item => FullyVisible(item, root)), $"layout_tab_headers_{width}x{height}_{tab}_{page}");
+                    check(Descendants(root).OfType<ScrollViewer>().Where(scroll => scroll.IsVisible).All(scroll => scroll.ScrollableHeight == 0 && scroll.ScrollableWidth == 0), $"layout_no_content_scroll_{width}x{height}_{tab}_{page}");
+                    foreach (var combo in controls.OfType<ComboBox>())
+                    {
+                        if (combo.Items.Count == 0)
+                        {
+                            main.Model.Devices.Add(new AudioDevice("qa-synthetic", "QA 마이크 · 긴 장치 이름"));
+                            main.Model.SelectedDevice = main.Model.Devices[0]; main.UpdateLayout();
+                        }
+                        check(combo.Foreground is SolidColorBrush foreground && foreground.Color == Colors.Black &&
+                            Descendants(combo).OfType<TextBlock>().Where(text => text.IsVisible && !string.IsNullOrWhiteSpace(text.Text)).All(text => text.Foreground is SolidColorBrush brush && brush.Color == Colors.Black), $"layout_select_black_{width}x{height}_{tab}_{page}");
+                        combo.IsDropDownOpen = true; await Task.Delay(30); combo.UpdateLayout();
+                        var item = combo.ItemContainerGenerator.ContainerFromIndex(0) as ComboBoxItem;
+                        check(item != null && item.Foreground is SolidColorBrush itemBrush && itemBrush.Color == Colors.Black &&
+                            Descendants(item).OfType<TextBlock>().Where(text => text.IsVisible).All(text => text.Foreground is SolidColorBrush brush && brush.Color == Colors.Black), $"layout_select_popup_black_{width}x{height}_{tab}_{page}");
+                        combo.IsDropDownOpen = false;
+                    }
+                    Save(main, $"voxpet-layout-{width}x{height}-tab-{tab}-{page}.png", 1);
                 }
-                Save(main, $"voxpet-layout-{width}x{height}-tab-{tab}.png", 1);
             }
             check(main.Model.Sensitivity == sensitivity && main.Model.Expressions.Selected.Draft == draft, $"layout_tab_switch_preserves_edit_{width}x{height}");
             main.SettingsTabs.SelectedIndex = 0; main.UpdateLayout();
