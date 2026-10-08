@@ -167,3 +167,18 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 증거: root artifacts/qa/plan011/windows/ 및 final-obs/, 배포 ZIP artifacts/VoxPet-win-x64-plan011.zip.
 
 물리 키보드/다른 프로그램과의 실사용 충돌, 실제 마이크/권한/제거, 사용자 GPU/OBS, 물리 DPI, 실제 입력 장시간은 기존 미실행 조건으로 남는다.
+
+
+## plan014 셀렉트 가독성·탭·개인 기본·방송창 크기
+
+2026-10-08 a81bc4e의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37768105239)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37768105246) 통과.
+
+- locked restore/format/analyzer/Release/publish, Core110/110, 경고·오류0. Windows smoke 실패0, 고유 명명 검사385개.
+- 4창크기×5상단 탭과 모든 하위 탭에서 조작과 머리글 가시성, 스크롤 없음, 선택값/펼친 목록 검정 글씨, 편집값 유지 확인. 탭별 실제 WPF PNG를 직접 확인했다. 작은 창에서 글씨 크기가 줄어드는 점은 유지하며 하위 탭으로 과도한 축소를 줄였다.
+- 개인 기본: 합성 PNG의 기본 불러오기/표정 유지/복원/손상·누락 복구 검증. 개인 실행 패키지에만 기존 늘보군 PNG를 Characters/늘보군.png로 동봉했다. 원본 SHA256 일치와 ZIP CRC 통과. 실제 늘보군 시작 화면은 이번 CI에 전송하지 않았으며 원본 캐릭터의 기존 plan012 Windows 검증과 구분한다.
+- 방송창: 너비·높이 제어, native 변경의 모델 반영, 유한한200~1200 DIP 범위, 재열기 크기 유지, 기존 우하단 resize hit/독립 수명 회귀 확인. OBS에 grip 픽셀이 찍히지 않도록 기존 투명 grip은 유지했다.
+- OBS32.2.2: WGC green/Chroma Key/native alpha65.08%, 각각7프레임 변화 통과. 기존 BitBlt 유효 프레임 없음은 유지.
+- 첫 Windows 실행의24개 선택 텍스트 실패는 명시적 ItemTemplate의 검정 TextBlock으로 수정하고 재검증했다.
+- 증거: artifacts/qa/plan014/windows/ 및 obs/. 개인 패키지: artifacts/VoxPet-win-x64-neulbo-plan014.zip.
+
+실제 마이크·물리 DPI/입력·사용자 GPU/OBS 실기는 기존 미실행 상태를 유지한다.

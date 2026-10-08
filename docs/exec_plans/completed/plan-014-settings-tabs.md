@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -41,7 +41,7 @@ QA → 자체 리뷰 → completed 이동/리뷰 미러 → main 병합/push →
 - [x] 상단 탭과 스크롤 없는 화면, 작은 창에서 내용 크기 조정.
 - [x] 기존 개인 늘보군의 기본 시작/복원 경로와 기존 슬롯 보존.
 - [x] QA fixture와 사용자 안내 동기화.
-- [ ] QA, 자체 리뷰, Git 수명 완료 및 실행 패키지 제공.
+- [x] QA, 자체 리뷰, Git 수명 완료 및 실행 패키지 제공.
 
 ## QA Plan
 
@@ -74,6 +74,12 @@ QA 이후 동일 에이전트 자체 리뷰. 세 요구사항, 기존 명령과 
 
 | 2026-10-08 | 검증 | 첫 Windows37767394347: restore/format/build/Core110개/publish 통과. smoke에서 셀렉트 텍스트24개 실패를 확인하고 수정. 탭 전환/가시성/방송 크기/기본 복원 검사 통과. 실제 작은 창에서 과도한 축소를 발견해 하위 탭으로 세분화 |
 
+| 2026-10-08 | 검증 | 최종 Windows37768105239: Core110/110/format/analyzer/Release/publish 경고0·오류0/385고유 검사·실패0. 4크기 모든 상단/하위 탭의 가시성·스크롤 없음·검정 선택값/팝업/편집 유지 통과. 실제 PNG 직접 확인 |
+| 2026-10-08 | 검증 | OBS37768105246: WGC/Chroma Key/native alpha65.08%/7프레임 통과. 개인 실행 ZIP13파일/CRC/기존 PNG SHA256 일치. 개인 이미지는 공개 전송 없음 |
+| 2026-10-08 | 심사 | QA 이후 자체 리뷰: 기존 명령/편집 잠금/오디오·저장 경계/기존 슬롯/OBS 수명/문서 확인. completed 이동과 리뷰 미러 작성 |
+
 ## Completion Notes
 
-구현과 QA 진행 중. Windows 물리 장치/DPI 검증은 기존 체크리스트를 따른다.
+요청한 검정 셀렉트 글씨/개인 늘보군 기본/스크롤 없는 상단 탭/방송창 크기를 구현했다. 최종 실행코드 a81bc4e의 Windows37768105239 및 OBS37768105246 통과. Core110/110, format/analyzer, Release/publish 경고·오류0, Windows smoke 실패0/고유385검사. 탭별 PNG에서 검정 선택값과 작은 창의 조작 가시성을 직접 확인했다.
+
+QA 이후 자체 리뷰를 완료하고 [리뷰 미러](../../reviews/plan-014-settings-tabs-review.md)를 작성했다. 개인 실행 ZIP은 root artifacts/VoxPet-win-x64-neulbo-plan014.zip이며13파일/ZIP CRC/원본 SHA256 일치 확인. 개인 PNG는 저장소에 커밋하거나 CI에 전송하지 않았다. 기존 저장 슬롯은 보존한다. 작은 창은 내용 크기를 줄이고 크기 설정은 이번 실행만 유지한다. 실제 마이크·물리 DPI/입력·사용자 OBS 실기와 이번 개인 패키지의 실제 Windows 시작 화면은 검증하지 않았으며 기존 체크리스트와 구분한다.
