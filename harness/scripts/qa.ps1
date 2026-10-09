@@ -38,6 +38,7 @@ try {
             publisherVerified = ($signature.Status -eq 'Valid' -and $signingPublisher -ceq '김태중')
         } | ConvertTo-Json | Set-Content -LiteralPath 'artifacts/test-results/publisher.json' -Encoding utf8
     }
+    if ($Publish) { & (Join-Path $PSScriptRoot 'startup-qa.ps1') }
     # 자동 시험의 상한: 기본 60초, 개인 시트의 추가 모션/저장/화면 시험은 90초. 실제 사용자 앱에는 적용하지 않는다.
     if ($Smoke) {
         $exe = if ($Publish) { 'artifacts/win-x64/VoxPet.exe' } else { 'src/VoxPet.App/bin/Release/net10.0-windows/win-x64/VoxPet.exe' }
