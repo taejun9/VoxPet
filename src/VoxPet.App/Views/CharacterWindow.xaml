@@ -6,7 +6,13 @@
   </Window.Resources>
   <!-- 설정창의 DataContext를 공유한다. 배경과 항상 위 옵션은 ViewModel 바인딩으로 함께 갱신된다. -->
   <Grid Background="{Binding BroadcastBackground}" MouseLeftButtonDown="DragCharacter">
-    <Grid.ContextMenu><ContextMenu><MenuItem Header="작게 (320 × 320)" Tag="320" Click="ResizeCharacter"/><MenuItem Header="기본 크기 (480 × 480)" Tag="480" Click="ResizeCharacter"/><MenuItem Header="크게 (640 × 640)" Tag="640" Click="ResizeCharacter"/><Separator/><MenuItem Header="방송창 닫기 (Esc)" Click="CloseCharacter"/></ContextMenu></Grid.ContextMenu>
+    <Grid.ContextMenu><ContextMenu Background="White" Foreground="Black">
+      <ContextMenu.Resources>
+        <Style TargetType="MenuItem">
+          <Setter Property="Foreground" Value="Black"/>
+          <Setter Property="HeaderTemplate"><Setter.Value><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></Setter.Value></Setter>
+        </Style>
+      </ContextMenu.Resources><MenuItem Header="작게 (320 × 320)" Tag="320" Click="ResizeCharacter"/><MenuItem Header="기본 크기 (480 × 480)" Tag="480" Click="ResizeCharacter"/><MenuItem Header="크게 (640 × 640)" Tag="640" Click="ResizeCharacter"/><Separator/><MenuItem Header="방송창 닫기 (Esc)" Click="CloseCharacter"/></ContextMenu></Grid.ContextMenu>
     <local:CharacterView DataContext="{Binding Character}" Margin="12"/>
   </Grid>
 </Window>

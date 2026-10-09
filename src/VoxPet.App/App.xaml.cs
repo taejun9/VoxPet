@@ -156,6 +156,7 @@ public partial class App : Application
             await CharacterQa.RunAsync(main, Check);
             await ExpressionQa.RunAsync(main, Check);
             await DetailedCharacterQa.RunAsync(Check);
+            await ExpressionManagementQa.RunAsync(main, Check);
             await UsabilityQa.RunAsync(Check);
             await LayoutQa.RunAsync(main, Check);
             var png = new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 730, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);

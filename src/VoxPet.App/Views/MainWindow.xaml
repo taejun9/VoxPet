@@ -245,6 +245,8 @@
                         </DataTemplate>
                       </ComboBox.ItemTemplate>
                     </ComboBox>
+                    <WrapPanel Margin="0,8,0,0"><Button Content="↑ 위로" Command="{Binding MoveUpCommand}" Padding="8,6"/><Button Content="↓ 아래로" Command="{Binding MoveDownCommand}" Padding="8,6"/></WrapPanel>
+                    <TextBlock Text="순서는 즉시 저장되며 F1~F12에도 적용됩니다." FontSize="11" TextWrapping="Wrap" Foreground="#8FA4BC" Margin="0,6,0,0"/>
                     <TextBlock Text="표정 이름" Margin="0,10,0,4"/>
                     <TextBox Text="{Binding Selected.Name, UpdateSourceTrigger=PropertyChanged}" MaxLength="40" Padding="6" AutomationProperties.Name="표정 이름"/>
                     <TextBlock Text="기본 표정" Margin="0,10,0,4"/>
@@ -273,6 +275,22 @@
                       <Button Content="표정 미리보기" Command="{Binding PreviewCommand}"/>
                       <Button Content="슬롯 저장" Command="{Binding SaveCommand}"/>
                     </WrapPanel>
+                  </StackPanel>
+                </TabItem>
+                <TabItem Header="테스트">
+                  <StackPanel Margin="8,12,8,0">
+                    <TextBlock Text="새 표정 12종 미리보기" FontWeight="SemiBold"/>
+                    <TextBlock Text="버튼을 누르면 새 얼굴을 확인합니다. 저장한 슬롯은 유지합니다." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,12"/>
+                    <ItemsControl ItemsSource="{Binding TestExpressions}">
+                      <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate><DataTemplate><Button Content="{Binding Name}" Command="{Binding PreviewCommand}" Padding="10,7" Margin="0,0,6,6"/></DataTemplate></ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <WrapPanel Margin="0,12,0,0">
+                      <Button Content="12종 전체 테스트" Command="{Binding DataContext.TestExpressionsCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="10,8"/>
+                      <Button Content="테스트 중지" Command="{Binding StopTestCommand}" Padding="10,8"/>
+                    </WrapPanel>
+                    <TextBlock Text="입력이 꺼져 있으면 마이크 없이 데모로 입 움직임을 표시합니다." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,12,0,0" Foreground="#8FA4BC"/>
                   </StackPanel>
                 </TabItem>
               </TabControl>

@@ -76,6 +76,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand CancelNoiseCommand { get; }
     public RelayCommand ApplyNoiseCommand { get; }
     public RelayCommand MicrophonePrivacyCommand { get; }
+    public AsyncCommand TestExpressionsCommand { get; }
     public event Func<string?>? ChooseCharacterSheet;
     public event Action? OpenBroadcast;
     public event Action? OpenMicrophonePrivacy;
@@ -116,6 +117,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             CalibrationStatus = $"Noise Gate {gate:F0} dBFS 적용 완료. 작은 목소리가 잘리는지 말해서 확인하세요.";
             recommendedGate = null; RefreshCommands();
         }, () => !closing && recommendedGate != null && calibration == null);
+        TestExpressionsCommand = new(() => TestExpressionsAsync(), () => !closing && !busy && Expressions.CanEdit);
+        Expressions.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Expressions.CanEdit)) TestExpressionsCommand.Refresh(); };
         MicrophonePrivacyCommand = new(() => OpenMicrophonePrivacy?.Invoke(), () => !closing);
         // 60Hz는 목표 갱신 주기다. 지연된 프레임도 Tick의 실제 dt로 계산해 반응 시간이 늘어나지 않게 한다.
         timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(1000.0 / 60) };
@@ -185,7 +188,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         StartCommand.Refresh(); StopCommand.Refresh(); RefreshCommand.Refresh(); DemoCommand.Refresh();
         ImportCharacterCommand.Refresh(); DefaultCharacterCommand.Refresh();
         MeasureNoiseCommand.Refresh(); CancelNoiseCommand.Refresh(); ApplyNoiseCommand.Refresh(); MicrophonePrivacyCommand.Refresh();
-        Notify(nameof(IsMeasuringNoise));
+        Notify(nameof(IsMeasuringNoise)); TestExpressionsCommand.Refresh();
     }
     public async Task InitializeAsync()
     {
@@ -240,12 +243,21 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     private async Task StopAsync()
     {
+        Expressions.CancelTest();
         ClearNoiseMeasurement("측정을 종료했습니다. 마이크를 다시 시작한 뒤 측정하세요.");
         busy = true; demo = false; RefreshCommands(); Status = "마이크 종료 중…";
         try { await session.StopAsync(); ResetLevels(); Status = session.Error ?? "중지됨 · 마이크 캡처가 해제되었습니다."; }
         finally { busy = false; RefreshCommands(); }
     }
     // 장치와 분리된 합성 숫자 데모를 시작한다. 종료는 StopCommand가 담당한다.
+    internal async Task TestExpressionsAsync(TimeSpan? interval = null)
+    {
+        if (closing || busy || !Expressions.CanEdit) return;
+        bool ownsDemo = CanChooseDevice;
+        if (ownsDemo) ToggleDemo();
+        try { if (interval is { } duration) await Expressions.TestAllAsync(duration); else await Expressions.TestAllAsync(); }
+        finally { if (ownsDemo && demo && !closing && !session.HasResources) await StopAsync(); }
+    }
     private void ToggleDemo()
     {
         demo = true; ResetLevels(); RefreshCommands(); Status = "합성 데모 · 마이크를 사용하지 않습니다. Stop으로 종료하세요.";

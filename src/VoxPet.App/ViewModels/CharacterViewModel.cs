@@ -15,7 +15,7 @@ public sealed class CharacterViewModel : ObservableObject
     private readonly Dictionary<ExpressionKind, ImageSource[,]> defaults = [];
     private ImageSource[,] sprites;
     private Dictionary<ExpressionKind, ImageSource[,]> personalDefaults = [];
-    public int DefaultExpressionCount => personalDefaults.Count == 0 ? defaults.Count : personalDefaults.Count;
+    public int DefaultExpressionCount => personalDefaults.Count == 0 ? defaults.Values.Distinct().Count() : personalDefaults.Count;
     public int MouthFrameCount => sprites.GetLength(0);
     public int DefaultWarnings { get; private set; }
     private string defaultName = "Violet Cat";
@@ -30,7 +30,7 @@ public sealed class CharacterViewModel : ObservableObject
     public CharacterViewModel()
     {
         string[] mouths = ["closed", "half", "open"];
-        foreach (var expression in Enum.GetValues<ExpressionKind>())
+        foreach (var expression in Enum.GetValues<ExpressionKind>().Where(kind => kind <= ExpressionKind.Sleepy))
         {
             var sheet = new ImageSource[3, 2];
             string prefix = expression == ExpressionKind.Neutral ? "" : expression.ToString().ToLowerInvariant() + "-";
@@ -44,6 +44,14 @@ public sealed class CharacterViewModel : ObservableObject
                 }
             defaults.Add(expression, sheet);
         }
+        // 공개 고양이는 기존6그림을 유지한다. 추가 종류의 실제 얼굴은 개인 표정 가족에서 읽는다.
+        foreach (var kind in Enum.GetValues<ExpressionKind>().Where(kind => kind > ExpressionKind.Sleepy))
+            defaults.Add(kind, defaults[kind switch
+            {
+                ExpressionKind.Smug => ExpressionKind.Sleepy,
+                ExpressionKind.Confused => ExpressionKind.Surprised,
+                _ => ExpressionKind.Happy
+            }]);
         sprites = defaults[ExpressionKind.Neutral]; sprite = sprites[0, 1];
     }
     /// <summary>개인 실행 폴더의 선택적 기본 PNG를 비동기로 읽는다. 실패해도 내장 캐릭터로 시작하며 원본과 저장 슬롯은 수정하지 않는다.</summary>
@@ -78,6 +86,11 @@ public sealed class CharacterViewModel : ObservableObject
         }
         catch (Exception ex) when (Expected(ex))
         { return false; }
+    }
+    internal Action CaptureAppearance()
+    {
+        var savedProfile = profile; var savedSprites = sprites; string savedName = Name;
+        return () => { Apply(savedProfile, savedSprites); Name = savedName; };
     }
     private static bool Expected(Exception ex) => ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException;
     public string Name { get => name; private set => Set(ref name, value); }

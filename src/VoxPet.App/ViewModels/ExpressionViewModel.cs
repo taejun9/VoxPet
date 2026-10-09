@@ -1,4 +1,5 @@
 using System.IO;
+using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 using System.Windows.Media;
 using VoxPet.App.Services;
@@ -14,8 +15,10 @@ public sealed class ExpressionSlotViewModel : ObservableObject
     public ExpressionProfile Saved { get; private set; }
     public ImageSource[,]? DraftSheet { get; private set; }
     public int Index { get; }
-    public string Label => $"F{Index + 1} · {Saved.Name}";
-    public ExpressionSlotViewModel(int index, ExpressionProfile profile) { Index = index; draft = Saved = profile; }
+    private int position;
+    public int Position { get => position; internal set { if (Set(ref position, value)) Notify(nameof(Label)); } }
+    public string Label => $"F{Position + 1} · {Saved.Name}";
+    public ExpressionSlotViewModel(int index, ExpressionProfile profile) { Index = Position = index; draft = Saved = profile; }
     public ExpressionProfile Draft => draft;
     public string Name { get => draft.Name; set { draft = draft with { Name = value }; Notify(); } }
     public ExpressionKind Kind { get => draft.Kind; set { draft = draft with { Kind = value }; Notify(); } }
@@ -36,11 +39,15 @@ public sealed class ExpressionSlotViewModel : ObservableObject
     }
 }
 
+public sealed record BuiltinExpressionTest(int Index, string Name, RelayCommand PreviewCommand);
+
 /// <summary>로컬 슬롯 IO를 작업 스레드에 두고 최신 전환 요청만 UI에 적용한다.</summary>
 public sealed class ExpressionViewModel : ObservableObject
 {
     private readonly CharacterViewModel character;
     private readonly ExpressionSlotStore store;
+    private readonly ExpressionOrderStore orderStore;
+    private CancellationTokenSource? testing;
     private readonly bool persistent;
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly Dictionary<int, ImageSource[,]> memorySheets = [];
@@ -50,14 +57,19 @@ public sealed class ExpressionViewModel : ObservableObject
     private string status = "슬롯을 편집한 뒤 저장하세요. Ctrl+Shift+F1~F11은 다른 앱에서도 전환합니다.";
     private string hotkeyStatus = "단축키 준비 중…";
     public CharacterViewModel Character => character;
-    public ExpressionSlotViewModel[] Slots { get; }
-    public ExpressionSlotViewModel Selected { get => selected; set => Set(ref selected, value); }
+    public ObservableCollection<ExpressionSlotViewModel> Slots { get; }
+    public ObservableCollection<BuiltinExpressionTest> TestExpressions { get; }
+    public bool IsTesting => testing != null;
+    public List<ExpressionKind> LastTestedKinds { get; } = [];
+    public ExpressionSlotViewModel Selected { get => selected; set { if (Set(ref selected, value)) RefreshMoves(); } }
     public bool CanEdit => !busy && !closing;
     public string Status { get => status; private set => Set(ref status, value); }
     public string HotkeyStatus { get => hotkeyStatus; set => Set(ref hotkeyStatus, value); }
-    public KeyValuePair<ExpressionKind, string>[] Kinds { get; } = [
-        new(ExpressionKind.Neutral, "평상"), new(ExpressionKind.Happy, "기쁨"), new(ExpressionKind.Sad, "슬픔"),
-        new(ExpressionKind.Angry, "화남"), new(ExpressionKind.Surprised, "놀람"), new(ExpressionKind.Sleepy, "졸림")];
+    public KeyValuePair<ExpressionKind, string>[] Kinds { get; } = Enumerable.Range(0, 12)
+        .Select(i => new KeyValuePair<ExpressionKind, string>((ExpressionKind)i, ExpressionProfile.Default(i).Name)).ToArray();
+    public AsyncCommand MoveUpCommand { get; }
+    public AsyncCommand MoveDownCommand { get; }
+    public RelayCommand StopTestCommand { get; }
     public AsyncCommand SaveCommand { get; }
     public AsyncCommand PreviewCommand { get; }
     public AsyncCommand ImportCommand { get; }
@@ -67,10 +79,16 @@ public sealed class ExpressionViewModel : ObservableObject
     public ExpressionViewModel(CharacterViewModel character, bool persistent, string? folder = null)
     {
         this.character = character; this.persistent = persistent;
-        store = new(folder ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VoxPet", "Expressions"));
-        Slots = Enumerable.Range(0, 12).Select(i => new ExpressionSlotViewModel(i, ExpressionProfile.Default(i))).ToArray();
+        string location = folder ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VoxPet", "Expressions");
+        store = new(location); orderStore = new(location);
+        Slots = new(Enumerable.Range(0, 12).Select(i => new ExpressionSlotViewModel(i, ExpressionProfile.Default(i))));
+        TestExpressions = new(Enumerable.Range(0, 12).Select(i => new BuiltinExpressionTest(i, ExpressionProfile.Default(i).Name,
+            new RelayCommand(() => _ = PreviewBuiltinAsync(i), () => !closing))));
         selected = Slots[0];
-        foreach (var slot in Slots) slot.SwitchCommand = new(() => _ = ActivateAsync(slot.Index), () => !closing);
+        foreach (var slot in Slots) slot.SwitchCommand = new(() => _ = ActivateAsync(slot.Position), () => !closing);
+        MoveUpCommand = new(() => MoveAsync(-1), () => CanEdit && Selected.Position > 0);
+        MoveDownCommand = new(() => MoveAsync(1), () => CanEdit && Selected.Position < 11);
+        StopTestCommand = new(CancelTest, () => !closing && IsTesting);
         SaveCommand = new(SaveAsync, () => CanEdit);
         PreviewCommand = new(() => PreviewAsync(), () => CanEdit);
         ImportCommand = new(ImportAsync, () => CanEdit);
@@ -79,15 +97,93 @@ public sealed class ExpressionViewModel : ObservableObject
     public async Task InitializeAsync()
     {
         if (!persistent) return;
-        var profiles = await Task.Run(() => Enumerable.Range(0, 12).Select(store.Load).ToArray());
-        if (closing) return;
-        for (int i = 0; i < 12; i++) Slots[i].MarkSaved(profiles[i]);
+        SetBusy(true); await gate.WaitAsync();
+        try
+        {
+            var loaded = await Task.Run(() => (Profiles: Enumerable.Range(0, 12).Select(store.Load).ToArray(), Order: orderStore.Load()));
+            if (closing) return;
+            foreach (var slot in Slots) slot.MarkSaved(loaded.Profiles[slot.Index]);
+            ApplyOrder(loaded.Order);
+        }
+        finally { gate.Release(); SetBusy(false); }
         await ActivateAsync(0);
+    }
+    private void RefreshMoves() { MoveUpCommand.Refresh(); MoveDownCommand.Refresh(); }
+    private void ApplyOrder(IReadOnlyList<int> order)
+    {
+        for (int position = 0; position < 12; position++)
+        {
+            Slots.Move(Slots.IndexOf(Slots.Single(slot => slot.Index == order[position])), position);
+            TestExpressions.Move(TestExpressions.IndexOf(TestExpressions.Single(item => item.Index == order[position])), position);
+        }
+        for (int i = 0; i < Slots.Count; i++) Slots[i].Position = i;
+        RefreshMoves();
+    }
+    public async Task MoveAsync(int delta)
+    {
+        if (!CanEdit || delta is not (-1 or 1)) return;
+        int from = Selected.Position, to = from + delta;
+        if (to is < 0 or >= 12) return;
+        var order = Slots.Select(slot => slot.Index).ToArray(); (order[from], order[to]) = (order[to], order[from]);
+        SetBusy(true); await gate.WaitAsync();
+        try
+        {
+            if (closing) return;
+            if (persistent) await Task.Run(() => orderStore.Save(order));
+            ApplyOrder(order); Status = "표정 순서를 저장했습니다. F1~F12는 표시된 새 순서를 따릅니다.";
+        }
+        catch (Exception ex) when (Expected(ex)) { if (!closing) Status = "순서를 저장하지 못했습니다. 기존 순서를 유지합니다."; }
+        finally { gate.Release(); SetBusy(false); }
+    }
+    public void CancelTest() => testing?.Cancel();
+    public async Task PreviewBuiltinAsync(int index)
+    {
+        if (closing || index is < 0 or >= 12) return;
+        CancelTest(); long request = ++revision; await gate.WaitAsync();
+        try
+        {
+            if (closing || request != revision) return;
+            character.Apply(ExpressionProfile.Default(index)); Status = $"{ExpressionProfile.Default(index).Name} · 기본 표정 미리보기";
+        }
+        finally { gate.Release(); }
+    }
+    public Task TestAllAsync() => TestAllAsync(TimeSpan.FromSeconds(1.2));
+    internal async Task TestAllAsync(TimeSpan interval)
+    {
+        if (!CanEdit) return;
+        var restore = character.CaptureAppearance(); long request = ++revision;
+        using var cancellation = new CancellationTokenSource(); testing = cancellation; LastTestedKinds.Clear();
+        SetBusy(true); Notify(nameof(IsTesting)); StopTestCommand.Refresh();
+        await gate.WaitAsync(); bool completed = false;
+        try
+        {
+            foreach (var item in TestExpressions)
+            {
+                cancellation.Token.ThrowIfCancellationRequested();
+                var profile = ExpressionProfile.Default(item.Index); character.Apply(profile); LastTestedKinds.Add(profile.Kind);
+                Status = $"12종 테스트 · {LastTestedKinds.Count}/12 · {profile.Name}";
+                await Task.Delay(interval, cancellation.Token);
+            }
+            completed = true;
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            testing = null;
+            try
+            {
+                if (!closing && request == revision)
+                {
+                    restore(); Status = completed ? "12종 테스트 완료 · 원래 표정으로 돌아왔습니다." : "테스트 취소 · 원래 표정으로 돌아왔습니다.";
+                }
+            }
+            finally { gate.Release(); SetBusy(false); Notify(nameof(IsTesting)); StopTestCommand.Refresh(); }
+        }
     }
     private void SetBusy(bool value)
     {
         busy = value; Notify(nameof(CanEdit));
-        SaveCommand.Refresh(); PreviewCommand.Refresh(); ImportCommand.Refresh(); BuiltinCommand.Refresh();
+        SaveCommand.Refresh(); PreviewCommand.Refresh(); ImportCommand.Refresh(); BuiltinCommand.Refresh(); RefreshMoves();
     }
     private static bool Expected(Exception ex) => ex is IOException or UnauthorizedAccessException or ArgumentException or
         NotSupportedException or FormatException or OverflowException or COMException;
@@ -99,13 +195,13 @@ public sealed class ExpressionViewModel : ObservableObject
     public async Task ActivateAsync(int index)
     {
         if (closing || index is < 0 or >= 12) return;
-        long request = ++revision;
+        CancelTest(); long request = ++revision;
         await gate.WaitAsync();
         try
         {
             if (closing || request != revision) return;
             var slot = Slots[index]; var profile = slot.Saved;
-            var sheet = !persistent && profile.SheetId != null && memorySheets.TryGetValue(index, out var cached) ? cached : await LoadSheetAsync(profile);
+            var sheet = !persistent && profile.SheetId != null && memorySheets.TryGetValue(slot.Index, out var cached) ? cached : await LoadSheetAsync(profile);
             if (closing || request != revision) return;
             character.Apply(profile, sheet); Selected = slot;
             Status = $"{slot.Label} · 표정 전환 완료";
@@ -175,7 +271,7 @@ public sealed class ExpressionViewModel : ObservableObject
     }
     public async Task CloseAsync()
     {
-        closing = true; ++revision; SetBusy(true);
+        closing = true; CancelTest(); ++revision; SetBusy(true);
         await gate.WaitAsync(); gate.Release();
     }
 }

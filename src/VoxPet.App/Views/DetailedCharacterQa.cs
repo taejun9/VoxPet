@@ -10,7 +10,7 @@ namespace VoxPet.App.Views;
 /// <summary>개인 자료 없이 상세8열의 행열/기본 표정 가족/저장 재시작/손상 복구를 확인한다.</summary>
 internal static class DetailedCharacterQa
 {
-    private static void SaveFixture(string path, int expression)
+    internal static void SaveFixture(string path, int expression)
     {
         var pixels = new byte[1024 * 256 * 4];
         for (int row = 0; row < 2; row++)
@@ -19,7 +19,7 @@ internal static class DetailedCharacterQa
                     for (int x = 20; x < 108; x++)
                     {
                         int i = ((row * 128 + y) * 1024 + col * 128 + x) * 4;
-                        pixels[i] = (byte)(30 + col * 25); pixels[i + 1] = (byte)(40 + expression * 30);
+                        pixels[i] = (byte)(30 + col * 25); pixels[i + 1] = (byte)(20 + expression * 18);
                         pixels[i + 2] = (byte)(row == 0 ? 70 : 180); pixels[i + 3] = 255;
                     }
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(BitmapSource.Create(1024, 256, 96, 96, PixelFormats.Bgra32, null, pixels, 4096)));
@@ -42,7 +42,7 @@ internal static class DetailedCharacterQa
             foreach (var kind in Enum.GetValues<ExpressionKind>().Where(kind => kind != ExpressionKind.Neutral))
                 SaveFixture(Path.Combine(variants, kind.ToString().ToLowerInvariant() + ".png"), (int)kind);
             var character = new CharacterViewModel();
-            check(await character.LoadDefaultAsync(path) && character.DefaultExpressionCount == 6 && character.MouthFrameCount == 8, "detailed_default_family_load");
+            check(await character.LoadDefaultAsync(path) && character.DefaultExpressionCount == 12 && character.MouthFrameCount == 8, "detailed_default_family_load");
             double[] levels = [0, .05, .15, .30, .45, .65, .82, 1];
             var states = new HashSet<ImageSource>();
             for (int mouth = 0; mouth < levels.Length; mouth++)
@@ -57,7 +57,7 @@ internal static class DetailedCharacterQa
             {
                 character.Apply(ExpressionProfile.Default((int)kind));
                 character.Update(new(0, 0, 0, 0, 1, MouthState.Closed));
-                check(Sample(character.Sprite)[1] == 40 + (int)kind * 30, "detailed_default_expression_" + kind);
+                check(Sample(character.Sprite)[1] == 20 + (int)kind * 18, "detailed_default_expression_" + kind);
             }
             var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
             var encoded = await Task.Run(() => CharacterViewModel.EncodeSheet(sheet));
@@ -70,9 +70,9 @@ internal static class DetailedCharacterQa
             character.Update(new(.82, 0, 0, 0, 1, MouthState.Closed));
             check(restart.Slots[0].Saved.SheetId != null && character.MouthFrameCount == 8 && Sample(character.Sprite)[0] == 180, "detailed_slot_survives_restart");
             File.WriteAllText(Path.Combine(variants, "sad.png"), "bad PNG");
-            check(await character.LoadDefaultAsync(path) && character.DefaultWarnings == 1 && character.DefaultExpressionCount == 5, "detailed_corrupt_variant_recovers");
+            check(await character.LoadDefaultAsync(path) && character.DefaultWarnings == 1 && character.DefaultExpressionCount == 11, "detailed_corrupt_variant_recovers");
             character.Apply(ExpressionProfile.Default(2)); character.Update(new(0, 0, 0, 0, 1, MouthState.Closed));
-            check(Sample(character.Sprite)[1] == 40, "detailed_corrupt_variant_uses_neutral");
+            check(Sample(character.Sprite)[1] == 20, "detailed_corrupt_variant_uses_neutral");
             File.Delete(path);
             var before = character.Sprite;
             check(!await character.LoadDefaultAsync(path) && ReferenceEquals(before, character.Sprite), "detailed_missing_default_preserves_current");
