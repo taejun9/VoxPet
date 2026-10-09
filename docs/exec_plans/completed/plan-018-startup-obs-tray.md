@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -38,10 +38,10 @@ QA→자체 리뷰→completed/리뷰 미러→main 병합/push→branch-d→wor
 ## Implementation Plan
 
 - [x] 기존 plan016의 일반 실행/12가족/저장 상태 재현과 원인 확인.
-- [ ] 초기화·오류 복구/최소 진단/일반 시작 프로세스 QA.
-- [ ] OBS 표시 문제의 캡처 호환 경로·UI/안내·실제 OBS QA.
-- [ ] 트레이 이동/복원/우클릭 방송창·종료/자원 해제.
-- [ ] 문서/개인 패키지/QA→리뷰→Git 수명.
+- [x] 초기화·오류 복구/최소 진단/일반 시작 프로세스 QA.
+- [x] OBS 표시 문제의 캡처 호환 경로·UI/안내·실제 OBS QA.
+- [x] 트레이 이동/복원/우클릭 방송창·종료/자원 해제.
+- [x] 문서/개인 패키지/QA→리뷰→Git 수명.
 
 ## QA Plan
 
@@ -57,6 +57,7 @@ QA 이후 동일 에이전트 자체 리뷰. 재현 증거/원인-수정 대응,
 | date | decision | reason |
 |---|---|---|
 | 2026-10-09 | persistSettings=false smoke 외에 일반 EXE를 별도 프로세스에서 실행 | 사용자 실제 시작 경로가 기존 QA에 빠짐 |
+| 2026-10-09 | 초록 배경은 불투명/non-layered 창, 투명 전환은 방송창만 재생성 | 기존 layered 초록 창의 캡처 호환 제한을 줄이고 native alpha 선택은 유지 |
 | 2026-10-09 | 사용자 Win11/OBS32.2.2 창 캡처 환경을 기준으로 조사 | Server CI/GPU 시험을 사용자 환경의 완전한 재현으로 주장하지 않음 |
 
 ## Progress Log
@@ -68,6 +69,21 @@ QA 이후 동일 에이전트 자체 리뷰. 재현 증거/원인-수정 대응,
 | 2026-10-09 | 검증 | 코드 수정 전37935023184에서 일반12가족 시작 실패 재현: NullReferenceException → 이동 버튼 CanExecute → InitializeAsync/SetBusy. WPF Selector가 초기화 중 Selected=null 전달 |
 | 2026-10-09 | 제작 | 유효한 마지막 선택 유지/null·외부 슬롯 무시, 동일 위치 Move 생략/순서 갱신 후 선택 바인딩 재동기화 |
 
+| 2026-10-09 | 제작 | 트레이 메뉴/복원/숨김 상태 종료, 초록=불투명/non-layered 방송창·모드 변경 재생성/크기위치 유지, 마지막 오류 최소 진단 구현 |
+| 2026-10-09 | 검증 | macOS format/analyzer/Release0경고0오류/Core140통과. 일반 프로세스5저장상태/실제 Selector/트레이와 OBS 재실행 |
+
+| 2026-10-09 | 검증 | 일반 시작5종 모두10초/정상 종료/저장 불변,Core140/WPF725 통과. OBS32.2.2의 BitBlt·WGC 초록/크로마키와 투명/native alpha 통과. PNG 직접 확인 |
+| 2026-10-09 | 심사 | 동일 에이전트 QA 이후 자체 리뷰. 재현-수정 연결/선택 불변식/트레이와 숨긴 창 종료/방송창 모드 수명/로컬 최소 진단 경계 확인 |
+| 2026-10-09 | 정리 | 완료 계획/리뷰 미러와 사용·OBS·오류 안내 동기화. 기존12PNG/원본/ZIP 보존 및 새 개인ZIP CRC 확인 |
+
 ## Completion Notes
 
-원인 재현/구현·검증 진행 중. 사용자 환경의 조용한 종료와 OBS 미표시를 이전 합성 통과만으로 해결되었다고 취급하지 않는다.
+세 요청을 구현·검증하고 QA 이후 자체 리뷰를 완료했다. 일반 시작 오류는 수정 전 실제 프로세스에서 재현하여 원인을 확인했다.
+
+- 재현37935023184: 일반12가족 프로세스 조용한 종료(-532462766), NullReferenceException/이동 명령 CanExecute/초기화 경로. Selected의 일시적 null을 무시하여 마지막 유효 선택을 유지하고 목록 갱신 후 바인딩을 동기화했다.
+- 실행 코드4403f8d. [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37937258075) Core140/WPF725·실패0·Release 경고/오류0·publish. 일반 프로세스5종×10초/초기화 완료/가시성/정상 종료/슬롯·순서 불변 통과.
+- [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37937258114): 초록 불투명/non-layered 창으로 이전 실패하던 BitBlt와WGC 모두 통과, 각7프레임 변화/Chroma Key. 투명 WGC/native alpha65.08% 유지. main트레이 숨김 상태에서 실제 OBS32.2.2 캡처.
+- 트레이는 설정창만 숨기며 입력/데모/방송창을 유지한다. 메뉴 복원/OBS 호환 열기/숨겨진 main 종료 및 자원 해제 검증. X는 정상 종료 유지.
+- 시작 설정 실패는 안내와 창을 유지하며, 치명 UI 오류는 최소 로컬 진단과 메시지 후 종료한다. 예외 메시지/개인 경로/장치명/음성 기록·전송 없음 확인.
+- 개인 ZIP artifacts/VoxPet-win-x64-neulbo-plan018.zip은26파일·CRC 통과, 기존12PNG와 원본 해시 동일. 이전 ZIP은 보존. 게시자 회사=김태중·NotSigned/개인PC 서명 안내 포함.
+- 증거 artifacts/qa/plan018/repro/, windows/, obs/, summary.json/package.json. 실제 사용자 Windows11 GPU/OBS 장면/개인PNG 화면/물리Shell·마이크는 별도 확인. 개인PNG는 CI에 보내지 않았으나 PNG 그림 내용과 무관한 UI 회귀를 동일12가족 구조와 일반 실행으로 확인했다.

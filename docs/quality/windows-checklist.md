@@ -213,3 +213,17 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 증거 artifacts/qa/plan016/windows/ 및 obs/, 개인 자산 artifacts/characters/neulbo-plan016/, 개인 ZIP artifacts/VoxPet-win-x64-neulbo-plan016.zip.
 
 실제 마이크/권한/장치 제거·물리 DPI/키보드·사용자 OBS/GPU 실기는 기존 미실행 상태를 유지한다.
+
+## plan018 조용한 시작 종료 재현·OBS 캡처 호환·트레이
+
+사용자는 Windows11/OBS32.2.2/창 캡처, plan016 실행 직후 오류 문구 없이 종료를 보고했다. 기존 persistSettings=false smoke는 일반 저장 설정/기본 가족 시작을 시험하지 못했다.
+
+- 코드 수정 전 [재현 실행](https://github.com/taejun9/VoxPet/actions/runs/37935023184): 같은352px셀12가족을 동봉하고 일반 인수 없는 EXE가 종료 코드-532462766으로 종료했다. stderr의 NullReferenceException은 이동 버튼 CanExecute → InitializeAsync/SetBusy → MainWindow.Loaded 경로였다. WPF 초기화 중 Selected=null을 허용한 회귀다.
+- 코드4403f8d [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37937258075): Core140/140·Release 경고/오류0·format/analyzer/publish, WPF725고유검사·실패0.
+- 일반 프로세스5사례(fresh12/reversed12/이전3열 저장PNG/손상 설정·순서·슬롯/public6)를 각10초 유지하고 초기화 완료/가시성/선택/편집 가능/정상 종료와 슬롯·순서 파일 불변을 확인했다. synthetic12가족/임시 QA 데이터이며 개인 이미지 전송 없음.
+- 실제 WPF Selector 선택 해제/순서 변경, 트레이 hide/메뉴 복원/기존 최소화 복구/방송창·데모 유지/숨겨진 main 종료 및 자원 정리 통과. Shell 물리 클릭과 구분한다.
+- 초록 배경 방송창은 불투명/non-layered로 변경, 투명 모드는 별도 native 창으로 재생성해 geometry/model을 유지한다. [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37937258114)에서 이전 실패하던 BitBlt와 WGC 모두 green/Chroma Key/각7프레임 변화 통과, transparent WGC native alpha65.08% 유지. main이 트레이에 숨겨진 상태의 실제 OBS32.2.2 캡처다. 캡처 PNG와 트레이/OBS 버튼이 있는 WPF 화면을 직접 확인했다.
+- 마지막 오류 로컬 로그는 종류/코드/앱 메서드/시간·버전만 기록하며 예외 메시지·개인 경로·음성 제외를 검증했다. 사용자의 보안 정책/인증서 신뢰를 변경하지 않았다.
+- 증거 artifacts/qa/plan018/repro/, windows/, obs/, summary.json. 개인 ZIP artifacts/VoxPet-win-x64-neulbo-plan018.zip은 기존12PNG/원본 해시를 유지하며 기존ZIP을 보존한다.
+
+실제 사용자 Windows11 GPU/OBS 설정/개인PNG 화면/물리Shell·마이크는 별도 환경이다. 이번 일반 시작 재현의 원인은 PNG 그림 내용과 무관한 Selector null 처리임을 확인했다. 게시자 회사 정보는 김태중이며 기본 EXE는 NotSigned이고 개인PC 서명 안내를 동봉한다.

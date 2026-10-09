@@ -60,3 +60,7 @@
 | Microsoft settings URI | https://learn.microsoft.com/en-us/windows/apps/develop/launch/launch-settings | 설정 페이지 | 2026-10-08 | ms-settings:privacy-microphone 바로가기 |
 
 공개 사용자 사례는 [기능 조사](../product/user-feature-research.md)의 S2로 별도 기록한다. 공식 API 근거로 사용하지 않는다. Gate 추천의 수치와 키 선택은 VoxPet 설계 결정이다.
+
+| Microsoft NotifyIcon | https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.notifyicon?view=windowsdesktop-10.0 | 트레이 수명 | 2026-10-09 | 알림 영역/메뉴/두 번 클릭 복원/Dispose |
+| Microsoft AllowsTransparency | https://learn.microsoft.com/en-us/dotnet/api/system.windows.window.allowstransparency?view=windowsdesktop-10.0 | 방송창 투명/불투명 | 2026-10-09 | WindowStyle=None 및 투명 클라이언트 영역 의미 |
+| OBS Window Capture Sources | https://obsproject.com/kb/window-capture-sources | 사용자 OBS32.2.2 창 캡처 | 2026-10-09 | 대상 창과 캡처 방식 설정/초록 배경 복구 안내 |

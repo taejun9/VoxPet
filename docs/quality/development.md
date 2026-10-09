@@ -109,3 +109,10 @@ plan015 MouthFrameTests는8단계 정확한 경계/비유한값/dBFS sweep/Gate�
 ## 표정 순서·12종 테스트 합성 시험
 
 plan016 ExpressionOrderTests는12종 기본값/기존 enum 숫자 호환/순열 저장·재시작/손상과 실패 복구를 확인한다. ExpressionManagementQa는 실제 방송창 우클릭 메뉴의 검정 헤더와 PNG, 이동 시 슬롯 파일·초안 유지/위치-F키 대응/재시작/경계/메모리 PNG 저장ID,12종 개별·전체 테스트·취소·키 전환·종료·원래 표정 복원, 자동 숫자 데모의 마이크 미사용과 종료를 검사한다. LayoutQa는 테스트 탭과12개 버튼도4창크기에서 확인한다. DetailedCharacterQa의 합성 표정 가족은12종×16상태로 확장했다. 개인 늘보군12PNG는 로컬에서 별도 검증하며 공개 CI로 보내지 않는다.
+
+
+## 일반 시작·트레이·OBS 호환 회귀
+
+plan018 `startup-qa.ps1`은 일회용 GitHub runner에서만 실행합니다. 일반 인수 없는 EXE를 별도 프로세스로10초씩 실행하여 fresh12/reversed12/이전3열 저장PNG/손상 상태/공용6얼굴을 확인하고 초기화 완료·선택·편집 가능·창 가시성·정상 종료·슬롯/순서 파일 불변을 검사합니다. 환경 VOXPET_QA_DATA_DIR은 GITHUB_ACTIONS=true 및 RUNNER_TEMP 내부에 한해서 임시 데이터 경로로 사용합니다. 사용자 실제 설정을 변경하지 않습니다. 기본 `qa.ps1 -Publish`에 포함됩니다.
+
+StartupTrayQa는 실제 WPF Selector의 임시 선택 해제/순서 변경과 트레이 메뉴·hide/restore/숨겨진 창 종료·데모 유지, native 초록 창의 non-layered 스타일과 모드 변경 크기/위치 유지, 최소 오류 로그의 메시지/경로 제외를 확인합니다. OBS QA는 설정창을 트레이로 숨긴 상태에서 별도 방송창을 캡처합니다. 실제 사용자 Shell 클릭/Windows11 GPU·물리 마이크 시험과 구분합니다.
