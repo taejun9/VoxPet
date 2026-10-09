@@ -17,6 +17,8 @@ git diff --check
 
 ## 확정한 빌드 환경
 
+게시자 메타데이터는 App csproj의 Company/Authors=김태중으로 지정한다. 이는 Authenticode 서명을 대체하지 않는다. `qa.ps1 -Publish`는 최종 단일 EXE의 CompanyName을 검사하고 실제 서명 상태/서명자/검증 여부를 `artifacts/test-results/publisher.json`에 기록한다. 기본 CI는 서명 인증서나 사용자 신뢰 저장소를 변경하지 않는다. 실사용 인증서 서명은 최종 publish 후 수행하며 개인 키/암호는 공개 Git/CI 증거로 보내지 않는다. [게시자 안내](../guides/installation.md#게시자-이름과-실행-경고)를 따른다.
+
 | 항목 | 기획 기준 / 결정 상태 |
 |---|---|
 | OS/CPU | Windows 11 x64의 지원 중인 버전 우선; Windows 10은 edition/build별 별도 실기 필요 |

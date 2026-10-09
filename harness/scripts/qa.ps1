@@ -22,6 +22,21 @@ try {
     if ($Publish) {
         dotnet publish src/VoxPet.App/VoxPet.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:RestoreLockedMode=true -o artifacts/win-x64
         if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
+        # 파일 속성의 CompanyName과 Authenticode 게시자는 별개다. 실제 배포 EXE를 읽어 둘 다 기록한다.
+        $publishedExe = (Resolve-Path 'artifacts/win-x64/VoxPet.exe').Path
+        $versionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($publishedExe)
+        if ($versionInfo.CompanyName -cne '김태중') { throw 'Published EXE company metadata mismatch' }
+        $signature = Get-AuthenticodeSignature -LiteralPath $publishedExe
+        $signingPublisher = if ($null -ne $signature.SignerCertificate) {
+            $signature.SignerCertificate.GetNameInfo([System.Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)
+        } else { $null }
+        [ordered]@{
+            companyName = $versionInfo.CompanyName
+            productName = $versionInfo.ProductName
+            signatureStatus = $signature.Status.ToString()
+            signingPublisher = $signingPublisher
+            publisherVerified = ($signature.Status -eq 'Valid' -and $signingPublisher -ceq '김태중')
+        } | ConvertTo-Json | Set-Content -LiteralPath 'artifacts/test-results/publisher.json' -Encoding utf8
     }
     # 자동 시험의 상한: 기본 60초, 개인 시트의 추가 모션/저장/화면 시험은 90초. 실제 사용자 앱에는 적용하지 않는다.
     if ($Smoke) {

@@ -35,6 +35,9 @@
 
 ## 남은 근거와 실기 확인
 
+| Microsoft code signing options | https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options | EXE 게시자/인증서 신뢰 | 2026-10-09 | 자체 서명 개인 시험 한계, 서명과 SmartScreen 평판 구분 |
+| Microsoft Set-AuthenticodeSignature | https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-authenticodesignature?view=powershell-5.1 | 파일 서명 | 2026-10-09 | 코드 서명 인증서/개인 키/SHA256와 최종 EXE 서명 경로 |
+
 - 정확한 Windows 10/11 빌드와 .NET 지원 OS 매트릭스, SDK/Visual Studio 버전 조합.
 - 패키지 버전은 고정했고 공식 소스로 이벤트 수명을 확인했다. 실제 장치의 WaveFormat은 Windows 실기로 확인한다.
 - WPF 투명 창의 OBS alpha 처리: OS/OBS/캡처 방식별 실기 검증 필요.
