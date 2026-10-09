@@ -53,12 +53,19 @@ internal static class DetailedCharacterQa
                     check(sample[0] == 30 + mouth * 25 && sample[2] == (eyes == 1 ? 70 : 180), "detailed_row_column_" + mouth + "_" + eyes);
                 }
             check(states.Count == 16 && states.All(image => image.IsFrozen), "detailed_sixteen_frozen_states");
+            var familyStates = new HashSet<ImageSource>();
             foreach (var kind in Enum.GetValues<ExpressionKind>())
             {
                 character.Apply(ExpressionProfile.Default((int)kind));
-                character.Update(new(0, 0, 0, 0, 1, MouthState.Closed));
-                check(Sample(character.Sprite)[1] == 20 + (int)kind * 18, "detailed_default_expression_" + kind);
+                for (int mouth = 0; mouth < levels.Length; mouth++)
+                    foreach (double eyes in new[] { 0.0, 1.0 })
+                    {
+                        character.Update(new(levels[mouth], 0, 0, 0, eyes, MouthState.Closed));
+                        familyStates.Add(character.Sprite); var sample = Sample(character.Sprite);
+                        check(sample[0] == 30 + mouth * 25 && sample[1] == 20 + (int)kind * 18 && sample[2] == (eyes == 1 ? 70 : 180), $"detailed_default_expression_{kind}_{mouth}_{eyes}");
+                    }
             }
+            check(familyStates.Count == 192 && familyStates.All(image => image.IsFrozen), "detailed_twelve_families_192_frozen_states");
             var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
             var encoded = await Task.Run(() => CharacterViewModel.EncodeSheet(sheet));
             var decoded = await Task.Run(() => CharacterSheetLoader.Load(encoded));

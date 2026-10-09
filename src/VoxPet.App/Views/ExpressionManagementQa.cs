@@ -82,6 +82,9 @@ internal static class ExpressionManagementQa
         await model.InitializeAsync();
         await model.TestExpressionsAsync(TimeSpan.FromMilliseconds(10));
         check(microphoneCalls == 0 && model.VoiceLevel == 0 && model.CanChooseDevice && model.Expressions.LastTestedKinds.Count == 12, "twelve_test_owns_only_synthetic_demo");
+        model.DemoCommand.Execute(null);
+        await model.TestExpressionsAsync(TimeSpan.FromMilliseconds(10));
+        check(microphoneCalls == 0 && !model.CanChooseDevice && model.StopCommand.CanExecute(null), "twelve_test_keeps_existing_demo");
         await model.DisposeAsync();
     }
 }
