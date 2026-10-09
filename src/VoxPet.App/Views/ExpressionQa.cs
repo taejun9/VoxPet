@@ -131,7 +131,7 @@ internal static class ExpressionQa
         main.WindowState = WindowState.Normal;
         check(main.Model.HandleExpressionKey(Key.F12, ModifierKeys.Control | ModifierKeys.Shift, false), "expression_F12_local_fallback");
         await Task.Delay(100);
-        check(character.Name.Contains("표정 12"), "expression_F12_selects_slot_12");
+        check(character.Name.Contains(main.Model.Expressions.Slots[11].Saved.Name), "expression_F12_selects_slot_12");
         check(!main.Model.HandleExpressionKey(Key.F1, ModifierKeys.Control, false), "expression_wrong_modifiers_ignored");
         hotkeys.Dispose();
         using (var reacquired = new ExpressionHotkeys(probe, _ => { }))
