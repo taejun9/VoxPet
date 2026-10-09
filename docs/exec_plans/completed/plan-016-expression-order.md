@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -41,7 +41,7 @@ QA→자체 리뷰→completed/리뷰 미러→main 병합/push→branch-d→wor
 - [x] 순서 매핑 저장/복구·위아래 이동·F키 대응·편집 초안 유지.
 - [x]12표정 종류와 개인12가족, 새6개 얼굴 자산 제작/통합.
 - [x] 개별12종 미리보기·전체 순회/취소·원래 화면 복원·마이크 없는 데모.
-- [ ] Core/Windows/OBS QA, 문서, 리뷰, 개인 ZIP 및 Git 수명.
+- [x] Core/Windows/OBS QA, 문서, 리뷰, 개인 ZIP 및 Git 수명.
 
 ## QA Plan
 
@@ -70,8 +70,19 @@ QA 이후 동일 에이전트 자체 리뷰. 세 요구사항/기존 슬롯·PNG
 | 2026-10-09 | 제작 | 메뉴 헤더 검정/저장ID 기반 이동/12종 개별·전체·취소/복원/숫자 데모 구현. 새6종 imagegen과 기존6종 보존,352px셀192고유상태 검증 |
 | 2026-10-09 | 검증 | locked restore/format 검증/Release 빌드0경고0오류/Core140통과. Windows/OBS 실행 준비 |
 
+| 2026-10-09 | 검증 | 코드6caff4b의 Windows37889406934/OBS37889406892 통과. Core140/WPF690검사·실패0,192합성 frozen상태·4창크기 모든 탭/메뉴 PNG 직접 확인 |
+| 2026-10-09 | 심사 | 동일 에이전트 QA 이후 자체 리뷰. 저장ID/표시 위치/순열 원자성·취소/복원·데모 소유권·사용자 저장값과 개인 자산 경계 확인 |
+| 2026-10-09 | 정리 | 개인12RGBA/192고유프레임·원본/기존6해시 보존·새 ZIP CRC 확인. 완료 계획/리뷰 미러/사용·배포·검증 문서 동기화. Git 수명 진행 |
+
 ## Completion Notes
 
 Windows 첫 실행37888923645:507통과, 기존 F12 기본 이름을 "표정12"로 가정한1개 assertion 실패. 실제 슬롯 저장 이름으로 검사하도록 fixture를 수정한다. OBS37888923685 통과.192상태 전체 매핑 및 기존 데모 보존도 보강하여 최종 재실행한다.
 
-구현·생성·QA 진행 중. 개인 원본·이전 ZIP과 사용자 저장값을 보존한다.
+세 요청을 구현하고 QA/자체 리뷰를 완료했다. 개인 원본·이전 ZIP과 사용자 저장값을 보존한다.
+
+- 실행 코드6caff4b. [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37889406934) Core140/140·WPF690고유검사·실패0·Release 경고/오류0·publish 통과. [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37889406892) WGC green/Chroma Key/native alpha/각7프레임 변화 통과.
+- 순서는 별도 order.json으로 저장·복구하며 PNG/슬롯 JSON과 편집 초안을 바꾸지 않는다. 표시 F키/개별 테스트/전체 순회가 순서를 따른다. 메모리 PNG는 위치와 무관한 저장ID로 찾아 재배열 회귀를 막았다.
+- 테스트 탭은 저장한 사용자 PNG와 별개로 기본12종을 시험한다. 전체 테스트 종료/중지 시 직전 표정을 복원하며 키/개별 선택은 최신 표정을 우선한다. 직접 소유한 숫자 데모만 종료하고 기존 데모/마이크를 유지한다. 실제 마이크 자동 시작/음성 저장/전송은 없다.
+- 개인 자산: 기존6PNG byte-identical, 새6종 참조 편집/imagegen,352px셀8×2/12파일/192고유상태·투명 여백/각8입 면적순서·원본SHA256 검증. artifacts/characters/neulbo-plan016/에 PNG/manifest/prompts/preview/검증 스크립트 보존. 개인 PNG는 Git/CI에 전달하지 않았다.
+- 개인 ZIP: artifacts/VoxPet-win-x64-neulbo-plan016.zip,24파일·CRC 통과. 합성 QA 결과는 artifacts/qa/plan016/windows/와 obs/, 패키지 해시는 package.json.
+- 제한: 공개 고양이는 기존6얼굴을 추가 종류에 재사용한다. 새 개인 PNG의 Windows 실행 화면은 수집하지 않았다. 실제 마이크/권한/물리 DPI/키보드/사용자 OBS·GPU 실기는 기존 미실기 범위다.

@@ -198,3 +198,18 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 증거: artifacts/qa/plan015/windows/ 및 obs/, 개인 자산 artifacts/characters/neulbo-plan015/, 실행 ZIP artifacts/VoxPet-win-x64-neulbo-plan015.zip.
 
 실제 마이크/권한/장치 제거·물리 DPI/키보드·사용자 OBS/GPU의 기존 미실행 상태는 유지한다.
+
+
+## plan016 방송창 메뉴·표정 순서·개인12종 테스트
+
+2026-10-09 코드6caff4b의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37889406934), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37889406892) 통과.
+
+- Core140/140·locked restore/format/analyzer/Release/publish 경고·오류0. WPF690고유검사·실패0.
+- 방송창 팝업 메뉴의 검정 글씨/실제 PNG, 순서 저장·재시작·경계·F키 위치 의미·초안/슬롯 JSON 유지·메모리 PNG 저장ID 검증. 테스트 탭12버튼/전체·취소·복원·키/종료와 기존 데모 보존/마이크 없는 숫자 데모 수명 확인.
+- 합성12종×16frozen상태의192매핑, 기존3열·저장 슬롯·입 음소거·창 크기/수명·hotkey 회귀.4창크기 모든 탭에서 컨트롤/머리글 가시성과 스크롤 없음 통과. 실제 메뉴/편집/테스트 PNG 확인.
+- 개인12얼굴: 기존6PNG 보존 및 새6종 imagegen 편집.352px셀8×2 RGBA12파일/192고유프레임·투명 여백·8입 면적순서·원본/기존6해시 일치. 개인 ZIP24파일·CRC 통과. 개인 PNG는 공개 Git/CI에 보내지 않았다. 실제 새 개인PNG의 Windows 화면은 이번 합성 fixture와 구분한다.
+- OBS32.2.2 WGC green+Chroma Key/native alpha·각7프레임 변화 통과. BitBlt의 기존 유효 프레임 없음 유지.
+- 첫 Windows 실행의 오래된 F12 이름 assertion1건은 실제 저장 이름으로 수정해 재검증했다.
+- 증거 artifacts/qa/plan016/windows/ 및 obs/, 개인 자산 artifacts/characters/neulbo-plan016/, 개인 ZIP artifacts/VoxPet-win-x64-neulbo-plan016.zip.
+
+실제 마이크/권한/장치 제거·물리 DPI/키보드·사용자 OBS/GPU 실기는 기존 미실행 상태를 유지한다.
