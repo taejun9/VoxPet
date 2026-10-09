@@ -61,7 +61,16 @@ public sealed class ExpressionViewModel : ObservableObject
     public ObservableCollection<BuiltinExpressionTest> TestExpressions { get; }
     public bool IsTesting => testing != null;
     public List<ExpressionKind> LastTestedKinds { get; } = [];
-    public ExpressionSlotViewModel Selected { get => selected; set { if (Set(ref selected, value)) RefreshMoves(); } }
+    public ExpressionSlotViewModel Selected
+    {
+        get => selected;
+        set
+        {
+            // WPF Selector는 목록 갱신/초기 바인딩 중 null을 잠시 전달한다. 마지막 유효 선택을 유지한다.
+            if (value == null || !Slots.Contains(value)) return;
+            if (Set(ref selected, value)) RefreshMoves();
+        }
+    }
     public bool CanEdit => !busy && !closing;
     public string Status { get => status; private set => Set(ref status, value); }
     public string HotkeyStatus { get => hotkeyStatus; set => Set(ref hotkeyStatus, value); }
@@ -113,11 +122,13 @@ public sealed class ExpressionViewModel : ObservableObject
     {
         for (int position = 0; position < 12; position++)
         {
-            Slots.Move(Slots.IndexOf(Slots.Single(slot => slot.Index == order[position])), position);
-            TestExpressions.Move(TestExpressions.IndexOf(TestExpressions.Single(item => item.Index == order[position])), position);
+            int slotIndex = Slots.IndexOf(Slots.Single(slot => slot.Index == order[position]));
+            int testIndex = TestExpressions.IndexOf(TestExpressions.Single(item => item.Index == order[position]));
+            if (slotIndex != position) Slots.Move(slotIndex, position);
+            if (testIndex != position) TestExpressions.Move(testIndex, position);
         }
         for (int i = 0; i < Slots.Count; i++) Slots[i].Position = i;
-        RefreshMoves();
+        Notify(nameof(Selected)); RefreshMoves();
     }
     public async Task MoveAsync(int delta)
     {

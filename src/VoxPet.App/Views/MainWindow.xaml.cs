@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.IO;
+using System.Text.Json;
 using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 
@@ -17,6 +19,10 @@ public partial class MainWindow : Window
     private CharacterWindow? character;
     private ExpressionHotkeys? hotkeys;
     private MuteHotkey? muteHotkey;
+    private TrayService? tray;
+    internal bool IsInTray { get; private set; }
+    internal bool TrayIconVisible => tray?.Visible == true;
+    internal void ActivateTrayMenu(int index) => tray?.ActivateMenu(index);
     private bool allowClose, shuttingDown;
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     // Loaded 후 장치 목록 초기화가 끝나는 시점. Windows smoke가 UI 준비를 기다리는 용도다.
@@ -35,6 +41,8 @@ public partial class MainWindow : Window
         SettingsTabs.SizeChanged += (_, _) => UpdateResponsiveLayout();
         SizeChanged += (_, _) => UpdateResponsiveLayout();
         Model.OpenBroadcast += () => ShowCharacter();
+        Model.MoveToTray += HideToTray;
+        Model.PropertyChanged += OnModelPropertyChanged;
         Model.OpenMicrophonePrivacy += () =>
         {
             try { Process.Start(new ProcessStartInfo("ms-settings:privacy-microphone") { UseShellExecute = true }); }
@@ -60,8 +68,39 @@ public partial class MainWindow : Window
             if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); }
             else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
         };
-        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); };
-        Loaded += async (_, _) => { await Model.InitializeAsync(); ready.TrySetResult(); };
+        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); tray?.Dispose(); Model.PropertyChanged -= OnModelPropertyChanged; };
+        Loaded += async (_, _) =>
+        {
+            try
+            {
+                await Model.InitializeAsync(); ready.TrySetResult();
+                if (!smoke && AppPaths.QaFolder is { } folder)
+                {
+                    Directory.CreateDirectory(folder);
+                    File.WriteAllText(Path.Combine(folder, "startup-ready.json"), JsonSerializer.Serialize(new
+                    {
+                        initialized = true,
+                        familyCount = Model.Character.DefaultExpressionCount,
+                        mouthFrames = Model.Character.MouthFrameCount,
+                        selectedStorageId = Model.Expressions.Selected.Index,
+                        selectedPosition = Model.Expressions.Selected.Position,
+                        canEdit = Model.Expressions.CanEdit,
+                        visible = IsVisible
+                    }));
+                }
+            }
+            catch (Exception error)
+            {
+                string path = ErrorDiagnostics.Record(error, "initialization");
+                if (smoke) ready.TrySetException(error);
+                else if (AppPaths.QaFolder != null) { ready.TrySetException(error); System.Windows.Application.Current.Shutdown(1); }
+                else
+                {
+                    Model.ReportStartupIssue(); ready.TrySetResult();
+                    MessageBox.Show(this, $"일부 시작 설정을 읽지 못했습니다. 창을 유지합니다. 오류 기록: {path}", "VoxPet 시작 설정");
+                }
+            }
+        };
         Closing += OnClosing;
     }
     internal ExpressionHotkeys EnableExpressionHotkeys()
@@ -86,6 +125,25 @@ public partial class MainWindow : Window
             : "Ctrl+Shift+M 등록 실패 · 다른 앱과 충돌할 수 있습니다. VoxPet 창 안의 키 또는 체크박스를 사용하세요.";
         return muteHotkey;
     }
+    internal void HideToTray()
+    {
+        if (shuttingDown) return;
+        tray ??= new TrayService(RestoreFromTray, () => Model.ObsBroadcastCommand.Execute(null), Close);
+        tray.Show(); IsInTray = true; Hide();
+    }
+    internal void RestoreFromTray()
+    {
+        if (shuttingDown) return;
+        Show(); WindowState = WindowState.Normal; Activate(); IsInTray = false; tray?.Hide();
+    }
+    private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(Model.GreenBackground) || character == null || shuttingDown) return;
+        // AllowsTransparency는 native 창 생성 뒤 변경할 수 없어 배경 모드 전환 시 방송창만 다시 만든다.
+        var previous = character;
+        double left = previous.Left, top = previous.Top; var state = previous.WindowState;
+        previous.Close(); var replacement = ShowCharacter(); replacement.Left = left; replacement.Top = top; replacement.WindowState = state;
+    }
     /// <summary>작은 창은 공통 미리보기를 숨기고 탭을 넓힌다. 캐릭터 탭에서는 항상 미리보기를 볼 수 있다.</summary>
     private void UpdateResponsiveLayout()
     {
@@ -109,7 +167,7 @@ public partial class MainWindow : Window
         if (character == null)
         {
             // Owner를 지정하지 않아 설정창 최소화가 방송창을 함께 숨기지 않게 한다. DataContext만 공유한다.
-            character = new CharacterWindow { DataContext = Model };
+            character = new CharacterWindow(opaque: Model.GreenBackground) { DataContext = Model };
             character.Closed += (_, _) => character = null;
             character.Show();
         }
@@ -133,12 +191,12 @@ public partial class MainWindow : Window
         {
             await ShutdownAsync();
             // 종료가 동기적으로 끝나도 취소한 Closing 이벤트가 반환된 뒤 다시 Close하도록 Dispatcher에 예약한다.
-            _ = Dispatcher.BeginInvoke(() => { if (IsVisible) Close(); });
+            _ = Dispatcher.BeginInvoke(Close);
         }
-        catch { IsEnabled = true; shuttingDown = false; MessageBox.Show("마이크 종료에 실패했습니다. 잠시 후 다시 닫아주세요.", "VoxPet"); }
+        catch { IsEnabled = true; shuttingDown = false; if (!IsVisible) RestoreFromTray(); MessageBox.Show("마이크 종료에 실패했습니다. 잠시 후 다시 닫아주세요.", "VoxPet"); }
     }
     /// <summary>
     /// 캡처 종료·설정 저장 후 방송창을 닫고 다음 Closing을 허용한다.
     /// </summary>
-    public async Task ShutdownAsync() { await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); allowClose = true; }
+    public async Task ShutdownAsync() { await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
 }

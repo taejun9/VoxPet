@@ -10,9 +10,10 @@
         <TextBlock x:Name="TitleText" Text="VoxPet" FontSize="32" FontWeight="Bold"/>
         <TextBlock x:Name="SubtitleText" Text="목소리로 움직이는 작은 친구" Foreground="#8FA4BC" Margin="0,6,0,24"/>
       </StackPanel>
-      <Border HorizontalAlignment="Right" VerticalAlignment="Top" Background="#213B38" CornerRadius="12" Padding="12,7">
-        <TextBlock Text="●  로컬 음량 분석" Foreground="{StaticResource Accent}"/>
-      </Border>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+        <Button Content="트레이로 이동" Command="{Binding TrayCommand}" FontSize="11" Padding="10,7"/>
+        <Border Background="#213B38" CornerRadius="12" Padding="12,7"><TextBlock Text="●  로컬 음량 분석" Foreground="{StaticResource Accent}"/></Border>
+      </StackPanel>
     </Grid>
     <!-- 각 탭은 동일한 모델을 공유한다. 작은 창은 내용 크기를 줄여 스크롤 없이 전체 조작을 표시한다. -->
     <Grid x:Name="PanelsGrid" Grid.Row="1">
@@ -182,8 +183,10 @@
                   <StackPanel Margin="8,12,8,0">
                     <WrapPanel Margin="0,12,0,0">
                       <CheckBox Content="방송창 항상 위" IsChecked="{Binding Topmost}"/>
-                      <CheckBox Content="초록 배경 (OBS)" IsChecked="{Binding GreenBackground}"/>
+                      <CheckBox Content="초록 배경 (OBS 호환)" IsChecked="{Binding GreenBackground}"/>
                     </WrapPanel>
+                    <Button Content="OBS 호환 방송창 열기" Command="{Binding ObsBroadcastCommand}" HorizontalAlignment="Left" FontSize="11" Padding="10,7" Margin="0,0,0,8"/>
+                    <TextBlock Text="OBS 창 캡처 대상: VoxPet Character · Windows 10(1903 이상) 방식" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,0,0,10"/>
                     <TextBlock Text="방송창 크기 · 오른쪽 아래 모서리를 끌어도 조절할 수 있습니다." TextWrapping="Wrap" FontSize="12"/>
                     <DockPanel Margin="0,12,0,0">
                       <TextBlock Text="너비"/>

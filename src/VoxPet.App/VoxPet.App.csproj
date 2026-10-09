@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
-    <UseWPF>true</UseWPF><EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>VoxPet</AssemblyName><Platforms>AnyCPU;x64</Platforms>
     <Company>김태중</Company><Authors>김태중</Authors><Product>VoxPet</Product>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
@@ -9,6 +9,7 @@
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
   <ItemGroup>
+    <Using Remove="System.Windows.Forms"/><Using Remove="System.Drawing"/>
     <ProjectReference Include="../VoxPet.Core/VoxPet.Core.csproj"/>
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1"/>
     <Resource Include="Assets/Characters/*.png"/>

@@ -7,6 +7,7 @@ using System.Windows.Interop;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using VoxPet.App.Views;
+using VoxPet.App.Services;
 
 namespace VoxPet.App;
 
@@ -52,9 +53,25 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        bool qa = e.Args.Contains("--smoke-test") || e.Args.Contains("--qa-demo") || AppPaths.QaFolder != null;
+        DispatcherUnhandledException += (_, error) =>
+        {
+            string path = ErrorDiagnostics.Record(error.Exception, "dispatcher");
+            error.Handled = true;
+            if (!qa) MessageBox.Show($"앱 오류로 실행을 계속할 수 없습니다. 오류 기록: {path}", "VoxPet 오류");
+            Shutdown(1);
+        };
         if (e.Args.Contains("--smoke-test")) RunSmokeAsync();
         else if (e.Args.Contains("--qa-demo")) RunQaDemoAsync(e.Args.Contains("--qa-transparent"));
-        else { var main = new MainWindow(); MainWindow = main; main.Show(); }
+        else
+        {
+            try { var main = new MainWindow(); MainWindow = main; main.Show(); }
+            catch (Exception error)
+            {
+                string path = ErrorDiagnostics.Record(error, "startup");
+                if (!qa) MessageBox.Show($"앱을 시작하지 못했습니다. 오류 기록: {path}", "VoxPet 시작 오류"); Shutdown(1);
+            }
+        }
     }
     // OBS QA fixture: 합성 숫자 데모만 사용한다. 마이크를 시작하거나 개인 설정을 저장하지 않는다.
     private async void RunQaDemoAsync(bool transparent)
@@ -66,7 +83,7 @@ public partial class App : Application
             main.Model.GreenBackground = !transparent;
             main.Model.DemoCommand.Execute(null);
             main.ShowCharacter();
-            main.WindowState = WindowState.Minimized;
+            main.Model.TrayCommand.Execute(null);
         }
         catch (Exception ex)
         {
@@ -125,6 +142,7 @@ public partial class App : Application
             main.Model.ResetCommand.Execute(null);
             if (main.Model.NormalizeMin != -50 || main.Model.NormalizeMax != -10) failures++;
             main.Model.GreenBackground = false;
+            broadcast = main.ShowCharacter();
             main.Model.Topmost = false;
             await Task.Delay(100);
             // 설정창 최소화가 독립 방송창에 전파되는 회귀를 native 창 상태로 확인한다.
@@ -157,6 +175,7 @@ public partial class App : Application
             await ExpressionQa.RunAsync(main, Check);
             await DetailedCharacterQa.RunAsync(Check);
             await ExpressionManagementQa.RunAsync(main, Check);
+            await StartupTrayQa.RunAsync(Check);
             await UsabilityQa.RunAsync(Check);
             await LayoutQa.RunAsync(main, Check);
             var png = new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 730, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);

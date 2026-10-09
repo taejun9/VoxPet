@@ -37,7 +37,7 @@ QA→자체 리뷰→completed/리뷰 미러→main 병합/push→branch-d→wor
 
 ## Implementation Plan
 
-- [ ] 기존 plan016의 일반 실행/12가족/저장 상태 재현과 원인 확인.
+- [x] 기존 plan016의 일반 실행/12가족/저장 상태 재현과 원인 확인.
 - [ ] 초기화·오류 복구/최소 진단/일반 시작 프로세스 QA.
 - [ ] OBS 표시 문제의 캡처 호환 경로·UI/안내·실제 OBS QA.
 - [ ] 트레이 이동/복원/우클릭 방송창·종료/자원 해제.
@@ -64,6 +64,9 @@ QA 이후 동일 에이전트 자체 리뷰. 재현 증거/원인-수정 대응,
 | date | role | note |
 |---|---|---|
 | 2026-10-09 | 지도 | plan017 메타데이터/개인PC 안내를 완료·병합한 뒤 plan018 생성. 개인 원본과 모든 이전ZIP 보존 |
+
+| 2026-10-09 | 검증 | 코드 수정 전37935023184에서 일반12가족 시작 실패 재현: NullReferenceException → 이동 버튼 CanExecute → InitializeAsync/SetBusy. WPF Selector가 초기화 중 Selected=null 전달 |
+| 2026-10-09 | 제작 | 유효한 마지막 선택 유지/null·외부 슬롯 무시, 동일 위치 Move 생략/순서 갱신 후 선택 바인딩 재동기화 |
 
 ## Completion Notes
 

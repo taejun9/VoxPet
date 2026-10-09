@@ -21,7 +21,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private readonly AudioSession session = new();
     private readonly AudioLevelProcessor processor = new();
     private readonly CharacterAnimator animator = new();
-    private readonly SettingsStore store = new();
+    private readonly SettingsStore store = new(Path.Combine(AppPaths.DataFolder, "settings.json"));
     private readonly Func<IReadOnlyList<AudioDevice>> listDevices;
     private readonly Func<string, IAudioInput> createInput;
     private NoiseGateCalibration? calibration;
@@ -67,6 +67,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand ResetCommand { get; }
     public RelayCommand DemoCommand { get; }
     public RelayCommand BroadcastCommand { get; }
+    public RelayCommand ObsBroadcastCommand { get; }
+    public RelayCommand TrayCommand { get; }
     public AsyncCommand ImportCharacterCommand { get; }
     public RelayCommand DefaultCharacterCommand { get; }
     public RelayCommand ConversationCommand { get; }
@@ -79,6 +81,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public AsyncCommand TestExpressionsCommand { get; }
     public event Func<string?>? ChooseCharacterSheet;
     public event Action? OpenBroadcast;
+    public event Action? MoveToTray;
     public event Action? OpenMicrophonePrivacy;
 
     /// <summary>
@@ -91,7 +94,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         this.persistSettings = persistSettings;
         this.listDevices = listDevices; this.createInput = createInput;
-        Expressions = new(Character, persistSettings);
+        Expressions = new(Character, persistSettings, Path.Combine(AppPaths.DataFolder, "Expressions"));
         var saved = persistSettings ? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         StartCommand = new(StartAsync, () => CanChooseDevice && SelectedDevice != null);
         StopCommand = new(StopAsync, () => !busy && !closing && (session.HasResources || demo));
@@ -99,6 +102,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ResetCommand = new(Reset);
         DemoCommand = new(ToggleDemo, () => CanChooseDevice);
         BroadcastCommand = new(() => OpenBroadcast?.Invoke());
+        ObsBroadcastCommand = new(() => { GreenBackground = true; OpenBroadcast?.Invoke(); }, () => !closing);
+        TrayCommand = new(() => MoveToTray?.Invoke(), () => !closing);
         ImportCharacterCommand = new(async () =>
         {
             var path = ChooseCharacterSheet?.Invoke();
@@ -188,7 +193,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         StartCommand.Refresh(); StopCommand.Refresh(); RefreshCommand.Refresh(); DemoCommand.Refresh();
         ImportCharacterCommand.Refresh(); DefaultCharacterCommand.Refresh();
         MeasureNoiseCommand.Refresh(); CancelNoiseCommand.Refresh(); ApplyNoiseCommand.Refresh(); MicrophonePrivacyCommand.Refresh();
-        Notify(nameof(IsMeasuringNoise)); TestExpressionsCommand.Refresh();
+        Notify(nameof(IsMeasuringNoise)); TestExpressionsCommand.Refresh(); TrayCommand.Refresh(); ObsBroadcastCommand.Refresh();
     }
     public async Task InitializeAsync()
     {
@@ -206,6 +211,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         }
         await Expressions.InitializeAsync(); await RefreshDevicesAsync();
     }
+    internal void ReportStartupIssue() => Status = "일부 시작 설정을 읽지 못했습니다. 현재 표정/설정은 유지합니다. 오류 기록을 확인하세요.";
     /// <summary>
     /// 장치 열거는 UI 밖에서 수행한다. await 후 UI에서 목록을 교체하고 이전 선택을 가능하면 유지한다.
     /// </summary>
