@@ -51,7 +51,7 @@ public partial class App : Application
     /// <summary>
     /// 일반 실행은 설정창을 연다. --smoke-test와 --qa-demo는 자동 검증 전용 인수다.
     /// </summary>
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         bool qa = e.Args.Contains("--smoke-test") || e.Args.Contains("--qa-demo") || AppPaths.QaFolder != null;
@@ -73,7 +73,8 @@ public partial class App : Application
         {
             try
             {
-                var main = new MainWindow(); MainWindow = main;
+                var saved = await Task.Run(() => new SettingsStore(Path.Combine(AppPaths.DataFolder, "settings.json")).Load());
+                var main = new MainWindow(false, SystemParameters.WorkArea, new ViewModels.MainViewModel(initialSettings: saved)); MainWindow = main;
                 main.SourceInitialized += (_, _) => instance?.Attach(HwndSource.FromHwnd(new WindowInteropHelper(main).Handle), main.RestoreFromTray);
                 main.Show();
             }
@@ -190,6 +191,8 @@ public partial class App : Application
             await Task.Delay(100);
             if (closingWindow.IsVisible) failures++;
             await CharacterQa.RunAsync(main, Check);
+            await CharacterSelectionQa.RunAsync(Check);
+            await SettingsPersistenceQa.RunAsync(Check);
             await ExpressionQa.RunAsync(main, Check);
             await DetailedCharacterQa.RunAsync(Check);
             await ExpressionManagementQa.RunAsync(main, Check);

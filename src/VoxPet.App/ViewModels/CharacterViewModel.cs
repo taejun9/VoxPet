@@ -60,33 +60,38 @@ public sealed class CharacterViewModel : ObservableObject
     {
         try
         {
-            // 기본 PNG와 표정별 형제 파일은 UI 밖에서 읽고 완성된 frozen 가족만 적용한다.
-            var loaded = await Task.Run(() =>
-            {
-                var family = new Dictionary<ExpressionKind, ImageSource[,]> { [ExpressionKind.Neutral] = CharacterSheetLoader.Load(path) };
-                int warnings = 0;
-                string folder = Path.Combine(Path.GetDirectoryName(path)!, Path.GetFileNameWithoutExtension(path) + "-표정");
-                foreach (var kind in Enum.GetValues<ExpressionKind>().Where(kind => kind != ExpressionKind.Neutral))
-                {
-                    string variant = Path.Combine(folder, kind.ToString().ToLowerInvariant() + ".png");
-                    if (!File.Exists(variant)) continue;
-                    try
-                    {
-                        var sheet = CharacterSheetLoader.Load(variant);
-                        if (sheet.GetLength(0) != family[ExpressionKind.Neutral].GetLength(0) || sheet[0, 0].Width != family[ExpressionKind.Neutral][0, 0].Width)
-                            throw new ArgumentException("기본 표정 시트의 크기와 입 단계가 같아야 합니다.");
-                        family.Add(kind, sheet);
-                    }
-                    catch (Exception ex) when (Expected(ex)) { warnings++; }
-                }
-                return (Family: family, Warnings: warnings);
-            });
-            personalDefaults = loaded.Family; DefaultWarnings = loaded.Warnings;
-            defaultName = Path.GetFileNameWithoutExtension(path);
-            RestoreDefault(); return true;
+            var loaded = await Task.Run(() => LoadFamily(path));
+            SetDefault(loaded, Path.GetFileNameWithoutExtension(path)); return true;
         }
         catch (Exception ex) when (Expected(ex))
         { return false; }
+    }
+    internal sealed record CharacterFamily(Dictionary<ExpressionKind, ImageSource[,]> Sheets, int Warnings);
+    /// <summary>worker에서 가족 전체를 준비한다. UI 적용과 분리하여 오래된 선택 결과를 버린다.</summary>
+    internal static CharacterFamily LoadFamily(string path)
+    {
+        var family = new Dictionary<ExpressionKind, ImageSource[,]> { [ExpressionKind.Neutral] = CharacterSheetLoader.Load(path) };
+        int warnings = 0;
+        string folder = Path.Combine(Path.GetDirectoryName(path)!, Path.GetFileNameWithoutExtension(path) + "-표정");
+        foreach (var kind in Enum.GetValues<ExpressionKind>().Where(kind => kind != ExpressionKind.Neutral))
+        {
+            string variant = Path.Combine(folder, kind.ToString().ToLowerInvariant() + ".png");
+            if (!File.Exists(variant)) continue;
+            try
+            {
+                var sheet = CharacterSheetLoader.Load(variant);
+                if (sheet.GetLength(0) != family[ExpressionKind.Neutral].GetLength(0) || sheet[0, 0].Width != family[ExpressionKind.Neutral][0, 0].Width)
+                    throw new ArgumentException("기본 표정 시트의 크기와 입 단계가 같아야 합니다.");
+                family.Add(kind, sheet);
+            }
+            catch (Exception ex) when (Expected(ex)) { warnings++; }
+        }
+        return new(family, warnings);
+    }
+    internal void SetDefault(CharacterFamily family, string displayName)
+    {
+        personalDefaults = family.Sheets; DefaultWarnings = family.Warnings; defaultName = displayName;
+        RestoreDefault(); Notify(nameof(DefaultExpressionCount)); Notify(nameof(MouthFrameCount));
     }
     internal Action CaptureAppearance()
     {

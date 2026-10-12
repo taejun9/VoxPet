@@ -18,10 +18,50 @@ namespace VoxPet.App.ViewModels;
 public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 {
     private readonly bool persistSettings;
+    private readonly string charactersFolder;
+    private CharacterDefinition selectedCharacter;
+    private CharacterDefinition appliedCharacter;
+    private bool characterInitialized;
+    private int characterLoads;
+    private long characterRevision;
+    public IReadOnlyList<CharacterDefinition> Characters => CharacterCatalog.All;
+    public bool CanChooseCharacter => !closing && !characterBusy;
+    public CharacterDefinition SelectedCharacter
+    {
+        get => selectedCharacter;
+        set
+        {
+            if (value == null || !Characters.Contains(value) || closing || value == selectedCharacter) return;
+            if (characterInitialized) _ = SelectCharacterAsync(value.Id);
+        }
+    }
     private readonly AudioSession session = new();
     private readonly AudioLevelProcessor processor = new();
     private readonly CharacterAnimator animator = new();
-    private readonly SettingsStore store = new(Path.Combine(AppPaths.DataFolder, "settings.json"));
+    private readonly SettingsStore store;
+    private readonly SemaphoreSlim settingsGate = new(1, 1);
+    private readonly DispatcherTimer saveTimer;
+    private bool settingsReady, refreshingDevices;
+    private string? preferredMicrophoneId;
+    private WindowPlacement? mainPlacement, broadcastPlacement;
+    private bool broadcastOpen;
+    private int settingsTab;
+    private int? expressionSlotId;
+    private ExpressionKind? builtinExpression;
+    private string settingsStatus = "";
+    public WindowPlacement? MainPlacement => mainPlacement;
+    public WindowPlacement? BroadcastPlacement => broadcastPlacement;
+    public bool BroadcastOpen => broadcastOpen;
+    public string? PreferredMicrophoneId => preferredMicrophoneId;
+    public string SettingsStatus { get => settingsStatus; private set => Set(ref settingsStatus, value); }
+    public int SettingsTab { get => settingsTab; set { if (value is >= 0 and < 6) Set(ref settingsTab, value); } }
+    internal void RememberMainPlacement(WindowPlacement value) { mainPlacement = value.Normalize(); ScheduleSettingsSave(); }
+    internal void RememberBroadcastPlacement(WindowPlacement value)
+    {
+        broadcastPlacement = value.Normalize(true);
+        BroadcastWidth = broadcastPlacement.Width; BroadcastHeight = broadcastPlacement.Height; ScheduleSettingsSave();
+    }
+    internal void RememberBroadcastOpen(bool value) { broadcastOpen = value; ScheduleSettingsSave(); }
     private readonly Func<IReadOnlyList<AudioDevice>> listDevices;
     private readonly Func<string, IAudioInput> createInput;
     private NoiseGateCalibration? calibration;
@@ -89,15 +129,27 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// QA는 persistSettings=false로 실제 사용자 설정을 읽거나 덮어쓰지 않는다.
     /// 명령 활성 조건은 마이크 수명과 별도 PNG 로딩 상태를 기준으로 UI에서 평가한다.
     /// </summary>
-    public MainViewModel(bool persistSettings = true) : this(persistSettings, AudioCaptureService.ListDevices, id => new AudioCaptureService(id)) { }
+    public MainViewModel(bool persistSettings = true, UserSettings? initialSettings = null) : this(persistSettings, AudioCaptureService.ListDevices, id => new AudioCaptureService(id), initialSettings: initialSettings) { }
     // Windows QA는 가짜 숫자 입력을 주입해 실제 마이크/사용자 설정에 접근하지 않는다.
-    internal MainViewModel(bool persistSettings, Func<IReadOnlyList<AudioDevice>> listDevices, Func<string, IAudioInput> createInput)
+    internal MainViewModel(bool persistSettings, Func<IReadOnlyList<AudioDevice>> listDevices, Func<string, IAudioInput> createInput, string? charactersFolder = null, string? dataFolder = null, UserSettings? initialSettings = null)
     {
         this.persistSettings = persistSettings;
+        this.charactersFolder = charactersFolder ?? Path.Combine(AppContext.BaseDirectory, "Characters");
         this.listDevices = listDevices; this.createInput = createInput;
-        Expressions = new(Character, persistSettings, Path.Combine(AppPaths.DataFolder, "Expressions"));
-        Wardrobe = new(persistSettings); Character.CostumeLayers = Wardrobe.Items;
-        var saved = persistSettings ? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
+        string folder = dataFolder ?? AppPaths.DataFolder; store = new(Path.Combine(folder, "settings.json"));
+        Expressions = new(Character, persistSettings, Path.Combine(folder, "Expressions"));
+        Wardrobe = new(persistSettings, Path.Combine(folder, "Wardrobe")); Character.CostumeLayers = Wardrobe.Items;
+        var saved = persistSettings ? initialSettings?.Normalize() ?? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
+        selectedCharacter = appliedCharacter = Characters.Single(item => item.Id == saved.CharacterId);
+        preferredMicrophoneId = saved.MicrophoneId; mainPlacement = saved.MainWindow; broadcastPlacement = saved.BroadcastWindow;
+        broadcastWidth = broadcastPlacement?.Width ?? 480; broadcastHeight = broadcastPlacement?.Height ?? 480;
+        broadcastOpen = saved.BroadcastOpen; muted = saved.CharacterMuted; settingsTab = saved.SettingsTab;
+        expressionSlotId = saved.ExpressionSlotId; builtinExpression = saved.BuiltinExpression;
+        Expressions.AppearanceSelected += (slot, kind) =>
+        {
+            if (closing) return;
+            expressionSlotId = slot; builtinExpression = kind; ScheduleSettingsSave();
+        };
         StartCommand = new(StartAsync, () => CanChooseDevice && SelectedDevice != null);
         StopCommand = new(StopAsync, () => !busy && !closing && (session.HasResources || demo));
         RefreshCommand = new(RefreshDevicesAsync, () => CanChooseDevice);
@@ -111,7 +163,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var path = ChooseCharacterSheet?.Invoke();
             if (path != null) await ImportCharacterAsync(path);
         }, () => !closing && !characterBusy);
-        DefaultCharacterCommand = new(() => { Character.RestoreDefault(); CharacterStatus = "기본 캐릭터로 복원했습니다."; }, () => !closing && !characterBusy);
+        DefaultCharacterCommand = new(() => { Expressions.RestoreCharacter(); CharacterStatus = "선택한 캐릭터의 평상 모습으로 복원했습니다."; }, () => !closing && !characterBusy);
         ConversationCommand = new(() => ApplyPreset(ReactionPreset.Conversation));
         SoftVoiceCommand = new(() => ApplyPreset(ReactionPreset.SoftVoice));
         SnappyCommand = new(() => ApplyPreset(ReactionPreset.Snappy));
@@ -130,8 +182,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         // 60Hz는 목표 갱신 주기다. 지연된 프레임도 Tick의 실제 dt로 계산해 반응 시간이 늘어나지 않게 한다.
         timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(1000.0 / 60) };
         timer.Tick += Tick; timer.Start();
+        saveTimer = new(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(350) };
+        saveTimer.Tick += SaveTimerTick;
+        PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(SelectedDevice) or nameof(NoiseGate) or nameof(NormalizeMin) or nameof(NormalizeMax) or nameof(Sensitivity) or nameof(AttackMs) or nameof(ReleaseMs)
+                or nameof(BroadcastWidth) or nameof(BroadcastHeight) or nameof(Topmost) or nameof(GreenBackground) or nameof(CharacterMuted) or nameof(SettingsTab) or nameof(SelectedCharacter)) ScheduleSettingsSave();
+        };
     }
-    public AudioDevice? SelectedDevice { get => selected; set { if (Set(ref selected, value)) RefreshCommands(); } }
+    public AudioDevice? SelectedDevice
+    {
+        get => selected;
+        set
+        {
+            if (value == null || refreshingDevices) return;
+            preferredMicrophoneId = value.Id;
+            if (Set(ref selected, value)) RefreshCommands();
+            else ScheduleSettingsSave();
+        }
+    }
     // 실행 자원이 남아 있거나 데모/수명 작업 중이면 장치를 바꾸거나 두 번째 입력을 시작하지 않는다.
     public bool CanChooseDevice => !busy && !closing && !session.HasResources && !demo;
     public string Status { get => status; private set => Set(ref status, value); }
@@ -156,7 +225,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public string MuteHotkeyStatus { get => muteHotkeyStatus; set => Set(ref muteHotkeyStatus, value); }
     public string CalibrationStatus { get => calibrationStatus; private set => Set(ref calibrationStatus, value); }
     public bool IsMeasuringNoise => calibration != null;
-    // 크기는 DIP 단위다. 모서리 드래그 결과도 공유하고 다시 열 때 이번 실행의 크기를 유지한다.
+    // 크기는 DIP 단위다. 모서리 드래그/슬라이더와 재실행에서 같은 값을 유지한다.
     public double BroadcastWidth { get => broadcastWidth; set => Set(ref broadcastWidth, double.IsFinite(value) ? Math.Clamp(value, 200, 1200) : 480); }
     public double BroadcastHeight { get => broadcastHeight; set => Set(ref broadcastHeight, double.IsFinite(value) ? Math.Clamp(value, 200, 1200) : 480); }
     public bool Topmost { get => topmost; set => Set(ref topmost, value); }
@@ -191,7 +260,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // 관련 속성과 명령의 CanExecuteChanged를 함께 갱신해 버튼 상태가 실제 수명을 반영하게 한다.
     private void RefreshCommands()
     {
-        Notify(nameof(CanChooseDevice)); Notify(nameof(DemoLabel));
+        Notify(nameof(CanChooseDevice)); Notify(nameof(CanChooseCharacter)); Notify(nameof(DemoLabel));
         StartCommand.Refresh(); StopCommand.Refresh(); RefreshCommand.Refresh(); DemoCommand.Refresh();
         ImportCharacterCommand.Refresh(); DefaultCharacterCommand.Refresh();
         MeasureNoiseCommand.Refresh(); CancelNoiseCommand.Refresh(); ApplyNoiseCommand.Refresh(); MicrophonePrivacyCommand.Refresh();
@@ -199,19 +268,57 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
     public async Task InitializeAsync()
     {
-        // 개인 PNG는 사용자의 실행 폴더에만 동봉한다. 저장된 슬롯의 선택은 그대로 보존한다.
+        int? startupSlot = expressionSlotId; var startupBuiltin = builtinExpression;
+        // 개인 PNG는 실행 폴더에서만 읽는다. 공개 배포에 없으면 내장 고양이를 유지한다.
         if (persistSettings)
         {
-            string path = Path.Combine(AppContext.BaseDirectory, "Characters", "늘보군.png");
-            if (File.Exists(path))
+            string id = SelectedCharacter.Id;
+            bool loaded = File.Exists(Path.Combine(charactersFolder, SelectedCharacter.FileName)) && await SelectCharacterAsync(id);
+            if (!loaded && id != CharacterCatalog.DefaultId)
+                loaded = await SelectCharacterAsync(CharacterCatalog.DefaultId);
+            if (!loaded)
             {
-                if (await Character.LoadDefaultAsync(path))
-                    CharacterStatus = $"기본 캐릭터 · {Character.DefaultExpressionCount}개 표정 / 입{Character.MouthFrameCount}단계" +
-                        (Character.DefaultWarnings > 0 ? " · 일부 표정 파일을 읽지 못해 평상 시트를 사용합니다." : " · 표정 탭에서 얼굴을 전환하세요.");
-                else CharacterStatus = "기본 PNG를 읽지 못했습니다. 내장 캐릭터로 시작합니다. Characters/늘보군.png를 확인하세요.";
+                selectedCharacter = appliedCharacter = Characters[0]; Notify(nameof(SelectedCharacter));
+                CharacterStatus = "캐릭터 파일을 읽지 못했습니다. 내장 고양이로 시작합니다. 개인 패키지의 Characters 폴더를 확인하세요.";
             }
         }
-        await Expressions.InitializeAsync(); await Wardrobe.InitializeAsync(); await RefreshDevicesAsync();
+        characterInitialized = true;
+        await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await RefreshDevicesAsync();
+        settingsReady = true;
+    }
+    /// <summary>전체 가족을 worker에서 읽고 최신 요청만 적용한다. 실패하면 선택과 현재 그림을 되돌린다.</summary>
+    public async Task<bool> SelectCharacterAsync(string id)
+    {
+        var item = Characters.FirstOrDefault(entry => entry.Id == id);
+        if (closing || item == null) return false;
+        long request = ++characterRevision;
+        selectedCharacter = item; Notify(nameof(SelectedCharacter));
+        characterLoads++; characterBusy = true; CharacterStatus = $"{item.Name} 불러오는 중…"; RefreshCommands();
+        try
+        {
+            bool changed = await Expressions.ChangeCharacterAsync(async () =>
+            {
+                var family = await Task.Run(() => CharacterViewModel.LoadFamily(Path.Combine(charactersFolder, item.FileName)));
+                return () =>
+                {
+                    Character.SetDefault(family, item.Name); appliedCharacter = item;
+                    CharacterStatus = $"{item.Name}{(item.SideView ? " · 측면" : "")} · 입{Character.MouthFrameCount}단계 / 눈 깜박임 · 두 창에 적용했습니다." +
+                        (family.Warnings > 0 ? " 일부 표정 파일은 평상 모습으로 표시합니다." : "");
+                };
+            });
+            if (!changed && !closing && request == characterRevision) CharacterStatus = "캐릭터 변경을 취소했습니다. 다시 선택하세요.";
+            return changed;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException)
+        {
+            if (!closing && request == characterRevision) CharacterStatus = $"{item.Name} 파일을 읽지 못했습니다. Characters/{item.FileName}를 확인하세요. 기존 캐릭터를 유지합니다.";
+            return false;
+        }
+        finally
+        {
+            if (request == characterRevision) { selectedCharacter = appliedCharacter; Notify(nameof(SelectedCharacter)); }
+            characterLoads--; characterBusy = characterLoads > 0; RefreshCommands();
+        }
     }
     internal void ReportStartupIssue() => Status = "일부 시작 설정을 읽지 못했습니다. 현재 표정/설정은 유지합니다. 오류 기록을 확인하세요.";
     /// <summary>
@@ -222,11 +329,19 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         busy = true; RefreshCommands();
         try
         {
-            string? old = SelectedDevice?.Id;
-            var devices = await Task.Run(listDevices);
-            Devices.Clear(); foreach (var device in devices) Devices.Add(device);
-            SelectedDevice = Devices.FirstOrDefault(d => d.Id == old) ?? Devices.FirstOrDefault();
-            Status = Devices.Count == 0 ? "사용 가능한 마이크가 없습니다. 장치를 연결한 뒤 새로고침하세요." : "마이크 준비 완료. Start를 누르면 로컬 분석을 시작합니다.";
+            string? wanted = preferredMicrophoneId ?? SelectedDevice?.Id;
+            var devices = await Task.Run(listDevices); if (closing) return;
+            refreshingDevices = true;
+            try
+            {
+                Devices.Clear(); foreach (var device in devices) Devices.Add(device);
+                selected = Devices.FirstOrDefault(d => d.Id == wanted) ?? Devices.FirstOrDefault();
+                preferredMicrophoneId ??= selected?.Id;
+                Notify(nameof(SelectedDevice));
+            }
+            finally { refreshingDevices = false; }
+            Status = Devices.Count == 0 ? "사용 가능한 마이크가 없습니다. 장치를 연결한 뒤 새로고침하세요." :
+                wanted != null && selected?.Id != wanted ? "마지막 마이크가 연결되지 않아 다른 장치를 표시합니다. 연결 후 새로고침하면 원래 선택을 복원합니다. Start로 시작하세요." : "마이크 준비 완료. Start를 누르면 로컬 분석을 시작합니다.";
         }
         catch { Status = "마이크 목록을 읽을 수 없습니다. Windows 마이크 권한과 연결을 확인하세요."; }
         finally { busy = false; RefreshCommands(); }
@@ -242,6 +357,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         try
         {
             await session.StartAsync(() => createInput(device.Id));
+            if (session.State == CaptureState.Running) { preferredMicrophoneId = device.Id; ScheduleSettingsSave(); }
             Status = session.State == CaptureState.Running ? $"분석 중 · {device.Name} · 오디오는 저장/전송되지 않습니다." : session.Error ?? "마이크 시작 실패";
         }
         finally { busy = false; RefreshCommands(); }
@@ -277,21 +393,25 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public async Task<bool> ImportCharacterAsync(string path)
     {
         if (closing || characterBusy) return false;
-        characterBusy = true; CharacterStatus = "캐릭터 시트를 읽는 중…"; RefreshCommands();
+        characterLoads++; characterBusy = true; CharacterStatus = "캐릭터 시트를 읽는 중…"; RefreshCommands();
         try
         {
-            var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
-            if (closing) return false;
-            Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path));
-            CharacterStatus = "캐릭터 적용 완료 · 미리보기와 방송창에 함께 적용됩니다.";
-            return true;
+            return await Expressions.ChangeCharacterAsync(async () =>
+            {
+                var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
+                return () =>
+                {
+                    Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path));
+                    CharacterStatus = "캐릭터 적용 완료 · 미리보기와 방송창에 함께 적용됩니다.";
+                };
+            });
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException)
         {
             if (!closing) CharacterStatus = "시트를 불러오지 못했습니다. 16MB 이하 RGBA PNG와 3열 또는8열×2행 크기를 확인하세요. 기존 캐릭터를 유지합니다.";
             return false;
         }
-        finally { characterBusy = false; RefreshCommands(); }
+        finally { characterLoads--; characterBusy = characterLoads > 0; RefreshCommands(); }
     }
     // 프리셋으로 불변 설정을 통째로 바꾼 뒤 모든 관련 바인딩을 다시 알린다.
     private void ApplyPreset(ReactionPreset preset)
@@ -371,16 +491,42 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Metrics = $"RMS {measured.Rms:F4}   Peak {measured.Peak:F4}   {measured.Dbfs:F1} dBFS{(measured.Peak >= 1 ? " · CLIP" : "")}";
         Character.Update(animator.Update(VoiceLevel, now), now);
     }
+    private void ScheduleSettingsSave()
+    {
+        if (!persistSettings || !settingsReady || closing) return;
+        saveTimer.Stop(); saveTimer.Start();
+    }
+    private async void SaveTimerTick(object? sender, EventArgs e)
+    {
+        saveTimer.Stop();
+        if (!closing) await FlushSettingsAsync();
+    }
+    internal UserSettings SnapshotSettings() => new(settings, Topmost, GreenBackground, appliedCharacter.Id, preferredMicrophoneId,
+        mainPlacement, (broadcastPlacement ?? new(BroadcastWidth, BroadcastHeight)) with { Width = BroadcastWidth, Height = BroadcastHeight },
+        broadcastOpen, CharacterMuted, SettingsTab, expressionSlotId, builtinExpression);
+    /// <summary>UI에서 불변 snapshot을 만들고 worker 저장을 직렬화한다. 마지막 종료 flush가 이전 저장 뒤에 실행된다.</summary>
+    internal async Task<bool> FlushSettingsAsync()
+    {
+        if (!persistSettings) return true;
+        var snapshot = SnapshotSettings(); await settingsGate.WaitAsync();
+        try
+        {
+            bool saved = await Task.Run(() => store.Save(snapshot));
+            SettingsStatus = saved ? "" : "마지막 설정을 저장하지 못했습니다. 저장 공간/권한을 확인하세요. 현재 값과 이전 저장 파일은 유지합니다.";
+            return saved;
+        }
+        finally { settingsGate.Release(); }
+    }
     /// <summary>
     /// UI 타이머를 먼저 중단하고 표정 IO·캡처 해제를 기다린 뒤 설정을 작업 스레드에서 저장한다.
     /// </summary>
     public async ValueTask DisposeAsync()
     {
         ClearNoiseMeasurement("앱 종료로 측정을 취소했습니다.");
-        closing = true; timer.Stop(); timer.Tick -= Tick; RefreshCommands();
+        closing = true; timer.Stop(); timer.Tick -= Tick; saveTimer.Stop(); saveTimer.Tick -= SaveTimerTick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
-        await session.DisposeAsync(); await Expressions.CloseAsync(); await Wardrobe.CloseAsync(); ResetLevels();
-        bool saved = !persistSettings || await Task.Run(() => store.Save(new(settings, Topmost, GreenBackground)));
-        if (!saved) Status = "설정을 저장하지 못했습니다. 다음 실행에서 기본값을 사용합니다.";
+        var expressionClose = Expressions.CloseAsync();
+        await session.DisposeAsync(); await expressionClose; await Wardrobe.CloseAsync(); ResetLevels();
+        await FlushSettingsAsync();
     }
 }

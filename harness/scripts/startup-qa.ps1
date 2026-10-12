@@ -28,8 +28,19 @@ function New-Sheet([string]$File, [int]$Columns, [int]$Cell) {
 }
 try {
     Add-Type -AssemblyName PresentationCore
+    if (-not ('VoxPetStartupNative' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class VoxPetStartupNative {
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
+}
+'@
+    }
     $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = Join-Path $root 'bundle'
-    foreach ($case in @('fresh12','restart-reversed12','legacy3-slot','corrupt-state','public6')) {
+    foreach ($case in @('fresh12','restart-reversed12','legacy3-slot','corrupt-state','restart-pelly','missing-character','corrupt-character','restart-settings','public6')) {
         $location = Join-Path $root $case; $data = Join-Path $location 'data'; $slots = Join-Path $data 'Expressions'
         New-Item -ItemType Directory -Path $slots -Force | Out-Null
         Copy-Item -LiteralPath $sourceExe -Destination (Join-Path $location 'VoxPet.exe')
@@ -43,6 +54,17 @@ try {
             }
         }
         $expectedId=0; $expectedFamily=if($case -eq 'public6'){6}else{12}; $expectedMouth=if($case -eq 'public6'){3}else{8}
+        $expectedCharacter='neulbo'
+        if ($case -in @('restart-pelly','missing-character','corrupt-character')) {
+            @{Audio=@{Sensitivity=1.7};Topmost=$false;CharacterId='pelly'} | ConvertTo-Json | Set-Content (Join-Path $data 'settings.json') -Encoding utf8
+            $pelly=Join-Path $characters '펠리.png'
+            if ($case -eq 'restart-pelly') { New-Sheet $pelly 3 128; $expectedFamily=1; $expectedMouth=3; $expectedCharacter='pelly' }
+            if ($case -eq 'corrupt-character') { 'broken PNG' | Set-Content $pelly -Encoding utf8 }
+        }
+        if ($case -eq 'restart-settings') {
+            @{Audio=@{Sensitivity=1.9};Topmost=$false;GreenBackground=$false;MicrophoneId='QA-unavailable';MainWindow=@{Width=800;Height=560;Left=80;Top=60};BroadcastWindow=@{Width=410;Height=270;Left=220;Top=190};BroadcastOpen=$true;CharacterMuted=$true;SettingsTab=4;ExpressionSlotId=7} | ConvertTo-Json -Depth 6 | Set-Content (Join-Path $data 'settings.json') -Encoding utf8
+            $expectedId=7
+        }
         $orderPath=Join-Path $slots 'order.json'; $slotPath=Join-Path $slots 'slot-1.json'
         if ($case -eq 'restart-reversed12') { @(11..0) | ConvertTo-Json -Compress | Set-Content $orderPath -Encoding utf8; $expectedId=11 }
         if ($case -eq 'legacy3-slot') {
@@ -69,7 +91,11 @@ try {
             throw ('Normal startup failed: '+$case)
         }
         $ready=Get-Content $readyPath -Raw | ConvertFrom-Json
-        if (-not $ready.initialized -or -not $ready.canEdit -or ($case -ne 'public6' -and -not $ready.visible) -or $ready.selectedStorageId -ne $expectedId -or $ready.selectedPosition -ne 0 -or $ready.familyCount -ne $expectedFamily -or $ready.mouthFrames -ne $expectedMouth) { throw ('Startup state mismatch: '+$case) }
+        if (-not $ready.initialized -or -not $ready.canEdit -or ($case -ne 'public6' -and -not $ready.visible) -or $ready.selectedStorageId -ne $expectedId -or $ready.selectedPosition -ne $(if($case -eq 'restart-settings'){7}else{0}) -or $ready.familyCount -ne $expectedFamily -or $ready.mouthFrames -ne $expectedMouth -or $ready.characterId -ne $expectedCharacter) { throw ('Startup state mismatch: '+$case) }
+        if ($case -eq 'restart-settings') {
+            $r=$ready.remembered
+            if ($r.Audio.Sensitivity -ne 1.9 -or $r.MainWindow.Width -ne 800 -or $r.MainWindow.Height -ne 560 -or $r.BroadcastWindow.Width -ne 410 -or $r.BroadcastWindow.Height -ne 270 -or -not $r.BroadcastOpen -or -not $r.CharacterMuted -or $r.SettingsTab -ne 4 -or $r.ExpressionSlotId -ne 7 -or -not $ready.microphonePreferencePresent) { throw 'Last settings normal process restore mismatch' }
+        }
         $duplicatePassed=$false
         if($case -eq 'public6') {
             if($ready.visible){throw 'Tray startup fixture did not hide'}
@@ -82,9 +108,14 @@ try {
             if(-not $activated.visible -or $activated.hwnd -ne $ready.hwnd){throw 'Duplicate launch changed original HWND'}
             $process.Refresh(); $duplicatePassed=$true
         }
-        $hasWindow=$process.MainWindowHandle -ne 0
-        if (-not $hasWindow -or -not $process.CloseMainWindow() -or -not $process.WaitForExit(8000) -or $process.ExitCode -ne 0) { throw ('Normal app graceful exit failed: '+$case) }
+        # 자동 열린 방송창이 Process.MainWindowHandle로 선택될 수 있어 Ready의 설정창 HWND를 닫는다.
+        $settingsHandle=[IntPtr]([long]$ready.hwnd)
+        if ($settingsHandle -eq [IntPtr]::Zero -or -not [VoxPetStartupNative]::PostMessage($settingsHandle,0x0010,[IntPtr]::Zero,[IntPtr]::Zero) -or -not $process.WaitForExit(8000) -or $process.ExitCode -ne 0) { throw ('Normal app graceful exit failed: '+$case) }
         $process=$null
+        $savedSettings=Get-Content (Join-Path $data 'settings.json') -Raw | ConvertFrom-Json
+        if ($case -eq 'restart-settings' -and ($savedSettings.MicrophoneId -ne 'QA-unavailable' -or -not $savedSettings.BroadcastOpen -or $savedSettings.SettingsTab -ne 4 -or $savedSettings.ExpressionSlotId -ne 7)) { throw 'Last settings exit flush mismatch' }
+        if ($savedSettings.CharacterId -ne $expectedCharacter) { throw ('Character selection save mismatch: '+$case) }
+        if ($case -in @('restart-pelly','missing-character','corrupt-character') -and ($savedSettings.Audio.Sensitivity -ne 1.7 -or $savedSettings.Topmost -ne $false)) { throw 'Character recovery lost unrelated audio/window settings' }
         if ($null -ne $beforeOrder -and (Get-FileHash $orderPath).Hash -ne $beforeOrder) { throw 'Startup changed existing order file' }
         if ($null -ne $beforeSlot -and (Get-FileHash $slotPath).Hash -ne $beforeSlot) { throw 'Startup changed existing slot file' }
         $cases.Add([ordered]@{case=$case;survivedSeconds=10;normalArguments=$true;ready=$ready;duplicateExitedAndRestoredSameWindow=$duplicatePassed;gracefulExit=$true;storedFilesPreserved=$true})

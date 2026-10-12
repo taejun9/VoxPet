@@ -7,7 +7,7 @@ using VoxPet.Core.Services;
 namespace VoxPet.App.Services;
 
 /// <summary>
-/// 장치 목록의 표시용 정보. Id는 현재 실행에서만 사용하며 영구 설정에 저장하지 않는다.
+/// 장치 목록의 표시용 정보. 마지막 선택을 위한 endpoint Id만 로컬 설정에 저장하고 로그에는 포함하지 않는다.
 /// </summary>
 public sealed record AudioDevice(string Id, string Name);
 

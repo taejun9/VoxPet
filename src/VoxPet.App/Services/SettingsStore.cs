@@ -5,9 +5,23 @@ using VoxPet.Core.Models;
 namespace VoxPet.App.Services;
 
 /// <summary>
-/// 영구 저장 대상은 오디오 조정과 방송창 옵션뿐이다. 마이크·개인 PNG·음소거는 포함하지 않는다.
+/// 마지막 UI/오디오 설정과 선택 endpoint ID를 로컬에만 저장한다. PCM·음성·PNG 경로는 저장하지 않는다.
 /// </summary>
-public sealed record UserSettings(AudioSettings Audio, bool Topmost = true, bool GreenBackground = true);
+public sealed record UserSettings(AudioSettings Audio, bool Topmost = true, bool GreenBackground = true, string CharacterId = CharacterCatalog.DefaultId,
+    string? MicrophoneId = null, WindowPlacement? MainWindow = null, WindowPlacement? BroadcastWindow = null,
+    bool BroadcastOpen = false, bool CharacterMuted = false, int SettingsTab = 0, int? ExpressionSlotId = null, ExpressionKind? BuiltinExpression = null)
+{
+    public UserSettings Normalize() => this with
+    {
+        CharacterId = CharacterCatalog.NormalizeId(CharacterId),
+        MicrophoneId = string.IsNullOrWhiteSpace(MicrophoneId) || MicrophoneId.Length > 1024 || MicrophoneId.Any(char.IsControl) ? null : MicrophoneId,
+        MainWindow = MainWindow?.Normalize(),
+        BroadcastWindow = BroadcastWindow?.Normalize(true),
+        SettingsTab = SettingsTab is >= 0 and < 6 ? SettingsTab : 0,
+        ExpressionSlotId = ExpressionSlotId is >= 0 and < 12 ? ExpressionSlotId : null,
+        BuiltinExpression = BuiltinExpression is { } kind && Enum.IsDefined(kind) ? kind : null
+    };
+}
 
 /// <summary>로컬 JSON 설정 저장소. 경로 주입으로 테스트를 실제 사용자 설정과 분리한다.</summary>
 public sealed class SettingsStore(string? settingsPath = null)
@@ -25,7 +39,7 @@ public sealed class SettingsStore(string? settingsPath = null)
             var settings = JsonSerializer.Deserialize<UserSettings>(File.ReadAllText(path));
             if (settings?.Audio == null) return new(new());
             settings.Audio.Validate();
-            return settings;
+            return settings.Normalize();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException or ArgumentException)
         { return new(new()); }
@@ -40,7 +54,7 @@ public sealed class SettingsStore(string? settingsPath = null)
         {
             settings.Audio.Validate();
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.WriteAllText(path + ".tmp", JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(path + ".tmp", JsonSerializer.Serialize(settings.Normalize(), new JsonSerializerOptions { WriteIndented = true }));
             File.Move(path + ".tmp", path, true);
             return true;
         }

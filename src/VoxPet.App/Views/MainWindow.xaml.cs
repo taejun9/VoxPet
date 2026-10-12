@@ -23,23 +23,25 @@ public partial class MainWindow : Window
     internal bool IsInTray { get; private set; }
     internal bool TrayIconVisible => tray?.Visible == true;
     internal void ActivateTrayMenu(int index) => tray?.ActivateMenu(index);
-    private bool allowClose, shuttingDown, initializationStarted;
+    private bool allowClose, shuttingDown, initializationStarted, restoringPlacement;
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     // Loaded 후 장치 목록 초기화가 끝나는 시점. Windows smoke가 UI 준비를 기다리는 용도다.
     public Task Ready => ready.Task;
     public MainWindow(bool smoke = false) : this(smoke, SystemParameters.WorkArea) { }
     // 작업 영역 주입은 작은 화면의 시작 bounds를 실제 모니터 변경 없이 시험하기 위한 경로다.
-    internal MainWindow(bool smoke, Rect initialWorkArea)
+    internal MainWindow(bool smoke, Rect initialWorkArea, MainViewModel? model = null)
     {
-        Model = new(persistSettings: !smoke);
+        Model = model ?? new(persistSettings: !smoke);
         InitializeComponent(); DataContext = Model;
-        Width = Math.Min(Width, Math.Max(MinWidth, initialWorkArea.Width - 32));
-        Height = Math.Min(Height, Math.Max(MinHeight, initialWorkArea.Height - 32));
+        Width = Model.MainPlacement?.Width ?? Math.Min(Width, Math.Max(MinWidth, initialWorkArea.Width - 32));
+        Height = Model.MainPlacement?.Height ?? Math.Min(Height, Math.Max(MinHeight, initialWorkArea.Height - 32));
         WindowStartupLocation = WindowStartupLocation.Manual;
         Left = initialWorkArea.Left + (initialWorkArea.Width - Width) / 2;
         Top = initialWorkArea.Top + (initialWorkArea.Height - Height) / 2;
         SettingsTabs.SizeChanged += (_, _) => UpdateResponsiveLayout();
-        SizeChanged += (_, _) => UpdateResponsiveLayout();
+        SizeChanged += (_, _) => { UpdateResponsiveLayout(); RememberPlacement(); };
+        LocationChanged += (_, _) => RememberPlacement();
+        StateChanged += (_, _) => RememberPlacement();
         Model.OpenBroadcast += () => ShowCharacter();
         Model.MoveToTray += HideToTray;
         Model.OpenMicrophonePrivacy += () =>
@@ -69,6 +71,7 @@ public partial class MainWindow : Window
         };
         SourceInitialized += (_, _) =>
         {
+            RestorePlacement(false);
             if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); }
             else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
         };
@@ -78,7 +81,10 @@ public partial class MainWindow : Window
             if (initializationStarted) return; initializationStarted = true;
             try
             {
-                await Model.InitializeAsync(); ready.TrySetResult();
+                RestorePlacement(true); RememberPlacement();
+                await Model.InitializeAsync();
+                if (!shuttingDown && Model.BroadcastOpen) ShowCharacter();
+                RememberPlacement(); ready.TrySetResult();
                 if (!smoke && AppPaths.QaFolder is { } folder)
                 {
                     Directory.CreateDirectory(folder);
@@ -88,6 +94,10 @@ public partial class MainWindow : Window
                         initialized = true,
                         familyCount = Model.Character.DefaultExpressionCount,
                         mouthFrames = Model.Character.MouthFrameCount,
+                        characterId = Model.SelectedCharacter.Id,
+                        characterName = Model.Character.Name,
+                        remembered = Model.SnapshotSettings() with { MicrophoneId = null },
+                        microphonePreferencePresent = Model.PreferredMicrophoneId != null,
                         selectedStorageId = Model.Expressions.Selected.Index,
                         selectedPosition = Model.Expressions.Selected.Position,
                         canEdit = Model.Expressions.CanEdit,
@@ -109,6 +119,23 @@ public partial class MainWindow : Window
             }
         };
         Closing += OnClosing;
+    }
+    private void RestorePlacement(bool restoreState)
+    {
+        if (Model.MainPlacement is not { } saved) return;
+        restoringPlacement = true;
+        try
+        {
+            WindowPlacementService.Restore(this, saved);
+            Model.RememberMainPlacement(WindowPlacementService.Capture(this) with { Maximized = saved.Maximized });
+            if (restoreState && saved.Maximized) WindowState = WindowState.Maximized;
+        }
+        finally { restoringPlacement = false; }
+    }
+    private void RememberPlacement()
+    {
+        if (!IsLoaded || restoringPlacement || shuttingDown) return;
+        Model.RememberMainPlacement(WindowPlacementService.Capture(this, Model.MainPlacement));
     }
     internal ExpressionHotkeys EnableExpressionHotkeys()
     {
@@ -141,7 +168,7 @@ public partial class MainWindow : Window
     internal void RestoreFromTray()
     {
         if (shuttingDown) return;
-        Show(); WindowState = WindowState.Normal; Activate(); IsInTray = false; tray?.Hide();
+        Show(); WindowState = Model.MainPlacement?.Maximized == true ? WindowState.Maximized : WindowState.Normal; Activate(); IsInTray = false; tray?.Hide();
         if (AppPaths.QaFolder is { } folder) File.WriteAllText(Path.Combine(folder, "activated.json"), JsonSerializer.Serialize(new { visible = IsVisible, hwnd = new WindowInteropHelper(this).Handle.ToInt64() }));
     }
     /// <summary>작은 창은 공통 미리보기를 숨기고 탭을 넓힌다. 캐릭터 탭에서는 항상 미리보기를 볼 수 있다.</summary>
@@ -168,8 +195,8 @@ public partial class MainWindow : Window
         {
             // Owner를 지정하지 않아 설정창 최소화가 방송창을 함께 숨기지 않게 한다. DataContext만 공유한다.
             character = new CharacterWindow() { DataContext = Model };
-            character.Closed += (_, _) => character = null;
-            character.Show();
+            character.Closed += (_, _) => { if (!shuttingDown) Model.RememberBroadcastOpen(false); character = null; };
+            Model.RememberBroadcastOpen(true); character.Show();
         }
         else
         {
@@ -186,7 +213,7 @@ public partial class MainWindow : Window
         if (allowClose) return;
         e.Cancel = true;
         if (shuttingDown) return;
-        shuttingDown = true; IsEnabled = false;
+        RememberPlacement(); shuttingDown = true; IsEnabled = false;
         try
         {
             await ShutdownAsync();
