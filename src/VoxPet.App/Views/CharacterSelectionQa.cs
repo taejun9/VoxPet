@@ -1,14 +1,26 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
+using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Models;
+using VoxPet.Core.Services;
 
 namespace VoxPet.App.Views;
 
 /// <summary>개인 이미지 대신 임시 합성 시트로 다섯 선택·표정 경합·실패 복구와 실제 Selector를 검사한다.</summary>
 internal static class CharacterSelectionQa
 {
+    private sealed class DelayedStopInput : IAudioInput
+    {
+        public event Action<AudioLevel>? LevelAvailable { add { } remove { } }
+        public event Action<Exception?>? Ended { add { } remove { } }
+        public TaskCompletionSource Stopping { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public Task StartAsync() => Task.CompletedTask;
+        public Task StopAsync() { Stopping.TrySetResult(); return Release.Task; }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
     public static async Task RunAsync(Action<bool, string> check)
     {
         string folder = Path.Combine(Path.GetTempPath(), "VoxPet-selection-qa-" + Guid.NewGuid());
@@ -65,6 +77,21 @@ internal static class CharacterSelectionQa
             var closing = model.SelectCharacterAsync("pelly");
             window.Close(); await Task.Delay(100); await closing;
             check(!window.IsVisible && !model.CanChooseCharacter && !await model.SelectCharacterAsync("neulbo"), "selection_close_drops_pending_load");
+            var input = new DelayedStopInput();
+            var delayed = new MainViewModel(false, () => [new AudioDevice("QA", "합성 지연 종료")], _ => input, folder);
+            await delayed.InitializeAsync(); await delayed.SelectCharacterAsync("neulbo");
+            delayed.StartCommand.Execute(null);
+            for (int i = 0; i < 100 && !delayed.MeasureNoiseCommand.CanExecute(null); i++) await Task.Delay(10);
+            check(delayed.MeasureNoiseCommand.CanExecute(null), "selection_delayed_stop_fixture_running");
+            var beforeClose = delayed.Character.Sprite;
+            var pending = delayed.SelectCharacterAsync("pelly");
+            var disposing = delayed.DisposeAsync().AsTask();
+            try
+            {
+                await input.Stopping.Task.WaitAsync(TimeSpan.FromSeconds(3));
+                check(!await pending && delayed.SelectedCharacter.Id == "neulbo" && ReferenceEquals(beforeClose, delayed.Character.Sprite), "selection_audio_stop_delay_cannot_apply_pending_character");
+            }
+            finally { input.Release.TrySetResult(); await disposing; }
         }
         finally
         {

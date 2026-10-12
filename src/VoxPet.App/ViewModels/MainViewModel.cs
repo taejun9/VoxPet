@@ -438,7 +438,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ClearNoiseMeasurement("앱 종료로 측정을 취소했습니다.");
         closing = true; timer.Stop(); timer.Tick -= Tick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
-        await session.DisposeAsync(); await Expressions.CloseAsync(); await Wardrobe.CloseAsync(); ResetLevels();
+        var expressionClose = Expressions.CloseAsync();
+        await session.DisposeAsync(); await expressionClose; await Wardrobe.CloseAsync(); ResetLevels();
         bool saved = !persistSettings || await Task.Run(() => store.Save(new(settings, Topmost, GreenBackground, appliedCharacter.Id)));
         if (!saved) Status = "설정을 저장하지 못했습니다. 다음 실행에서 기본값을 사용합니다.";
     }
