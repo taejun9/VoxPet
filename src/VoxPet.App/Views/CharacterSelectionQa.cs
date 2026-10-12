@@ -40,6 +40,7 @@ internal static class CharacterSelectionQa
             {
                 var item = model.Characters[i];
                 check(await model.SelectCharacterAsync(item.Id), "selection_load_" + item.Id);
+                await ScreenEvidence.CaptureAsync(window, "selection-" + item.Id, check, new { item.Id, item.Name, syntheticCharacter = true });
                 check(model.SelectedCharacter == item && model.Character.Name.StartsWith(item.Name) && ReferenceEquals(window.CharacterSelector.SelectedItem, item), "selection_applied_ui_" + item.Id);
                 var states = new HashSet<ImageSource>();
                 foreach (double eyes in new[] { 0.0, 1.0 })

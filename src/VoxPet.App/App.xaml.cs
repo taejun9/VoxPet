@@ -201,6 +201,7 @@ public partial class App : Application
             await HandMotionQa.RunAsync(main, Check);
             await UsabilityQa.RunAsync(Check);
             await LayoutQa.RunAsync(main, Check);
+            await ScreenSceneQa.RunAsync(Check);
             var png = new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 730, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             png.Render(main);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder(); encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(png));

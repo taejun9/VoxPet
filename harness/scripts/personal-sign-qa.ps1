@@ -1,4 +1,4 @@
-# 개인 PC에서 직접 신뢰할 수 있는 자체 서명 패키지. 사용자 인증서/개인키를 받거나 내보내지 않는다.
+﻿# 개인 PC에서 직접 신뢰할 수 있는 자체 서명 패키지. 사용자 인증서/개인키를 받거나 내보내지 않는다.
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Signing fixture is restricted to disposable GitHub runners' }
 $certificate = $null
@@ -38,7 +38,7 @@ try {
     [ordered]@{signer=$name;subject=$certificate.Subject;thumbprint=$certificate.Thumbprint;notAfter=$certificate.NotAfter.ToUniversalTime().ToString('O');untrustedStatus=$untrusted.Status.ToString();trustedStatus=$verified.Status.ToString();tamperedStatus=$tamperStatus;publicCertificateOnly=$true;certificateAuthorityVerified=$false;privateKeyExported=$false;iconPresent=$true;exeSha256=(Get-FileHash $exe -Algorithm SHA256).Hash;cerSha256=(Get-FileHash $cer -Algorithm SHA256).Hash} | ConvertTo-Json | Set-Content "$output/publisher-signature.json" -Encoding utf8
     Write-Host 'Personal signature QA: signature and tamper checks passed; run normal startup'
     Copy-Item 'artifacts/test-results/startup.json' 'artifacts/test-results/unsigned-startup.json'
-    & "$PSScriptRoot/startup-qa.ps1" -Exe $exe
+    & "$PSScriptRoot/startup-qa.ps1" -Exe $exe -ScreenRun signed
     Copy-Item 'artifacts/test-results/startup.json' 'artifacts/test-results/signed-startup.json'
     Copy-Item "$output/publisher-signature.json" 'artifacts/test-results/personal-publisher.json'
 } finally {

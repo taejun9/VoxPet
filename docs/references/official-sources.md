@@ -73,3 +73,6 @@
 
 | Microsoft DrawingContext.PushClip | https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.drawingcontext.pushclip?view=windowsdesktop-10.0 | 비파괴 PNG 영역 렌더 | 2026-10-12 | clip/transform stack와 Pop의 수명 |
 | Microsoft LowLevelMouseProc | https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelmouseproc | 좌클릭 신호 | 2026-10-12 | 즉시 반환·CallNextHookEx로 원래 입력 전달 |
+
+| Microsoft BitBlt | https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-bitblt | 실제 화면 캡처 | 2026-10-12 | SRCCOPY/CAPTUREBLT, desktop DC의 표시 픽셀과 layered 창 포함 |
+| Microsoft SetWindowPos | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos | 화면 z-order | 2026-10-12 | topmost와 실제 창 표시 순서 의미 |

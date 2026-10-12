@@ -54,6 +54,9 @@ jobs:
           name: VoxPet-personal-signed-win-x64
           path: artifacts/personal-win-x64/
           if-no-files-found: error
+      - name: Verify real desktop screen coverage
+        shell: pwsh
+        run: python -X utf8 harness/scripts/verify_screens.py "$env:RUNNER_TEMP"
       - name: Upload test results and rendered smoke image
         if: always()
         uses: actions/upload-artifact@v7
@@ -70,4 +73,6 @@ jobs:
             ${{ runner.temp }}/voxpet-expression-*.png
             ${{ runner.temp }}/voxpet-costume-*.png
             ${{ runner.temp }}/voxpet-motion-*.png
+            ${{ runner.temp }}/voxpet-screen-*.png
+            ${{ runner.temp }}/voxpet-screen-*.json
           if-no-files-found: warn

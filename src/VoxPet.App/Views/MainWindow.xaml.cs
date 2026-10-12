@@ -105,6 +105,7 @@ public partial class MainWindow : Window
                         visible = IsVisible,
                         hwnd = new WindowInteropHelper(this).Handle.ToInt64()
                     }));
+                    if (IsVisible) await CaptureStartupScreenAsync();
                 }
             }
             catch (Exception error)
@@ -120,6 +121,12 @@ public partial class MainWindow : Window
             }
         };
         Closing += OnClosing;
+    }
+    private async Task CaptureStartupScreenAsync()
+    {
+        if (AppPaths.QaFolder is not { } folder || Environment.GetEnvironmentVariable("VOXPET_QA_SCREEN_NAME") is not { } name) return;
+        try { await ScreenEvidence.CaptureAsync(this, name, (passed, _) => { if (!passed) throw new InvalidOperationException("Startup desktop capture invalid"); }, new { normalStartup = true }); }
+        catch (Exception error) { File.WriteAllText(Path.Combine(folder, "screen-error.json"), JsonSerializer.Serialize(new { type = error.GetType().Name })); }
     }
     private void RestorePlacement(bool restoreState)
     {
@@ -186,7 +193,11 @@ public partial class MainWindow : Window
     {
         if (shuttingDown) return;
         Show(); WindowState = Model.MainPlacement?.Maximized == true ? WindowState.Maximized : WindowState.Normal; Activate(); IsInTray = false; tray?.Hide();
-        if (AppPaths.QaFolder is { } folder) File.WriteAllText(Path.Combine(folder, "activated.json"), JsonSerializer.Serialize(new { visible = IsVisible, hwnd = new WindowInteropHelper(this).Handle.ToInt64() }));
+        if (AppPaths.QaFolder is { } folder)
+        {
+            File.WriteAllText(Path.Combine(folder, "activated.json"), JsonSerializer.Serialize(new { visible = IsVisible, hwnd = new WindowInteropHelper(this).Handle.ToInt64() }));
+            _ = CaptureStartupScreenAsync();
+        }
     }
     /// <summary>작은 창은 공통 미리보기를 숨기고 탭을 넓힌다. 캐릭터 탭에서는 항상 미리보기를 볼 수 있다.</summary>
     private void UpdateResponsiveLayout()

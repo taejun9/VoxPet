@@ -36,6 +36,8 @@ internal static class SettingsPersistenceQa
             var model = CreateModel(); window = new(true, SystemParameters.WorkArea, model);
             window.Show(); await window.Ready;
             var broadcast = window.ShowCharacter();
+            await ScreenEvidence.CaptureAsync(window, "settings-initial", check);
+            await ScreenEvidence.CaptureAsync(broadcast, "settings-initial-broadcast", check);
             check(model.SelectedDevice?.Id == "QA-b" && model.PreferredMicrophoneId == "QA-b" && inputs == 0 && model.VoiceLevel == 0, "settings_microphone_restored_without_capture");
             check(window.Width == 800 && window.Height == 560 && window.SettingsTabs.SelectedIndex == 2 && model.CharacterMuted && model.Expressions.Selected.Index == 7, "settings_main_ui_and_expression_restore");
             check(broadcast.Width == 410 && broadcast.Height == 270 && model.BroadcastOpen && !model.GreenBackground && !model.Topmost, "settings_broadcast_restored_open_and_size");
@@ -63,6 +65,8 @@ internal static class SettingsPersistenceQa
             broadcast = window.ShowCharacter();
             check(window.WindowState == WindowState.Maximized && model.MainPlacement == written.MainWindow && model.SelectedDevice?.Id == "QA-a", "settings_restart_maximized_position_and_microphone");
             check(model.BroadcastPlacement == written.BroadcastWindow && broadcast.Width == 530 && broadcast.Height == 360 && model.SettingsTab == 4 && model.Expressions.Selected.Index == 5, "settings_restart_broadcast_position_and_last_expression");
+            await ScreenEvidence.CaptureAsync(window, "settings-restarted", check);
+            await ScreenEvidence.CaptureAsync(broadcast, "settings-restarted-broadcast", check);
             model.BroadcastWidth = 510; await Task.Delay(50);
             check(broadcast.Width == 510 && model.BroadcastPlacement!.Width == 510, "settings_restored_broadcast_preserves_two_way_size_binding");
             broadcast.Close(); await model.FlushSettingsAsync();

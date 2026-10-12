@@ -117,6 +117,7 @@ internal static class LayoutQa
                         combo.IsDropDownOpen = false;
                     }
                     Save(main, $"voxpet-layout-{width}x{height}-tab-{tab}-{page}.png", 1);
+                    await ScreenEvidence.CaptureAsync(main, $"layout-{width}x{height}-tab-{tab}-{page}", check, new { tab, page, width, height });
                 }
             }
             check(main.Model.Sensitivity == sensitivity && main.Model.Expressions.Selected.Draft == draft, $"layout_tab_switch_preserves_edit_{width}x{height}");

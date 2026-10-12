@@ -1,10 +1,11 @@
 ﻿# 일반 인수 없는 EXE의 실제 WPF 초기화/저장 상태/정상 종료. 개인 PNG를 사용하지 않는다.
-param([string]$Exe = 'artifacts/win-x64/VoxPet.exe')
+param([string]$Exe = 'artifacts/win-x64/VoxPet.exe', [ValidateSet('unsigned','signed')][string]$ScreenRun = 'unsigned')
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Startup QA runs only on a disposable GitHub runner' }
 $priorData = $env:VOXPET_QA_DATA_DIR
 $priorExtract = $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR
 $priorTray = $env:VOXPET_QA_START_IN_TRAY
+$priorScreen = $env:VOXPET_QA_SCREEN_NAME
 $root = Join-Path $env:RUNNER_TEMP ('VoxPet-startup-' + [Guid]::NewGuid().ToString('N'))
 $sourceExe = (Resolve-Path $Exe).Path
 $process = $null
@@ -45,6 +46,7 @@ public static class VoxPetStartupNative {
         New-Item -ItemType Directory -Path $slots -Force | Out-Null
         Copy-Item -LiteralPath $sourceExe -Destination (Join-Path $location 'VoxPet.exe')
         $env:VOXPET_QA_DATA_DIR = $data
+        $env:VOXPET_QA_SCREEN_NAME = "startup-$ScreenRun-$case"
         if ($case -ne 'public6') {
             $characters = Join-Path $location 'Characters'; $variants = Join-Path $characters '늘보군-표정'
             New-Item -ItemType Directory -Path $variants -Force | Out-Null
@@ -108,6 +110,11 @@ public static class VoxPetStartupNative {
             if(-not $activated.visible -or $activated.hwnd -ne $ready.hwnd){throw 'Duplicate launch changed original HWND'}
             $process.Refresh(); $duplicatePassed=$true
         }
+        $screenMetadata = Join-Path $env:RUNNER_TEMP ("voxpet-screen-startup-$ScreenRun-$case.json")
+        for($screenWait=0; $screenWait -lt 50 -and -not (Test-Path $screenMetadata); $screenWait++){Start-Sleep -Milliseconds 100}
+        if(-not (Test-Path $screenMetadata)){throw ('Startup desktop screen missing: '+$case)}
+        $screenEvidence=Get-Content $screenMetadata -Raw | ConvertFrom-Json
+        if(-not $screenEvidence.actualDesktopPixels -or -not $screenEvidence.valid -or (Test-Path (Join-Path $data 'screen-error.json'))){throw ('Startup desktop screen invalid: '+$case)}
         # 자동 열린 방송창이 Process.MainWindowHandle로 선택될 수 있어 Ready의 설정창 HWND를 닫는다.
         $settingsHandle=[IntPtr]([long]$ready.hwnd)
         if ($settingsHandle -eq [IntPtr]::Zero -or -not [VoxPetStartupNative]::PostMessage($settingsHandle,0x0010,[IntPtr]::Zero,[IntPtr]::Zero) -or -not $process.WaitForExit(8000) -or $process.ExitCode -ne 0) { throw ('Normal app graceful exit failed: '+$case) }
@@ -123,6 +130,6 @@ public static class VoxPetStartupNative {
     $cases | ConvertTo-Json -Depth 8 | Set-Content 'artifacts/test-results/startup.json' -Encoding utf8
 } finally {
     if ($null -ne $process -and -not $process.HasExited) { $process.Kill(); $process.WaitForExit() }
-    $env:VOXPET_QA_DATA_DIR=$priorData; $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR=$priorExtract; $env:VOXPET_QA_START_IN_TRAY=$priorTray
+    $env:VOXPET_QA_DATA_DIR=$priorData; $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR=$priorExtract; $env:VOXPET_QA_START_IN_TRAY=$priorTray; $env:VOXPET_QA_SCREEN_NAME=$priorScreen
     Remove-Item -LiteralPath $root -Recurse -Force
 }

@@ -494,6 +494,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Metrics = $"RMS {measured.Rms:F4}   Peak {measured.Peak:F4}   {measured.Dbfs:F1} dBFS{(measured.Peak >= 1 ? " · CLIP" : "")}";
         Hands.Update(now); Character.Update(animator.Update(VoiceLevel, now), now);
     }
+    internal Action PauseVisualForQa()
+    {
+        bool enabled = timer.IsEnabled; timer.Stop();
+        return () => { if (enabled && !closing) timer.Start(); };
+    }
     private void ScheduleSettingsSave()
     {
         if (!persistSettings || !settingsReady || closing) return;
