@@ -75,3 +75,5 @@ QA 후 단일 에이전트 자체 리뷰. 창 최소화/트레이 종료에서�
 - locked restore/format/Release build 경고0·오류0, Core168/168 통과.
 - verify_base/verify_app/diff --check 통과.
 - 실제 창 재실행/자동 저장/마이크 factory0/손상 저장 복구 fixture, 일반 EXE restart-settings 추가. 개인 데이터는 임시 fake fixture로 대체.
+
+- 최초 Windows38238890972: build/Core168 통과, 일반 restart-settings의 종료 검사 실패. 자동 열린 방송창을 Process.MainWindowHandle이 선택하여 설정창이 남는 하네스 문제. Ready에서 기록한 설정창 HWND에 WM_CLOSE를 보내도록 수정. OBS38238891072 통과.

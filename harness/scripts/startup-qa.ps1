@@ -28,6 +28,17 @@ function New-Sheet([string]$File, [int]$Columns, [int]$Cell) {
 }
 try {
     Add-Type -AssemblyName PresentationCore
+    if (-not ('VoxPetStartupNative' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class VoxPetStartupNative {
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool PostMessage(IntPtr hwnd, uint message, IntPtr wparam, IntPtr lparam);
+}
+'@
+    }
     $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = Join-Path $root 'bundle'
     foreach ($case in @('fresh12','restart-reversed12','legacy3-slot','corrupt-state','restart-pelly','missing-character','corrupt-character','restart-settings','public6')) {
         $location = Join-Path $root $case; $data = Join-Path $location 'data'; $slots = Join-Path $data 'Expressions'
@@ -97,8 +108,9 @@ try {
             if(-not $activated.visible -or $activated.hwnd -ne $ready.hwnd){throw 'Duplicate launch changed original HWND'}
             $process.Refresh(); $duplicatePassed=$true
         }
-        $hasWindow=$process.MainWindowHandle -ne 0
-        if (-not $hasWindow -or -not $process.CloseMainWindow() -or -not $process.WaitForExit(8000) -or $process.ExitCode -ne 0) { throw ('Normal app graceful exit failed: '+$case) }
+        # 자동 열린 방송창이 Process.MainWindowHandle로 선택될 수 있어 Ready의 설정창 HWND를 닫는다.
+        $settingsHandle=[IntPtr]([long]$ready.hwnd)
+        if ($settingsHandle -eq [IntPtr]::Zero -or -not [VoxPetStartupNative]::PostMessage($settingsHandle,0x0010,[IntPtr]::Zero,[IntPtr]::Zero) -or -not $process.WaitForExit(8000) -or $process.ExitCode -ne 0) { throw ('Normal app graceful exit failed: '+$case) }
         $process=$null
         $savedSettings=Get-Content (Join-Path $data 'settings.json') -Raw | ConvertFrom-Json
         if ($case -eq 'restart-settings' -and ($savedSettings.MicrophoneId -ne 'QA-unavailable' -or -not $savedSettings.BroadcastOpen -or $savedSettings.SettingsTab -ne 4 -or $savedSettings.ExpressionSlotId -ne 7)) { throw 'Last settings exit flush mismatch' }
