@@ -90,5 +90,26 @@ public sealed class HandMotionTests : IDisposable
             }
         }
     }
+    [Fact]
+    public void ConnectedMeshHasNoInvertedTrianglesAtDefaultMotionAndFixedRegionEdges()
+    {
+        foreach (string id in CharacterCatalog.All.Select(character => character.Id).Append("builtin"))
+        {
+            var rig = CharacterRig.Default(id); var x = ConnectedMotion.Columns(rig); var y = ConnectedMotion.Rows(rig, false);
+            foreach (var gesture in Enum.GetValues<HandGesture>()) for (int frame = 0; frame < 20; frame++)
+            {
+                var pose = CharacterMotion.Evaluate(rig, new(0, 0, 0, 0, 1, MouthState.Closed), 1, new(gesture, frame / 20d), HandMotionProfile.Default(gesture));
+                MotionPoint Map(double a, double b) => ConnectedMotion.Map(new(a, b), rig, pose);
+                for (int row = 0; row < y.Length - 1; row++) for (int column = 0; column < x.Length - 1; column++)
+                {
+                    var a = Map(x[column], y[row]); var b = Map(x[column + 1], y[row]); var c = Map(x[column + 1], y[row + 1]); var d = Map(x[column], y[row + 1]);
+                    Assert.True(Cross(a, b, c) > 0); Assert.True(Cross(a, c, d) > 0);
+                }
+                Assert.Equal(new MotionPoint(rig.Left.X, rig.Left.Y), Map(rig.Left.X, rig.Left.Y));
+                Assert.Equal(new MotionPoint(256, 100), Map(256, 100));
+            }
+        }
+        static double Cross(MotionPoint a, MotionPoint b, MotionPoint c) => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+    }
     public void Dispose() { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
 }

@@ -27,8 +27,9 @@ public static class CharacterMotion
             HandGesture.ToySword => (-5d, 24 + wave * 12),
             _ => (-8d, 22 + wave * 10)
         };
-        return new(head, mouth, rig.Left.Enabled ? left * envelope : 0, rig.Right.Enabled ? right * envelope : 0,
+        return new(head, mouth, rig.Left.Enabled ? SafeAngle(left, rig.Left) * envelope : 0, rig.Right.Enabled ? SafeAngle(right, rig.Right) * envelope : 0,
             profile.X * envelope, profile.Y * envelope, 1 + (profile.Scale - 1) * envelope, hand.Gesture, envelope);
     }
+    private static double SafeAngle(double angle, LimbRegion limb) => angle * Math.Min(1, Math.Atan(limb.Width * .18 / limb.Height) * 180 / Math.PI / 36);
     private static double Finite(double value, double min, double max) => double.IsFinite(value) ? Math.Clamp(value, min, max) : 0;
 }

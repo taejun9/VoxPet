@@ -15,7 +15,7 @@ public sealed class SettingsTests : IDisposable
     public void SaveAndReloadPreservesLastSettings()
     {
         var settings = new UserSettings(new(NoiseGate: -35, NormalizeMin: -75, NormalizeMax: -15, Sensitivity: 1.7, AttackMs: 50, ReleaseMs: 200), false, false, "pelly",
-            "QA-endpoint-id", new(920, 680, -1100, 140, true), new(610, 420, 110, 160), true, true, 4, 8);
+            "QA-endpoint-id", new(920, 680, -1100, 140, true), new(610, 420, 110, 160), true, true, 6, 8);
         var store = new SettingsStore(FilePath); Assert.True(store.Save(settings)); Assert.Equal(settings, store.Load());
         var json = File.ReadAllText(FilePath);
         Assert.Contains("QA-endpoint-id", json); Assert.DoesNotContain("DeviceName", json); Assert.DoesNotContain("Pcm", json); Assert.DoesNotContain("AudioLevel", json);

@@ -378,7 +378,12 @@
                     <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
                   </StackPanel>
                 </TabItem>
-                <TabItem Header="손·연결" DataContext="{Binding Hands}">
+
+      </TabControl>
+            </StackPanel>
+          </Viewbox>
+        </TabItem>
+        <TabItem Header="손·연결" DataContext="{Binding Hands}">
           <Viewbox Stretch="Uniform" StretchDirection="DownOnly" VerticalAlignment="Top">
             <StackPanel Width="440" Margin="0,12,0,0" IsEnabled="{Binding CanEdit}">
               <TabControl Background="#111927" BorderThickness="0" Foreground="#DDE4F0">
@@ -418,10 +423,6 @@
                   <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
                 </StackPanel></TabItem>
               </TabControl>
-            </StackPanel>
-          </Viewbox>
-        </TabItem>
-      </TabControl>
             </StackPanel>
           </Viewbox>
         </TabItem>

@@ -52,7 +52,7 @@ public sealed class CostumeViewModel : ObservableObject
     private CostumeItemViewModel? selected;
     private CostumeCategory importCategory;
     private int filterIndex;
-    private string status = "이미지를 추가하고 클릭해 착용하세요. 배치는 의상 저장으로 유지합니다.";
+    private string status = "이미지를 추가하고 클릭해 착용하세요. 배치는 자동 저장됩니다.";
     public ObservableCollection<CostumeItemViewModel> Items { get; } = [];
     public IEnumerable<CostumeItemViewModel> Filtered => Items.Where(item => FilterIndex == 0 || (int)item.Category == FilterIndex - 1);
     public string[] Filters { get; } = ["전체", .. CategoryNames];
@@ -82,7 +82,7 @@ public sealed class CostumeViewModel : ObservableObject
         ImportCommand = new(async () => { if (ChooseImage?.Invoke() is { } path) await ImportAsync(path); }, () => CanEdit);
         SaveCommand = new(SaveAsync, () => CanEdit);
         DeleteCommand = new(DeleteAsync, () => CanAdjust);
-        RemoveAllCommand = new(() => { foreach (var item in Items) item.SetEnabled(false); ReleaseUnused(); ScheduleSave(); Status = "모두 해제했습니다. 유지하려면 의상 저장을 누르세요."; }, () => CanEdit);
+        RemoveAllCommand = new(() => { foreach (var item in Items) item.SetEnabled(false); ReleaseUnused(); ScheduleSave(); Status = "모두 해제했습니다. 자동 저장됩니다."; }, () => CanEdit);
         UpLayerCommand = new(() => MoveLayer(1), () => CanAdjust && Items.IndexOf(Selected!) < Items.Count - 1);
         DownLayerCommand = new(() => MoveLayer(-1), () => CanAdjust && Items.IndexOf(Selected!) > 0);
         LeftCommand = new(() => Selected!.X -= 1, () => CanAdjust); RightCommand = new(() => Selected!.X += 1, () => CanAdjust);
@@ -154,7 +154,7 @@ public sealed class CostumeViewModel : ObservableObject
             if (closing) return false;
             var added = Create(profile); added.Image = loaded.Decoded.Image; Items.Add(added); ApplyConflicts(added); selected = added;
             if (FilterIndex != 0 && FilterIndex != (int)category + 1) { filterIndex = 0; Notify(nameof(FilterIndex)); }
-            Notify(nameof(Selected)); Notify(nameof(Filtered)); ReleaseUnused(); Status = "보관함에 저장하고 착용했습니다. 크기/위치를 조정한 뒤 의상 저장을 누르세요."; return true;
+            Notify(nameof(Selected)); Notify(nameof(Filtered)); ReleaseUnused(); Status = "보관함에 저장하고 착용했습니다. 크기/위치/움직임 연결은 자동 저장됩니다."; return true;
         }
         catch (Exception error) when (Expected(error)) { Status = "이미지를 추가하지 못했습니다. PNG/JPG/BMP/GIF,16MB 이하·4096px/800만 화소 이하인지 확인하세요. 기존 의상은 유지합니다."; return false; }
         finally { gate.Release(); SetBusy(false); }
@@ -171,7 +171,7 @@ public sealed class CostumeViewModel : ObservableObject
                 if (Items.Count(other => other.Enabled && !ReferenceEquals(other, item) && !CostumeProfile.Conflicts(item.Category, other.Category)) >= 24) throw new ArgumentException("착용24개 제한");
                 item.Image ??= await ReadAsync(item.Id); if (closing) return; ApplyConflicts(item);
             }
-            item.SetEnabled(enabled); ReleaseUnused(); Status = enabled ? "착용했습니다. 위치/크기 조정은 미리보기에 즉시 반영됩니다. 의상 저장으로 유지하세요." : "해제했습니다. 유지하려면 의상 저장을 누르세요.";
+            item.SetEnabled(enabled); ReleaseUnused(); Status = enabled ? "착용했습니다. 위치/크기 조정은 미리보기에 즉시 반영됩니다. 자동 저장됩니다." : "해제했습니다. 자동 저장됩니다.";
         }
         catch (Exception error) when (Expected(error)) { item.SetEnabled(false); Status = "이미지를 읽지 못했거나 착용24개 제한입니다. 기존 보관 파일은 유지합니다."; }
         finally { gate.Release(); SetBusy(false); if (!closing) ScheduleSave(); }
@@ -179,7 +179,7 @@ public sealed class CostumeViewModel : ObservableObject
     private void MoveLayer(int delta)
     {
         if (!CanAdjust) return; int current = Items.IndexOf(Selected!), next = current + delta;
-        if (next < 0 || next >= Items.Count) return; Items.Move(current, next); ScheduleSave(); Notify(nameof(Filtered)); Notify(nameof(Selected)); Refresh(); Status = "겹치는 순서를 바꿨습니다. 목록의 아래 항목이 앞에 표시됩니다. 의상 저장을 누르세요.";
+        if (next < 0 || next >= Items.Count) return; Items.Move(current, next); ScheduleSave(); Notify(nameof(Filtered)); Notify(nameof(Selected)); Refresh(); Status = "겹치는 순서를 바꿨습니다. 목록의 아래 항목이 앞에 표시됩니다. 자동 저장됩니다.";
     }
     public async Task SaveAsync()
     {

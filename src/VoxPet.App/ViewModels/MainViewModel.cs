@@ -165,7 +165,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             var path = ChooseCharacterSheet?.Invoke();
             if (path != null) await ImportCharacterAsync(path);
         }, () => !closing && !characterBusy);
-        DefaultCharacterCommand = new(() => { Expressions.RestoreCharacter(); CharacterStatus = "선택한 캐릭터의 평상 모습으로 복원했습니다."; }, () => !closing && !characterBusy);
+        DefaultCharacterCommand = new(() => { Expressions.RestoreCharacter(); Hands.SetCharacter(Character.DefaultExpressionCount == 6 ? "builtin" : appliedCharacter.Id); CharacterStatus = "선택한 캐릭터의 평상 모습으로 복원했습니다."; }, () => !closing && !characterBusy);
         ConversationCommand = new(() => ApplyPreset(ReactionPreset.Conversation));
         SoftVoiceCommand = new(() => ApplyPreset(ReactionPreset.SoftVoice));
         SnappyCommand = new(() => ApplyPreset(ReactionPreset.Snappy));
@@ -285,7 +285,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
         }
         characterInitialized = true;
-        await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await Hands.InitializeAsync(); Hands.SetCharacter(appliedCharacter.Id); await RefreshDevicesAsync();
+        await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await Hands.InitializeAsync(); Hands.SetCharacter(Character.DefaultExpressionCount == 6 ? "builtin" : appliedCharacter.Id); await RefreshDevicesAsync();
         settingsReady = true;
     }
     /// <summary>전체 가족을 worker에서 읽고 최신 요청만 적용한다. 실패하면 선택과 현재 그림을 되돌린다.</summary>

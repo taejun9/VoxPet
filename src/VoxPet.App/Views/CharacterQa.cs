@@ -42,6 +42,7 @@ internal static class CharacterQa
         personalDefault.RestoreDefault();
         check(ReferenceEquals(defaultSprite, personalDefault.Sprite), "character_personal_default_restore");
         check(!await personalDefault.LoadDefaultAsync(sheetPath + ".missing") && ReferenceEquals(defaultSprite, personalDefault.Sprite), "character_personal_default_failure_preserves_default");
+        main.Model.Character.Update(new(0, 0, 0, 0, 1, MouthState.Closed));
         var initial = main.Model.Character.Sprite;
         string micStatus = main.Model.Status;
         check(await main.Model.ImportCharacterAsync(sheetPath), "character_valid_sheet_import");

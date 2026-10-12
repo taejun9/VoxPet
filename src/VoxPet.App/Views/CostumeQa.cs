@@ -56,11 +56,13 @@ internal static class CostumeQa
                 check(wardrobe.Items.Count(item => item.Category == category && item.Enabled) == 2, "costume_multiple_" + category);
             }
             wardrobe.RemoveAllCommand.Execute(null); await wardrobe.WearAsync(top, true);
-            top.X = 12.25; top.Y = 21.5; top.SizePercent = 50;
+            top.X = 12.25; top.Y = 21.5; top.SizePercent = 50; top.AttachmentIndex = (int)MotionAttachment.RightHand; top.FollowPercent = 40;
             wardrobe.RightCommand.Execute(null); wardrobe.DownCommand.Execute(null);
             check(top.X == 13.25 && top.Y == 22.5 && top.DisplayWidth == 115 && top.DisplayHeight == 115, "costume_fine_position_uniform_size");
             wardrobe.Selected = null; check(ReferenceEquals(wardrobe.Selected, top), "costume_transient_null_selection_retained");
             wardrobe.UpLayerCommand.Execute(null); var order = wardrobe.Items.Select(item => item.Id).ToArray();
+            await Task.Delay(500);
+            check(new CostumeStore(library).Load().Items.Single(item => item.Id == top.Id).Attachment == MotionAttachment.RightHand && new CostumeStore(library).Load().Items.Single(item => item.Id == top.Id).Follow == .4, "costume_motion_attachment_auto_save");
             await wardrobe.SaveAsync(); check(File.ReadAllBytes(original).SequenceEqual(before), "costume_original_unchanged");
             var priorLayers = main.Model.Character.CostumeLayers;
             main.Model.Character.CostumeLayers = wardrobe.Items;
@@ -77,7 +79,7 @@ internal static class CostumeQa
             File.Delete(original);
             var restart = new CostumeViewModel(true, library); await restart.InitializeAsync();
             var restored = restart.Items.Single(item => item.Id == top.Id);
-            check(restart.Items.Select(item => item.Id).SequenceEqual(order) && restored.X == 13.25 && restored.Y == 22.5 && restored.SizePercent == 50 && restored.Enabled && restored.Image is BitmapSource { IsFrozen: true }, "costume_restart_after_original_removed");
+            check(restart.Items.Select(item => item.Id).SequenceEqual(order) && restored.X == 13.25 && restored.Y == 22.5 && restored.SizePercent == 50 && restored.Enabled && restored.AttachmentIndex == (int)MotionAttachment.RightHand && restored.FollowPercent == 40 && restored.Image is BitmapSource { IsFrozen: true }, "costume_restart_after_original_removed");
             await restart.CloseAsync();
             var store = new CostumeStore(library); var saved = store.Load().Items;
             string index = File.ReadAllText(Path.Combine(library, "wardrobe.json"));

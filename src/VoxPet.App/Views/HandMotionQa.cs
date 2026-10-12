@@ -30,9 +30,9 @@ internal static class HandMotionQa
         Square(98, 392, 0, 255, 0); Square(250, 370, 0, 255, 255); Square(120, 100, 255, 0, 0);
         var bitmap = BitmapSource.Create(512, 512, 96, 96, PixelFormats.Bgra32, null, pixels, 2048); bitmap.Freeze(); return bitmap;
     }
-    private static byte[] Render(CharacterViewModel model, string? name = null)
+    private static byte[] Render(CharacterViewModel model, string? name = null, bool props = true)
     {
-        var view = new CharacterView { DataContext = model, Width = 512, Height = 512 };
+        var view = new MotionSurface { DataContext = model, Width = 512, Height = 512, DrawMotionProps = props };
         view.Measure(new Size(512, 512)); view.Arrange(new Rect(0, 0, 512, 512)); view.UpdateLayout();
         var bitmap = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); bitmap.Render(view);
         if (name != null)
@@ -54,6 +54,7 @@ internal static class HandMotionQa
     }
     public static async Task RunAsync(MainWindow main, Action<bool, string> check)
     {
+        check(main.SettingsTabs.Items.Count == 7, "motion_settings_7_top_level_tabs");
         string folder = Path.Combine(Path.GetTempPath(), "VoxPet-motion-qa-" + Guid.NewGuid()); Directory.CreateDirectory(folder);
         var character = new CharacterViewModel(); var hands = new HandMotionViewModel(character, true, folder, () => 1);
         try
@@ -78,7 +79,7 @@ internal static class HandMotionQa
             var greenAfter = Centroid(after, (r, g, b) => r < 20 && g > 230 && b < 20);
             var cyanAfter = Centroid(after, (r, g, b) => r < 20 && g > 230 && b > 230);
             var expected = MotionSurface.AttachmentTransform(character, MotionAttachment.LeftHand, 1).Transform(greenBefore);
-            check(greenBefore.X > 0 && greenAfter.X > 0 && (greenAfter - expected).Length < 1 && (greenAfter - greenBefore).Length > 20 && (cyanAfter - cyanBefore).Length < .1, "motion_sleeve_follows_hand_body_stays_aligned");
+            check(greenBefore.X > 0 && greenAfter.X > 0 && (greenAfter - expected).Length < 1 && (greenAfter - greenBefore).Length > 5 && (cyanAfter - cyanBefore).Length < .1, "motion_sleeve_follows_hand_body_stays_aligned");
             marker.AttachmentIndex = (int)MotionAttachment.Head; character.SetMotion(rig with { HeadMotion = true }, null, null);
             character.Update(new(0, 0, 6, 0, 1, MouthState.Closed), 1);
             var head = Render(character, "voxpet-motion-head.png"); var red = Centroid(head, (r, g, b) => r > 230 && g < 20 && b < 20);
@@ -91,12 +92,13 @@ internal static class HandMotionQa
             marker.FollowPercent = 0;
             check((Centroid(Render(character), (r, g, b) => r > 230 && g < 20 && b < 20) - new Point(125.5, 105.5)).Length < .1, "motion_zero_follow_preserves_placement");
             character.CostumeLayers.Clear(); character.Update(new(0, 0, 0, 0, 1, MouthState.Closed), 3);
+            rig = CharacterRig.Default("builtin");
             foreach (var gesture in Enum.GetValues<HandGesture>())
             {
                 character.SetMotion(rig, null, null); var rest = Render(character); var sprite = character.Sprite;
                 character.SetMotion(rig, new(gesture, .5), HandMotionProfile.Default(gesture));
                 var frame = Render(character, "voxpet-motion-" + gesture + ".png");
-                check(!rest.SequenceEqual(frame) && rest.Take(512 * 285 * 4).SequenceEqual(frame.Take(512 * 285 * 4)) && ReferenceEquals(sprite, character.Sprite), "motion_" + gesture + "_hand_changes_face_preserved");
+                check(!rest.SequenceEqual(frame) && rest.Take(512 * (int)rig.HeadCutY * 4).SequenceEqual(Render(character, props: false).Take(512 * (int)rig.HeadCutY * 4)) && ReferenceEquals(sprite, character.Sprite), "motion_" + gesture + "_hand_changes_face_preserved");
             }
             check(ReferenceEquals(main.ShowCharacter().DataContext, main.Model), "motion_broadcast_keeps_shared_model");
             var source = HwndSource.FromHwnd(new WindowInteropHelper(main).Handle); int hits = 0, clicks = 0;
