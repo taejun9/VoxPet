@@ -13,6 +13,7 @@ public sealed class CostumeItemViewModel : ObservableObject
     private CostumeProfile profile;
     private ImageSource? image;
     private readonly Action<CostumeItemViewModel, string> changed;
+    private readonly Action<CostumeItemViewModel, bool>? requestedWear;
     public CostumeProfile Profile => profile;
     public Guid Id => profile.Id;
     public CostumeCategory Category => profile.Category;
@@ -24,7 +25,7 @@ public sealed class CostumeItemViewModel : ObservableObject
     public double SizePercent { get => profile.Scale * 100; set { profile = profile with { Scale = double.IsFinite(value) ? Math.Clamp(value / 100, .05, 5) : profile.Scale }; Notify(); Notify(nameof(DisplayWidth)); Notify(nameof(DisplayHeight)); changed(this, nameof(SizePercent)); } }
     public double DisplayWidth => profile.BaseWidth * profile.Scale;
     public double DisplayHeight => profile.BaseHeight * profile.Scale;
-    public bool Enabled { get => profile.Enabled; set { if (value == profile.Enabled) return; SetEnabled(value); changed(this, nameof(Enabled)); } }
+    public bool Enabled { get => profile.Enabled; set { if (value == profile.Enabled) return; if (requestedWear != null) { requestedWear(this, value); Notify(); } else { SetEnabled(value); changed(this, nameof(Enabled)); } } }
     public bool BehindCharacter { get => profile.BehindCharacter; set { if (value == profile.BehindCharacter) return; profile = profile with { BehindCharacter = value }; Notify(); Notify(nameof(ShowInFront)); Notify(nameof(ShowBehind)); changed(this, nameof(BehindCharacter)); } }
     public int AttachmentIndex { get => (int)profile.Attachment; set { if (!Enum.IsDefined((MotionAttachment)value)) return; profile = profile with { Attachment = (MotionAttachment)value }; Notify(); changed(this, nameof(AttachmentIndex)); } }
     public double FollowPercent { get => profile.Follow * 100; set { if (!double.IsFinite(value)) return; profile = profile with { Follow = Math.Clamp(value / 100, 0, 1) }; Notify(); changed(this, nameof(FollowPercent)); } }
@@ -33,7 +34,7 @@ public sealed class CostumeItemViewModel : ObservableObject
     public ImageSource? Image { get => image; internal set => Set(ref image, value); }
     public AsyncCommand WearCommand { get; internal set; } = null!;
     internal void SetEnabled(bool value) { profile = profile with { Enabled = value }; Notify(nameof(Enabled)); Notify(nameof(ShowInFront)); Notify(nameof(ShowBehind)); }
-    internal CostumeItemViewModel(CostumeProfile profile, Action<CostumeItemViewModel, string> changed) { this.profile = profile; this.changed = changed; }
+    internal CostumeItemViewModel(CostumeProfile profile, Action<CostumeItemViewModel, string> changed, Action<CostumeItemViewModel, bool>? requestedWear = null) { this.profile = profile; this.changed = changed; this.requestedWear = requestedWear; }
 }
 
 /// <summary>의상 편집·착용은 UI 소유, 파일/디코딩은 worker. 저장한 원본 복사본을 별도 관리한다.</summary>
@@ -102,7 +103,7 @@ public sealed class CostumeViewModel : ObservableObject
         {
             if (property == nameof(entry.Enabled)) _ = WearAsync(entry, entry.Enabled);
             else { Status = "미리보기에 반영했습니다. 마지막 배치를 자동 저장합니다."; ScheduleSave(); }
-        });
+        }, (entry, enabled) => _ = WearAsync(entry, enabled));
         item.WearCommand = new(() => WearAsync(item, true), () => CanEdit); return item;
     }
     private static bool Expected(Exception error) => error is IOException or UnauthorizedAccessException or ArgumentException or FormatException or NotSupportedException or InvalidOperationException or COMException;

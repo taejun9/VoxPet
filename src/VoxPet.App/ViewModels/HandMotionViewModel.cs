@@ -125,7 +125,7 @@ public sealed class HandMotionViewModel : ObservableObject
     private async void SaveTick(object? sender, EventArgs e) { saveTimer.Stop(); if (!closing) await FlushAsync(); }
     public async Task<bool> FlushAsync()
     {
-        if (!persistent) return true;
+        if (!persistent || !ready) return true;
         var snapshot = Snapshot(); await gate.WaitAsync();
         try { bool saved = await Task.Run(() => store.Save(snapshot)); if (!saved) Status = "동작 설정을 저장하지 못했습니다. 저장 공간/권한을 확인하세요. 이전 파일은 유지합니다."; return saved; }
         finally { gate.Release(); }

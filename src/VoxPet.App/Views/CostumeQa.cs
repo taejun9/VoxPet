@@ -89,6 +89,14 @@ internal static class CostumeQa
             var recover = new CostumeViewModel(true, library); await recover.InitializeAsync();
             check(!recover.Items.Single(item => item.Id == top.Id).Enabled && recover.Items.Count == Enum.GetValues<CostumeCategory>().Length + 2 && store.Load().Items.SequenceEqual(saved), "costume_bad_managed_image_recovers_without_rewrite");
             await recover.CloseAsync();
+            string closeFolder = Path.Combine(folder, "close-while-wearing"), closeImage = Path.Combine(folder, "close-fixture.png"); Fixture(closeImage);
+            var pendingWear = new CostumeViewModel(true, closeFolder); pendingWear.ImportCategory = CostumeCategory.Hat;
+            check(await pendingWear.ImportAsync(closeImage), "costume_close_wear_fixture_import");
+            var pendingHat = pendingWear.Selected!; pendingWear.RemoveAllCommand.Execute(null);
+            pendingWear.ImportCategory = CostumeCategory.Earrings; await pendingWear.ImportAsync(closeImage);
+            await pendingWear.SaveAsync(); pendingHat.Enabled = true; bool lastDisplayed = pendingHat.Enabled;
+            await pendingWear.CloseAsync();
+            check(new CostumeStore(closeFolder).Load().Items.Single(item => item.Id == pendingHat.Id).Enabled == lastDisplayed, "costume_close_pending_wear_keeps_last_displayed_state");
             wardrobe.Selected = top; wardrobe.DeleteCommand.Execute(null);
             for (int i = 0; i < 100 && !wardrobe.CanEdit; i++) await Task.Delay(20);
             check(!wardrobe.Items.Contains(top) && !File.Exists(Path.Combine(library, top.Id.ToString("N") + ".img")), "costume_delete_owned_copy");

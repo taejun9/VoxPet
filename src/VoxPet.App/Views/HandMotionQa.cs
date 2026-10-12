@@ -64,6 +64,9 @@ internal static class HandMotionQa
             await Task.Delay(500);
             var saved = new HandMotionStore(Path.Combine(folder, "motion.json")).Load().Settings;
             check(saved.Profiles[2].Enabled && saved.Profiles[2].IntervalSeconds == 7.5 && saved.Rigs!["pelly"].HeadMotion && saved.Rigs["pelly"].Right.X == 308, "motion_auto_save_modes_and_character_rig");
+            var priorBytes = File.ReadAllBytes(Path.Combine(folder, "motion.json"));
+            var earlyClose = new HandMotionViewModel(character, true, folder, () => 1); await earlyClose.CloseAsync(); await earlyClose.InitializeAsync();
+            check(priorBytes.SequenceEqual(File.ReadAllBytes(Path.Combine(folder, "motion.json"))), "motion_close_before_load_preserves_last_settings");
             hands.X = 25; await hands.CloseAsync();
             var restart = new HandMotionViewModel(character, true, folder, () => 1); await restart.InitializeAsync(); restart.SelectedIndex = 2; restart.SetCharacter("pelly");
             check(restart.X == 25 && restart.HeadMotion && restart.MouthTravel == 23 && !restart.Rig.Left.Enabled, "motion_restart_last_edit_flush_and_side_pelly");
