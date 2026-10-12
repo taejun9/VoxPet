@@ -1,9 +1,9 @@
 namespace VoxPet.Core.Models;
 
-public enum CostumeCategory { Hat, Glasses, FaceDecoration, Earrings, Top, Bottom, Outerwear, OnePiece }
+public enum CostumeCategory { Hat, Glasses, FaceDecoration, Earrings, Top, Bottom, Outerwear, OnePiece, Cape }
 
 public sealed record CostumeProfile(Guid Id, string Name, CostumeCategory Category, double X, double Y,
-    double BaseWidth, double BaseHeight, double Scale = 1, bool Enabled = true)
+    double BaseWidth, double BaseHeight, double Scale = 1, bool Enabled = true, bool BehindCharacter = false)
 {
     public void Validate()
     {

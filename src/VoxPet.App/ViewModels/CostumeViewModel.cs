@@ -25,16 +25,19 @@ public sealed class CostumeItemViewModel : ObservableObject
     public double DisplayWidth => profile.BaseWidth * profile.Scale;
     public double DisplayHeight => profile.BaseHeight * profile.Scale;
     public bool Enabled { get => profile.Enabled; set { if (value == profile.Enabled) return; SetEnabled(value); changed(this, nameof(Enabled)); } }
+    public bool BehindCharacter { get => profile.BehindCharacter; set { if (value == profile.BehindCharacter) return; profile = profile with { BehindCharacter = value }; Notify(); Notify(nameof(ShowInFront)); Notify(nameof(ShowBehind)); changed(this, nameof(BehindCharacter)); } }
+    public bool ShowInFront => Enabled && !BehindCharacter;
+    public bool ShowBehind => Enabled && BehindCharacter;
     public ImageSource? Image { get => image; internal set => Set(ref image, value); }
     public AsyncCommand WearCommand { get; internal set; } = null!;
-    internal void SetEnabled(bool value) { profile = profile with { Enabled = value }; Notify(nameof(Enabled)); }
+    internal void SetEnabled(bool value) { profile = profile with { Enabled = value }; Notify(nameof(Enabled)); Notify(nameof(ShowInFront)); Notify(nameof(ShowBehind)); }
     internal CostumeItemViewModel(CostumeProfile profile, Action<CostumeItemViewModel, string> changed) { this.profile = profile; this.changed = changed; }
 }
 
 /// <summary>의상 편집·착용은 UI 소유, 파일/디코딩은 worker. 저장한 원본 복사본을 별도 관리한다.</summary>
 public sealed class CostumeViewModel : ObservableObject
 {
-    public static string[] CategoryNames { get; } = ["모자", "안경", "얼굴장식", "귀걸이", "상의", "하의", "겉옷", "한벌옷"];
+    public static string[] CategoryNames { get; } = ["모자", "안경", "얼굴장식", "귀걸이", "상의", "하의", "겉옷", "한벌옷", "망토"];
     private readonly CostumeStore store;
     private readonly bool persistent;
     private readonly SemaphoreSlim gate = new(1, 1);
@@ -48,7 +51,7 @@ public sealed class CostumeViewModel : ObservableObject
     public IEnumerable<CostumeItemViewModel> Filtered => Items.Where(item => FilterIndex == 0 || (int)item.Category == FilterIndex - 1);
     public string[] Filters { get; } = ["전체", .. CategoryNames];
     public KeyValuePair<CostumeCategory, string>[] Categories { get; } = Enum.GetValues<CostumeCategory>().Select(category => new KeyValuePair<CostumeCategory, string>(category, CategoryNames[(int)category])).ToArray();
-    public int FilterIndex { get => filterIndex; set { if (Set(ref filterIndex, Math.Clamp(value, 0, 8))) { Notify(nameof(Filtered)); selected = Filtered.FirstOrDefault(); Notify(nameof(Selected)); Refresh(); } } }
+    public int FilterIndex { get => filterIndex; set { if (Set(ref filterIndex, Math.Clamp(value, 0, CategoryNames.Length))) { Notify(nameof(Filtered)); selected = Filtered.FirstOrDefault(); Notify(nameof(Selected)); Refresh(); } } }
     public CostumeCategory ImportCategory { get => importCategory; set => Set(ref importCategory, value); }
     public CostumeItemViewModel? Selected { get => selected; set { if (value == null || !Items.Contains(value)) return; if (Set(ref selected, value)) Refresh(); } }
     public bool CanEdit => !busy && !closing;
@@ -132,11 +135,11 @@ public sealed class CostumeViewModel : ObservableObject
                 var bytes = new byte[(int)file.Length]; file.ReadExactly(bytes); return (Bytes: bytes, Decoded: CostumeImageLoader.Load(bytes));
             });
             if (closing) return false;
-            double width = category switch { CostumeCategory.Hat or CostumeCategory.Glasses => 200, CostumeCategory.FaceDecoration => 140, CostumeCategory.Earrings => 300, _ => 230 };
+            double width = category switch { CostumeCategory.Hat or CostumeCategory.Glasses => 200, CostumeCategory.FaceDecoration => 140, CostumeCategory.Earrings => 300, CostumeCategory.Cape => 320, _ => 230 };
             double height = width * loaded.Decoded.Height / loaded.Decoded.Width;
             if (height > 512) { width *= 512 / height; height = 512; }
             var profile = new CostumeProfile(Guid.NewGuid(), Path.GetFileNameWithoutExtension(path)[..Math.Min(60, Path.GetFileNameWithoutExtension(path).Length)], category,
-                (512 - width) / 2, category switch { CostumeCategory.Hat => 20, CostumeCategory.Glasses or CostumeCategory.Earrings => 140, CostumeCategory.FaceDecoration => 210, CostumeCategory.Bottom => 370, _ => 280 }, width, height);
+                (512 - width) / 2, category switch { CostumeCategory.Hat => 20, CostumeCategory.Glasses or CostumeCategory.Earrings => 140, CostumeCategory.FaceDecoration => 210, CostumeCategory.Bottom => 370, CostumeCategory.Cape => 180, _ => 280 }, width, height, BehindCharacter: category == CostumeCategory.Cape);
             var snapshot = Items.Select(item => item.Profile with { Enabled = item.Enabled && !CostumeProfile.Conflicts(category, item.Category) }).Append(profile).ToArray();
             CostumeStore.Validate(snapshot);
             if (persistent) await Task.Run(() => store.Import(snapshot, profile.Id, loaded.Bytes)); else memory.Add(profile.Id, loaded.Bytes);

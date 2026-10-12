@@ -4,6 +4,11 @@
   <UserControl.RenderTransform><TranslateTransform Y="{Binding Bounce}"/></UserControl.RenderTransform>
   <Viewbox Stretch="Uniform">
     <Canvas Width="512" Height="512" ClipToBounds="True">
+      <ItemsControl ItemsSource="{Binding CostumeLayers}" Width="512" Height="512">
+        <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding X}"/><Setter Property="Canvas.Top" Value="{Binding Y}"/></Style></ItemsControl.ItemContainerStyle>
+        <ItemsControl.ItemTemplate><DataTemplate><Image Source="{Binding Image}" Width="{Binding DisplayWidth}" Height="{Binding DisplayHeight}" Visibility="{Binding ShowBehind, Converter={StaticResource WearingVisibility}}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/></DataTemplate></ItemsControl.ItemTemplate>
+      </ItemsControl>
       <Image Width="512" Height="512" Source="{Binding PreviousSprite}" Opacity="{Binding PreviousOpacity}" RenderOptions.BitmapScalingMode="HighQuality"/>
       <Image Width="512" Height="512" Source="{Binding Sprite}" Opacity="{Binding Blend}" RenderOptions.BitmapScalingMode="HighQuality"/>
       <Path Data="M5,0 C4,5 0,8 0,12 C0,20 10,20 10,12 C10,8 6,5 5,0 Z" Fill="#9ADFFE" Stroke="#65BCEB" StrokeThickness="1" Canvas.Left="{Binding TearLeftX}" Canvas.Top="{Binding TearLeftY}" Opacity="{Binding TearLeftOpacity}"/>
@@ -11,7 +16,7 @@
       <ItemsControl ItemsSource="{Binding CostumeLayers}" Width="512" Height="512">
         <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
         <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding X}"/><Setter Property="Canvas.Top" Value="{Binding Y}"/></Style></ItemsControl.ItemContainerStyle>
-        <ItemsControl.ItemTemplate><DataTemplate><Image Source="{Binding Image}" Width="{Binding DisplayWidth}" Height="{Binding DisplayHeight}" Visibility="{Binding Enabled, Converter={StaticResource WearingVisibility}}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/></DataTemplate></ItemsControl.ItemTemplate>
+        <ItemsControl.ItemTemplate><DataTemplate><Image Source="{Binding Image}" Width="{Binding DisplayWidth}" Height="{Binding DisplayHeight}" Visibility="{Binding ShowInFront, Converter={StaticResource WearingVisibility}}" Stretch="Fill" RenderOptions.BitmapScalingMode="HighQuality"/></DataTemplate></ItemsControl.ItemTemplate>
       </ItemsControl>
     </Canvas>
   </Viewbox>

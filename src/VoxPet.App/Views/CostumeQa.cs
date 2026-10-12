@@ -45,6 +45,8 @@ internal static class CostumeQa
             var top = wardrobe.Items.Single(item => item.Category == CostumeCategory.Top);
             var bottom = wardrobe.Items.Single(item => item.Category == CostumeCategory.Bottom);
             var outer = wardrobe.Items.Single(item => item.Category == CostumeCategory.Outerwear);
+            var cape = wardrobe.Items.Single(item => item.Category == CostumeCategory.Cape);
+            check(cape.Enabled && cape.BehindCharacter && outer.Enabled && one.Enabled, "cape_coexists_and_defaults_behind");
             check(one.Enabled && !top.Enabled && !bottom.Enabled && outer.Enabled, "costume_onepiece_excludes_separates_keeps_outerwear");
             await wardrobe.WearAsync(top, true); await wardrobe.WearAsync(bottom, true);
             check(!one.Enabled && top.Enabled && bottom.Enabled && outer.Enabled, "costume_separates_exclude_onepiece");
@@ -80,10 +82,10 @@ internal static class CostumeQa
             var store = new CostumeStore(library); var saved = store.Load().Items;
             string index = File.ReadAllText(Path.Combine(library, "wardrobe.json"));
             string bad = Path.Combine(folder, "bad.png"); File.WriteAllText(bad, new string('x', 64));
-            check(!await wardrobe.ImportAsync(bad) && File.ReadAllText(Path.Combine(library, "wardrobe.json")) == index && wardrobe.Items.Count == 10, "costume_bad_import_preserves_library");
+            check(!await wardrobe.ImportAsync(bad) && File.ReadAllText(Path.Combine(library, "wardrobe.json")) == index && wardrobe.Items.Count == Enum.GetValues<CostumeCategory>().Length + 2, "costume_bad_import_preserves_library");
             File.WriteAllText(Path.Combine(library, top.Id.ToString("N") + ".img"), "broken");
             var recover = new CostumeViewModel(true, library); await recover.InitializeAsync();
-            check(!recover.Items.Single(item => item.Id == top.Id).Enabled && recover.Items.Count == 10 && store.Load().Items.SequenceEqual(saved), "costume_bad_managed_image_recovers_without_rewrite");
+            check(!recover.Items.Single(item => item.Id == top.Id).Enabled && recover.Items.Count == Enum.GetValues<CostumeCategory>().Length + 2 && store.Load().Items.SequenceEqual(saved), "costume_bad_managed_image_recovers_without_rewrite");
             await recover.CloseAsync();
             wardrobe.Selected = top; wardrobe.DeleteCommand.Execute(null);
             for (int i = 0; i < 100 && !wardrobe.CanEdit; i++) await Task.Delay(20);
