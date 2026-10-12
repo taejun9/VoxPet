@@ -4,6 +4,7 @@ $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Startup QA runs only on a disposable GitHub runner' }
 $priorData = $env:VOXPET_QA_DATA_DIR
 $priorExtract = $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR
+$priorTray = $env:VOXPET_QA_START_IN_TRAY
 $root = Join-Path $env:RUNNER_TEMP ('VoxPet-startup-' + [Guid]::NewGuid().ToString('N'))
 $sourceExe = (Resolve-Path $Exe).Path
 $process = $null
@@ -57,6 +58,7 @@ try {
         $beforeOrder=if(Test-Path $orderPath){(Get-FileHash $orderPath).Hash}else{$null}
         $beforeSlot=if(Test-Path $slotPath){(Get-FileHash $slotPath).Hash}else{$null}
         $stderr = Join-Path $location 'stderr.txt'
+        $env:VOXPET_QA_START_IN_TRAY=if($case -eq 'public6'){'true'}else{$null}
         $process = Start-Process (Join-Path $location 'VoxPet.exe') -PassThru -RedirectStandardError $stderr
         Start-Sleep -Seconds 10
         $process.Refresh()
@@ -67,17 +69,29 @@ try {
             throw ('Normal startup failed: '+$case)
         }
         $ready=Get-Content $readyPath -Raw | ConvertFrom-Json
-        if (-not $ready.initialized -or -not $ready.canEdit -or -not $ready.visible -or $ready.selectedStorageId -ne $expectedId -or $ready.selectedPosition -ne 0 -or $ready.familyCount -ne $expectedFamily -or $ready.mouthFrames -ne $expectedMouth) { throw ('Startup state mismatch: '+$case) }
+        if (-not $ready.initialized -or -not $ready.canEdit -or ($case -ne 'public6' -and -not $ready.visible) -or $ready.selectedStorageId -ne $expectedId -or $ready.selectedPosition -ne 0 -or $ready.familyCount -ne $expectedFamily -or $ready.mouthFrames -ne $expectedMouth) { throw ('Startup state mismatch: '+$case) }
+        $duplicatePassed=$false
+        if($case -eq 'public6') {
+            if($ready.visible){throw 'Tray startup fixture did not hide'}
+            $second=Start-Process $sourceExe -PassThru
+            if(-not $second.WaitForExit(8000) -or $second.ExitCode -ne 0){throw 'Duplicate app did not exit normally'}
+            $activatedPath=Join-Path $data 'activated.json'
+            for($i=0; $i -lt 50 -and -not (Test-Path $activatedPath); $i++){Start-Sleep -Milliseconds 100}
+            if(-not (Test-Path $activatedPath)){throw 'Duplicate launch did not activate original tray window'}
+            $activated=Get-Content $activatedPath -Raw | ConvertFrom-Json
+            if(-not $activated.visible -or $activated.hwnd -ne $ready.hwnd){throw 'Duplicate launch changed original HWND'}
+            $process.Refresh(); $duplicatePassed=$true
+        }
         $hasWindow=$process.MainWindowHandle -ne 0
         if (-not $hasWindow -or -not $process.CloseMainWindow() -or -not $process.WaitForExit(8000) -or $process.ExitCode -ne 0) { throw ('Normal app graceful exit failed: '+$case) }
         $process=$null
         if ($null -ne $beforeOrder -and (Get-FileHash $orderPath).Hash -ne $beforeOrder) { throw 'Startup changed existing order file' }
         if ($null -ne $beforeSlot -and (Get-FileHash $slotPath).Hash -ne $beforeSlot) { throw 'Startup changed existing slot file' }
-        $cases.Add([ordered]@{case=$case;survivedSeconds=10;normalArguments=$true;ready=$ready;gracefulExit=$true;storedFilesPreserved=$true})
+        $cases.Add([ordered]@{case=$case;survivedSeconds=10;normalArguments=$true;ready=$ready;duplicateExitedAndRestoredSameWindow=$duplicatePassed;gracefulExit=$true;storedFilesPreserved=$true})
     }
     $cases | ConvertTo-Json -Depth 8 | Set-Content 'artifacts/test-results/startup.json' -Encoding utf8
 } finally {
     if ($null -ne $process -and -not $process.HasExited) { $process.Kill(); $process.WaitForExit() }
-    $env:VOXPET_QA_DATA_DIR=$priorData; $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR=$priorExtract
+    $env:VOXPET_QA_DATA_DIR=$priorData; $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR=$priorExtract; $env:VOXPET_QA_START_IN_TRAY=$priorTray
     Remove-Item -LiteralPath $root -Recurse -Force
 }

@@ -44,6 +44,15 @@ jobs:
           name: VoxPet-win-x64
           path: artifacts/win-x64/
           if-no-files-found: error
+      - name: Sign personal package and verify signer, icon and normal startup
+        shell: pwsh
+        run: ./harness/scripts/personal-sign-qa.ps1
+      - name: Upload personally trusted signed application
+        uses: actions/upload-artifact@v7
+        with:
+          name: VoxPet-personal-signed-win-x64
+          path: artifacts/personal-win-x64/
+          if-no-files-found: error
       - name: Upload test results and rendered smoke image
         if: always()
         uses: actions/upload-artifact@v7
@@ -58,4 +67,5 @@ jobs:
             ${{ runner.temp }}/voxpet-layout-result.json
             ${{ runner.temp }}/voxpet-personal-*.png
             ${{ runner.temp }}/voxpet-expression-*.png
+            ${{ runner.temp }}/voxpet-costume-*.png
           if-no-files-found: warn

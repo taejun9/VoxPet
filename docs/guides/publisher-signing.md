@@ -1,6 +1,6 @@
 # 김태중 게시자 서명
 
-파일 속성의 회사 이름과 Windows 실행 경고의 게시자는 다릅니다. 회사 이름은 김태중으로 지정했지만 실행 경고는 디지털 서명의 인증서 신뢰로 판단합니다. 아래 작업은 Windows에서 수행합니다. 앱 자체와 기본 CI는 인증서를 설치하거나 신뢰 저장소를 변경하지 않습니다.
+파일 속성의 회사 이름과 Windows 실행 경고의 게시자는 다릅니다. 회사 이름은 김태중으로 지정했지만 실행 경고는 디지털 서명의 인증서 신뢰로 판단합니다. 아래 작업은 Windows에서 수행합니다. 앱은 사용자 인증서를 설치하거나 신뢰 저장소를 변경하지 않습니다. 개인 서명 QA는 일회용 Windows runner에만 임시 신뢰를 등록하고 끝나면 제거합니다.
 
 ## 코드 서명 인증서를 보유한 경우
 
@@ -37,6 +37,18 @@ Set-AuthenticodeSignature -LiteralPath '.\VoxPet.exe' -Certificate $cert -HashAl
 
 공개 `.cer`를 직접 열어 이름/지문을 확인한 뒤 **인증서 설치 → 로컬 컴퓨터 → 모든 인증서를 다음 저장소에 저장 → 신뢰할 수 있는 루트 인증 기관**을 선택합니다. Windows의 관리자 확인과 신뢰 확인은 사용자가 직접 판단합니다. 다른 사람이 보낸 인증서에는 이 개인 시험 절차를 적용하지 않습니다.
 
-설치 후 `Get-AuthenticodeSignature`의 `Status=Valid`와 서명자 김태중을 확인하고 Windows의 실제 실행 경고를 확인합니다. 만료일 이후 또는 다른 PC에는 별도 확인이 필요합니다. 여기서는 경고가 자동으로 사라졌다고 보장하지 않습니다. 기본 자동 빌드 ZIP에는 이 인증서나 서명이 포함되지 않습니다.
+설치 후 `Get-AuthenticodeSignature`의 `Status=Valid`와 서명자 김태중을 확인하고 Windows의 실제 실행 경고를 확인합니다. 만료일 이후 또는 다른 PC에는 별도 확인이 필요합니다. 여기서는 경고가 자동으로 사라졌다고 보장하지 않습니다. 공용 VoxPet-win-x64는 서명되지 않은 원본이고, VoxPet-personal-signed-win-x64는 별도 개인 자체 서명 패키지입니다.
 
 공식 근거: [Microsoft 코드 서명 옵션](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options), [Set-AuthenticodeSignature](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-authenticodesignature?view=powershell-5.1), [New-SelfSignedCertificate](https://learn.microsoft.com/en-us/powershell/module/pki/new-selfsignedcertificate?view=windowsserver2025-ps). 확인일:2026-10-09.
+
+
+## 제공된 개인 서명 패키지
+
+plan019 개인 ZIP에는 **김태중** 이름으로 자체 서명한 최종 VoxPet.exe, 공개 **VoxPet-personal-publisher.cer**, **publisher-signature.json**이 있습니다. 인증기관이 신원을 확인한 인증서가 아닙니다. CI가 일회용 코드 서명 키를 만들며 개인키는 내보내거나 artifact에 포함하지 않고 실행 종료 시 삭제합니다. 다른 파일을 다시 서명하는 데 이 공개 인증서를 사용할 수 없습니다. 매 빌드 인증서가 달라지므로 새 패키지의 지문을 다시 확인하세요.
+
+1. ZIP 전체를 압축 해제합니다. EXE 속성 → 디지털 서명 → 김태중을 확인합니다.
+2. 공개 CER을 열어 이름 **김태중**과 세부 정보의 지문을 publisher-signature.json의 thumbprint와 비교합니다. 파일 무결성은 같은 JSON의 EXE/CER SHA256으로 확인합니다.
+3. 이 개인 패키지를 신뢰하기로 한 PC에서 CER의 **인증서 설치 → 로컬 컴퓨터 → 모든 인증서를 다음 저장소에 저장 → 신뢰할 수 있는 루트 인증 기관**을 직접 선택합니다. Windows 관리자/신뢰 확인을 직접 진행합니다.
+4. PowerShell에서 `Get-AuthenticodeSignature -LiteralPath '.\VoxPet.exe'`를 실행해 Valid인지 확인합니다. 신뢰 등록 전에는 NotTrusted/UnknownError 등으로 표시될 수 있습니다.
+
+이 절차는 해당 인증서로 서명된 코드를 신뢰하게 합니다. Windows 실행 경고의 실제 표시는 대상PC에서 확인해야 하며 SmartScreen 평판 경고가 남을 수 있습니다. 앱이 신뢰 설정을 자동으로 바꾸지는 않습니다. CI는 신뢰 전 서명자, 임시 신뢰 후 Valid, 변조 파일 HashMismatch와 서명된 단일 EXE의 일반 시작/중복 실행/종료를 검사합니다. 신뢰 제거는 certlm.msc의 신뢰할 수 있는 루트 인증 기관에서 이 패키지의 지문과 일치하는 인증서만 삭제합니다.

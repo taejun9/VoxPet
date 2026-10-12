@@ -13,7 +13,8 @@ internal sealed class TrayService : IDisposable
     internal bool Visible => !disposed && icon.Visible;
     internal TrayService(Action restore, Action broadcast, Action exit)
     {
-        image = (Icon)SystemIcons.Application.Clone();
+        using var stream = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/Assets/VoxPet.ico"))!.Stream;
+        using var loaded = new Icon(stream); image = (Icon)loaded.Clone();
         menu = new Forms.ContextMenuStrip { ForeColor = Color.Black, BackColor = Color.White };
         menu.Items.Add("설정창 열기", null, (_, _) => restore());
         menu.Items.Add("OBS용 방송창 열기", null, (_, _) => broadcast());

@@ -43,10 +43,10 @@ internal static class StartupTrayQa
             check(ReferenceEquals(selected, selector.SelectedItem) && selected.Position == 1 && window.Model.Expressions.Slots[1].Index == selected.Index, "startup_bound_selector_reorder_preserves_selection");
             await window.Model.Expressions.MoveAsync(-1);
             var broadcast = window.ShowCharacter(); var firstHandle = new WindowInteropHelper(broadcast).Handle;
-            check(!broadcast.AllowsTransparency && (GetWindowLongPtr(firstHandle, -20).ToInt64() & 0x80000) == 0, "obs_green_opaque_nonlayered_window");
+            check(broadcast.AllowsTransparency && (GetWindowLongPtr(firstHandle, -20).ToInt64() & 0x80000) != 0, "obs_green_stable_layered_window");
             broadcast.Left = 120; broadcast.Top = 140; window.Model.BroadcastWidth = 600; window.Model.BroadcastHeight = 360;
             window.Model.GreenBackground = false; var transparent = window.ShowCharacter();
-            check(!broadcast.IsVisible && transparent.AllowsTransparency && transparent.Left == 120 && transparent.Top == 140 && transparent.Width == 600 && transparent.Height == 360, "obs_background_mode_recreates_preserving_geometry");
+            check(ReferenceEquals(broadcast, transparent) && new WindowInteropHelper(transparent).Handle == firstHandle && transparent.AllowsTransparency && transparent.Left == 120 && transparent.Top == 140 && transparent.Width == 600 && transparent.Height == 360, "obs_background_mode_preserves_hwnd_geometry");
             window.Model.DemoCommand.Execute(null); window.Model.TrayCommand.Execute(null);
             var broadcastHandle = new WindowInteropHelper(transparent).Handle;
             check(window.IsInTray && window.TrayIconVisible && !window.IsVisible && IsWindowVisible(broadcastHandle) && !IsIconic(broadcastHandle), "tray_hides_only_settings_keeps_broadcast");
@@ -54,7 +54,7 @@ internal static class StartupTrayQa
             for (int i = 0; i < 80; i++) { await Task.Delay(20); reacted |= window.Model.VoiceLevel > .2; }
             check(reacted, "tray_keeps_synthetic_animation_running");
             window.ActivateTrayMenu(1); var compatible = window.ShowCharacter();
-            check(!window.IsVisible && compatible.IsVisible && !compatible.AllowsTransparency && window.Model.GreenBackground, "tray_menu_opens_obs_compatible_broadcast");
+            check(!window.IsVisible && compatible.IsVisible && ReferenceEquals(compatible, broadcast) && new WindowInteropHelper(compatible).Handle == firstHandle && window.Model.GreenBackground, "tray_menu_preserves_obs_broadcast");
             window.ActivateTrayMenu(0);
             check(window.IsVisible && window.WindowState == WindowState.Normal && !window.IsInTray && !window.TrayIconVisible, "tray_menu_restores_settings");
             window.WindowState = WindowState.Minimized; window.HideToTray(); window.RestoreFromTray();

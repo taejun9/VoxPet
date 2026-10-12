@@ -44,6 +44,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public ObservableCollection<AudioDevice> Devices { get; } = [];
     public CharacterViewModel Character { get; } = new();
     public ExpressionViewModel Expressions { get; }
+    public CostumeViewModel Wardrobe { get; }
     public Func<int, bool>? IsGlobalExpressionKey { get; set; }
     public Func<bool>? IsGlobalMuteKey { get; set; }
     public bool HandleMuteKey(Key key, ModifierKeys modifiers, bool repeat)
@@ -95,6 +96,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         this.persistSettings = persistSettings;
         this.listDevices = listDevices; this.createInput = createInput;
         Expressions = new(Character, persistSettings, Path.Combine(AppPaths.DataFolder, "Expressions"));
+        Wardrobe = new(persistSettings); Character.CostumeLayers = Wardrobe.Items;
         var saved = persistSettings ? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         StartCommand = new(StartAsync, () => CanChooseDevice && SelectedDevice != null);
         StopCommand = new(StopAsync, () => !busy && !closing && (session.HasResources || demo));
@@ -209,7 +211,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 else CharacterStatus = "기본 PNG를 읽지 못했습니다. 내장 캐릭터로 시작합니다. Characters/늘보군.png를 확인하세요.";
             }
         }
-        await Expressions.InitializeAsync(); await RefreshDevicesAsync();
+        await Expressions.InitializeAsync(); await Wardrobe.InitializeAsync(); await RefreshDevicesAsync();
     }
     internal void ReportStartupIssue() => Status = "일부 시작 설정을 읽지 못했습니다. 현재 표정/설정은 유지합니다. 오류 기록을 확인하세요.";
     /// <summary>
@@ -377,7 +379,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ClearNoiseMeasurement("앱 종료로 측정을 취소했습니다.");
         closing = true; timer.Stop(); timer.Tick -= Tick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
-        await session.DisposeAsync(); await Expressions.CloseAsync(); ResetLevels();
+        await session.DisposeAsync(); await Expressions.CloseAsync(); await Wardrobe.CloseAsync(); ResetLevels();
         bool saved = !persistSettings || await Task.Run(() => store.Save(new(settings, Topmost, GreenBackground)));
         if (!saved) Status = "설정을 저장하지 못했습니다. 다음 실행에서 기본값을 사용합니다.";
     }

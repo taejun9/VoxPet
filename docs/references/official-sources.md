@@ -64,3 +64,5 @@
 | Microsoft NotifyIcon | https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.notifyicon?view=windowsdesktop-10.0 | 트레이 수명 | 2026-10-09 | 알림 영역/메뉴/두 번 클릭 복원/Dispose |
 | Microsoft AllowsTransparency | https://learn.microsoft.com/en-us/dotnet/api/system.windows.window.allowstransparency?view=windowsdesktop-10.0 | 방송창 투명/불투명 | 2026-10-09 | WindowStyle=None 및 투명 클라이언트 영역 의미 |
 | OBS Window Capture Sources | https://obsproject.com/kb/window-capture-sources | 사용자 OBS32.2.2 창 캡처 | 2026-10-09 | 대상 창과 캡처 방식 설정/초록 배경 복구 안내 |
+
+| Microsoft New-SelfSignedCertificate | https://learn.microsoft.com/en-us/powershell/module/pki/new-selfsignedcertificate?view=windowsserver2025-ps | 개인 서명 키 | 2026-10-12 | CodeSigningCert/SHA256/NonExportable·공개 CER와 개인키 구분 |

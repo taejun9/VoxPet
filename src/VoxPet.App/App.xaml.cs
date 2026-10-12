@@ -16,6 +16,7 @@ namespace VoxPet.App;
 /// </summary>
 public partial class App : Application
 {
+    private SingleInstance? instance;
     private int failures;
     private readonly List<string> failedChecks = [];
     private readonly HashSet<string> passedChecks = [];
@@ -54,6 +55,11 @@ public partial class App : Application
     {
         base.OnStartup(e);
         bool qa = e.Args.Contains("--smoke-test") || e.Args.Contains("--qa-demo") || AppPaths.QaFolder != null;
+        if (!e.Args.Contains("--smoke-test") && !e.Args.Contains("--qa-demo"))
+        {
+            instance = new SingleInstance();
+            if (!instance.IsFirst) { instance.RequestExisting(); Shutdown(0); return; }
+        }
         DispatcherUnhandledException += (_, error) =>
         {
             string path = ErrorDiagnostics.Record(error.Exception, "dispatcher");
@@ -65,7 +71,12 @@ public partial class App : Application
         else if (e.Args.Contains("--qa-demo")) RunQaDemoAsync(e.Args.Contains("--qa-transparent"));
         else
         {
-            try { var main = new MainWindow(); MainWindow = main; main.Show(); }
+            try
+            {
+                var main = new MainWindow(); MainWindow = main;
+                main.SourceInitialized += (_, _) => instance?.Attach(HwndSource.FromHwnd(new WindowInteropHelper(main).Handle), main.RestoreFromTray);
+                main.Show();
+            }
             catch (Exception error)
             {
                 string path = ErrorDiagnostics.Record(error, "startup");
@@ -73,6 +84,7 @@ public partial class App : Application
             }
         }
     }
+    protected override void OnExit(ExitEventArgs e) { instance?.Dispose(); base.OnExit(e); }
     // OBS QA fixture: 합성 숫자 데모만 사용한다. 마이크를 시작하거나 개인 설정을 저장하지 않는다.
     private async void RunQaDemoAsync(bool transparent)
     {
@@ -81,6 +93,12 @@ public partial class App : Application
             var main = new MainWindow(smoke: true); MainWindow = main; main.Show();
             await main.Ready;
             main.Model.GreenBackground = !transparent;
+            // 합성 OBS fixture의 배경 전환 요청. 일반 앱에는 이 hook을 등록하지 않는다.
+            HwndSource.FromHwnd(new WindowInteropHelper(main).Handle).AddHook((IntPtr window, int code, IntPtr first, IntPtr second, ref bool handled) =>
+            {
+                if (code == 0x8019) { main.Model.GreenBackground = first != IntPtr.Zero; handled = true; }
+                return IntPtr.Zero;
+            });
             main.Model.DemoCommand.Execute(null);
             main.ShowCharacter();
             main.Model.TrayCommand.Execute(null);
@@ -176,6 +194,7 @@ public partial class App : Application
             await DetailedCharacterQa.RunAsync(Check);
             await ExpressionManagementQa.RunAsync(main, Check);
             await StartupTrayQa.RunAsync(Check);
+            await CostumeQa.RunAsync(main, Check);
             await UsabilityQa.RunAsync(Check);
             await LayoutQa.RunAsync(main, Check);
             var png = new System.Windows.Media.Imaging.RenderTargetBitmap(1000, 730, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);

@@ -23,7 +23,7 @@ public partial class MainWindow : Window
     internal bool IsInTray { get; private set; }
     internal bool TrayIconVisible => tray?.Visible == true;
     internal void ActivateTrayMenu(int index) => tray?.ActivateMenu(index);
-    private bool allowClose, shuttingDown;
+    private bool allowClose, shuttingDown, initializationStarted;
     private readonly TaskCompletionSource ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
     // Loaded 후 장치 목록 초기화가 끝나는 시점. Windows smoke가 UI 준비를 기다리는 용도다.
     public Task Ready => ready.Task;
@@ -42,7 +42,6 @@ public partial class MainWindow : Window
         SizeChanged += (_, _) => UpdateResponsiveLayout();
         Model.OpenBroadcast += () => ShowCharacter();
         Model.MoveToTray += HideToTray;
-        Model.PropertyChanged += OnModelPropertyChanged;
         Model.OpenMicrophonePrivacy += () =>
         {
             try { Process.Start(new ProcessStartInfo("ms-settings:privacy-microphone") { UseShellExecute = true }); }
@@ -52,6 +51,11 @@ public partial class MainWindow : Window
         Model.ChooseCharacterSheet += () =>
         {
             var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 PNG 시트 선택 (3열 또는8열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
+            return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+        };
+        Model.Wardrobe.ChooseImage += () =>
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "의상 이미지 추가", Filter = "이미지|*.png;*.jpg;*.jpeg;*.bmp;*.gif", CheckFileExists = true };
             return dialog.ShowDialog(this) == true ? dialog.FileName : null;
         };
         Model.Expressions.ChooseSheet += () =>
@@ -68,15 +72,17 @@ public partial class MainWindow : Window
             if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); }
             else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
         };
-        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); tray?.Dispose(); Model.PropertyChanged -= OnModelPropertyChanged; };
+        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); tray?.Dispose(); };
         Loaded += async (_, _) =>
         {
+            if (initializationStarted) return; initializationStarted = true;
             try
             {
                 await Model.InitializeAsync(); ready.TrySetResult();
                 if (!smoke && AppPaths.QaFolder is { } folder)
                 {
                     Directory.CreateDirectory(folder);
+                    if (Environment.GetEnvironmentVariable("VOXPET_QA_START_IN_TRAY") == "true") HideToTray();
                     File.WriteAllText(Path.Combine(folder, "startup-ready.json"), JsonSerializer.Serialize(new
                     {
                         initialized = true,
@@ -85,7 +91,8 @@ public partial class MainWindow : Window
                         selectedStorageId = Model.Expressions.Selected.Index,
                         selectedPosition = Model.Expressions.Selected.Position,
                         canEdit = Model.Expressions.CanEdit,
-                        visible = IsVisible
+                        visible = IsVisible,
+                        hwnd = new WindowInteropHelper(this).Handle.ToInt64()
                     }));
                 }
             }
@@ -135,14 +142,7 @@ public partial class MainWindow : Window
     {
         if (shuttingDown) return;
         Show(); WindowState = WindowState.Normal; Activate(); IsInTray = false; tray?.Hide();
-    }
-    private void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName != nameof(Model.GreenBackground) || character == null || shuttingDown) return;
-        // AllowsTransparency는 native 창 생성 뒤 변경할 수 없어 배경 모드 전환 시 방송창만 다시 만든다.
-        var previous = character;
-        double left = previous.Left, top = previous.Top; var state = previous.WindowState;
-        previous.Close(); var replacement = ShowCharacter(); replacement.Left = left; replacement.Top = top; replacement.WindowState = state;
+        if (AppPaths.QaFolder is { } folder) File.WriteAllText(Path.Combine(folder, "activated.json"), JsonSerializer.Serialize(new { visible = IsVisible, hwnd = new WindowInteropHelper(this).Handle.ToInt64() }));
     }
     /// <summary>작은 창은 공통 미리보기를 숨기고 탭을 넓힌다. 캐릭터 탭에서는 항상 미리보기를 볼 수 있다.</summary>
     private void UpdateResponsiveLayout()
@@ -167,7 +167,7 @@ public partial class MainWindow : Window
         if (character == null)
         {
             // Owner를 지정하지 않아 설정창 최소화가 방송창을 함께 숨기지 않게 한다. DataContext만 공유한다.
-            character = new CharacterWindow(opaque: Model.GreenBackground) { DataContext = Model };
+            character = new CharacterWindow() { DataContext = Model };
             character.Closed += (_, _) => character = null;
             character.Show();
         }

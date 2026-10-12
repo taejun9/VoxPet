@@ -155,3 +155,10 @@ ExpressionHotkeys는 설정창의 HwndSource에 RegisterHotKey(MOD_CONTROL|MOD_S
 AudioSession.ReadSnapshot은 fresh 숫자 측정과 단조 timestamp만 제공하며 무신호/250ms 초과/종료 입력은 null이다. 기존 ReadLevel의 무음 timeout 계약은 유지한다. MainViewModel은 UI tick에서 중복 timestamp를 제외하고 NoiseGateCalibration에 숫자만 전달한다. 3초 측정 후 추천은 직접 적용하며 취소/Stop/프리셋/종료에 폐기한다. 캡처 worker에 IO나 UI 대기를 추가하지 않는다. 추천 수식/경계는 [기능 조사](../product/user-feature-research.md)에 기록했다.
 
 MuteHotkey는 RegisterHotKey의 MOD_NOREPEAT로 Ctrl+Shift+M만 등록한다. 충돌 시 MainViewModel.HandleMuteKey가 두 창 안의 대체 입력을 처리하며 등록 성공한 키는 중복 처리하지 않는다. Shutdown/Closed는 키를 해제한다. 입 음소거는 기존 CharacterMuted와 같은 동작이며 PCM 캡처를 해제하지 않는다.
+
+
+## 의상과 창 수명 (plan019)
+
+Core CostumeProfile/CostumeStore는8분류·유한 배치·GUID 관리 원본/원자적 JSON을 소유한다. App CostumeViewModel은 UI 컬렉션/선택·착용·명시 저장을 관리하고 IO/이미지 디코딩을 worker로 보낸다. frozen 최대1024px 이미지로 렌더하며 비착용/비선택 이미지는 메모리에서 해제한다. 최대24착용/100보관이다. 캐릭터512 Canvas의 마지막 레이어에서 좌표/균일 크기를 공유하고 대기 이동과 함께 움직인다. 표정 PNG/오디오 계산은 변경하지 않는다.
+
+SingleInstance는 사용자SID와 세션 범위 Local mutex를 사용한다. 두 번째 일반 실행은 등록 native 메시지로 기존 설정창에 복원을 요청한 뒤0으로 종료한다. 첫 실행만 모델/장치/UI를 생성한다. 방송창은 항상 AllowsTransparency=true이며 GreenBackground 바인딩만 바꿔 HWND를 유지한다. WGC를 권장하며 이전 plan018의 non-layered BitBlt 호환 대신 사용자 요청인 창 유지·native alpha를 선택했다.

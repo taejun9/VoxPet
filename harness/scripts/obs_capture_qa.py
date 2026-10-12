@@ -2,6 +2,8 @@
 """Disposable Windows OBS QA: captures only synthetic VoxPet images, never audio/video recording."""
 from __future__ import annotations
 import argparse
+import ctypes
+from ctypes import wintypes
 import base64
 import hashlib
 import io
@@ -98,6 +100,34 @@ def get_valid_capture(rpc: ObsRpc, name: str, green: bool = True):
 
 def resource_sample(process: psutil.Process, started: float):
     return {'seconds': round(time.monotonic() - started, 2), 'rss': process.memory_info().rss, 'handles': process.num_handles()}
+
+
+def fixture_windows(pid: int):
+    user = ctypes.WinDLL('user32', use_last_error=True)
+    user.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+    user.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+    found = {}
+    callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+    def visit(hwnd, _):
+        owner = wintypes.DWORD(); user.GetWindowThreadProcessId(hwnd, ctypes.byref(owner))
+        if owner.value == pid:
+            title = ctypes.create_unicode_buffer(256); user.GetWindowTextW(hwnd, title, 256)
+            if title.value.startswith('VoxPet Character'): found['broadcast'] = int(hwnd)
+            elif title.value.startswith('VoxPet ·'): found['main'] = int(hwnd)
+        return True
+    user.EnumWindows(callback_type(visit), 0)
+    if set(found) != {'main', 'broadcast'}: raise RuntimeError('Synthetic windows not found')
+    return found
+
+
+def switch_fixture(pid: int, green: bool):
+    windows = fixture_windows(pid)
+    user = ctypes.WinDLL('user32', use_last_error=True)
+    user.SendMessageTimeoutW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM, wintypes.UINT, wintypes.UINT, ctypes.POINTER(ctypes.c_size_t)]
+    result = ctypes.c_size_t()
+    if not user.SendMessageTimeoutW(windows['main'], 0x8019, int(green), 0, 2, 3000, ctypes.byref(result)):
+        raise RuntimeError('Synthetic background switch timed out')
+    return windows['broadcast']
 
 
 # 시간을 두고 픽셀 hash를 비교해 이미지가 표시되지만 애니메이션이 정지한 실패도 확인한다.
@@ -204,7 +234,24 @@ def main() -> int:
         if not any(result.get('passed') for result in report['methods']):
             raise RuntimeError('No Window Capture method passed on this Windows renderer')
         passed_method = next(result['method'] for result in report['methods'] if result.get('passed'))
+        if args.background == 'green':
+            wgc = next((result for result in report['methods'] if result.get('method') == 'WGC' and result.get('passed')), None)
+            if wgc is None: raise RuntimeError('Fixed transparent HWND requires WGC capture')
+            passed_method = 'WGC'
         rpc.call('SetInputSettings', inputName=name, inputSettings={'method': 1 if passed_method == 'BitBlt' else 2}, overlay=True)
+        if args.background == 'green':
+            original_hwnd = switch_fixture(args.voxpet_pid, False)
+            time.sleep(1)
+            alpha_image, alpha_metrics = get_valid_capture(rpc, name, green=False)
+            alpha_image.save(args.output / 'same-window-transparent.png')
+            if alpha_metrics['transparent_ratio'] < .2: raise RuntimeError('Same source did not switch to transparent background')
+            restored_hwnd = switch_fixture(args.voxpet_pid, True)
+            time.sleep(1)
+            restored_image, restored_metrics = get_valid_capture(rpc, name)
+            restored_image.save(args.output / 'same-window-green.png')
+            if original_hwnd != restored_hwnd or fixture_windows(args.voxpet_pid)['broadcast'] != original_hwnd:
+                raise RuntimeError('Background switch replaced broadcast HWND')
+            report['same_window_switch'] = {'hwnd_preserved': True, 'source_recreated': False, 'transparent': alpha_metrics, 'green': restored_metrics}
         if args.long_run_minutes:
             if args.long_run_minutes < 60:
                 raise RuntimeError('Long-run evidence requires at least 60 measured minutes')

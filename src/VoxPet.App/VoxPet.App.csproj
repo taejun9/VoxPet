@@ -3,6 +3,7 @@
     <OutputType>WinExe</OutputType><TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><UseWindowsForms>true</UseWindowsForms><EnableWindowsTargeting>true</EnableWindowsTargeting>
     <AssemblyName>VoxPet</AssemblyName><Platforms>AnyCPU;x64</Platforms>
+    <ApplicationIcon>Assets/VoxPet.ico</ApplicationIcon>
     <Company>김태중</Company><Authors>김태중</Authors><Product>VoxPet</Product>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier><SelfContained>true</SelfContained><PublishSingleFile>true</PublishSingleFile>
@@ -13,6 +14,7 @@
     <ProjectReference Include="../VoxPet.Core/VoxPet.Core.csproj"/>
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1"/>
     <Resource Include="Assets/Characters/*.png"/>
+    <Resource Include="Assets/VoxPet.ico"/>
     <Content Include="Assets/Characters/manifest.json" CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="../../docs/distribution/*.txt" Exclude="../../docs/distribution/USER-GUIDE.txt" Link="Licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="../../docs/distribution/USER-GUIDE.txt" Link="USER-GUIDE.txt" CopyToOutputDirectory="PreserveNewest"/>

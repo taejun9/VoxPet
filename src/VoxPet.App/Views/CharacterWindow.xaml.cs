@@ -8,10 +8,9 @@ namespace VoxPet.App.Views;
 /// </summary>
 public partial class CharacterWindow : Window
 {
-    public CharacterWindow(bool opaque = false)
+    public CharacterWindow()
     {
         InitializeComponent();
-        AllowsTransparency = !opaque;
         SizeChanged += (_, e) =>
         {
             if (IsLoaded && DataContext is VoxPet.App.ViewModels.MainViewModel model)

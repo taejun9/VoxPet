@@ -17,7 +17,7 @@ git diff --check
 
 ## 확정한 빌드 환경
 
-게시자 메타데이터는 App csproj의 Company/Authors=김태중으로 지정한다. 이는 Authenticode 서명을 대체하지 않는다. `qa.ps1 -Publish`는 최종 단일 EXE의 CompanyName을 검사하고 실제 서명 상태/서명자/검증 여부를 `artifacts/test-results/publisher.json`에 기록한다. 기본 CI는 서명 인증서나 사용자 신뢰 저장소를 변경하지 않는다. 실사용 인증서 서명은 최종 publish 후 수행하며 개인 키/암호는 공개 Git/CI 증거로 보내지 않는다. [게시자 안내](../guides/installation.md#게시자-이름과-실행-경고)를 따른다.
+게시자 메타데이터는 App csproj의 Company/Authors=김태중으로 지정한다. 이는 Authenticode 서명을 대체하지 않는다. `qa.ps1 -Publish`는 최종 단일 EXE의 CompanyName을 검사하고 실제 서명 상태/서명자/검증 여부를 `artifacts/test-results/publisher.json`에 기록한다. 공용 배포는 unsigned이며 별도 personal-sign-qa.ps1이 일회용 runner 키로 개인 패키지를 서명한다. 해당 runner에만 임시 신뢰를 등록/제거하며 개인키는 내보내지 않는다. 사용자 신뢰 저장소는 변경하지 않는다. 실사용 인증서 서명은 최종 publish 후 수행하며 개인 키/암호는 공개 Git/CI 증거로 보내지 않는다. [게시자 안내](../guides/installation.md#게시자-이름과-실행-경고)를 따른다.
 
 | 항목 | 기획 기준 / 결정 상태 |
 |---|---|
@@ -115,4 +115,13 @@ plan016 ExpressionOrderTests는12종 기본값/기존 enum 숫자 호환/순열 
 
 plan018 `startup-qa.ps1`은 일회용 GitHub runner에서만 실행합니다. 일반 인수 없는 EXE를 별도 프로세스로10초씩 실행하여 fresh12/reversed12/이전3열 저장PNG/손상 상태/공용6얼굴을 확인하고 초기화 완료·선택·편집 가능·창 가시성·정상 종료·슬롯/순서 파일 불변을 검사합니다. 환경 VOXPET_QA_DATA_DIR은 GITHUB_ACTIONS=true 및 RUNNER_TEMP 내부에 한해서 임시 데이터 경로로 사용합니다. 사용자 실제 설정을 변경하지 않습니다. 기본 `qa.ps1 -Publish`에 포함됩니다.
 
-StartupTrayQa는 실제 WPF Selector의 임시 선택 해제/순서 변경과 트레이 메뉴·hide/restore/숨겨진 창 종료·데모 유지, native 초록 창의 non-layered 스타일과 모드 변경 크기/위치 유지, 최소 오류 로그의 메시지/경로 제외를 확인합니다. OBS QA는 설정창을 트레이로 숨긴 상태에서 별도 방송창을 캡처합니다. 실제 사용자 Shell 클릭/Windows11 GPU·물리 마이크 시험과 구분합니다.
+StartupTrayQa는 실제 WPF Selector의 임시 선택 해제/순서 변경과 트레이 메뉴·hide/restore/숨겨진 창 종료·데모 유지, plan019의 layered 방송창과 배경 변경 HWND·크기/위치 유지, 최소 오류 로그의 메시지/경로 제외를 확인합니다. OBS QA는 설정창을 트레이로 숨긴 상태에서 별도 방송창을 캡처합니다. 실제 사용자 Shell 클릭/Windows11 GPU·물리 마이크 시험과 구분합니다.
+
+
+## 의상·단일 실행·개인 서명 회귀
+
+plan019 CostumeTests/CostumeQa는8분류, 원자적 저장 실패/원본 보존, 관리 복사본/재시작/손상 복구, 한벌과 상하의 배타·겉옷/복수 장식 공존, 미세 위치·균일 크기·레이어 순서, 미리보기/방송 합성 픽셀을 검사한다. LayoutQa는6탭을4창크기에서 검사한다. startup-qa.ps1은 마지막 public6에서 실제 추가 EXE가0으로 종료하고 숨겨진 기존 HWND를 복원하는지 확인한다. 일반 시작은 mutex를 사용하고 smoke/OBS fixture는 격리 실행한다.
+
+개인 서명 하네스는 일회용 GitHub runner에만 실행한다. NonExportable 키를 생성해 복사된 최종 단일 EXE에 SHA256 서명하고 공개 CER만 내보낸다. 서명자 김태중/EXE 아이콘, 임시 Root 신뢰 후 Valid, 변조 HashMismatch, 서명된 EXE의5개 일반 시작 케이스를 검사한다. finally에서 임시 Root와 개인키를 제거한다. 공개 배포와 개인 서명 artifact를 구분한다. 개인 늘보군 PNG는 포함하지 않는다.
+
+OBS QA는 WGC 소스를 생성한 뒤 같은 HWND에서 초록→투명→초록 전환을 요청하고 소스를 다시 만들지 않은 캡처와 alpha를 확인한다. 일반 앱에는 QA 전환 메시지 hook이 없다. 고정 HWND를 위해 항상 투명 layered 창을 사용하므로 BitBlt 실패는 호환 제한으로 기록하고 WGC는 필수 통과다.

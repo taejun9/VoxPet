@@ -12,6 +12,7 @@ namespace VoxPet.App.ViewModels;
 /// <summary>두 창이 공유하는 frozen PNG와 표정·모션 상태. UI 스레드에서만 갱신한다.</summary>
 public sealed class CharacterViewModel : ObservableObject
 {
+    public System.Collections.ObjectModel.ObservableCollection<CostumeItemViewModel> CostumeLayers { get; internal set; } = [];
     private readonly Dictionary<ExpressionKind, ImageSource[,]> defaults = [];
     private ImageSource[,] sprites;
     private Dictionary<ExpressionKind, ImageSource[,]> personalDefaults = [];
