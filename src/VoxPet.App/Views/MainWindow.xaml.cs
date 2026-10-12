@@ -29,9 +29,9 @@ public partial class MainWindow : Window
     public Task Ready => ready.Task;
     public MainWindow(bool smoke = false) : this(smoke, SystemParameters.WorkArea) { }
     // 작업 영역 주입은 작은 화면의 시작 bounds를 실제 모니터 변경 없이 시험하기 위한 경로다.
-    internal MainWindow(bool smoke, Rect initialWorkArea)
+    internal MainWindow(bool smoke, Rect initialWorkArea, MainViewModel? model = null)
     {
-        Model = new(persistSettings: !smoke);
+        Model = model ?? new(persistSettings: !smoke);
         InitializeComponent(); DataContext = Model;
         Width = Math.Min(Width, Math.Max(MinWidth, initialWorkArea.Width - 32));
         Height = Math.Min(Height, Math.Max(MinHeight, initialWorkArea.Height - 32));
@@ -88,6 +88,8 @@ public partial class MainWindow : Window
                         initialized = true,
                         familyCount = Model.Character.DefaultExpressionCount,
                         mouthFrames = Model.Character.MouthFrameCount,
+                        characterId = Model.SelectedCharacter.Id,
+                        characterName = Model.Character.Name,
                         selectedStorageId = Model.Expressions.Selected.Index,
                         selectedPosition = Model.Expressions.Selected.Position,
                         canEdit = Model.Expressions.CanEdit,

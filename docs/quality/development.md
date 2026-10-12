@@ -75,6 +75,10 @@ Licenses/와 자산 manifest/USER-GUIDE.txt를 함께 배포한다. macOS에서�
 자체 포함 runtime의 보안 업데이트는 SDK 갱신과 앱 재배포로 적용한다.
 기본 PNG 재생성은 개발용 Pillow가 필요하다. 앱 실행/빌드에는 Pillow가 필요 없다.
 
+## 다섯 캐릭터 선택 회귀
+
+plan021 CharacterSelectionQa는 개인 자료 없이 합성 시트로 다섯 WPF 선택 항목, frozen 입/눈 상태, 두 창 공유, 누락/손상 시 선택 복구, 연속 선택의 최신 요청, 전체 표정 테스트 중 변경, 종료 중 읽기를 검사한다. LayoutQa는 캐릭터 선택 ComboBox와 안내까지4창크기에서 확인한다. startup-qa.ps1은 일반/서명 EXE의 펠리 ID 복원·종료 저장과 파일 누락/손상 복구를 추가 검사한다. 신규 실제 개인 PNG는 CI에 전송하지 않고 로컬 자산 검사와 개인 ZIP에만 포함한다. [캐릭터 목록](../product/character-library.md)을 따른다.
+
 ## 개인 캐릭터 Windows 합성 시험
 
 plan008의 smoke는 로컬 PNG 시트 불러오기/잘못된 파일 복구/행열 매핑과 정렬/프리셋/음소거를 마이크 없이 시험한다.

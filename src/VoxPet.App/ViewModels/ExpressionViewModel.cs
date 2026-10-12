@@ -280,6 +280,25 @@ public sealed class ExpressionViewModel : ObservableObject
         catch (Exception ex) when (Expected(ex)) { if (!closing) Status = "슬롯을 저장하지 못했습니다. 이름·파일·저장 공간을 확인하세요. 이전 저장값을 유지합니다."; }
         finally { gate.Release(); SetBusy(false); }
     }
+    internal void RestoreCharacter()
+    {
+        if (closing) return;
+        CancelTest(); ++revision; character.RestoreDefault();
+    }
+    /// <summary>캐릭터 변경과 표정 IO를 같은 gate/revision으로 직렬화해 테스트의 오래된 복원을 버린다.</summary>
+    internal async Task<bool> ChangeCharacterAsync(Func<Task<Action>> prepare)
+    {
+        if (closing) return false;
+        CancelTest(); long request = ++revision; await gate.WaitAsync();
+        try
+        {
+            if (closing || request != revision) return false;
+            var apply = await prepare();
+            if (closing || request != revision) return false;
+            apply(); return true;
+        }
+        finally { gate.Release(); }
+    }
     public async Task CloseAsync()
     {
         closing = true; CancelTest(); ++revision; SetBusy(true);

@@ -14,10 +14,29 @@ public sealed class SettingsTests : IDisposable
     // 왕복 저장과 함께 장치 ID·PCM·측정값 필드가 영구 파일에 포함되지 않는지 확인한다.
     public void SaveAndReloadPreservesAdjustmentsOnly()
     {
-        var settings = new UserSettings(new(NoiseGate: -35, NormalizeMin: -75, NormalizeMax: -15, Sensitivity: 1.7, AttackMs: 50, ReleaseMs: 200), false, false);
+        var settings = new UserSettings(new(NoiseGate: -35, NormalizeMin: -75, NormalizeMax: -15, Sensitivity: 1.7, AttackMs: 50, ReleaseMs: 200), false, false, "pelly");
         var store = new SettingsStore(FilePath); Assert.True(store.Save(settings)); Assert.Equal(settings, store.Load());
         var json = File.ReadAllText(FilePath);
         Assert.DoesNotContain("Device", json); Assert.DoesNotContain("Pcm", json); Assert.DoesNotContain("AudioLevel", json);
+        Assert.DoesNotContain(".png", json);
+    }
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"unknown\"")]
+    [InlineData("\"../private.png\"")]
+    public void InvalidCharacterPreservesOtherSettings(string id)
+    {
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(FilePath, "{\"Audio\":{\"Sensitivity\":1.7},\"Topmost\":false,\"CharacterId\":" + id + "}");
+        var loaded = new SettingsStore(FilePath).Load();
+        Assert.Equal(CharacterCatalog.DefaultId, loaded.CharacterId); Assert.Equal(1.7, loaded.Audio.Sensitivity); Assert.False(loaded.Topmost);
+    }
+    [Fact]
+    public void LegacySettingsUseExistingCharacter()
+    {
+        Directory.CreateDirectory(folder); File.WriteAllText(FilePath, "{\"Audio\":{\"Sensitivity\":1.7}}");
+        var loaded = new SettingsStore(FilePath).Load();
+        Assert.Equal(CharacterCatalog.DefaultId, loaded.CharacterId); Assert.Equal(1.7, loaded.Audio.Sensitivity);
     }
     [Theory]
     [InlineData("bad json")]

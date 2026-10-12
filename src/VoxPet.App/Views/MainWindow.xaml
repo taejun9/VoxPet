@@ -171,6 +171,9 @@
         <TabItem Header="캐릭터">
           <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Stretch" VerticalAlignment="Top">
             <StackPanel Width="440" Margin="0,12,0,0">
+              <TextBlock Text="캐릭터 선택" FontWeight="SemiBold" Margin="8,0,8,6"/>
+              <ComboBox x:Name="CharacterSelector" ItemsSource="{Binding Characters}" SelectedItem="{Binding SelectedCharacter}" DisplayMemberPath="Name" IsEnabled="{Binding CanChooseCharacter}" AutomationProperties.Name="캐릭터 선택" Margin="8,0,8,6"/>
+              <TextBlock Text="{Binding CharacterStatus}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="8,0,8,8"/>
               <TabControl Background="#111927" BorderThickness="0" Foreground="#DDE4F0" Padding="0">
                 <TabItem Header="미리보기">
                   <StackPanel Margin="8,12,8,0">
@@ -204,9 +207,9 @@
                   <StackPanel Margin="8,12,8,0">
                     <WrapPanel>
                       <Button Content="PNG 시트 불러오기" Command="{Binding ImportCharacterCommand}"/>
-                      <Button Content="기본 캐릭터" Command="{Binding DefaultCharacterCommand}"/>
+                      <Button Content="선택 캐릭터로 복원" Command="{Binding DefaultCharacterCommand}"/>
                     </WrapPanel>
-                    <TextBlock Text="{Binding CharacterStatus}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,0,0,16"/>
+                    <TextBlock Text="입3열 또는8열 × 눈2행의 투명 PNG 시트를 사용할 수 있습니다." TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,0,0,16"/>
                   </StackPanel>
                 </TabItem>
               </TabControl>

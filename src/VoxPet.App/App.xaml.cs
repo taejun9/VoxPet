@@ -190,6 +190,7 @@ public partial class App : Application
             await Task.Delay(100);
             if (closingWindow.IsVisible) failures++;
             await CharacterQa.RunAsync(main, Check);
+            await CharacterSelectionQa.RunAsync(Check);
             await ExpressionQa.RunAsync(main, Check);
             await DetailedCharacterQa.RunAsync(Check);
             await ExpressionManagementQa.RunAsync(main, Check);

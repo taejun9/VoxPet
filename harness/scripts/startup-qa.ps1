@@ -29,7 +29,7 @@ function New-Sheet([string]$File, [int]$Columns, [int]$Cell) {
 try {
     Add-Type -AssemblyName PresentationCore
     $env:DOTNET_BUNDLE_EXTRACT_BASE_DIR = Join-Path $root 'bundle'
-    foreach ($case in @('fresh12','restart-reversed12','legacy3-slot','corrupt-state','public6')) {
+    foreach ($case in @('fresh12','restart-reversed12','legacy3-slot','corrupt-state','restart-pelly','missing-character','corrupt-character','public6')) {
         $location = Join-Path $root $case; $data = Join-Path $location 'data'; $slots = Join-Path $data 'Expressions'
         New-Item -ItemType Directory -Path $slots -Force | Out-Null
         Copy-Item -LiteralPath $sourceExe -Destination (Join-Path $location 'VoxPet.exe')
@@ -43,6 +43,13 @@ try {
             }
         }
         $expectedId=0; $expectedFamily=if($case -eq 'public6'){6}else{12}; $expectedMouth=if($case -eq 'public6'){3}else{8}
+        $expectedCharacter='neulbo'
+        if ($case -in @('restart-pelly','missing-character','corrupt-character')) {
+            @{Audio=@{Sensitivity=1.7};Topmost=$false;CharacterId='pelly'} | ConvertTo-Json | Set-Content (Join-Path $data 'settings.json') -Encoding utf8
+            $pelly=Join-Path $characters '펠리.png'
+            if ($case -eq 'restart-pelly') { New-Sheet $pelly 3 128; $expectedFamily=1; $expectedMouth=3; $expectedCharacter='pelly' }
+            if ($case -eq 'corrupt-character') { 'broken PNG' | Set-Content $pelly -Encoding utf8 }
+        }
         $orderPath=Join-Path $slots 'order.json'; $slotPath=Join-Path $slots 'slot-1.json'
         if ($case -eq 'restart-reversed12') { @(11..0) | ConvertTo-Json -Compress | Set-Content $orderPath -Encoding utf8; $expectedId=11 }
         if ($case -eq 'legacy3-slot') {
@@ -69,7 +76,7 @@ try {
             throw ('Normal startup failed: '+$case)
         }
         $ready=Get-Content $readyPath -Raw | ConvertFrom-Json
-        if (-not $ready.initialized -or -not $ready.canEdit -or ($case -ne 'public6' -and -not $ready.visible) -or $ready.selectedStorageId -ne $expectedId -or $ready.selectedPosition -ne 0 -or $ready.familyCount -ne $expectedFamily -or $ready.mouthFrames -ne $expectedMouth) { throw ('Startup state mismatch: '+$case) }
+        if (-not $ready.initialized -or -not $ready.canEdit -or ($case -ne 'public6' -and -not $ready.visible) -or $ready.selectedStorageId -ne $expectedId -or $ready.selectedPosition -ne 0 -or $ready.familyCount -ne $expectedFamily -or $ready.mouthFrames -ne $expectedMouth -or $ready.characterId -ne $expectedCharacter) { throw ('Startup state mismatch: '+$case) }
         $duplicatePassed=$false
         if($case -eq 'public6') {
             if($ready.visible){throw 'Tray startup fixture did not hide'}
@@ -85,6 +92,9 @@ try {
         $hasWindow=$process.MainWindowHandle -ne 0
         if (-not $hasWindow -or -not $process.CloseMainWindow() -or -not $process.WaitForExit(8000) -or $process.ExitCode -ne 0) { throw ('Normal app graceful exit failed: '+$case) }
         $process=$null
+        $savedSettings=Get-Content (Join-Path $data 'settings.json') -Raw | ConvertFrom-Json
+        if ($savedSettings.CharacterId -ne $expectedCharacter) { throw ('Character selection save mismatch: '+$case) }
+        if ($case -in @('restart-pelly','missing-character','corrupt-character') -and ($savedSettings.Audio.Sensitivity -ne 1.7 -or $savedSettings.Topmost -ne $false)) { throw 'Character recovery lost unrelated audio/window settings' }
         if ($null -ne $beforeOrder -and (Get-FileHash $orderPath).Hash -ne $beforeOrder) { throw 'Startup changed existing order file' }
         if ($null -ne $beforeSlot -and (Get-FileHash $slotPath).Hash -ne $beforeSlot) { throw 'Startup changed existing slot file' }
         $cases.Add([ordered]@{case=$case;survivedSeconds=10;normalArguments=$true;ready=$ready;duplicateExitedAndRestoredSameWindow=$duplicatePassed;gracefulExit=$true;storedFilesPreserved=$true})
