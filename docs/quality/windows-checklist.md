@@ -280,3 +280,18 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 개인 ZIP32파일/100521104bytes/CRC·SHA256 3e9bcc0adcb4ee6a8b10783bd301016daa6d33edb0dcdd46ae659147c273f1bf, 기존16PNG byte-identical/이전ZIP·원본 보존. 개인PNG 공개 전송 없음. 증거 artifacts/qa/plan020/, 배포 artifacts/VoxPet-win-x64-motion-plan020.zip.
 
 손가락 새 작화/자동 관절 인식이 아니라 원본 팔·날개의 연속 변형과 native 소품이다. 머리 흔들림은 선택형, 입 장식 이동량은 수동 조절값이다. 큰 이동·확대의 왜곡은 손 영역/배치로 조정한다. 실제 개인PNG/Windows11 물리 마이크·키보드/사용자 GPU·다중 모니터 실기는 대상PC 항목이다.
+
+
+## plan023 전체 재시험과 실제 Windows 데스크톱 화면
+
+2026-10-12, 코드c7d2f0f의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38255728224)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38255728219), 정상 앱 동작이 동일한 main1939f3c의 [장시간 OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38252444387)를 다시 실행해 통과했다. plan023 앱 변경은 QA fixture/helper/CI guard뿐이며 renderer/audio/settings 정상 동작은 변경하지 않았다. 사용자는 GitHub Windows 화면 시험을 선택하고 개인 PNG 외부 전송을 거부했다.
+
+- Core177/177(macOS/Windows), locked restore/format/analyzer/Release 경고0·오류0·자체 포함 publish. 실제 WPF1346고유검사·실패0. 일반/서명 EXE 각각9개 시나리오 정상 종료와 재실행·선택·설정·단일 실행/트레이 복원 통과.
+- 실제 표시된 HWND 영역에서 desktop SRCCOPY|CAPTUREBLT로225장 수집. 기존 RenderTargetBitmap 검사와 별개이며 실패 시 대체하지 않았다. foreground HWND/색상/OS·bounds·PNG 크기/CRC/소스 기반 coverage 검사와225장 전수 직접 시각 검토를 모두 통과했다.
+- 설정7탭21페이지×4크기84장,12표정×3입×2눈72장과 설정창12장,5손동작×4시점20장,머리·입 장식6장,방송/트레이4장,5캐릭터 선택5장,설정 초기/재생성4장,일반/서명 실행18장. 공개 고양이/합성 시트/실제 ImportAsync로 읽은 합성 의상만 사용했다. 소매·손/몸통/머리 pivot/입+머리 상속은 기존 픽셀 위치 검사를 함께 유지했다.
+- 첫 실행38254012931은 수동으로 추가한 의상 fixture의 WearCommand 누락 때문에 종료에서 NullReferenceException이 발생했다. 실제 Wardrobe.ImportAsync 경로로 수정했고 전체 재실행으로 통과했다. 상한만 늘리거나 기존 검사를 제외하지 않았다.
+- OBS32.2.2 WGC·각7프레임 변화·초록 크로마/투명 native alpha·같은 HWND/소스 배경 전환 통과. 장시간10분 warmup 후60.05분 측정·RSS 증가-2.39MiB·핸들 증가-2·프레임 변화67회. 기준RSS50MiB/핸들50 이하 통과. BitBlt의 layered 캡처 실패는 기존 runner 제한으로 유지하며 WGC를 사용한다.
+- 배포 EXE 서명자 김태중/CI 임시 신뢰 Valid/변조 HashMismatch/공개 CER·개인키 미포함 확인. 로컬 개인16PNG의 SHA256/크기와 패키지 복사 바이트 일치. 새 ZIP32파일/100540586bytes·CRC 통과·SHA256 `648823cb71561877d8b66735862581a3ee3aa868f3cd456d511a046fc7de815f`. 이전 ZIP/원본 보존.
+- 로컬 증거: artifacts/qa/plan023/windows/gallery.html, windows/_temp/voxpet-screen-coverage.json, visual-review.json, obs-short-complete/, obs-long/, package-summary.json. 갤러리의225장 이름/해시를 시각 검토 기록에 보존했다.
+
+개인 PNG의 실제 Windows 모습·물리 마이크/권한/USB 제거·물리 키보드/Shell·실제 혼합 DPI/사용자 GPU는 이번 환경에서 시험하지 않았다. CI의 합성 자료/가짜 장치 결과로 해당 실기 합격을 주장하지 않는다. 개인 PNG는 외부 전송 없이 새 로컬 ZIP에만 동봉했다.

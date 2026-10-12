@@ -95,7 +95,7 @@ plan011의 ExpressionQa는 임시 저장소/메모리만 사용해 슬롯 JSON/�
 
 `VOXPET_QA_SHEET`를 지정한 실행은 슬롯 관리 복사본의 저장·재시작·원본 제거·손상 복구에도 그 개인 시트를 사용한다. 늘보군 평상/눈물 슬롯의 여섯 frozen 상태, 전환 시작/완료, 무음 blink·눈물과 두 창 공유를 검사하고 `voxpet-personal-expression-*.png`에 미리보기 및 초록/투명 방송창을 렌더한다. `voxpet-smoke-result.json`의 passedChecks/failedChecks로 개인 시험 실행 여부를 확인한다. 이 PNG는 개인 자료이므로 위 수집·보존·정리 절차를 동일하게 적용한다.
 
-자동 smoke 프로세스의 상한은 plan020부터 기본90초, 개인 시트 추가 시험은120초다. 시험 항목과 판정 기준은 동일하게 유지하며 추가 개인 시트 저장/모션/캡처 시간만 확보한다. 실제 사용자 앱 실행에는 이 상한을 적용하지 않는다.
+자동 smoke 프로세스의 상한은 plan023부터 기본180초, 개인 시트 추가 시험은210초다. 시험 항목과 판정 기준은 동일하게 유지하며 추가 개인 시트 저장/모션/캡처 시간만 확보한다. 실제 사용자 앱 실행에는 이 상한을 적용하지 않는다.
 
 ## 주변 소음·입 음소거 사용성 합성 시험
 
@@ -136,4 +136,13 @@ plan022 SettingsPersistenceQa는 가짜 장치/임시 저장소로 실제 WPF �
 
 ## 손동작·의상 연결 QA (plan020)
 
-HandMotionTests는 지연 간격/중복 입력/한 동작/시간 및 관절 유한값/예약 키·중복/캐릭터5종 기본 영역/구 의상 enum·연결 기본값/원자적 저장·손상 복구를 검사한다. HandMotionQa는 실제 WPF 합성 색상 표식의 중심점과 공유 관절 변환을 비교해 소매 이동·몸통 고정·머리/입 상속·0% 영향도를 확인하고5동작별 얼굴 보존을 검사한다. 임시 motion.json의 자동 저장/종료 flush/캐릭터별 재시작과 별도 HWND 등록 키 충돌·WM_HOTKEY·실제 합성 좌클릭·해제/재등록을 시험한다. LayoutQa는7탭과 새 하위 탭을4창크기에서 검사한다. 마이크/개인 PNG는 사용하지 않는다. 추가 시험에 맞춰 기본 smoke 상한90초/개인120초이며 통과 조건은 동일하다.
+HandMotionTests는 지연 간격/중복 입력/한 동작/시간 및 관절 유한값/예약 키·중복/캐릭터5종 기본 영역/구 의상 enum·연결 기본값/원자적 저장·손상 복구를 검사한다. HandMotionQa는 실제 WPF 합성 색상 표식의 중심점과 공유 관절 변환을 비교해 소매 이동·몸통 고정·머리/입 상속·0% 영향도를 확인하고5동작별 얼굴 보존을 검사한다. 임시 motion.json의 자동 저장/종료 flush/캐릭터별 재시작과 별도 HWND 등록 키 충돌·WM_HOTKEY·실제 합성 좌클릭·해제/재등록을 시험한다. LayoutQa는7탭과 새 하위 탭을4창크기에서 검사한다. 마이크/개인 PNG는 사용하지 않는다. 추가 시험에 맞춰 plan023부터 기본 smoke 상한180초/개인210초이며 통과 조건은 동일하다.
+
+
+## Windows 실제 데스크톱 화면 증거
+
+plan023은 기존 WPF RenderTargetBitmap 검사와 별도로 표시된 HWND 영역의 데스크톱 픽셀을 SRCCOPY|CAPTUREBLT로 수집한다. 가려짐 방지를 위해 캡처 동안만 Topmost/Activate를 적용하고 원래 Topmost를 복원한다. 빈/단색/화면 밖/foreground HWND 불일치는 실패이며 합성 렌더로 대체하지 않는다. 투명 창의 데스크톱 캡처는 뒤 창까지 합성된 화면이므로 native alpha 판정은 기존 OBS WGC 검사를 따른다.
+
+`ScreenSceneQa`는 공개 고양이와 실제 Wardrobe.ImportAsync로 읽은 합성 의상을 사용한다. 7탭21페이지×4창크기84장,12표정×3입×2눈72장과 설정창12장,5손동작×4시점20장,머리/입 연결6장,방송/트레이4장,선택5장,설정 초기/재생성4장,일반/서명9사례씩18장으로225장을 수집한다. `python3 harness/scripts/verify_screens.py <RUNNER_TEMP>`는 소스의 탭/표정 정의와 coverage·foreground·PNG 크기/CRC를 검사한다. 직접 시각 검토는 자동 검사와 별도 단계다.
+
+화면 증거는 GITHUB_ACTIONS=true와 RUNNER_TEMP가 있는 일회용 runner만 생성한다. 일반 시작 캡처에는 추가로 검증된 AppPaths.QaFolder와 VOXPET_QA_SCREEN_NAME이 필요하다. 정상 사용자 실행에는 화면 저장을 추가하지 않는다. 기본 workflow는 개인 PNG/실제 설정/음성 대신 공용·합성 자료만 사용한다.

@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -31,9 +31,9 @@ codex/plan-023-screen-retest / .worktree/plan-023-screen-retest. QA→단일 에
 ## Implementation Plan
 
 - [x] 실제 HWND/desktop pixels의 화면 캡처와 메타데이터/실패 증거 추가.
-- [ ] 기존 전체 WPF/일반 시작·서명/OBS 검사 재실행 및 화면 검토.
-- [ ] 모든 기존 테스트/화면 증거 목록과 합성·실기 구분 기록.
-- [ ] 검증된 새 ZIP/원본16PNG 보존·서명/CRC, 자체 리뷰/완료 Git 절차.
+- [x] 기존 전체 WPF/일반 시작·서명/OBS 검사 재실행 및 화면 검토.
+- [x] 모든 기존 테스트/화면 증거 목록과 합성·실기 구분 기록.
+- [x] 검증된 새 ZIP/원본16PNG 보존·서명/CRC, 자체 리뷰/완료 Git 절차.
 
 ## QA Plan
 
@@ -50,6 +50,7 @@ QA 이후 같은 에이전트 자체 리뷰. 실제 화면 캡처·합성 렌더
 | 2026-10-12 | 화면 장면의 의상도 실제 Wardrobe.ImportAsync 경로로 추가/착용 | 첫 화면 시험은 종료 시 수동 fixture 항목의 WearCommand 미설정으로 NullReferenceException/오류 UI 대기 발생. 제품 생성 경로로 전체 수명을 검증하도록 수정 |
 | 2026-10-12 | GitHub Windows 화면 시험/개인 PNG 로컬 보존 | 사용자 명시 선택. macOS에는 Windows 화면 연결 없음 |
 | 2026-10-12 | 표시된 앱 HWND의 실제 데스크톱 픽셀 캡처, 기존 RenderTargetBitmap 결과 병행 | 사용자 요청 실제 화면 검증과 이전 자동 렌더 검사 구분 |
+| 2026-10-12 | 장시간 OBS는 main1939f3c, 화면·배포는 c7d2f0f에서 시험 | diff 확인 결과 plan023의 앱 변경은 QA 전용 helper/guard/fixture뿐이며 정상 renderer/audio/settings 동작은 동일 |
 | 2026-10-12 | 장시간 OBS60분 측정도 다시 실행 | 사용자가 모든 테스트 재실행을 명시 |
 
 ## Progress Log
@@ -58,7 +59,9 @@ QA 이후 같은 에이전트 자체 리뷰. 실제 화면 캡처·합성 렌더
 |---|---|---|
 | 2026-10-12 | 제작 | desktop SRCCOPY/CAPTUREBLT와 foreground HWND/색상/PNG CRC/모든 장면 coverage, 일반/서명 실행 화면, 표정·손·의상/머리·입 장면 추가. 기존 기능 검사/개인 자료 경계 유지. 장시간 OBS38252444387 실행 시작 |
 | 2026-10-12 | 지도 | main1939f3c clean/origin 동기화, macOS 화면 inventory 확인. 사용자 CI 방식/개인 PNG 외부 전송 금지 답변 반영 |
+| 2026-10-12 | 검증 | Windows38255728224 Core177/WPF1346·서명/일반9사례씩·실제 화면225장 전수 시각 검토 통과. 첫 fixture 종료 오류 수정 후 전체 재실행. short OBS38255728219 통과. 장시간 결과는 다음 행 참조 |
+| 2026-10-12 | 심사 | long OBS38252444387 60.048분/RSS-2506752bytes/핸들-2/프레임67회 통과. QA 후 자체 리뷰/ZIP32파일 CRC·서명/16PNG byte-identical 확인 |
 
 ## Completion Notes
 
-진행 중. 기존 배포와 개인 자산을 보존하며 새 Windows 화면 증거를 수집한다.
+전체 QA/225장 전수 시각 검토/QA 이후 자체 리뷰 통과. 장시간 OBS 60.05분 측정·RSS 증가-2.39MiB·핸들 증가-2·프레임 변화67회. 새 개인 ZIP32파일·CRC/SHA256/서명·기존16PNG 바이트 보존 통과. Windows/short OBS는 c7d2f0f, long OBS는 동일 정상 동작 main1939f3c. 개인 PNG/물리 장치 실기는 별도 범위로 기록했다. main ff-only 통합/push 후 일반 branch-d/worktree 제거 절차를 수행한다.
