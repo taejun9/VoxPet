@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -37,11 +37,11 @@ QA→자체 리뷰→completed/리뷰 미러→main 병합/push→branch-d→wor
 
 ## Implementation Plan
 
-- [ ]8분류 의상 보관함/합성/배치/저장·복구/세부 UI.
-- [ ] 단일 실행과 기존 창/트레이 복원.
-- [ ] 고정 방송창 배경 전환 및 OBS 캡처 검증.
-- [ ] 실행/트레이 아이콘과 개인 서명·인증서 설치 안내.
-- [ ] Core/Windows 일반 시작·WPF/OBS·서명 QA,개인 ZIP,리뷰/Git 수명.
+- [x] 8분류 의상 보관함/합성/배치/저장·복구/세부 UI.
+- [x] 단일 실행과 기존 창/트레이 복원.
+- [x] 고정 방송창 배경 전환 및 OBS 캡처 검증.
+- [x] 실행/트레이 아이콘과 개인 서명·인증서 설치 안내.
+- [x] Core/Windows 일반 시작·WPF/OBS·서명 QA,개인 ZIP,리뷰/Git 수명.
 
 ## QA Plan
 
@@ -68,7 +68,18 @@ QA 이후 동일 에이전트 자체 리뷰. 저장 소유권·이미지 메모�
 | date | role | note |
 |---|---|---|
 | 2026-10-12 | 지도 | main clean/동기화 및 plan019 격리. 기존 CharacterView/방송창 재생성/트레이/메타데이터·QA 경로 확인 |
+| 2026-10-12 | 제작 |8분류 의상/로컬 관리 저장·동일 renderer 합성, 단일 실행, 고정 HWND, native icon 및 개인 서명 하네스 구현 |
+| 2026-10-12 | 검증 | Core151/WPF844, 일반 unsigned/signed 각5사례·중복 복원, OBS 동일 창/소스·alpha, 실제 서명/변조/아이콘 및 개인ZIP 통과 |
+| 2026-10-12 | 심사 | QA 이후 같은 에이전트 자체 리뷰. 미해결 기능 결함 없음, WGC·수동 개인 신뢰/대상PC 실기 한계 기록 |
 
 ## Completion Notes
 
-로컬 Release 빌드 경고0/오류0·Core151통과. OBS38199786112 통과: WGC 초록/크로마·투명 native alpha65.08%·같은 HWND 배경 왕복/소스 유지. BitBlt 유효 프레임 없음 제한. Windows38199786043: Core151·일반5시작/중복실행·의상20검사 통과. 새2 ComboBox 선택/팝업 글씨16검사 실패를 명시 Black DataTemplate으로 수정. 실제 착용 항목/60자 이름을 레이아웃 시험에 추가해 재검증 중. 개인 서명은 대상PC에서 인증서 신뢰를 직접 등록해야 하며 SmartScreen 경고 제거를 보장하지 않는다.
+코드73c4b34의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38200870611) 통과: locked restore/format/analyzer/Release/publish 경고0·오류0, Core151/151, WPF844고유검사 실패0.8분류/복수 장식/한벌 배타·겉옷 공존/비율 크기·미세 좌표·레이어/관리 복사본/저장·재시작·손상 복구/원본 보존 및6탭×4크기 실제 항목·60자 이름 배치 검증. 일반 인수 없는 unsigned와 signed EXE 각각5사례×10초 유지/정상 종료/기존 슬롯·순서 불변, 중복 실행0종료·기존 트레이 HWND 복원.
+
+[OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38200259371) 통과: OBS32.2.2/Server2025 build26100/Basic Render Driver/WGC 초록·크로마·7프레임 변화·native alpha65.08%. 같은 HWND와 같은 소스에서 초록→투명→초록을 캡처했다. BitBlt는 유효 프레임 없음 제한을 명시했다. OBS 확인 코드41692f8 이후 src 변경 없음.
+
+김태중 실제 Authenticode 서명자, 신뢰 전 UnknownError/일회용 CI LocalMachine Root 신뢰 후 Valid/변조 HashMismatch를 검사했다. finally에서 해당 지문의 Root/개인키 삭제. 공개 CER만 제공하며 인증기관 신원 검증이 아니다. EXE PE에 자체 아이콘7해상도 payload가 원본 ICO와 일치함을 확인했다. 사용자PC 신뢰 등록은 수동이고 실제 게시자 화면·SmartScreen 경고 제거는 보장하지 않는다.
+
+첫 Windows38199786043에서 새2 ComboBox의 선택/팝업 글씨16검사 실패를 재현하고 Black DataTemplate으로 수정했다. Windows38200259395는 WPF844·실패0이나 CurrentUser Root의 확인 UI 대기로 추정되어 서명 단계에서 취소했다. LocalMachine CI 전용 Root/단계 로그/5분 상한으로 수정한 최종 실행에서 전체 통과했다.
+
+개인 ZIP artifacts/VoxPet-win-x64-neulbo-plan019.zip:27파일/93,271,126bytes/CRC 통과, SHA256 a08844c8aa7c317d6fb1a7b90b46864eb2738baa178b77159cad31b7ce9ce291. 기존12PNG/원본 SHA256·이전ZIP 보존. 실제 개인PNG는 CI로 보내지 않았다. 증거 artifacts/qa/plan019/. QA 이후 동일 에이전트 자체 리뷰 완료. 실제 사용자 Windows11 GPU/물리마이크·Shell/개인 인증서 설치는 별도 실기 항목이다.

@@ -17,7 +17,7 @@ try {
     $untrusted = Get-AuthenticodeSignature -LiteralPath $exe
     $name = $untrusted.SignerCertificate.GetNameInfo([Security.Cryptography.X509Certificates.X509NameType]::SimpleName, $false)
     if ($name -cne '김태중' -or $untrusted.SignerCertificate.Thumbprint -ne $certificate.Thumbprint) { throw 'Personal signer mismatch' }
-    # 신뢰 설치는 이 일회용 QA 계정에만 수행한다. 사용자 PC에는 설치 스크립트를 제공하지 않는다.
+    # 신뢰 설치는 이 일회용 QA 컴퓨터에만 수행한다. 사용자 PC에는 설치 스크립트를 제공하지 않는다.
     Write-Host 'Personal signature QA: temporarily trust certificate on disposable machine'
     Import-Certificate -FilePath $cer -CertStoreLocation 'Cert:\LocalMachine\Root' | Out-Null
     $trusted = $true

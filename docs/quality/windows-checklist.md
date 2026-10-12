@@ -227,3 +227,17 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 증거 artifacts/qa/plan018/repro/, windows/, obs/, summary.json. 개인 ZIP artifacts/VoxPet-win-x64-neulbo-plan018.zip은 기존12PNG/원본 해시를 유지하며 기존ZIP을 보존한다.
 
 실제 사용자 Windows11 GPU/OBS 설정/개인PNG 화면/물리Shell·마이크는 별도 환경이다. 이번 일반 시작 재현의 원인은 PNG 그림 내용과 무관한 Selector null 처리임을 확인했다. 게시자 회사 정보는 김태중이며 기본 EXE는 NotSigned이고 개인PC 서명 안내를 동봉한다.
+
+
+## plan019 의상·단일 실행·고정 HWND·개인 게시자
+
+2026-10-12 코드73c4b34의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38200870611), 앱 src 동일41692f8의 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38200259371) 통과.
+
+- Core151/151·Release 경고0/오류0·locked restore/format/analyzer/publish. WPF844고유검사·실패0.8분류 관리 복사/추가·착용·명시 저장/미세XY·균일 크기·레이어/재시작·손상 복구·원본 보존. 한벌과 상하의 배타·겉옷/복수 얼굴·귀걸이 공존.6탭×4창크기 실제 항목·60자 이름/검정 선택·팝업 글씨/페이지 스크롤 없음.
+- 일반 unsigned와 signed EXE 각각5사례×10초/정상 종료/슬롯·순서 보존, 추가 실행0종료/기존 tray HWND 복원. 트레이/창/모션 수명·native resize 회귀 유지.
+- OBS32.2.2/Server2025 build26100/Basic Render Driver: WGC 초록/크로마·투명 native alpha65.08%/7프레임 변화. 같은 source/같은 HWND에서 배경 왕복 통과. 고정 HWND의 always-layered 방식에서는 BitBlt 유효 프레임 없음. WGC를 명시한다.
+- 실제 서명자 김태중, 신뢰 전 UnknownError/CI 임시 LocalMachine Root 신뢰 후 Valid/변조 HashMismatch, 서명된 단일 EXE 정상 실행. 해당 Root/개인키는 finally 정리하고 공개 CER만 제공. EXE 아이콘7해상도 payload 일치. 대상 개인PC의 신뢰 등록은 수동이며 인증기관 신원 확인/SmartScreen 평판과 구분한다.
+- 첫 신규 ComboBox 글씨16실패를 수정/재검증했다. 중간 WPF844 통과 실행은 CurrentUser Root의 확인 UI 대기 추정으로 취소하고 CI LocalMachine Root/단계 로그/상한으로 수정해 전체 통과했다.
+- 개인ZIP27파일/93,271,126bytes/CRC·이전12PNG/원본 해시 일치. 기존ZIP 보존. 개인PNG 공개 전송 없음. 증거 artifacts/qa/plan019/, 패키지 artifacts/VoxPet-win-x64-neulbo-plan019.zip. QA 이후 같은 에이전트 자체 리뷰.
+
+실제 사용자 Windows11 GPU/마이크·물리Shell/개인PNG 화면·인증서 수동 설치와 실제 실행 경고는 별도 실기다. 자동 검사 합격을 사용자PC 경고가 제거된 결과로 표현하지 않는다.
