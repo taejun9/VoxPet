@@ -129,3 +129,7 @@ plan019 CostumeTests/CostumeQa는8분류, 원자적 저장 실패/원본 보존,
 개인 서명 하네스는 일회용 GitHub runner에만 실행한다. NonExportable 키를 생성해 복사된 최종 단일 EXE에 SHA256 서명하고 공개 CER만 내보낸다. 서명자 김태중/EXE 아이콘, 임시 Root 신뢰 후 Valid, 변조 HashMismatch, 서명된 EXE의5개 일반 시작 케이스를 검사한다. finally에서 임시 Root와 개인키를 제거한다. 공개 배포와 개인 서명 artifact를 구분한다. 개인 늘보군 PNG는 포함하지 않는다.
 
 OBS QA는 WGC 소스를 생성한 뒤 같은 HWND에서 초록→투명→초록 전환을 요청하고 소스를 다시 만들지 않은 캡처와 alpha를 확인한다. 일반 앱에는 QA 전환 메시지 hook이 없다. 고정 HWND를 위해 항상 투명 layered 창을 사용하므로 BitBlt 실패는 호환 제한으로 기록하고 WGC는 필수 통과다.
+
+## 마지막 설정 자동 저장·재실행 QA
+
+plan022 SettingsPersistenceQa는 가짜 장치/임시 저장소로 실제 WPF 창2회 생성·닫기, 자동 저장/종료 flush, 설정창 정상 bounds와 최대화·최소화/트레이, 방송창 크기/좌표/재열기·닫음·TwoWay 바인딩, 마지막 마이크와 목록 순서/분리/재연결·빈 목록, 음소거/탭/저장 슬롯·내장 얼굴과 임시 전체 테스트, 쓰기 실패/이전 파일 보존·재시도를 검사한다. 실제 입력 factory 호출0을 확인한다. startup-qa.ps1의 restart-settings는 일반/서명 EXE 프로세스에서도 크기/열림/음소거/탭/표정/마이크 선호 복원을 확인한다. Core는 새 필드 왕복/이전 설정/필드 복구 및 음수 모니터·분리/작업 영역·DIP 배율을 검사한다. 실제 mixed-DPI 다중 모니터/물리 마이크는 실기 대상이다.

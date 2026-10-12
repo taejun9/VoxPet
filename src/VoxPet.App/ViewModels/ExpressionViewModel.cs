@@ -84,6 +84,7 @@ public sealed class ExpressionViewModel : ObservableObject
     public AsyncCommand ImportCommand { get; }
     public RelayCommand BuiltinCommand { get; }
     public event Func<string?>? ChooseSheet;
+    public event Action<int?, ExpressionKind?>? AppearanceSelected;
 
     public ExpressionViewModel(CharacterViewModel character, bool persistent, string? folder = null)
     {
@@ -103,7 +104,7 @@ public sealed class ExpressionViewModel : ObservableObject
         ImportCommand = new(ImportAsync, () => CanEdit);
         BuiltinCommand = new(() => { Selected.UseBuiltin(); Status = "내장 표정을 선택했습니다. 미리보기 후 저장하세요."; }, () => CanEdit);
     }
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(int? slotId = null, ExpressionKind? builtin = null)
     {
         if (!persistent) return;
         SetBusy(true); await gate.WaitAsync();
@@ -115,7 +116,8 @@ public sealed class ExpressionViewModel : ObservableObject
             ApplyOrder(loaded.Order);
         }
         finally { gate.Release(); SetBusy(false); }
-        await ActivateAsync(0);
+        if (builtin is { } kind) await PreviewBuiltinAsync((int)kind);
+        else await ActivateAsync(slotId is { } id ? Slots.FirstOrDefault(slot => slot.Index == id)?.Position ?? 0 : 0);
     }
     private void RefreshMoves() { MoveUpCommand.Refresh(); MoveDownCommand.Refresh(); }
     private void ApplyOrder(IReadOnlyList<int> order)
@@ -154,7 +156,7 @@ public sealed class ExpressionViewModel : ObservableObject
         try
         {
             if (closing || request != revision) return;
-            character.Apply(ExpressionProfile.Default(index)); Status = $"{ExpressionProfile.Default(index).Name} · 기본 표정 미리보기";
+            character.Apply(ExpressionProfile.Default(index)); AppearanceSelected?.Invoke(null, (ExpressionKind)index); Status = $"{ExpressionProfile.Default(index).Name} · 기본 표정 미리보기";
         }
         finally { gate.Release(); }
     }
@@ -214,7 +216,7 @@ public sealed class ExpressionViewModel : ObservableObject
             var slot = Slots[index]; var profile = slot.Saved;
             var sheet = !persistent && profile.SheetId != null && memorySheets.TryGetValue(slot.Index, out var cached) ? cached : await LoadSheetAsync(profile);
             if (closing || request != revision) return;
-            character.Apply(profile, sheet); Selected = slot;
+            character.Apply(profile, sheet); Selected = slot; AppearanceSelected?.Invoke(slot.Index, null);
             Status = $"{slot.Label} · 표정 전환 완료";
         }
         catch (Exception ex) when (Expected(ex))
@@ -232,7 +234,7 @@ public sealed class ExpressionViewModel : ObservableObject
             slot.Draft.Validate();
             var sheet = slot.DraftSheet ?? (!persistent && slot.Draft.SheetId != null && memorySheets.TryGetValue(slot.Index, out var cached) ? cached : await LoadSheetAsync(slot.Draft));
             if (closing || request != revision) return;
-            character.Apply(slot.Draft, sheet); Status = "편집한 표정 미리보기 · 단축키에 반영하려면 저장하세요.";
+            character.Apply(slot.Draft, sheet); AppearanceSelected?.Invoke(slot.Index, null); Status = "편집한 표정 미리보기 · 단축키에 반영하려면 저장하세요.";
         }
         catch (Exception ex) when (Expected(ex)) { if (!closing) Status = "미리보기에 실패했습니다. 이름과 PNG 시트를 확인하세요. 현재 표정을 유지합니다."; }
         finally { gate.Release(); SetBusy(false); }
@@ -275,7 +277,7 @@ public sealed class ExpressionViewModel : ObservableObject
             }
             slot.MarkSaved(saved);
             if (closing || request != revision) return;
-            character.Apply(saved, rendered); Status = $"{slot.Label} · {(persistent ? "로컬 저장 완료 · 다음 실행에도 유지됩니다." : "QA 메모리 저장 완료")}";
+            character.Apply(saved, rendered); AppearanceSelected?.Invoke(slot.Index, null); Status = $"{slot.Label} · {(persistent ? "로컬 저장 완료 · 다음 실행에도 유지됩니다." : "QA 메모리 저장 완료")}";
         }
         catch (Exception ex) when (Expected(ex)) { if (!closing) Status = "슬롯을 저장하지 못했습니다. 이름·파일·저장 공간을 확인하세요. 이전 저장값을 유지합니다."; }
         finally { gate.Release(); SetBusy(false); }
@@ -283,7 +285,7 @@ public sealed class ExpressionViewModel : ObservableObject
     internal void RestoreCharacter()
     {
         if (closing) return;
-        CancelTest(); ++revision; character.RestoreDefault();
+        CancelTest(); ++revision; character.RestoreDefault(); AppearanceSelected?.Invoke(null, ExpressionKind.Neutral);
     }
     /// <summary>캐릭터 변경과 표정 IO를 같은 gate/revision으로 직렬화해 테스트의 오래된 복원을 버린다.</summary>
     internal async Task<bool> ChangeCharacterAsync(Func<Task<Action>> prepare)
@@ -295,7 +297,7 @@ public sealed class ExpressionViewModel : ObservableObject
             if (closing || request != revision) return false;
             var apply = await prepare();
             if (closing || request != revision) return false;
-            apply(); return true;
+            apply(); AppearanceSelected?.Invoke(null, ExpressionKind.Neutral); return true;
         }
         finally { gate.Release(); }
     }

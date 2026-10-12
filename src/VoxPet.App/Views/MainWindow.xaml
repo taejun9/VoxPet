@@ -44,7 +44,7 @@
           </StackPanel>
         </Grid>
       </Border>
-      <TabControl x:Name="SettingsTabs" Grid.Column="2" Background="#111927" BorderThickness="0" Foreground="#DDE4F0" Padding="0" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+      <TabControl x:Name="SettingsTabs" SelectedIndex="{Binding SettingsTab, Mode=TwoWay}" Grid.Column="2" Background="#111927" BorderThickness="0" Foreground="#DDE4F0" Padding="0" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
         <TabItem Header="마이크">
           <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Stretch" VerticalAlignment="Top">
             <StackPanel Width="440" Margin="0,12,0,0">
@@ -371,7 +371,12 @@
       </TabControl>
     </Grid>
     <Border x:Name="StatusCard" Grid.Row="2" Background="#1B2738" CornerRadius="10" Padding="14" Margin="0,16,0,0">
-      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="48" FontSize="12" ToolTip="{Binding Status}"/>
+      <StackPanel>
+        <TextBlock Text="{Binding Status}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="48" FontSize="12" ToolTip="{Binding Status}"/>
+        <TextBlock Text="{Binding SettingsStatus}" TextWrapping="Wrap" MaxHeight="48" FontSize="11" Foreground="#F2C48D">
+          <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding SettingsStatus}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+        </TextBlock>
+      </StackPanel>
     </Border>
   </Grid>
 </Window>

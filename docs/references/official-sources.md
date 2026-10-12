@@ -32,6 +32,8 @@
 | Microsoft Fix Microphone Problems | https://support.microsoft.com/en-us/windows/hardware/drivers/fix-microphone-problems | 입력 장치·볼륨 | 2026-10-06 | Windows 소리 설정의 입력 선택과 입력 볼륨 |
 | Microsoft 파일 압축 및 압축 해제 | https://support.microsoft.com/ko-kr/windows/experience/storage-filemanagement/zip-and-unzip-files | ZIP 압축 풀기 | 2026-10-06 | 초보자 설치 안내의 마우스 오른쪽 메뉴·전체 추출 |
 | Microsoft 32-bit and 64-bit Windows FAQ | https://support.microsoft.com/en-gb/windows/experience/compatibility/32-bit-and-64-bit-windows-frequently-asked-questions | 컴퓨터 종류 확인 | 2026-10-06 | 설정 → 시스템 → 정보의 시스템 종류 확인 경로 |
+| Microsoft GetWindowRect | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getwindowrect | 창 위치 저장 | 2026-10-12 | DPI 가상화된 native 화면 좌표와 resize 경계를 그대로 저장/복원 |
+| Microsoft SetWindowPos | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos | 창 위치 복원 | 2026-10-12 | NOSIZE/NOZORDER/NOACTIVATE로 위치만 이동하고 WPF DIP 크기/바인딩 유지 |
 
 ## 남은 근거와 실기 확인
 
