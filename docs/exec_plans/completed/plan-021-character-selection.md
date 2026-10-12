@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -40,8 +40,8 @@ QA → 자체 리뷰 → completed 이동/리뷰 미러 → main 병합/push →
 - [x] 다섯 항목의 안정적인 ID와 로컬 캐릭터 카탈로그/선택 저장 구현
 - [x] imagegen으로 네 첨부의 투명 배경 3열×2행 반응 시트 준비, 펠리 측면 유지
 - [x] 캐릭터 탭 선택 UI, 비동기 전환과 실패 복구, 표정 테스트와의 전환 경합 처리
-- [ ] 선택/설정 호환 Core 검사와 Windows 합성 QA, 문서/개인 패키지 갱신
-- [ ] QA 후 자체 리뷰와 Git 수명 완료
+- [x] 선택/설정 호환 Core 검사와 Windows 합성 QA, 문서/개인 패키지 갱신
+- [x] QA 후 자체 리뷰와 완료 기록 준비
 
 ## QA Plan
 
@@ -68,10 +68,18 @@ QA 이후 단일 에이전트 자체 리뷰: 다섯 이름/순서와 측면 펠�
 | date | role | note |
 |---|---|---|
 | 2026-10-12 | 지도 | 저장소/QA/설정/기본 PNG 경로 확인. 첫 fetch는 sandbox에서 FETCH_HEAD 쓰기 제한으로 실패, 승인 실행으로 성공. 원격과 main 일치. |
+| 2026-10-12 | 검증 | 최종 Windows Core160/WPF910·실패0, 일반/서명 각8사례, OBS WGC/alpha/동일 창·소스 전환 통과. |
+| 2026-10-12 | 심사 | 자체 리뷰의 가독성/종료 경합 수정 확인, 미해결 차단 사항 없음. 개인 실제 Windows 실기는 별도. |
+| 2026-10-12 | 정리 | 개인 ZIP32파일/CRC/서명·PNG 해시 확인, 완료 계획과 리뷰 미러 작성. |
+
 
 ## Completion Notes
 
-구현과 QA 진행 중. macOS에서 WPF 실행은 불가능하므로 Windows 합성 QA 결과와 실기 제한을 별도 기록한다.
+최종 코드 bc20ca0의 Windows QA38232965708 및 OBS QA38232965718 성공. Core160/160, WPF910고유검사 실패0. 실제 ComboBox/두 창 공유/연속 선택/전체 테스트 취소/손상·누락/지연 마이크 Stop 중 종료 적용 차단을 확인했다. 일반 및 김태중 자체 서명 EXE 각각8개 시작·종료 사례, 펠리 ID 저장/복원 및 누락·손상 늘보군 복구, 기존 슬롯/순서 불변 통과.
+
+최종 개인 ZIP: artifacts/VoxPet-win-x64-characters-plan021.zip (32파일,100469367bytes), CRC와 파일 SHA256/서명자/공개 인증서 대조 성공. 기존12PNG를 byte-identical로 보존하고 신규4RGBA/24셀을 로컬 검사했다. 이미지/원본/프롬프트는 Git/공개 CI에 넣지 않았다. 생성에는 내장 image_gen을 사용했다.
+
+QA 후 자체 리뷰의 ComboBox 가독성과 종료 순서 경합을 수정해 재검증했다. 신규4종은 평상3입×2눈이며 별도12표정 얼굴은 제공하지 않는다. 실제 사용자 Windows11의 개인 그림/물리 마이크/GPU/OBS 실기는 대상PC에서 확인한다. BitBlt는 기존 layered 창 호환 제한이며 WGC를 사용한다. README와 다른 진행 worktree를 보존했다. 완료 기록을 포함한 브랜치를 main에 fast-forward 병합/push하고 로컬 브랜치/worktree를 정상 정리하는 Git 수명 절차를 따른다.
 
 ### 초기 QA 기록
 
