@@ -26,7 +26,7 @@ internal static class CostumePresets
                 d.PushTransform(new TranslateTransform(x, y)); d.PushTransform(new ScaleTransform(size, size));
                 Path("M0,-18 L5,-6 L18,-5 L8,4 L11,17 L0,10 L-11,17 L-8,4 L-18,-5 L-5,-6 Z", Brushes.Gold); d.Pop(); d.Pop();
             }
-            double headX = side ? 318 : 256, eyeY = human ? 155 : side ? 166 : 205;
+            double headX = side ? 290 : 256, eyeY = human ? 210 : side ? 170 : 205;
             double bodyTop = rig.HeadCutY + 12, bodyBottom = human ? 385 : side ? 414 : 438;
             double left = rig.Left.X + rig.Left.Width * .7, right = rig.Right.X + rig.Right.Width * .3;
             void Shirt(bool coat, bool dress)
@@ -62,7 +62,7 @@ internal static class CostumePresets
                     }
                     break;
                 case CostumeCategory.FaceDecoration:
-                    double ribbonY = side ? 242 : human ? 200 : 283, ribbonX = side ? 320 : 256;
+                    double ribbonY = side ? 242 : human ? 246 : 283, ribbonX = side ? 290 : 256;
                     d.PushTransform(new TranslateTransform(ribbonX, ribbonY));
                     Path("M0,0 C-55,-35 -52,29 -7,7 Z M0,0 C55,-35 52,29 7,7 Z", fabric); d.DrawEllipse(Brushes.Gold, outline, new Point(0, 0), 8, 8); d.Pop(); break;
                 case CostumeCategory.Earrings:

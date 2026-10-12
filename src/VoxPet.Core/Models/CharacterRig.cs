@@ -16,7 +16,7 @@ public sealed record CharacterRig(double HeadCutY, LimbRegion Left, LimbRegion R
     public static CharacterRig Default(string id) => id switch
     {
         "builtin" => new(300, new(155, 300, 90, 70), new(270, 300, 90, 70)),
-        "neulbo-man" or "neulbo-girl" => new(214, new(170, 240, 66, 136), new(336, 240, 66, 136)),
+        "neulbo-man" or "neulbo-girl" => new(260, new(150, 282, 74, 115), new(298, 282, 74, 115)),
         "drawing-neulbo" => new(310, new(134, 325, 58, 130), new(330, 325, 58, 130)),
         "pelly" => new(242, new(100, 264, 50, 130, false), new(312, 264, 148, 150)),
         _ => new(285, new(62, 290, 96, 148), new(354, 290, 96, 148))
