@@ -48,6 +48,12 @@ internal static class LayoutQa
         using var file = File.Create(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), name));
         encoder.Save(file);
     }
+    private static bool InsideTextInput(DependencyObject element)
+    {
+        for (DependencyObject? parent = element; parent != null; parent = VisualTreeHelper.GetParent(parent))
+            if (parent is TextBox) return true;
+        return false;
+    }
     public static async Task RunAsync(MainWindow main, Action<bool, string> check)
     {
         var cases = new List<object>();
@@ -93,7 +99,8 @@ internal static class LayoutQa
                         if (!visible) invisible.Add(label);
                     }
                     check(Descendants(root).OfType<TabItem>().Where(item => item.IsVisible).All(item => FullyVisible(item, root)), $"layout_tab_headers_{width}x{height}_{tab}_{page}");
-                    check(Descendants(root).OfType<ScrollViewer>().Where(scroll => scroll.IsVisible).All(scroll => scroll.ScrollableHeight == 0 && scroll.ScrollableWidth == 0), $"layout_no_content_scroll_{width}x{height}_{tab}_{page}");
+                    // 긴 한 줄 입력의 내부 caret 이동은 허용하고 페이지/목록 가로 스크롤과 세로 스크롤은 검사한다.
+                    check(Descendants(root).OfType<ScrollViewer>().Where(scroll => scroll.IsVisible).All(scroll => scroll.ScrollableHeight == 0 && (scroll.ScrollableWidth == 0 || InsideTextInput(scroll))), $"layout_no_content_scroll_{width}x{height}_{tab}_{page}");
                     foreach (var combo in controls.OfType<ComboBox>())
                     {
                         if (combo.Items.Count == 0)

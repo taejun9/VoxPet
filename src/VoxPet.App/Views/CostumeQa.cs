@@ -88,6 +88,16 @@ internal static class CostumeQa
             wardrobe.Selected = top; wardrobe.DeleteCommand.Execute(null);
             for (int i = 0; i < 100 && !wardrobe.CanEdit; i++) await Task.Delay(20);
             check(!wardrobe.Items.Contains(top) && !File.Exists(Path.Combine(library, top.Id.ToString("N") + ".img")), "costume_delete_owned_copy");
+            Fixture(original);
+            main.Model.Wardrobe.ImportCategory = CostumeCategory.Hat;
+            check(await main.Model.Wardrobe.ImportAsync(original), "costume_memory_fixture_import");
+            main.Model.Wardrobe.Selected!.Name = new string('옷', 60);
+            main.Model.Wardrobe.Selected.X = 27.25;
+            await main.Model.Wardrobe.SaveAsync();
+            var memoryFolder = Path.Combine(folder, "memory-only");
+            var memoryOnly = new CostumeViewModel(false, memoryFolder);
+            await memoryOnly.ImportAsync(original); await memoryOnly.SaveAsync(); await memoryOnly.CloseAsync();
+            check(!Directory.Exists(memoryFolder), "costume_memory_fixture_no_persistent_write");
         }
         finally { await wardrobe.CloseAsync(); Directory.Delete(folder, true); }
     }

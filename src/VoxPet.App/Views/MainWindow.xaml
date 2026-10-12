@@ -332,12 +332,12 @@
                 <TabItem Header="보관함">
                   <StackPanel Margin="8,12,8,0" IsEnabled="{Binding CanEdit}">
                     <TextBlock Text="이미지 추가 분류"/>
-                    <ComboBox ItemsSource="{Binding Categories}" SelectedValuePath="Key" DisplayMemberPath="Value" SelectedValue="{Binding ImportCategory}" Margin="0,6,0,8"/>
+                    <ComboBox ItemsSource="{Binding Categories}" SelectedValuePath="Key" SelectedValue="{Binding ImportCategory}" Margin="0,6,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Value}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
                     <WrapPanel><Button Content="이미지 추가" Command="{Binding ImportCommand}" Padding="10,7"/><Button Content="의상 저장" Command="{Binding SaveCommand}" Padding="10,7"/><Button Content="모두 해제" Command="{Binding RemoveAllCommand}" Padding="10,7"/></WrapPanel>
                     <TextBlock Text="투명 PNG를 권장합니다. 클릭해 착용한 뒤 조정 탭에서 배치하세요." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,8"/>
-                    <ComboBox ItemsSource="{Binding Filters}" SelectedIndex="{Binding FilterIndex}" Margin="0,0,0,8"/>
+                    <ComboBox ItemsSource="{Binding Filters}" SelectedIndex="{Binding FilterIndex}" Margin="0,0,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
                     <ListBox ItemsSource="{Binding Filtered}" SelectedItem="{Binding Selected}" Height="160" Background="#1B2738" BorderThickness="0" Foreground="#DDE4F0">
-                      <ListBox.ItemTemplate><DataTemplate><DockPanel><CheckBox IsChecked="{Binding Enabled}" ToolTip="착용/해제" Margin="0,0,6,0"/><Button Content="{Binding Label}" Command="{Binding WearCommand}" FontSize="11" Padding="6,5" HorizontalAlignment="Stretch"/></DockPanel></DataTemplate></ListBox.ItemTemplate>
+                      <ListBox.ItemTemplate><DataTemplate><DockPanel><CheckBox IsChecked="{Binding Enabled}" ToolTip="착용/해제" Margin="0,0,6,0"/><Button Command="{Binding WearCommand}" FontSize="11" Padding="6,5" HorizontalAlignment="Stretch" ToolTip="{Binding Label}"><TextBlock Text="{Binding Label}" FontSize="11" MaxWidth="260" TextTrimming="CharacterEllipsis"/></Button></DockPanel></DataTemplate></ListBox.ItemTemplate>
                     </ListBox>
                     <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="0,8,0,0"/>
                   </StackPanel>
