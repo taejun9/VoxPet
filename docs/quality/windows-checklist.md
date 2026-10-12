@@ -266,3 +266,17 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 개인 ZIP32파일/100483996bytes/CRC/서명 EXE·CER 해시·기존16PNG byte-identical. 이전 ZIP·원본 보존. 증거 artifacts/qa/plan022/, 배포 artifacts/VoxPet-win-x64-settings-plan022.zip.
 
 혼합 DPI 다중 모니터/RDP·물리 마이크와 사용자 GPU/OBS 실기는 별도다.350ms 자동 저장 전 프로세스 강제 종료는 마지막 변경이 남지 않을 수 있다. 정상 종료·재실행 검사는 실제 Windows 프로세스와 창에서 확인했다.
+
+## plan020 손동작·의상/장식 연결
+
+2026-10-12 최종 코드0a363e5의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38248447249), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38248445309) 통과. QA 이후 단일 에이전트 자체 리뷰/종료 경합 보완 재검증.
+
+- Core177/177·Release 경고0/오류0·locked restore/format/analyzer/publish. 기본5캐릭터/공용 고양이×5동작의 연결 격자 삼각형 뒤집힘0, 유한 시간/관절·모드/간격·중복 입력·예약/중복 키·망토 enum8/구 의상 연결 기본값·원자 저장/손상 복구.
+- 실제 WPF1134고유검사·실패0. 모션27종: 소매 표식 이동/몸통 유지·동일 변환/머리 pivot·입+머리 상속/영향도0/5동작 얼굴 원본 보존, 동작/캐릭터별 영역 자동 저장·마지막 종료 편집 flush·재시작·읽기 전 종료 보존, 같은 캐릭터 표정 변경 중 손 유지/다른 캐릭터 취소/사용자 PNG 자산 종류 복원, native 키 등록·충돌/WM_HOTKEY/재설정·해제/실제 합성 좌버튼 down·해제. 의상 연결 자동 저장·미완료 착용 종료의 마지막 표시값 보존.
+- 7탭/새 하위 페이지×4창크기, 검정 선택·팝업 글씨·스크롤 없음. 첫 실행에서 발견한 탭 중첩20검사/비동기 blink fixture1검사를 수정했고 사각 팔 회전의 빈틈은 연결 격자/영역 비율 회전으로 보완했다. 재검증 렌더 PNG 시각 확인.
+- unsigned/signed EXE 각각9개 일반 실행/10초 유지·정상 종료·마이크 선호/창 크기·위치/탭/표정/캐릭터·슬롯/순서 보존. 오디오 입력 자동 시작 없음.
+- OBS32.2.2 WGC 초록/크로마/투명 native alpha·같은 HWND/소스 배경 왕복 통과. 기존 BitBlt layered 제한 유지. 실제 마이크/사용자 GPU/개인 PNG는 합성 CI와 구분한다.
+- 김태중 자체 서명·공개 CER·EXE 해시/아이콘·CI 임시 Root 신뢰 후 Valid/변조 HashMismatch. Root/키 finally 정리. 개인키 포함/신뢰 자동 설치 없음.
+- 개인 ZIP32파일/100521104bytes/CRC·SHA256 3e9bcc0adcb4ee6a8b10783bd301016daa6d33edb0dcdd46ae659147c273f1bf, 기존16PNG byte-identical/이전ZIP·원본 보존. 개인PNG 공개 전송 없음. 증거 artifacts/qa/plan020/, 배포 artifacts/VoxPet-win-x64-motion-plan020.zip.
+
+손가락 새 작화/자동 관절 인식이 아니라 원본 팔·날개의 연속 변형과 native 소품이다. 머리 흔들림은 선택형, 입 장식 이동량은 수동 조절값이다. 큰 이동·확대의 왜곡은 손 영역/배치로 조정한다. 실제 개인PNG/Windows11 물리 마이크·키보드/사용자 GPU·다중 모니터 실기는 대상PC 항목이다.

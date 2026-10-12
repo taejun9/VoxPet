@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -36,7 +36,7 @@ codex/plan-020-cape-hand-motion / .worktree/plan-020-cape-hand-motion. QA→동�
 - [x] Core 5종 손동작 스케줄러 always/interval/hotkey, 유한 시간/간격/지연·수동 입력과 저장 모델.
 - [x] 원본 머리·표정 보존/관절 연결 몸·손 렌더러와 공유 미리보기/방송, 손모션 설정 탭·초/핫키/영역 조정.
 - [x] 전역 핫키 충돌/기존예약키·repeat/재등록/트레이·종료 수명.
-- [ ] Core/WPF/일반 시작/OBS/개인 서명 검증·원본 보존 ZIP·자체 리뷰·Git 수명.
+- [x] Core/WPF/일반 시작/OBS/개인 서명 검증·원본 보존 ZIP·자체 리뷰·Git 수명.
 
 ## QA Plan
 
@@ -67,6 +67,7 @@ QA 후 같은 에이전트 자체 리뷰. 기존 enum·저장 호환, 손 mask/�
 
 | date | role | note |
 |---|---|---|
+| 2026-10-12 | 검증/심사 | 최종0a363e5 Windows38248447249/OBS38248445309 모두 success. Core177/WPF1134/모션27·실패0, 일반/서명9사례씩, 자체 리뷰 보완 재검증·서명/기존16PNG/ZIP CRC/해시 확인 |
 | 2026-10-12 | 심사 | Windows 격자/7탭1126개 검사·실패0 후 자체 리뷰. 초기 로드 전 종료는 motion.json 기본값 저장을 차단하고, 의상 체크 요청은 PNG 로드/착용 확정 후에만 Profile.Enabled를 갱신해 종료 중 미완료 요청이 저장되지 않도록 보완. 재검증 진행 |
 | 2026-10-12 | 제작 | Core177/177: 기본5캐릭터+공용 고양이의 모든5동작 격자 삼각형 뒤집힘0. 손 이동 기준은 작은 안전 회전에서도 실제 합성 중심점/동일 변환 일치와5px 초과 이동으로 확인. 공용/개인/사용자 PNG 연결 구분, 같은 캐릭터 표정 변경 시 손 유지 보완 |
 | 2026-10-12 | 제작 | 원본 팔·소매/머리·입 장식 연결, 망토,5동작 시간축/설정·캐릭터별 영역, 자동 저장 및 native 입력 구현. locked restore/Release 경고0·오류0, Core176/176 통과. Windows 첫 실행: native/연결/저장20개 통과, 탭 중첩20개/비동기 blink에 의존한 fixture1개 실패. 별도 최상위7탭/결정적인 fixture 상태로 수정하고 화면 빈틈을 연결 격자로 보완 |
@@ -74,4 +75,10 @@ QA 후 같은 에이전트 자체 리뷰. 기존 enum·저장 호환, 손 mask/�
 
 ## Completion Notes
 
-손동작 초안을 보존한 커밋191ed11 이후 main7259318을 병합했다. 캐릭터5종/마지막 설정 복원을 포함해 사용자 최신 요청을 수행한다.
+손동작 초안191ed11을 보존하고 main7259318을 병합해 작업했다. 최종 앱/QA 소스0a363e5의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38248447249)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38248445309) 통과. locked restore/format/analyzer/Release 경고0·오류0, Core177/177, WPF1134고유검사·실패0(모션27종/의상 연결 자동 저장·미완료 착용 종료 포함).7탭/모든 하위 페이지×4창크기와 검정 선택/팝업 글씨·스크롤 없음. unsigned/signed EXE 각각9개 일반 시작/정상 종료·설정/슬롯 보존. 초기 읽기 전 종료와 같은 캐릭터 표정 변경 중 손 재생/자산 종류 복원을 확인했다.
+
+OBS32.2.2 WGC 초록/크로마·투명 alpha·같은 HWND/소스의 배경 왕복 회귀 통과. 기존 always-layered BitBlt 제한 유지. 김태중 자체 서명·CI 임시 신뢰 후 Valid/변조 HashMismatch/공개 CER·EXE SHA256/아이콘 검증. 사용자PC의 인증서 신뢰 자동 설치 없음.
+
+새 개인 ZIP artifacts/VoxPet-win-x64-motion-plan020.zip:32파일/100521104bytes/CRC pass, SHA256 3e9bcc0adcb4ee6a8b10783bd301016daa6d33edb0dcdd46ae659147c273f1bf. 기존16개 PNG byte-identical과 이전ZIP/Downloads 원본 보존. 개인PNG·키 공개 전송 없음. 증거 artifacts/qa/plan020/에는 최초 실패/재검증 화면과 최종 Windows/OBS·서명/패키지 요약을 분리 보존했다.
+
+QA 이후 단일 에이전트 자체 리뷰와 종료 경합 보완 재검증 완료. 완료 계획/리뷰 미러를 기록하고 작업 브랜치에서 완료 커밋 후 main ff-only 병합/push, detached→branch-d→worktree 제거 절차를 따른다. 별도 AI 손 PNG 대신 원본의 연결된 격자 변형과 native 소품을 사용한다. 자동 해부 인식/새 손가락 작화/자동 턱 윤곽 추적은 제공하지 않으며 큰 사용자 이동·확대는 영역/배치를 조정한다. 실제 개인PNG/Windows11 GPU/물리 마이크/키보드·다중 모니터 환경의 모습은 대상PC 실기로 구분한다.
