@@ -254,3 +254,15 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 개인 ZIP32파일/100469367bytes/CRC/SHA256/EXE·공개 인증서 해시 대조 통과. 기존ZIP/Downloads 원본 보존. 증거 artifacts/qa/plan021/, 캐릭터 artifacts/characters/plan021/, 배포 artifacts/VoxPet-win-x64-characters-plan021.zip.
 
 신규4종은 평상3입×2눈이며 별도12표정 얼굴은 제공하지 않는다. 사용자 실제 Windows11 개인 그림·물리 마이크/GPU/OBS·의상과 눈물 배치는 대상PC 실기로 확인한다. 자동 합성 QA 및 자체 서명을 실제 사용자PC의 마이크/실행 경고 통과로 표현하지 않는다.
+
+## plan022 마지막 설정 유지
+
+2026-10-12 앱d9ce823/종료 하네스5202b20의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38239838261) 통과. 같은 앱 소스의 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38238891072) 통과. QA 이후 단일 에이전트 자체 리뷰.
+
+- Core168/168·Release 경고0/오류0·locked restore/format/analyzer/publish, WPF929고유검사 실패0. 설정 검사19종: 실제 창 재생성/자동 저장·종료 flush/마이크 분리·순서·재연결·빈 목록과 입력 factory0/최대화·최소화·트레이 정상 bounds/방송창 크기·좌표·열림·닫음·TwoWay 바인딩/음소거·탭·슬롯·내장 얼굴/임시 전체 테스트/저장 실패 이전 파일 보존·재시도 확인.
+- unsigned/signed EXE 각각9개 일반 프로세스 사례의10초 유지·정상 종료·슬롯/순서 불변. restart-settings에서 두 창/마지막 설정/마이크 선호 ID 복원을 확인했다. Process.MainWindowHandle이 복원된 방송창을 선택하는 초기 종료 fixture 문제를 Ready의 설정창 HWND로 수정했다.
+- 일반 시작 JSON은 worker 읽기, 자동 저장은350ms 지연·worker·순차/원자 교체, 종료는 마지막 snapshot 확정. endpoint ID는 사용자 요청에 따라 로컬 설정에만 저장하고 진단·시작 증거에는 기록하지 않는다. 실제 사용자 설정은 CI로 보내지 않았다.
+- OBS WGC/크로마·투명 alpha·동일 HWND/소스 배경 왕복 회귀 유지. BitBlt의 기존 layered 제한 유지.
+- 개인 ZIP32파일/100483996bytes/CRC/서명 EXE·CER 해시·기존16PNG byte-identical. 이전 ZIP·원본 보존. 증거 artifacts/qa/plan022/, 배포 artifacts/VoxPet-win-x64-settings-plan022.zip.
+
+혼합 DPI 다중 모니터/RDP·물리 마이크와 사용자 GPU/OBS 실기는 별도다.350ms 자동 저장 전 프로세스 강제 종료는 마지막 변경이 남지 않을 수 있다. 정상 종료·재실행 검사는 실제 Windows 프로세스와 창에서 확인했다.
