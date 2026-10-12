@@ -54,7 +54,7 @@ public sealed class HandMotionViewModel : ObservableObject
     public bool HeadMotion { get => Rig.HeadMotion; set => ChangeRig(Rig with { HeadMotion = value }); }
     public bool Guides { get => guides; set { if (Set(ref guides, value)) { character.ShowMotionGuides = value; character.RefreshMotion(); } } }
     public string Status { get => status; set => Set(ref status, value); }
-    public bool CanEdit => !closing;
+    public bool CanEdit => ready && !closing;
     public RelayCommand PreviewCommand { get; }
     public RelayCommand StopCommand { get; }
     public RelayCommand ResetRigCommand { get; }
@@ -76,11 +76,11 @@ public sealed class HandMotionViewModel : ObservableObject
             var loaded = await Task.Run(store.Load); if (closing) return;
             settings = loaded.Settings; if (loaded.Recovered) Status = "동작 설정을 읽지 못해 기본값으로 시작합니다. 이전 파일은 보존합니다.";
         }
-        scheduler.Configure(settings, seconds()); ready = true; NotifyEditor(); InputsChanged?.Invoke();
+        scheduler.Configure(settings, seconds()); ready = true; Update(seconds()); NotifyEditor(); Notify(nameof(CanEdit)); PreviewCommand.Refresh(); StopCommand.Refresh(); ResetRigCommand.Refresh(); InputsChanged?.Invoke();
     }
     public void SetCharacter(string id)
     {
-        characterId = id; scheduler.Cancel(); character.SetMotion(Rig, null, null); NotifyEditor();
+        if (id != characterId) scheduler.Cancel(); characterId = id; Update(seconds()); NotifyEditor();
     }
     public bool Trigger(HandGesture gesture, bool preview = false) => !closing && scheduler.Trigger(gesture, seconds(), preview);
     public void LeftClick()
@@ -112,7 +112,7 @@ public sealed class HandMotionViewModel : ObservableObject
         try
         {
             value.Validate(); bool inputsChanged = !settings.Profiles.SequenceEqual(value.Profiles); settings = value; scheduler.Configure(settings, seconds());
-            character.SetMotion(Rig, null, null); Status = "미리보기에 반영했습니다. 마지막 설정을 자동 저장합니다.";
+            Update(seconds()); Status = "미리보기에 반영했습니다. 마지막 설정을 자동 저장합니다.";
             if (persistent && ready) { saveTimer.Stop(); saveTimer.Start(); }
             NotifyEditor(); if (inputsChanged) InputsChanged?.Invoke();
         }

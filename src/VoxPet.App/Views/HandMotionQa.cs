@@ -100,6 +100,15 @@ internal static class HandMotionQa
                 var frame = Render(character, "voxpet-motion-" + gesture + ".png");
                 check(!rest.SequenceEqual(frame) && rest.Take(512 * (int)rig.HeadCutY * 4).SequenceEqual(Render(character, props: false).Take(512 * (int)rig.HeadCutY * 4)) && ReferenceEquals(sprite, character.Sprite), "motion_" + gesture + "_hand_changes_face_preserved");
             }
+            double testTime = 10;
+            var memory = new HandMotionViewModel(character, false, Path.Combine(folder, "memory"), () => testTime); await memory.InitializeAsync(); memory.SetCharacter("builtin");
+            memory.Trigger(HandGesture.Claw, true); testTime += .5; memory.Update(testTime); var active = character.Motion;
+            memory.SetCharacter("builtin"); check(character.Motion.Gesture == HandGesture.Claw && character.Motion.LeftAngle == active.LeftAngle, "motion_same_character_expression_does_not_cancel_hand");
+            memory.SetCharacter("pelly"); check(character.Motion.Gesture == null && !character.Rig.Left.Enabled, "motion_changed_character_cancels_old_hand");
+            await memory.CloseAsync(); check(!Directory.Exists(Path.Combine(folder, "memory")), "motion_memory_fixture_no_write");
+            var capture = character.CaptureAppearance(); bool custom = character.UsesCustomSheet;
+            var customSheet = new ImageSource[3, 2]; for (int mouthIndex = 0; mouthIndex < 3; mouthIndex++) for (int eye = 0; eye < 2; eye++) customSheet[mouthIndex, eye] = Markers();
+            character.UseSheet(customSheet, "custom"); check(character.UsesCustomSheet, "motion_custom_sheet_identity"); capture(); check(character.UsesCustomSheet == custom, "motion_test_restore_preserves_asset_identity");
             check(ReferenceEquals(main.ShowCharacter().DataContext, main.Model), "motion_broadcast_keeps_shared_model");
             var source = HwndSource.FromHwnd(new WindowInteropHelper(main).Handle); int hits = 0, clicks = 0;
             using (var inputs = new HandMotionInputs(source, _ => hits++, () => clicks++))

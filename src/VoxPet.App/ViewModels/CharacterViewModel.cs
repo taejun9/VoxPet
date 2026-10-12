@@ -24,6 +24,8 @@ public sealed class CharacterViewModel : ObservableObject
     private readonly Dictionary<ExpressionKind, ImageSource[,]> defaults = [];
     private ImageSource[,] sprites;
     private Dictionary<ExpressionKind, ImageSource[,]> personalDefaults = [];
+    public bool IsBuiltInDefault => personalDefaults.Count == 0;
+    public bool UsesCustomSheet { get; private set; }
     public int DefaultExpressionCount => personalDefaults.Count == 0 ? defaults.Values.Distinct().Count() : personalDefaults.Count;
     public int MouthFrameCount => sprites.GetLength(0);
     public int DefaultWarnings { get; private set; }
@@ -103,8 +105,8 @@ public sealed class CharacterViewModel : ObservableObject
     }
     internal Action CaptureAppearance()
     {
-        var savedProfile = profile; var savedSprites = sprites; string savedName = Name;
-        return () => { Apply(savedProfile, savedSprites); Name = savedName; };
+        var savedProfile = profile; var savedSprites = sprites; string savedName = Name; bool savedCustom = UsesCustomSheet;
+        return () => { Apply(savedProfile, savedSprites); UsesCustomSheet = savedCustom; Name = savedName; };
     }
     private static bool Expected(Exception ex) => ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException;
     public string Name { get => name; private set => Set(ref name, value); }
@@ -142,7 +144,7 @@ public sealed class CharacterViewModel : ObservableObject
         profile = expression;
         var builtin = personalDefaults.TryGetValue(expression.Kind, out var variant) ? variant :
             personalDefaults.TryGetValue(ExpressionKind.Neutral, out var neutral) ? neutral : defaults[expression.Kind];
-        sprites = sheet ?? builtin;
+        sprites = sheet ?? builtin; UsesCustomSheet = sheet != null;
         Name = sheet == null ? $"{defaultName} · {expression.Name}" : $"{expression.Name} · 사용자 캐릭터";
         Notify(nameof(TearLeftX)); Notify(nameof(TearRightX)); Update(current, now);
     }
