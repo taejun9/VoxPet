@@ -47,6 +47,7 @@ QA 이후 같은 에이전트 자체 리뷰. 실제 화면 캡처·합성 렌더
 
 | date | decision | reason |
 |---|---|---|
+| 2026-10-12 | 화면 장면의 의상도 실제 Wardrobe.ImportAsync 경로로 추가/착용 | 첫 화면 시험은 종료 시 수동 fixture 항목의 WearCommand 미설정으로 NullReferenceException/오류 UI 대기 발생. 제품 생성 경로로 전체 수명을 검증하도록 수정 |
 | 2026-10-12 | GitHub Windows 화면 시험/개인 PNG 로컬 보존 | 사용자 명시 선택. macOS에는 Windows 화면 연결 없음 |
 | 2026-10-12 | 표시된 앱 HWND의 실제 데스크톱 픽셀 캡처, 기존 RenderTargetBitmap 결과 병행 | 사용자 요청 실제 화면 검증과 이전 자동 렌더 검사 구분 |
 | 2026-10-12 | 장시간 OBS60분 측정도 다시 실행 | 사용자가 모든 테스트 재실행을 명시 |

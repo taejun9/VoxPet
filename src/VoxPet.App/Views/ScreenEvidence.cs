@@ -90,7 +90,6 @@ internal static class ScreenEvidence
             var colors = new HashSet<int>();
             for (int i = 0; i < pixels.Length; i += 4) { pixels[i + 3] = 255; if (i % 64 == 0) colors.Add((pixels[i] << 16) | (pixels[i + 1] << 8) | pixels[i + 2]); }
             bool valid = colors.Count > 24 && GetForegroundWindow() == handle;
-            check(valid, "screen_" + name);
             var image = BitmapSource.Create(width, height, 96, 96, PixelFormats.Bgra32, null, pixels, width * 4); image.Freeze();
             string fileName = "voxpet-screen-" + name + ".png";
             await Task.Run(() => { var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image)); using var file = File.Create(Path.Combine(folder, fileName)); encoder.Save(file); });
@@ -98,6 +97,7 @@ internal static class ScreenEvidence
             records.Add(record);
             File.WriteAllText(Path.Combine(folder, "voxpet-screen-" + name + ".json"), JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true }));
             File.WriteAllText(Path.Combine(folder, "voxpet-screen-index.json"), JsonSerializer.Serialize(records, new JsonSerializerOptions { WriteIndented = true }));
+            check(valid, "screen_" + name);
         }
         finally { window.SetCurrentValue(Window.TopmostProperty, prior); }
     }

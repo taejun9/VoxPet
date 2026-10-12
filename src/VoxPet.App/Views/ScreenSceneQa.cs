@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -11,6 +12,8 @@ internal static class ScreenSceneQa
 {
     private static ImageSource Accessory(string kind)
     {
+        int width = kind == "sleeves" ? 512 : kind == "hat" ? 160 : 28;
+        int height = kind == "sleeves" ? 512 : kind == "hat" ? 42 : 14;
         var visual = new DrawingVisual();
         using (var drawing = visual.RenderOpen())
         {
@@ -20,9 +23,9 @@ internal static class ScreenSceneQa
                 drawing.DrawRoundedRectangle(Brushes.DarkSeaGreen, new Pen(Brushes.DarkGreen, 3), new Rect(270, 310, 88, 55), 16, 16);
                 drawing.DrawRoundedRectangle(Brushes.DarkOliveGreen, new Pen(Brushes.DarkGreen, 3), new Rect(212, 345, 88, 70), 10, 10);
             }
-            else drawing.DrawRoundedRectangle(kind == "hat" ? Brushes.DeepSkyBlue : Brushes.HotPink, new Pen(Brushes.Gold, 4), new Rect(8, 8, 496, 496), 50, 50);
+            else drawing.DrawRoundedRectangle(kind == "hat" ? Brushes.DeepSkyBlue : Brushes.HotPink, new Pen(Brushes.Gold, 4), new Rect(2, 2, width - 4, height - 4), 5, 5);
         }
-        var image = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); image.Render(visual); image.Freeze(); return image;
+        var image = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); image.Render(visual); image.Freeze(); return image;
     }
     public static async Task RunAsync(Action<bool, string> check)
     {
@@ -30,6 +33,7 @@ internal static class ScreenSceneQa
         var model = new MainViewModel(false, () => [], _ => { inputCalls++; throw new InvalidOperationException(); });
         var main = new MainWindow(true, new Rect(0, 0, 1000, 730), model);
         Action? resume = null;
+        string folder = Path.Combine(Path.GetTempPath(), "VoxPet-screen-scenes-" + Guid.NewGuid()); Directory.CreateDirectory(folder);
         try
         {
             main.Show(); await main.Ready; resume = model.PauseVisualForQa();
@@ -48,10 +52,14 @@ internal static class ScreenSceneQa
                 await ScreenEvidence.CaptureAsync(main, "expression-ui-" + kind.ToString().ToLowerInvariant(), check);
             }
             await model.Expressions.PreviewBuiltinAsync(0);
-            var sleeves = new CostumeItemViewModel(new(Guid.NewGuid(), "합성 소매", CostumeCategory.Top, 0, 0, 512, 512, Attachment: MotionAttachment.Garment), (_, _) => { }) { Image = Accessory("sleeves") };
-            var hat = new CostumeItemViewModel(new(Guid.NewGuid(), "합성 머리 장식", CostumeCategory.Hat, 175, 80, 160, 42), (_, _) => { }) { Image = Accessory("hat") };
-            var mouthItem = new CostumeItemViewModel(new(Guid.NewGuid(), "합성 입 장식", CostumeCategory.FaceDecoration, 242, 286, 28, 14), (_, _) => { }) { Image = Accessory("mouth") };
-            model.Character.CostumeLayers.Add(sleeves); model.Character.CostumeLayers.Add(hat); model.Character.CostumeLayers.Add(mouthItem);
+            foreach (var (kind, category, x, y, width) in new[] { ("sleeves", CostumeCategory.Top, 0d, 0d, 512d), ("hat", CostumeCategory.Hat, 175d, 80d, 160d), ("mouth", CostumeCategory.FaceDecoration, 242d, 286d, 28d) })
+            {
+                var image = Accessory(kind); string fileName = Path.Combine(folder, "synthetic-" + kind + ".png");
+                await Task.Run(() => { var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create((BitmapSource)image)); using var file = File.Create(fileName); encoder.Save(file); });
+                model.Wardrobe.ImportCategory = category;
+                check(await model.Wardrobe.ImportAsync(fileName), "screen_real_wardrobe_import_" + kind);
+                var item = model.Wardrobe.Selected!; item.X = x; item.Y = y; item.SizePercent = width / item.Profile.BaseWidth * 100;
+            }
             var rig = CharacterRig.Default("builtin");
             foreach (var gesture in Enum.GetValues<HandGesture>())
                 for (int frame = 0; frame < 4; frame++)
@@ -81,6 +89,6 @@ internal static class ScreenSceneQa
             main.RestoreFromTray(); await ScreenEvidence.CaptureAsync(main, "settings-restored-from-tray", check);
             check(inputCalls == 0, "screen_scenes_no_microphone_input");
         }
-        finally { resume?.Invoke(); await main.ShutdownAsync(); main.Close(); }
+        finally { resume?.Invoke(); await main.ShutdownAsync(); main.Close(); Directory.Delete(folder, true); }
     }
 }
