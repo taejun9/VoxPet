@@ -52,10 +52,16 @@ public sealed class CostumeViewModel : ObservableObject
     private readonly System.Windows.Threading.DispatcherTimer saveTimer;
     private CostumeItemViewModel? selected;
     private CostumeCategory importCategory;
-    private int filterIndex;
+    private int filterIndex, presetIndex;
+    private string characterId = CharacterCatalog.DefaultId;
+    public string[] Presets { get; } = ["베레모", "동그란 안경", "리본", "별 귀걸이", "단추 상의", "멜빵 바지", "포켓 재킷", "나들이 한벌옷", "별 망토"];
+    public int PresetIndex { get => presetIndex; set => Set(ref presetIndex, Math.Clamp(value, 0, 8)); }
+    public string PresetCharacter => CharacterCatalog.All.FirstOrDefault(item => item.Id == characterId)?.Name ?? "현재 캐릭터";
+    public AsyncCommand AddPresetCommand { get; }
+    public void SetCharacter(string id) { characterId = id; Notify(nameof(PresetCharacter)); Notify(nameof(Filtered)); if (Selected != null && !Filtered.Contains(Selected)) { selected = Filtered.FirstOrDefault(); Notify(nameof(Selected)); } Refresh(); }
     private string status = "이미지를 추가하고 클릭해 착용하세요. 배치는 자동 저장됩니다.";
     public ObservableCollection<CostumeItemViewModel> Items { get; } = [];
-    public IEnumerable<CostumeItemViewModel> Filtered => Items.Where(item => FilterIndex == 0 || (int)item.Category == FilterIndex - 1);
+    public IEnumerable<CostumeItemViewModel> Filtered => Items.Where(item => (item.Profile.CharacterId == null || item.Profile.CharacterId == characterId) && (FilterIndex == 0 || (int)item.Category == FilterIndex - 1));
     public string[] Filters { get; } = ["전체", .. CategoryNames];
     public KeyValuePair<CostumeCategory, string>[] Categories { get; } = Enum.GetValues<CostumeCategory>().Select(category => new KeyValuePair<CostumeCategory, string>(category, CategoryNames[(int)category])).ToArray();
     public int FilterIndex { get => filterIndex; set { if (Set(ref filterIndex, Math.Clamp(value, 0, CategoryNames.Length))) { Notify(nameof(Filtered)); selected = Filtered.FirstOrDefault(); Notify(nameof(Selected)); Refresh(); } } }
@@ -80,10 +86,11 @@ public sealed class CostumeViewModel : ObservableObject
         this.persistent = persistent; store = new(folder ?? Path.Combine(AppPaths.DataFolder, "Wardrobe"));
         saveTimer = new(System.Windows.Threading.DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(350) };
         saveTimer.Tick += AutoSaveTick;
+        AddPresetCommand = new(() => AddPresetAsync((CostumeCategory)PresetIndex), () => CanEdit);
         ImportCommand = new(async () => { if (ChooseImage?.Invoke() is { } path) await ImportAsync(path); }, () => CanEdit);
         SaveCommand = new(SaveAsync, () => CanEdit);
         DeleteCommand = new(DeleteAsync, () => CanAdjust);
-        RemoveAllCommand = new(() => { foreach (var item in Items) item.SetEnabled(false); ReleaseUnused(); ScheduleSave(); Status = "모두 해제했습니다. 자동 저장됩니다."; }, () => CanEdit);
+        RemoveAllCommand = new(() => { foreach (var item in Items.Where(item => item.Profile.CharacterId == null || item.Profile.CharacterId == characterId)) item.SetEnabled(false); ReleaseUnused(); ScheduleSave(); Status = "모두 해제했습니다. 자동 저장됩니다."; }, () => CanEdit);
         UpLayerCommand = new(() => MoveLayer(1), () => CanAdjust && Items.IndexOf(Selected!) < Items.Count - 1);
         DownLayerCommand = new(() => MoveLayer(-1), () => CanAdjust && Items.IndexOf(Selected!) > 0);
         LeftCommand = new(() => Selected!.X -= 1, () => CanAdjust); RightCommand = new(() => Selected!.X += 1, () => CanAdjust);
@@ -92,7 +99,7 @@ public sealed class CostumeViewModel : ObservableObject
     private void Refresh()
     {
         Notify(nameof(CanEdit)); Notify(nameof(CanAdjust));
-        foreach (var command in new[] { ImportCommand, SaveCommand, DeleteCommand }) command.Refresh();
+        foreach (var command in new[] { ImportCommand, SaveCommand, DeleteCommand, AddPresetCommand }) command.Refresh();
         foreach (var command in new[] { RemoveAllCommand, UpLayerCommand, DownLayerCommand, LeftCommand, RightCommand, UpCommand, DownCommand }) command.Refresh();
         foreach (var item in Items) item.WearCommand.Refresh();
     }
@@ -111,7 +118,7 @@ public sealed class CostumeViewModel : ObservableObject
     private void ReleaseUnused() { foreach (var item in Items.Where(item => !item.Enabled && !ReferenceEquals(item, Selected))) item.Image = null; }
     private void ApplyConflicts(CostumeItemViewModel item)
     {
-        foreach (var other in Items.Where(other => !ReferenceEquals(other, item) && CostumeProfile.Conflicts(item.Category, other.Category))) other.SetEnabled(false);
+        foreach (var other in Items.Where(other => !ReferenceEquals(other, item) && (other.Profile.CharacterId == null || item.Profile.CharacterId == null || other.Profile.CharacterId == item.Profile.CharacterId) && CostumeProfile.Conflicts(item.Category, other.Category))) other.SetEnabled(false);
     }
     public async Task InitializeAsync()
     {
@@ -169,7 +176,8 @@ public sealed class CostumeViewModel : ObservableObject
             if (closing) return;
             if (enabled)
             {
-                if (Items.Count(other => other.Enabled && !ReferenceEquals(other, item) && !CostumeProfile.Conflicts(item.Category, other.Category)) >= 24) throw new ArgumentException("착용24개 제한");
+                CostumeStore.Validate(Items.Select(other => ReferenceEquals(other, item) ? other.Profile with { Enabled = true } :
+                    other.Profile with { Enabled = other.Enabled && !((other.Profile.CharacterId == null || item.Profile.CharacterId == null || other.Profile.CharacterId == item.Profile.CharacterId) && CostumeProfile.Conflicts(item.Category, other.Category)) }).ToArray());
                 item.Image ??= await ReadAsync(item.Id); if (closing) return; ApplyConflicts(item);
             }
             item.SetEnabled(enabled); ReleaseUnused(); Status = enabled ? "착용했습니다. 위치/크기 조정은 미리보기에 즉시 반영됩니다. 자동 저장됩니다." : "해제했습니다. 자동 저장됩니다.";
@@ -198,6 +206,30 @@ public sealed class CostumeViewModel : ObservableObject
             Items.Remove(item); selected = Filtered.FirstOrDefault(); Notify(nameof(Selected)); Notify(nameof(Filtered)); Status = "보관 복사본을 삭제했습니다. 사용자의 원본 이미지는 유지합니다.";
         }
         catch (Exception error) when (Expected(error)) { Status = "삭제하지 못했습니다. 기존 보관함을 유지합니다."; }
+        finally { gate.Release(); SetBusy(false); }
+    }
+    public async Task<bool> AddPresetAsync(CostumeCategory category)
+    {
+        if (!CanEdit || !Enum.IsDefined(category)) return false;
+        string id = characterId, key = category.ToString();
+        var existing = Items.FirstOrDefault(item => item.Profile.CharacterId == id && item.Profile.PresetKey == key);
+        if (existing != null) { await WearAsync(existing, true); Selected = existing; return existing.Enabled; }
+        if (Items.Count >= 100) { Status = "보관함100개 제한입니다."; return false; }
+        // 벡터 작화는 UI에서 frozen bitmap으로 만든 뒤 저장/디코딩은 worker에서 수행한다.
+        byte[] bytes = CostumePresets.Draw(id, category); SetBusy(true); await gate.WaitAsync();
+        try
+        {
+            if (closing) return false;
+            var profile = new CostumeProfile(Guid.NewGuid(), PresetCharacter + " · " + Presets[(int)category], category, 0, 0, 512, 512,
+                Enabled: false, BehindCharacter: category == CostumeCategory.Cape, CharacterId: id, PresetKey: key);
+            var snapshot = Items.Select(item => item.Profile).Append(profile).ToArray();
+            var image = await Task.Run(() => { var decoded = CostumeImageLoader.Load(bytes).Image; if (persistent) store.Import(snapshot, profile.Id, bytes); return decoded; });
+            if (closing) return false;
+            if (!persistent) memory[profile.Id] = bytes;
+            var item = Create(profile); item.Image = image; Items.Add(item); Selected = item; Notify(nameof(Filtered));
+            ApplyConflicts(item); item.SetEnabled(true); ScheduleSave(); Status = "캐릭터에 맞는 아이템을 착용했습니다. 위치/크기/연결을 조정할 수 있습니다."; return true;
+        }
+        catch (Exception error) when (Expected(error)) { Status = "아이템을 추가하지 못했습니다. 기존 보관함은 유지합니다."; return false; }
         finally { gate.Release(); SetBusy(false); }
     }
     private void ScheduleSave() { dirty = true; placementRevision++; if (persistent && !closing) { saveTimer.Stop(); saveTimer.Start(); } }

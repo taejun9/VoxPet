@@ -5,7 +5,7 @@ public enum MotionAttachment { Auto, Body, Head, Mouth, LeftHand, RightHand, Gar
 
 public sealed record CostumeProfile(Guid Id, string Name, CostumeCategory Category, double X, double Y,
     double BaseWidth, double BaseHeight, double Scale = 1, bool Enabled = true, bool BehindCharacter = false,
-    MotionAttachment Attachment = MotionAttachment.Auto, double Follow = 1)
+    MotionAttachment Attachment = MotionAttachment.Auto, double Follow = 1, string? CharacterId = null, string? PresetKey = null)
 {
     public MotionAttachment EffectiveAttachment => Attachment != MotionAttachment.Auto ? Attachment : Category switch
     {
@@ -16,6 +16,8 @@ public sealed record CostumeProfile(Guid Id, string Name, CostumeCategory Catego
     };
     public void Validate()
     {
+        if (CharacterId != null && CharacterId is not ("builtin" or "custom") && !CharacterCatalog.All.Any(item => item.Id == CharacterId)) throw new ArgumentException("의상 캐릭터를 확인하세요.");
+        if (PresetKey != null && (PresetKey.Length > 40 || CharacterId == null)) throw new ArgumentException("꾸미기 아이템을 확인하세요.");
         if (!Enum.IsDefined(Attachment) || !double.IsFinite(Follow) || Follow is < 0 or > 1) throw new ArgumentException("움직임 연결 범위를 확인하세요.");
         if (Id == Guid.Empty || string.IsNullOrWhiteSpace(Name) || Name.Length > 60 || !Enum.IsDefined(Category) ||
             !double.IsFinite(X) || !double.IsFinite(Y) || X is < -512 or > 1024 || Y is < -512 or > 1024 ||

@@ -20,7 +20,7 @@ public sealed class CostumeStore(string folder)
     }
     public static void Validate(IReadOnlyList<CostumeProfile> items)
     {
-        if (items.Any(item => item == null) || items.Count > 100 || items.Select(item => item.Id).Distinct().Count() != items.Count || items.Count(item => item.Enabled) > 24)
+        if (items.Any(item => item == null) || items.Count > 100 || items.Select(item => item.Id).Distinct().Count() != items.Count || items.Select(item => item.CharacterId).Distinct().Any(id => items.Count(item => item.Enabled && (item.CharacterId == null || item.CharacterId == id)) > 24))
             throw new ArgumentException("의상 보관100개/착용24개 제한 또는 중복 ID를 확인하세요.");
         foreach (var item in items) item.Validate();
     }

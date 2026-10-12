@@ -81,7 +81,7 @@ internal static class HandMotionQa
             var after = Render(character, "voxpet-motion-garment.png");
             var greenAfter = Centroid(after, (r, g, b) => r < 20 && g > 230 && b < 20);
             var cyanAfter = Centroid(after, (r, g, b) => r < 20 && g > 230 && b > 230);
-            var expected = MotionSurface.AttachmentTransform(character, MotionAttachment.LeftHand, 1).Transform(greenBefore);
+            var mapped = ConnectedMotion.Map(new(greenBefore.X, greenBefore.Y), character.Rig, character.Motion, 1, false); var expected = new Point(mapped.X, mapped.Y);
             check(greenBefore.X > 0 && greenAfter.X > 0 && (greenAfter - expected).Length < 1 && (greenAfter - greenBefore).Length > 5 && (cyanAfter - cyanBefore).Length < .1, "motion_sleeve_follows_hand_body_stays_aligned");
             marker.AttachmentIndex = (int)MotionAttachment.Head; character.SetMotion(rig with { HeadMotion = true }, null, null);
             character.Update(new(0, 0, 6, 0, 1, MouthState.Closed), 1);
@@ -105,8 +105,8 @@ internal static class HandMotionQa
             }
             double testTime = 10;
             var memory = new HandMotionViewModel(character, false, Path.Combine(folder, "memory"), () => testTime); await memory.InitializeAsync(); memory.SetCharacter("builtin");
-            memory.Trigger(HandGesture.Claw, true); testTime += .5; memory.Update(testTime); var active = character.Motion;
-            memory.SetCharacter("builtin"); check(character.Motion.Gesture == HandGesture.Claw && character.Motion.LeftAngle == active.LeftAngle, "motion_same_character_expression_does_not_cancel_hand");
+            memory.Trigger(HandGesture.HandRaise, true); testTime += .5; memory.Update(testTime); var active = character.Motion;
+            memory.SetCharacter("builtin"); check(character.Motion.Gesture == HandGesture.HandRaise && character.Motion.LeftAngle == active.LeftAngle, "motion_same_character_expression_does_not_cancel_hand");
             memory.SetCharacter("pelly"); check(character.Motion.Gesture == null && !character.Rig.Left.Enabled, "motion_changed_character_cancels_old_hand");
             await memory.CloseAsync(); check(!Directory.Exists(Path.Combine(folder, "memory")), "motion_memory_fixture_no_write");
             var capture = character.CaptureAppearance(); bool custom = character.UsesCustomSheet;

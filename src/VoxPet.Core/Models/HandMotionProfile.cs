@@ -1,6 +1,6 @@
 namespace VoxPet.Core.Models;
 
-public enum HandGesture { Claw, ToyGun, Heart, ToySword, MagicWand }
+public enum HandGesture { HandRaise = 0, ToyGun, Heart, ToySword, MagicWand }
 public enum HandTriggerMode { Always, Interval, Hotkey }
 
 public sealed record HandShortcut(uint Modifiers, uint Key)
@@ -17,7 +17,7 @@ public sealed record HandShortcut(uint Modifiers, uint Key)
 public sealed record HandMotionProfile(HandGesture Gesture, bool Enabled, HandTriggerMode Mode,
     double IntervalSeconds, HandShortcut Shortcut, double X = 0, double Y = 0, double Scale = 1, bool LeftClick = true)
 {
-    public static HandMotionProfile Default(HandGesture gesture) => new(gesture, gesture == HandGesture.Claw, HandTriggerMode.Hotkey, 5, new(3, 0x31 + (uint)gesture));
+    public static HandMotionProfile Default(HandGesture gesture) => new(gesture, gesture == HandGesture.HandRaise, HandTriggerMode.Hotkey, 5, new(3, 0x31 + (uint)gesture));
     public void Validate()
     {
         if (!Enum.IsDefined(Gesture) || !Enum.IsDefined(Mode) || Shortcut == null ||

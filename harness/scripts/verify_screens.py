@@ -31,7 +31,7 @@ for kind in expressions:
     expected.add('expression-ui-' + kind)
     for mouth in range(3):
         for eye in range(2): expected.add(f'expression-{kind}-mouth-{mouth}-eye-{eye}')
-for gesture in ['claw', 'toygun', 'heart', 'toysword', 'magicwand']:
+for gesture in ['handraise', 'toygun', 'heart', 'toysword', 'magicwand']:
     for frame in range(4): expected.add(f'hand-{gesture}-{frame}')
 for angle in [0, 6, 12]: expected.add(f'attachment-head-{angle}')
 for level in range(3): expected.add(f'attachment-mouth-{level}')
@@ -40,6 +40,11 @@ for case in ['broadcast-transparent', 'broadcast-green-again', 'broadcast-while-
 for character in ['neulbo', 'drawing-neulbo', 'neulbo-man', 'neulbo-girl', 'pelly']: expected.add('selection-' + character)
 for run in ['unsigned', 'signed']:
     for case in ['fresh12', 'restart-reversed12', 'legacy3-slot', 'corrupt-state', 'restart-pelly', 'missing-character', 'corrupt-character', 'restart-settings', 'public6']: expected.add(f'startup-{run}-{case}')
+for character in ['neulbo', 'drawing-neulbo', 'neulbo-man', 'neulbo-girl', 'pelly']:
+    for kind in expressions: expected.add(f'custom-expression-{character}-{kind}')
+    for category in ['hat', 'glasses', 'facedecoration', 'earrings', 'top', 'bottom', 'outerwear', 'onepiece', 'cape']: expected.add(f'custom-preset-{character}-{category}')
+    for gesture in ['handraise', 'toygun', 'heart', 'toysword', 'magicwand']: expected.add(f'custom-hand-{character}-{gesture}')
+for name in ['custom-tour-restored', 'custom-preset-settings']: expected.add(name)
 records = []
 for name in sorted(expected):
     metadata = json.loads((args.folder / f'voxpet-screen-{name}.json').read_text())

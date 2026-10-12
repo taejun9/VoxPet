@@ -161,11 +161,11 @@ public sealed class ExpressionViewModel : ObservableObject
         finally { gate.Release(); }
     }
     public Task TestAllAsync() => TestAllAsync(TimeSpan.FromSeconds(1.2));
-    internal async Task TestAllAsync(TimeSpan interval)
+    internal async Task TestAllAsync(TimeSpan interval, CancellationToken externalCancellation = default)
     {
         if (!CanEdit) return;
         var restore = character.CaptureAppearance(); long request = ++revision;
-        using var cancellation = new CancellationTokenSource(); testing = cancellation; LastTestedKinds.Clear();
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(externalCancellation); testing = cancellation; LastTestedKinds.Clear();
         SetBusy(true); Notify(nameof(IsTesting)); StopTestCommand.Refresh();
         await gate.WaitAsync(); bool completed = false;
         try

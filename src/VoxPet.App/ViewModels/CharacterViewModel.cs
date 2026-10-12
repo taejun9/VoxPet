@@ -13,6 +13,7 @@ namespace VoxPet.App.ViewModels;
 public sealed class CharacterViewModel : ObservableObject
 {
     public System.Collections.ObjectModel.ObservableCollection<CostumeItemViewModel> CostumeLayers { get; internal set; } = [];
+    public string CostumeCharacterId { get; internal set; } = CharacterCatalog.DefaultId;
     public CharacterRig Rig { get; private set; } = CharacterRig.Default(CharacterCatalog.DefaultId);
     public MotionPose Motion { get; private set; } = MotionPose.Rest;
     public bool ShowMotionGuides { get; internal set; }
@@ -102,6 +103,17 @@ public sealed class CharacterViewModel : ObservableObject
     {
         personalDefaults = family.Sheets; DefaultWarnings = family.Warnings; defaultName = displayName;
         RestoreDefault(); Notify(nameof(DefaultExpressionCount)); Notify(nameof(MouthFrameCount));
+    }
+    internal Action CaptureRequestedAppearance()
+    {
+        var savedProfile = profile; var custom = UsesCustomSheet ? sprites : null;
+        return () => Apply(savedProfile, custom);
+    }
+    internal Action CaptureDefaultAppearance()
+    {
+        var family = personalDefaults; string displayName = defaultName; int warnings = DefaultWarnings;
+        var restore = CaptureAppearance();
+        return () => { personalDefaults = family; defaultName = displayName; DefaultWarnings = warnings; restore(); Notify(nameof(DefaultExpressionCount)); Notify(nameof(MouthFrameCount)); };
     }
     internal Action CaptureAppearance()
     {

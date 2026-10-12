@@ -167,10 +167,11 @@ public partial class MainWindow : Window
     {
         if (handInputs == null) return;
         var settings = Model.Hands.Snapshot(); handInputs.Configure(settings);
-        bool needsMouse = settings.Profiles.Any(profile => profile.Enabled && profile.LeftClick && profile.Mode == VoxPet.Core.Models.HandTriggerMode.Hotkey);
+        var click = settings.Profiles.FirstOrDefault(profile => profile.Enabled && profile.LeftClick && profile.Mode == VoxPet.Core.Models.HandTriggerMode.Hotkey);
+        bool needsMouse = click != null;
         Model.Hands.Status = handInputs.Conflicts.Count > 0 || needsMouse && !handInputs.MouseRegistered
             ? "입력 등록 실패 · 다른 앱과의 키 충돌을 확인하세요. 손동작 시험 버튼은 사용할 수 있습니다."
-            : "동작 설정 자동 저장 · 좌클릭은 원래 클릭과 함께 실행됩니다.";
+            : click == null ? "동작 설정을 자동 저장합니다." : $"좌클릭 → {Model.Hands.Gestures[(int)click.Gesture]} · 원래 클릭도 전달합니다.";
     }
     internal MuteHotkey EnableMuteHotkey()
     {

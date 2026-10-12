@@ -51,10 +51,12 @@ public sealed class MotionSurface : FrameworkElement
         {
             var limb = attachment == MotionAttachment.LeftHand ? rig.Left : rig.Right;
             if (!limb.Enabled) return Transform.Identity;
+            var wrist = new MotionPoint(limb.PivotX, limb.Y + limb.Height * .9);
+            var target = ConnectedMotion.Map(wrist, rig, pose, follow, false);
             var group = new TransformGroup(); double scale = 1 + (pose.HandScale - 1) * follow;
-            group.Children.Add(new ScaleTransform(scale, scale, limb.PivotX, limb.PivotY));
-            group.Children.Add(new RotateTransform((attachment == MotionAttachment.LeftHand ? pose.LeftAngle : pose.RightAngle) * follow, limb.PivotX, limb.PivotY));
-            group.Children.Add(new TranslateTransform(pose.HandX * follow, pose.HandY * follow)); return group;
+            group.Children.Add(new ScaleTransform(scale, scale, wrist.X, wrist.Y));
+            group.Children.Add(new RotateTransform((attachment == MotionAttachment.LeftHand ? pose.LeftAngle : pose.RightAngle) * follow, wrist.X, wrist.Y));
+            group.Children.Add(new TranslateTransform(target.X - wrist.X, target.Y - wrist.Y)); return group;
         }
         return Transform.Identity;
     }
@@ -105,7 +107,7 @@ public sealed class MotionSurface : FrameworkElement
     }
     private void Costumes(DrawingContext drawing, bool behind)
     {
-        foreach (var item in model!.CostumeLayers.Where(item => item.Enabled && item.BehindCharacter == behind && item.Image != null))
+        foreach (var item in model!.CostumeLayers.Where(item => item.Enabled && (item.Profile.CharacterId == null || item.Profile.CharacterId == model.CostumeCharacterId) && item.BehindCharacter == behind && item.Image != null))
         {
             var rect = new Rect(item.X, item.Y, item.DisplayWidth, item.DisplayHeight);
             var attachment = item.Profile.EffectiveAttachment;
@@ -140,18 +142,39 @@ public sealed class MotionSurface : FrameworkElement
         }
         else
         {
-            drawing.PushTransform(AttachmentTransform(model, rig.Right.Enabled ? MotionAttachment.RightHand : MotionAttachment.LeftHand, 1));
-            drawing.PushTransform(new TranslateTransform(limb.PivotX, limb.Y + limb.Height - 16));
+            var wrist = ConnectedMotion.Map(new(limb.PivotX, limb.Y + limb.Height * .9), rig, motion);
+            drawing.PushTransform(new TranslateTransform(wrist.X, wrist.Y));
+            drawing.PushTransform(new RotateTransform(rig.Right.Enabled ? motion.RightAngle : motion.LeftAngle));
             switch (motion.Gesture)
             {
                 case HandGesture.ToyGun:
-                    drawing.DrawGeometry(Brushes.DeepSkyBlue, Outline, Gun); drawing.DrawRectangle(Brushes.Orange, null, new Rect(60, -18, 8, 14)); break;
-                case HandGesture.ToySword: drawing.DrawGeometry(Brushes.LightBlue, Outline, Sword); break;
+                    drawing.DrawGeometry(Brushes.DeepSkyBlue, Outline, Gun);
+                    drawing.DrawRoundedRectangle(Brushes.Orange, Outline, new Rect(57, -20, 13, 18), 4, 4);
+                    drawing.DrawEllipse(Brushes.White, Outline, new Point(28, 6), 6, 7);
+                    drawing.DrawRoundedRectangle(Brushes.Gold, Outline, new Rect(9, -31, 24, 13), 5, 5);
+                    drawing.DrawEllipse(Brushes.LightSkyBlue, null, new Point(82 + motion.Effect * 12, -10), 5, 5); break;
+                case HandGesture.ToySword:
+                    drawing.DrawGeometry(Brushes.LightBlue, Outline, Sword);
+                    drawing.DrawRectangle(Brushes.Gold, Outline, new Rect(-20, 0, 40, 8));
+                    drawing.DrawRoundedRectangle(Brushes.Sienna, Outline, new Rect(-5, 8, 10, 23), 3, 3);
+                    drawing.DrawLine(FrozenPen(Brushes.White, 2), new Point(0, -62), new Point(0, -8)); break;
                 case HandGesture.MagicWand:
                     drawing.DrawRoundedRectangle(Brushes.MediumPurple, Outline, new Rect(-4, -68, 8, 80), 3, 3);
                     drawing.PushTransform(new TranslateTransform(0, -76)); drawing.DrawGeometry(Brushes.Gold, Outline, Star); drawing.Pop(); break;
-                case HandGesture.Claw:
-                    for (int i = 0; i < 3; i++) drawing.DrawLine(FrozenPen(Brushes.LightSalmon, 4), new Point(i * 12 - 12, -40), new Point(i * 12 - 25, -8)); break;
+                case HandGesture.HandRaise:
+                    if (model.CostumeCharacterId == "pelly")
+                    {
+                        drawing.DrawEllipse(Brushes.FloralWhite, Outline, new Point(0, -10), 18, 28);
+                        for (int i = 0; i < 3; i++) drawing.DrawEllipse(Brushes.FloralWhite, Outline, new Point(-12 + i * 12, -29), 7, 16);
+                    }
+                    else
+                    {
+                        var hand = model.CostumeCharacterId is "neulbo-man" or "neulbo-girl" ? Brushes.Bisque : Brushes.Tan;
+                        drawing.DrawRoundedRectangle(hand, Outline, new Rect(-13, -24, 26, 30), 11, 11);
+                        for (int i = 0; i < 4; i++) drawing.DrawRoundedRectangle(hand, Outline, new Rect(-12 + i * 7, -38 + Math.Abs(i - 1.5) * 3, 7, 25), 3, 3);
+                        drawing.DrawRoundedRectangle(hand, Outline, new Rect(-20, -12, 13, 9), 4, 4);
+                    }
+                    break;
             }
             drawing.Pop(); drawing.Pop();
         }

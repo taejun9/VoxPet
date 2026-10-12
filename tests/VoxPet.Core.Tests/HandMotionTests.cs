@@ -9,19 +9,19 @@ public sealed class HandMotionTests : IDisposable
 {
     private readonly string folder = Path.Combine(Path.GetTempPath(), "VoxPet-hand-" + Guid.NewGuid());
     private static HandMotionSettings Settings(HandTriggerMode mode, double interval = 5) => HandMotionSettings.Default() with
-    { Profiles = HandMotionSettings.Default().Profiles.Select(profile => profile with { Enabled = profile.Gesture == HandGesture.Claw, Mode = mode, IntervalSeconds = interval }).ToArray() };
+    { Profiles = HandMotionSettings.Default().Profiles.Select(profile => profile with { Enabled = profile.Gesture == HandGesture.HandRaise, Mode = mode, IntervalSeconds = interval }).ToArray() };
     [Fact]
     public void IntervalDoesNotReplayMissedCyclesAndTriggerDoesNotRestartSameMotion()
     {
         var scheduler = new HandMotionScheduler(); scheduler.Configure(Settings(HandTriggerMode.Interval), 0);
         Assert.Null(scheduler.Update(4.99)); Assert.Equal(0, scheduler.Update(5)!.Progress);
-        Assert.Equal(HandGesture.Claw, scheduler.Update(5.7)!.Gesture); Assert.Null(scheduler.Update(6.4));
+        Assert.Equal(HandGesture.HandRaise, scheduler.Update(5.7)!.Gesture); Assert.Null(scheduler.Update(6.4));
         Assert.Equal(0, scheduler.Update(100)!.Progress); Assert.Null(scheduler.Update(101.5)); Assert.Null(scheduler.Update(104.9));
         scheduler.Configure(Settings(HandTriggerMode.Hotkey), 105);
-        Assert.True(scheduler.Trigger(HandGesture.Claw, 105)); Assert.False(scheduler.Trigger(HandGesture.Claw, 105.7));
+        Assert.True(scheduler.Trigger(HandGesture.HandRaise, 105)); Assert.False(scheduler.Trigger(HandGesture.HandRaise, 105.7));
         Assert.Equal(.5, scheduler.Update(105.7)!.Progress, 10); Assert.False(scheduler.Trigger(HandGesture.Heart, 105.8));
         Assert.True(scheduler.Trigger(HandGesture.Heart, 105.8, true)); Assert.Equal(HandGesture.Heart, scheduler.Update(105.9)!.Gesture);
-        scheduler.Cancel(); Assert.Null(scheduler.Update(106)); scheduler.Stop(); Assert.False(scheduler.Trigger(HandGesture.Claw, 107, true));
+        scheduler.Cancel(); Assert.Null(scheduler.Update(106)); scheduler.Stop(); Assert.False(scheduler.Trigger(HandGesture.HandRaise, 107, true));
     }
     [Fact]
     public void AlwaysAndPendingIntervalsShareOnePlaybackFairly()
@@ -39,7 +39,7 @@ public sealed class HandMotionTests : IDisposable
     public void InvalidTimeIsRejected(double time)
     {
         var scheduler = new HandMotionScheduler(); Assert.Throws<ArgumentOutOfRangeException>(() => scheduler.Update(time));
-        Assert.Throws<ArgumentOutOfRangeException>(() => scheduler.Trigger(HandGesture.Claw, time));
+        Assert.Throws<ArgumentOutOfRangeException>(() => scheduler.Trigger(HandGesture.HandRaise, time));
     }
     [Fact]
     public void SettingsPreserveOldWardrobeIdsAndRecoverWithoutOverwriting()
@@ -103,13 +103,37 @@ public sealed class HandMotionTests : IDisposable
                 for (int row = 0; row < y.Length - 1; row++) for (int column = 0; column < x.Length - 1; column++)
                 {
                     var a = Map(x[column], y[row]); var b = Map(x[column + 1], y[row]); var c = Map(x[column + 1], y[row + 1]); var d = Map(x[column], y[row + 1]);
-                    Assert.True(Cross(a, b, c) > 0); Assert.True(Cross(a, c, d) > 0);
+                    Assert.True(Cross(a, b, c) > 0, $"{id}/{gesture}/{frame}/{column}/{row}: ABC"); Assert.True(Cross(a, c, d) > 0, $"{id}/{gesture}/{frame}/{column}/{row}: ACD");
                 }
                 Assert.Equal(new MotionPoint(rig.Left.X, rig.Left.Y), Map(rig.Left.X, rig.Left.Y));
                 Assert.Equal(new MotionPoint(256, 100), Map(256, 100));
             }
         }
         static double Cross(MotionPoint a, MotionPoint b, MotionPoint c) => (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X);
+    }
+    [Fact]
+    public void HandRaisePreservesLegacyZeroAndActuallyLiftsWristWithoutMovingFace()
+    {
+        Assert.Equal(0, (int)HandGesture.HandRaise);
+        var legacy = JsonSerializer.Deserialize<HandMotionProfile>("{\"Gesture\":0,\"Enabled\":true,\"Mode\":2,\"IntervalSeconds\":5,\"Shortcut\":{\"Modifiers\":3,\"Key\":49}}");
+        Assert.Equal(HandGesture.HandRaise, legacy!.Gesture); legacy.Validate();
+        foreach (var id in CharacterCatalog.All.Select(c => c.Id).Append("builtin"))
+        {
+            var rig = CharacterRig.Default(id); var limb = rig.Right;
+            var pose = CharacterMotion.Evaluate(rig, new(0, 0, 0, 0, 1, MouthState.Closed), 1, new(HandGesture.HandRaise, .5), HandMotionProfile.Default(HandGesture.HandRaise));
+            var wrist = new MotionPoint(limb.PivotX, limb.Y + limb.Height * .9); var moved = ConnectedMotion.Map(wrist, rig, pose);
+            Assert.True(moved.Y < wrist.Y - 15); Assert.Equal(new MotionPoint(256, 100), ConnectedMotion.Map(new(256, 100), rig, pose));
+        }
+    }
+    [Fact]
+    public void ScopedWardrobeAllowsAllFiveCharactersAndPreservesLegacyGlobalItems()
+    {
+        var items = CharacterCatalog.All.SelectMany(c => Enumerable.Range(0, 9).Select(i => new CostumeProfile(Guid.NewGuid(), "item", (CostumeCategory)i, 0, 0, 512, 512, CharacterId: c.Id, PresetKey: i.ToString()))).ToArray();
+        CostumeStore.Validate(items); Assert.Equal(45, items.Length);
+        var global = new CostumeProfile(Guid.NewGuid(), "legacy", CostumeCategory.FaceDecoration, 0, 0, 20, 20);
+        CostumeStore.Validate(items.Append(global).ToArray());
+        Assert.Throws<ArgumentException>(() => (global with { CharacterId = "../private" }).Validate());
+        Assert.Throws<ArgumentException>(() => (global with { PresetKey = "hat" }).Validate());
     }
     public void Dispose() { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
 }

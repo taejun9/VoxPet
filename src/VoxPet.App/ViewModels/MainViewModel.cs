@@ -122,6 +122,15 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public RelayCommand ApplyNoiseCommand { get; }
     public RelayCommand MicrophonePrivacyCommand { get; }
     public AsyncCommand TestExpressionsCommand { get; }
+    public AsyncCommand TestCharactersCommand { get; }
+    public RelayCommand StopCharacterTestsCommand { get; }
+    private CancellationTokenSource? characterTesting;
+    private Task characterTourTask = Task.CompletedTask;
+    private Action? characterTourRestore;
+    private string characterTestStatus = "선택한 캐릭터 또는 다섯 캐릭터의12표정을 테스트하세요.";
+    public string CharacterTestStatus { get => characterTestStatus; private set => Set(ref characterTestStatus, value); }
+    public bool IsTestingCharacters => characterTesting != null;
+    public List<string> LastTestedCharacters { get; } = [];
     public event Func<string?>? ChooseCharacterSheet;
     public event Action? OpenBroadcast;
     public event Action? MoveToTray;
@@ -144,6 +153,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Hands = new(Character, persistSettings, folder, () => clock.Elapsed.TotalSeconds);
         var saved = persistSettings ? initialSettings?.Normalize() ?? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         selectedCharacter = appliedCharacter = Characters.Single(item => item.Id == saved.CharacterId);
+        Wardrobe.SetCharacter(appliedCharacter.Id); Character.CostumeCharacterId = appliedCharacter.Id;
         preferredMicrophoneId = saved.MicrophoneId; mainPlacement = saved.MainWindow; broadcastPlacement = saved.BroadcastWindow;
         broadcastWidth = broadcastPlacement?.Width ?? 480; broadcastHeight = broadcastPlacement?.Height ?? 480;
         broadcastOpen = saved.BroadcastOpen; muted = saved.CharacterMuted; settingsTab = saved.SettingsTab;
@@ -151,6 +161,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Expressions.AppearanceSelected += (slot, kind) =>
         {
             if (closing) return;
+            if (characterTesting != null && characterTourRestore != null) { CancelCharacterTour(true); ++characterRevision; }
             expressionSlotId = slot; builtinExpression = kind; Hands.SetCharacter(MotionCharacterId); ScheduleSettingsSave();
         };
         StartCommand = new(StartAsync, () => CanChooseDevice && SelectedDevice != null);
@@ -179,8 +190,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             CalibrationStatus = $"Noise Gate {gate:F0} dBFS 적용 완료. 작은 목소리가 잘리는지 말해서 확인하세요.";
             recommendedGate = null; RefreshCommands();
         }, () => !closing && recommendedGate != null && calibration == null);
-        TestExpressionsCommand = new(() => TestExpressionsAsync(), () => !closing && !busy && Expressions.CanEdit);
-        Expressions.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Expressions.CanEdit)) TestExpressionsCommand.Refresh(); };
+        TestCharactersCommand = new(() => TestCharactersAsync(), () => !closing && !busy && !IsTestingCharacters && Expressions.CanEdit);
+        StopCharacterTestsCommand = new(() => { characterTesting?.Cancel(); Expressions.CancelTest(); }, () => !closing && (IsTestingCharacters || Expressions.IsTesting));
+        TestExpressionsCommand = new(() => TestExpressionsAsync(), () => !closing && !busy && !IsTestingCharacters && Expressions.CanEdit);
+        Expressions.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Expressions.CanEdit)) { TestExpressionsCommand.Refresh(); TestCharactersCommand.Refresh(); } StopCharacterTestsCommand.Refresh(); };
         MicrophonePrivacyCommand = new(() => OpenMicrophonePrivacy?.Invoke(), () => !closing);
         // 60Hz는 목표 갱신 주기다. 지연된 프레임도 Tick의 실제 dt로 계산해 반응 시간이 늘어나지 않게 한다.
         timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(1000.0 / 60) };
@@ -294,7 +307,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         var item = Characters.FirstOrDefault(entry => entry.Id == id);
         if (closing || item == null) return false;
-        long request = ++characterRevision;
+        CancelCharacterTour(false); long request = ++characterRevision;
         selectedCharacter = item; Notify(nameof(SelectedCharacter));
         characterLoads++; characterBusy = true; CharacterStatus = $"{item.Name} 불러오는 중…"; RefreshCommands();
         try
@@ -305,6 +318,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return () =>
                 {
                     Character.SetDefault(family, item.Name); appliedCharacter = item; Hands.SetCharacter(item.Id);
+                    Wardrobe.SetCharacter(item.Id); Character.CostumeCharacterId = item.Id; Character.RefreshMotion();
                     CharacterStatus = $"{item.Name}{(item.SideView ? " · 측면" : "")} · 입{Character.MouthFrameCount}단계 / 눈 깜박임 · 두 창에 적용했습니다." +
                         (family.Warnings > 0 ? " 일부 표정 파일은 평상 모습으로 표시합니다." : "");
                 };
@@ -370,7 +384,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     private async Task StopAsync()
     {
-        Expressions.CancelTest();
+        characterTesting?.Cancel(); Expressions.CancelTest();
         ClearNoiseMeasurement("측정을 종료했습니다. 마이크를 다시 시작한 뒤 측정하세요.");
         busy = true; demo = false; RefreshCommands(); Status = "마이크 종료 중…";
         try { await session.StopAsync(); ResetLevels(); Status = session.Error ?? "중지됨 · 마이크 캡처가 해제되었습니다."; }
@@ -384,6 +398,48 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if (ownsDemo) ToggleDemo();
         try { if (interval is { } duration) await Expressions.TestAllAsync(duration); else await Expressions.TestAllAsync(); }
         finally { if (ownsDemo && demo && !closing && !session.HasResources) await StopAsync(); }
+    }
+    private void CancelCharacterTour(bool keepRequested)
+    {
+        characterTesting?.Cancel(); var restore = characterTourRestore; characterTourRestore = null;
+        if (restore != null && !closing) { var requested = keepRequested ? Character.CaptureRequestedAppearance() : null; restore(); requested?.Invoke(); }
+    }
+    internal Task TestCharactersAsync(TimeSpan? interval = null)
+    {
+        if (IsTestingCharacters) return characterTourTask;
+        return characterTourTask = RunCharacterTestsAsync(interval);
+    }
+    private async Task RunCharacterTestsAsync(TimeSpan? interval)
+    {
+        if (closing || busy || IsTestingCharacters || !Expressions.CanEdit) return;
+        using var cancellation = new CancellationTokenSource(); characterTesting = cancellation;
+        var restore = Character.CaptureDefaultAppearance(); characterTourRestore = restore; string originalName = Character.Name;
+        long request = characterRevision; bool ownsDemo = CanChooseDevice;
+        if (ownsDemo) ToggleDemo(); LastTestedCharacters.Clear();
+        Notify(nameof(IsTestingCharacters)); TestExpressionsCommand.Refresh(); TestCharactersCommand.Refresh(); StopCharacterTestsCommand.Refresh();
+        try
+        {
+            foreach (var item in Characters)
+            {
+                cancellation.Token.ThrowIfCancellationRequested();
+                var family = await Task.Run(() => CharacterViewModel.LoadFamily(Path.Combine(charactersFolder, item.FileName)), cancellation.Token);
+                cancellation.Token.ThrowIfCancellationRequested(); if (closing || request != characterRevision) break;
+                Character.SetDefault(family, item.Name); Hands.SetCharacter(item.Id); Wardrobe.SetCharacter(item.Id); Character.CostumeCharacterId = item.Id;
+                LastTestedCharacters.Add(item.Id); CharacterTestStatus = $"{item.Name} · {LastTestedCharacters.Count}/5 · 표정{Character.DefaultExpressionCount}종";
+                await Expressions.TestAllAsync(interval ?? TimeSpan.FromSeconds(1.2), cancellation.Token);
+            }
+            if (!cancellation.IsCancellationRequested) CharacterTestStatus = "다섯 캐릭터 표정 테스트 완료 · 원래 캐릭터로 돌아갑니다.";
+        }
+        catch (OperationCanceledException) { CharacterTestStatus = "캐릭터 표정 테스트를 중지했습니다."; }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException)
+        { CharacterTestStatus = "캐릭터 파일을 읽지 못해 테스트를 중지했습니다. 개인 패키지의 Characters 폴더를 확인하세요."; }
+        finally
+        {
+            if (!closing && request == characterRevision) { restore(); CharacterTestStatus += $" · {originalName}"; }
+            Wardrobe.SetCharacter(appliedCharacter.Id); Character.CostumeCharacterId = appliedCharacter.Id; Hands.SetCharacter(MotionCharacterId);
+            characterTourRestore = null; characterTesting = null; Notify(nameof(IsTestingCharacters)); TestExpressionsCommand.Refresh(); TestCharactersCommand.Refresh(); StopCharacterTestsCommand.Refresh();
+            if (ownsDemo && demo && !closing && !session.HasResources) await StopAsync();
+        }
     }
     private void ToggleDemo()
     {
@@ -533,7 +589,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ClearNoiseMeasurement("앱 종료로 측정을 취소했습니다.");
         closing = true; timer.Stop(); timer.Tick -= Tick; saveTimer.Stop(); saveTimer.Tick -= SaveTimerTick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
-        var expressionClose = Expressions.CloseAsync(); var handsClose = Hands.CloseAsync();
+        characterTesting?.Cancel(); await characterTourTask; var expressionClose = Expressions.CloseAsync(); var handsClose = Hands.CloseAsync();
         await session.DisposeAsync(); await expressionClose; await handsClose; await Wardrobe.CloseAsync(); ResetLevels();
         await FlushSettingsAsync();
     }

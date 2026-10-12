@@ -20,9 +20,9 @@ public sealed class HandMotionViewModel : ObservableObject
     private string characterId = CharacterCatalog.DefaultId;
     private int selected, side;
     private bool ready, closing, guides;
-    private string status = "기본: 좌클릭 할퀴기 · 설정은 자동 저장됩니다.";
+    private string status = "기본: 좌클릭 손올리기 · 설정은 자동 저장됩니다.";
     public CharacterViewModel Character => character;
-    public string[] Gestures { get; } = ["할퀴기", "장난감 총", "손하트", "장난감 칼", "요술봉"];
+    public string[] Gestures { get; } = ["손올리기", "장난감 총", "손하트", "장난감 칼", "요술봉"];
     public string[] Modes { get; } = ["항상", "초 간격", "입력할 때"];
     public string[] Inputs { get; } = ["좌클릭", "전역 키"];
     public string[] ModifierNames { get; } = ["Ctrl+Alt", "Ctrl", "Alt", "Ctrl+Shift", "Alt+Shift", "Ctrl+Alt+Shift"];
@@ -56,6 +56,7 @@ public sealed class HandMotionViewModel : ObservableObject
     public string Status { get => status; set => Set(ref status, value); }
     public bool CanEdit => ready && !closing;
     public RelayCommand PreviewCommand { get; }
+    public RelayCommand ClickCommand { get; }
     public RelayCommand StopCommand { get; }
     public RelayCommand ResetRigCommand { get; }
     public event Action? InputsChanged;
@@ -63,6 +64,7 @@ public sealed class HandMotionViewModel : ObservableObject
     public HandMotionViewModel(CharacterViewModel character, bool persistent, string folder, Func<double> seconds)
     {
         this.character = character; this.persistent = persistent; this.seconds = seconds; store = new(Path.Combine(folder, "motion.json"));
+        ClickCommand = new(() => Change(Selected with { Enabled = true, Mode = HandTriggerMode.Hotkey, LeftClick = true }), () => CanEdit);
         PreviewCommand = new(() => Trigger((HandGesture)selected, true), () => CanEdit);
         StopCommand = new(() => { scheduler.Cancel(); character.SetMotion(Rig, null, null); }, () => CanEdit);
         ResetRigCommand = new(() => ChangeRig(CharacterRig.Default(characterId)), () => CanEdit);
@@ -76,7 +78,7 @@ public sealed class HandMotionViewModel : ObservableObject
             var loaded = await Task.Run(store.Load); if (closing) return;
             settings = loaded.Settings; if (loaded.Recovered) Status = "동작 설정을 읽지 못해 기본값으로 시작합니다. 이전 파일은 보존합니다.";
         }
-        scheduler.Configure(settings, seconds()); ready = true; Update(seconds()); NotifyEditor(); Notify(nameof(CanEdit)); PreviewCommand.Refresh(); StopCommand.Refresh(); ResetRigCommand.Refresh(); InputsChanged?.Invoke();
+        scheduler.Configure(settings, seconds()); ready = true; Update(seconds()); NotifyEditor(); Notify(nameof(CanEdit)); PreviewCommand.Refresh(); ClickCommand.Refresh(); StopCommand.Refresh(); ResetRigCommand.Refresh(); InputsChanged?.Invoke();
     }
     public void SetCharacter(string id)
     {
@@ -134,7 +136,7 @@ public sealed class HandMotionViewModel : ObservableObject
     {
         closing = true; scheduler.Stop(); saveTimer.Stop(); saveTimer.Tick -= SaveTick;
         character.SetMotion(Rig, null, null); character.ShowMotionGuides = false;
-        Notify(nameof(CanEdit)); PreviewCommand.Refresh(); StopCommand.Refresh(); ResetRigCommand.Refresh();
+        Notify(nameof(CanEdit)); PreviewCommand.Refresh(); ClickCommand.Refresh(); StopCommand.Refresh(); ResetRigCommand.Refresh();
         await FlushAsync();
     }
 }

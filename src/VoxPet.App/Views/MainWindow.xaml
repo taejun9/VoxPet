@@ -287,15 +287,17 @@
                 </TabItem>
                 <TabItem Header="테스트">
                   <StackPanel Margin="8,12,8,0">
-                    <TextBlock Text="새 표정 12종 미리보기" FontWeight="SemiBold"/>
+                    <TextBlock Text="캐릭터별12종 표정 테스트" FontWeight="SemiBold"/>
                     <TextBlock Text="버튼을 누르면 새 얼굴을 확인합니다. 저장한 슬롯은 유지합니다." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,12"/>
+                    <TextBlock Text="{Binding DataContext.CharacterTestStatus, RelativeSource={RelativeSource AncestorType=Window}}" TextWrapping="Wrap" FontSize="11" Margin="0,6,0,8"/>
                     <ItemsControl ItemsSource="{Binding TestExpressions}">
                       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate><DataTemplate><Button Content="{Binding Name}" Command="{Binding PreviewCommand}" Padding="10,7" Margin="0,0,6,6"/></DataTemplate></ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <WrapPanel Margin="0,12,0,0">
-                      <Button Content="12종 전체 테스트" Command="{Binding DataContext.TestExpressionsCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="10,8"/>
-                      <Button Content="테스트 중지" Command="{Binding StopTestCommand}" Padding="10,8"/>
+                      <Button Content="현재 캐릭터12종 테스트" Command="{Binding DataContext.TestExpressionsCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="10,8"/>
+                      <Button Content="다섯 캐릭터 전체 테스트" Command="{Binding DataContext.TestCharactersCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="10,8"/>
+                      <Button Content="테스트 중지" Command="{Binding DataContext.StopCharacterTestsCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="10,8"/>
                     </WrapPanel>
                     <TextBlock Text="입력이 꺼져 있으면 마이크 없이 데모로 입 움직임을 표시합니다." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
                     <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,12,0,0" Foreground="#8FA4BC"/>
@@ -334,6 +336,16 @@
           <Viewbox Stretch="Uniform" StretchDirection="DownOnly" VerticalAlignment="Top">
             <StackPanel Width="440" Margin="0,12,0,0">
               <TabControl Background="#111927" BorderThickness="0" Foreground="#DDE4F0">
+                <TabItem Header="꾸미기">
+                  <StackPanel Margin="8,12,8,0">
+                    <TextBlock Text="{Binding PresetCharacter, StringFormat={} {0} 꾸미기}" FontWeight="Bold"/>
+                    <TextBlock Text="캐릭터에 맞는 아이템을 선택하고 바로 착용하세요. 기존 보관함은 유지됩니다." TextWrapping="Wrap" Margin="0,8,0,12"/>
+                    <ComboBox ItemsSource="{Binding Presets}" SelectedIndex="{Binding PresetIndex}" AutomationProperties.Name="캐릭터 꾸미기 아이템"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <Button Content="아이템 추가하고 착용" Command="{Binding AddPresetCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                    <TextBlock Text="모자·안경·귀걸이는 머리를, 리본은 입을, 상의·재킷·한벌옷의 소매는 손동작을 따라갑니다." TextWrapping="Wrap" FontSize="12" Margin="0,12,0,0"/>
+                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,12,0,0"/>
+                  </StackPanel>
+                </TabItem>
                 <TabItem Header="보관함">
                   <StackPanel Margin="8,12,8,0" IsEnabled="{Binding CanEdit}">
                     <TextBlock Text="이미지 추가 분류"/>
@@ -390,7 +402,7 @@
                 <TabItem Header="손동작"><StackPanel Margin="8,12,8,0">
 <ComboBox ItemsSource="{Binding Gestures}" SelectedIndex="{Binding SelectedIndex}" AutomationProperties.Name="손동작 종류" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox><CheckBox Content="선택 동작 사용" IsChecked="{Binding Enabled}"/>
 <ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding ModeIndex}" AutomationProperties.Name="손동작 실행 방식" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox><StackPanel Width="190" Margin="0,0,8,8"><TextBlock Text="간격 (2~3600초)"/><TextBox Text="{Binding Interval, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="간격 (2~3600초)"/></StackPanel><ComboBox ItemsSource="{Binding Inputs}" SelectedIndex="{Binding InputIndex}" AutomationProperties.Name="손동작 입력" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox><WrapPanel><StackPanel Width="190" Margin="0,0,8,0"><ComboBox ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex}" AutomationProperties.Name="손동작 조합키" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel><StackPanel Width="190"><ComboBox ItemsSource="{Binding Keys}" SelectedIndex="{Binding KeyIndex}" AutomationProperties.Name="손동작 키" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel></WrapPanel>
-                  <WrapPanel><Button Content="동작 시험" Command="{Binding PreviewCommand}"/><Button Content="현재 동작 멈춤" Command="{Binding StopCommand}"/></WrapPanel>
+                  <WrapPanel><Button Content="좌클릭으로 이 동작 사용" Command="{Binding ClickCommand}"/><Button Content="동작 시험" Command="{Binding PreviewCommand}"/><Button Content="현재 동작 멈춤" Command="{Binding StopCommand}"/></WrapPanel>
                   <TextBlock Text="좌클릭 동작은 한 개만 활성화됩니다. 항상·간격 모드는 입력 설정과 무관하게 실행됩니다. 시험은 마이크 없이 실행됩니다." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
                   <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
                 </StackPanel></TabItem>

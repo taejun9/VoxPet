@@ -17,9 +17,11 @@ public static class ConnectedMotion
         }
         foreach (var (limb, angle) in new[] { (rig.Left, pose.LeftAngle), (rig.Right, pose.RightAngle) })
         {
-            if (!limb.Enabled || y <= limb.Y || y >= limb.Y + limb.Height || x <= limb.X || x >= limb.X + limb.Width) continue;
+            if (!limb.Enabled || y <= limb.Y || y >= Math.Min(512, limb.Y + limb.Height + 32) || x <= limb.X || x >= limb.X + limb.Width) continue;
             double u = (x - limb.X) / limb.Width, v = (y - limb.Y) / limb.Height;
-            double weight = Smooth(Math.Min(u, 1 - u) / .25) * Smooth(Math.Min(v / .25, (1 - v) / .12));
+            // Wrist remains attached: lift rises along the sleeve and fades only below the limb.
+            double tail = v <= 1 ? 1 : Smooth((limb.Y + limb.Height + 32 - y) / 32);
+            double weight = Smooth(Math.Min(u, 1 - u) / .25) * Smooth(v) * tail;
             double scale = 1 + (pose.HandScale - 1) * follow;
             var scaled = new MotionPoint(limb.PivotX + (x - limb.PivotX) * scale, limb.PivotY + (y - limb.PivotY) * scale);
             var target = Rotate(scaled, limb.PivotX, limb.PivotY, angle * follow);
@@ -28,7 +30,7 @@ public static class ConnectedMotion
         return point;
     }
     public static double[] Columns(CharacterRig rig) => new[] { 0d, 256, 512 }.Concat(new[] { rig.Left, rig.Right }.Where(limb => limb.Enabled).SelectMany(limb => new[] { limb.X, limb.X + limb.Width * .25, limb.PivotX, limb.X + limb.Width * .75, limb.X + limb.Width })).Distinct().Order().ToArray();
-    public static double[] Rows(CharacterRig rig, bool head) => new[] { head ? rig.HeadCutY - 24 : rig.HeadCutY, rig.HeadCutY, 512d }.Concat(new[] { rig.Left, rig.Right }.Where(limb => limb.Enabled).SelectMany(limb => new[] { limb.Y, limb.Y + limb.Height * .25, limb.Y + limb.Height * .5, limb.Y + limb.Height * .75, limb.Y + limb.Height * .88, limb.Y + limb.Height })).Distinct().Order().ToArray();
+    public static double[] Rows(CharacterRig rig, bool head) => new[] { head ? rig.HeadCutY - 24 : rig.HeadCutY, rig.HeadCutY, 512d }.Concat(new[] { rig.Left, rig.Right }.Where(limb => limb.Enabled).SelectMany(limb => new[] { limb.Y, limb.Y + limb.Height * .25, limb.Y + limb.Height * .5, limb.Y + limb.Height * .75, limb.Y + limb.Height * .88, limb.Y + limb.Height, Math.Min(512, limb.Y + limb.Height + 32) })).Distinct().Order().ToArray();
     private static double Smooth(double value) { value = Math.Clamp(value, 0, 1); return value * value * (3 - 2 * value); }
     private static MotionPoint Rotate(MotionPoint point, double x, double y, double degrees)
     {
