@@ -78,5 +78,6 @@ QA 이후 단일 에이전트 자체 리뷰: 다섯 이름/순서와 측면 펠�
 - 고정 SDK 10.0.401 locked restore, Release build 경고0/오류0, format --verify-no-changes 통과.
 - 최초 로컬 SDK 경로는 인증서 assembly 누락으로 실패하여 기존 정상 SDK019 사용. restore는 sandbox 네트워크 제한으로 NU1900, 승인 실행에서 취약성 검사 포함 성공.
 - Core test는 sandbox 로컬 소켓 금지로 시작 실패, 승인 환경에서 재실행.
+- Core160/160 통과. 최초 Windows CI38231326083은 build/Core160 성공, WPF884고유검사 통과와24개 실패. 실패는 캐릭터 ComboBox 선택값/팝업 글씨가 어두운 테마 색을 사용한 것뿐이며 명시적 검정 ItemTemplate으로 수정. 신규 실제 선택·경합·파일 복구 검사 전부 통과. OBS38231326034 성공.
 - 신규4RGBA 시트/24셀/6고유 상태/셀 내부 여백·알파 확인, 기존12PNG byte-identical. 개인 시트/프롬프트/QA 기록은 ignored artifacts에 보관.
 - Windows CI용 실제 Selector/선택 경합 fixture와 일반 EXE 펠리 복원·누락·손상 사례 추가. 개인 자료는 CI에 전달하지 않음.

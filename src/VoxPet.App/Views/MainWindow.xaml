@@ -172,7 +172,9 @@
           <Viewbox Stretch="Uniform" StretchDirection="DownOnly" HorizontalAlignment="Stretch" VerticalAlignment="Top">
             <StackPanel Width="440" Margin="0,12,0,0">
               <TextBlock Text="캐릭터 선택" FontWeight="SemiBold" Margin="8,0,8,6"/>
-              <ComboBox x:Name="CharacterSelector" ItemsSource="{Binding Characters}" SelectedItem="{Binding SelectedCharacter}" DisplayMemberPath="Name" IsEnabled="{Binding CanChooseCharacter}" AutomationProperties.Name="캐릭터 선택" Margin="8,0,8,6"/>
+              <ComboBox x:Name="CharacterSelector" ItemsSource="{Binding Characters}" SelectedItem="{Binding SelectedCharacter}" IsEnabled="{Binding CanChooseCharacter}" AutomationProperties.Name="캐릭터 선택" Margin="8,0,8,6" MinHeight="32" Foreground="Black" Background="White">
+                <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate>
+              </ComboBox>
               <TextBlock Text="{Binding CharacterStatus}" TextWrapping="Wrap" FontSize="11" Foreground="#8FA4BC" Margin="8,0,8,8"/>
               <TabControl Background="#111927" BorderThickness="0" Foreground="#DDE4F0" Padding="0">
                 <TabItem Header="미리보기">
