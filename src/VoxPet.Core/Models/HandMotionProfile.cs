@@ -15,9 +15,9 @@ public sealed record HandShortcut(uint Modifiers, uint Key)
 }
 
 public sealed record HandMotionProfile(HandGesture Gesture, bool Enabled, HandTriggerMode Mode,
-    double IntervalSeconds, HandShortcut Shortcut, double X = 0, double Y = 0, double Scale = 1)
+    double IntervalSeconds, HandShortcut Shortcut, double X = 0, double Y = 0, double Scale = 1, bool LeftClick = true)
 {
-    public static HandMotionProfile Default(HandGesture gesture) => new(gesture, false, HandTriggerMode.Hotkey, 5, new(3, 0x31 + (uint)gesture));
+    public static HandMotionProfile Default(HandGesture gesture) => new(gesture, gesture == HandGesture.Claw, HandTriggerMode.Hotkey, 5, new(3, 0x31 + (uint)gesture));
     public void Validate()
     {
         if (!Enum.IsDefined(Gesture) || !Enum.IsDefined(Mode) || Shortcut == null ||
@@ -28,16 +28,21 @@ public sealed record HandMotionProfile(HandGesture Gesture, bool Enabled, HandTr
     }
 }
 
-public sealed record HandMotionSettings(HandMotionProfile[] Profiles, double? HeadCutY = null)
+public sealed record HandMotionSettings(HandMotionProfile[] Profiles, Dictionary<string, CharacterRig>? Rigs = null)
 {
     public static HandMotionSettings Default() => new(Enum.GetValues<HandGesture>().Select(HandMotionProfile.Default).ToArray());
     public void Validate()
     {
         if (Profiles == null || Profiles.Length != 5 || Profiles.Any(profile => profile == null) ||
-            Profiles.Select(profile => profile.Gesture).Distinct().Count() != 5 ||
-            HeadCutY is { } y && (!double.IsFinite(y) || y is < 240 or > 380)) throw new ArgumentException("손동작5종/머리 경계를 확인하세요.");
+            Profiles.Select(profile => profile.Gesture).Distinct().Count() != 5) throw new ArgumentException("손동작5종을 확인하세요.");
         foreach (var profile in Profiles) profile.Validate();
-        var keys = Profiles.Where(profile => profile.Enabled && profile.Mode == HandTriggerMode.Hotkey).Select(profile => profile.Shortcut).ToArray();
+        if (Rigs != null)
+        {
+            if (Rigs.Count > 6 || Rigs.Any(pair => pair.Value == null || pair.Key != "custom" && !CharacterCatalog.All.Any(character => character.Id == pair.Key))) throw new ArgumentException("캐릭터 연결 설정을 확인하세요.");
+            foreach (var rig in Rigs.Values) rig.Validate();
+        }
+        var keys = Profiles.Where(profile => profile.Enabled && profile.Mode == HandTriggerMode.Hotkey && !profile.LeftClick).Select(profile => profile.Shortcut).ToArray();
         if (keys.Distinct().Count() != keys.Length) throw new ArgumentException("사용 중인 손동작 핫키가 중복됩니다.");
+        if (Profiles.Count(profile => profile.Enabled && profile.Mode == HandTriggerMode.Hotkey && profile.LeftClick) > 1) throw new ArgumentException("좌클릭 동작은 하나만 활성화할 수 있습니다.");
     }
 }

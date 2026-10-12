@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     private CharacterWindow? character;
     private ExpressionHotkeys? hotkeys;
     private MuteHotkey? muteHotkey;
+    private HandMotionInputs? handInputs;
     private TrayService? tray;
     internal bool IsInTray { get; private set; }
     internal bool TrayIconVisible => tray?.Visible == true;
@@ -72,10 +73,10 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) =>
         {
             RestorePlacement(false);
-            if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); }
+            if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); EnableHandInputs(); }
             else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
         };
-        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); tray?.Dispose(); };
+        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); handInputs?.Dispose(); tray?.Dispose(); };
         Loaded += async (_, _) =>
         {
             if (initializationStarted) return; initializationStarted = true;
@@ -147,6 +148,22 @@ public partial class MainWindow : Window
             ? "Ctrl+Shift+F1~F11 전역 사용 · F12는 VoxPet 창 안에서 사용"
             : $"단축키 등록 실패: {string.Join(", ", hotkeys.Conflicts.Select(i => $"F{i + 1}"))} · 다른 앱과 충돌할 수 있습니다. 앱 안의 키/버튼을 사용하세요. F12도 앱 안에서 사용합니다.";
         return hotkeys;
+    }
+    internal HandMotionInputs EnableHandInputs()
+    {
+        if (handInputs != null) return handInputs;
+        var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+        handInputs = new(source, gesture => Model.Hands.Trigger(gesture), Model.Hands.LeftClick);
+        Model.Hands.InputsChanged += ConfigureHandInputs; ConfigureHandInputs(); return handInputs;
+    }
+    private void ConfigureHandInputs()
+    {
+        if (handInputs == null) return;
+        var settings = Model.Hands.Snapshot(); handInputs.Configure(settings);
+        bool needsMouse = settings.Profiles.Any(profile => profile.Enabled && profile.LeftClick && profile.Mode == VoxPet.Core.Models.HandTriggerMode.Hotkey);
+        Model.Hands.Status = handInputs.Conflicts.Count > 0 || needsMouse && !handInputs.MouseRegistered
+            ? "입력 등록 실패 · 다른 앱과의 키 충돌을 확인하세요. 손동작 시험 버튼은 사용할 수 있습니다."
+            : "동작 설정 자동 저장 · 좌클릭은 원래 클릭과 함께 실행됩니다.";
     }
     internal MuteHotkey EnableMuteHotkey()
     {
@@ -225,5 +242,5 @@ public partial class MainWindow : Window
     /// <summary>
     /// 캡처 종료·설정 저장 후 방송창을 닫고 다음 Closing을 허용한다.
     /// </summary>
-    public async Task ShutdownAsync() { await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
+    public async Task ShutdownAsync() { handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
 }

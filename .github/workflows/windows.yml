@@ -69,4 +69,5 @@ jobs:
             ${{ runner.temp }}/voxpet-personal-*.png
             ${{ runner.temp }}/voxpet-expression-*.png
             ${{ runner.temp }}/voxpet-costume-*.png
+            ${{ runner.temp }}/voxpet-motion-*.png
           if-no-files-found: warn

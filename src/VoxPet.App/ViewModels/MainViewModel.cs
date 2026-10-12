@@ -54,7 +54,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public bool BroadcastOpen => broadcastOpen;
     public string? PreferredMicrophoneId => preferredMicrophoneId;
     public string SettingsStatus { get => settingsStatus; private set => Set(ref settingsStatus, value); }
-    public int SettingsTab { get => settingsTab; set { if (value is >= 0 and < 6) Set(ref settingsTab, value); } }
+    public int SettingsTab { get => settingsTab; set { if (value is >= 0 and < 7) Set(ref settingsTab, value); } }
     internal void RememberMainPlacement(WindowPlacement value) { mainPlacement = value.Normalize(); ScheduleSettingsSave(); }
     internal void RememberBroadcastPlacement(WindowPlacement value)
     {
@@ -85,6 +85,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public CharacterViewModel Character { get; } = new();
     public ExpressionViewModel Expressions { get; }
     public CostumeViewModel Wardrobe { get; }
+    public HandMotionViewModel Hands { get; }
     public Func<int, bool>? IsGlobalExpressionKey { get; set; }
     public Func<bool>? IsGlobalMuteKey { get; set; }
     public bool HandleMuteKey(Key key, ModifierKeys modifiers, bool repeat)
@@ -139,6 +140,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         string folder = dataFolder ?? AppPaths.DataFolder; store = new(Path.Combine(folder, "settings.json"));
         Expressions = new(Character, persistSettings, Path.Combine(folder, "Expressions"));
         Wardrobe = new(persistSettings, Path.Combine(folder, "Wardrobe")); Character.CostumeLayers = Wardrobe.Items;
+        Hands = new(Character, persistSettings, folder, () => clock.Elapsed.TotalSeconds);
         var saved = persistSettings ? initialSettings?.Normalize() ?? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         selectedCharacter = appliedCharacter = Characters.Single(item => item.Id == saved.CharacterId);
         preferredMicrophoneId = saved.MicrophoneId; mainPlacement = saved.MainWindow; broadcastPlacement = saved.BroadcastWindow;
@@ -283,7 +285,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
         }
         characterInitialized = true;
-        await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await RefreshDevicesAsync();
+        await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await Hands.InitializeAsync(); Hands.SetCharacter(appliedCharacter.Id); await RefreshDevicesAsync();
         settingsReady = true;
     }
     /// <summary>전체 가족을 worker에서 읽고 최신 요청만 적용한다. 실패하면 선택과 현재 그림을 되돌린다.</summary>
@@ -301,7 +303,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 var family = await Task.Run(() => CharacterViewModel.LoadFamily(Path.Combine(charactersFolder, item.FileName)));
                 return () =>
                 {
-                    Character.SetDefault(family, item.Name); appliedCharacter = item;
+                    Character.SetDefault(family, item.Name); appliedCharacter = item; Hands.SetCharacter(item.Id);
                     CharacterStatus = $"{item.Name}{(item.SideView ? " · 측면" : "")} · 입{Character.MouthFrameCount}단계 / 눈 깜박임 · 두 창에 적용했습니다." +
                         (family.Warnings > 0 ? " 일부 표정 파일은 평상 모습으로 표시합니다." : "");
                 };
@@ -401,7 +403,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
                 return () =>
                 {
-                    Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path));
+                    Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path)); Hands.SetCharacter("custom");
                     CharacterStatus = "캐릭터 적용 완료 · 미리보기와 방송창에 함께 적용됩니다.";
                 };
             });
@@ -489,7 +491,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if ((!running && !demo) || CharacterMuted) processor.Reset();
         VoiceLevel = processor.VoiceLevel; RawLevel = running || demo ? result.Raw : 0;
         Metrics = $"RMS {measured.Rms:F4}   Peak {measured.Peak:F4}   {measured.Dbfs:F1} dBFS{(measured.Peak >= 1 ? " · CLIP" : "")}";
-        Character.Update(animator.Update(VoiceLevel, now), now);
+        Hands.Update(now); Character.Update(animator.Update(VoiceLevel, now), now);
     }
     private void ScheduleSettingsSave()
     {
@@ -525,8 +527,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ClearNoiseMeasurement("앱 종료로 측정을 취소했습니다.");
         closing = true; timer.Stop(); timer.Tick -= Tick; saveTimer.Stop(); saveTimer.Tick -= SaveTimerTick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
-        var expressionClose = Expressions.CloseAsync();
-        await session.DisposeAsync(); await expressionClose; await Wardrobe.CloseAsync(); ResetLevels();
+        var expressionClose = Expressions.CloseAsync(); var handsClose = Hands.CloseAsync();
+        await session.DisposeAsync(); await expressionClose; await handsClose; await Wardrobe.CloseAsync(); ResetLevels();
         await FlushSettingsAsync();
     }
 }

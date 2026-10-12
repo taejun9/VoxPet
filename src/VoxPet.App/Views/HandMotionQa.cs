@@ -1,0 +1,125 @@
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using VoxPet.App.Services;
+using VoxPet.App.ViewModels;
+using VoxPet.Core.Models;
+using VoxPet.Core.Services;
+
+namespace VoxPet.App.Views;
+
+/// <summary>합성 PNG/설정/입력만 사용. 실제 마이크나 개인 캐릭터를 읽지 않는다.</summary>
+internal static class HandMotionQa
+{
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool PostMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")]
+    private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
+    private static ImageSource Markers()
+    {
+        var pixels = new byte[512 * 512 * 4];
+        void Square(int x, int y, byte r, byte g, byte b)
+        {
+            for (int row = y; row < y + 12; row++) for (int column = x; column < x + 12; column++)
+            { int i = (row * 512 + column) * 4; pixels[i] = b; pixels[i + 1] = g; pixels[i + 2] = r; pixels[i + 3] = 255; }
+        }
+        Square(98, 392, 0, 255, 0); Square(250, 370, 0, 255, 255); Square(120, 100, 255, 0, 0);
+        var bitmap = BitmapSource.Create(512, 512, 96, 96, PixelFormats.Bgra32, null, pixels, 2048); bitmap.Freeze(); return bitmap;
+    }
+    private static byte[] Render(CharacterViewModel model, string? name = null)
+    {
+        var view = new CharacterView { DataContext = model, Width = 512, Height = 512 };
+        view.Measure(new Size(512, 512)); view.Arrange(new Rect(0, 0, 512, 512)); view.UpdateLayout();
+        var bitmap = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); bitmap.Render(view);
+        if (name != null)
+        {
+            var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+            using var file = File.Create(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), name)); encoder.Save(file);
+        }
+        byte[] pixels = new byte[512 * 512 * 4]; bitmap.CopyPixels(pixels, 2048, 0); return pixels;
+    }
+    private static Point Centroid(byte[] pixels, Func<byte, byte, byte, bool> color)
+    {
+        double x = 0, y = 0, count = 0;
+        for (int row = 0; row < 512; row++) for (int column = 0; column < 512; column++)
+        {
+            int i = (row * 512 + column) * 4;
+            if (pixels[i + 3] > 220 && color(pixels[i + 2], pixels[i + 1], pixels[i])) { x += column; y += row; count++; }
+        }
+        return count == 0 ? new(-1, -1) : new(x / count, y / count);
+    }
+    public static async Task RunAsync(MainWindow main, Action<bool, string> check)
+    {
+        string folder = Path.Combine(Path.GetTempPath(), "VoxPet-motion-qa-" + Guid.NewGuid()); Directory.CreateDirectory(folder);
+        var character = new CharacterViewModel(); var hands = new HandMotionViewModel(character, true, folder, () => 1);
+        try
+        {
+            await hands.InitializeAsync(); hands.SelectedIndex = 2; hands.InputIndex = 1; hands.Enabled = true; hands.ModeIndex = 1; hands.Interval = 7.5;
+            hands.SetCharacter("pelly"); hands.HeadMotion = true; hands.MouthTravel = 23; hands.SideIndex = 1; hands.LimbX = 308;
+            await Task.Delay(500);
+            var saved = new HandMotionStore(Path.Combine(folder, "motion.json")).Load().Settings;
+            check(saved.Profiles[2].Enabled && saved.Profiles[2].IntervalSeconds == 7.5 && saved.Rigs!["pelly"].HeadMotion && saved.Rigs["pelly"].Right.X == 308, "motion_auto_save_modes_and_character_rig");
+            hands.X = 25; await hands.CloseAsync();
+            var restart = new HandMotionViewModel(character, true, folder, () => 1); await restart.InitializeAsync(); restart.SelectedIndex = 2; restart.SetCharacter("pelly");
+            check(restart.X == 25 && restart.HeadMotion && restart.MouthTravel == 23 && !restart.Rig.Left.Enabled, "motion_restart_last_edit_flush_and_side_pelly");
+            restart.SetCharacter("neulbo"); check(!restart.HeadMotion && restart.Rig.Left.Enabled, "motion_character_specific_rigs"); await restart.CloseAsync();
+            var rig = CharacterRig.Default("neulbo");
+            var marker = new CostumeItemViewModel(new(Guid.NewGuid(), "marker", CostumeCategory.Top, 0, 0, 512, 512, Attachment: MotionAttachment.Garment), (_, _) => { }) { Image = Markers() };
+            character.CostumeLayers.Add(marker); character.Update(new(0, 0, 0, 0, 1, MouthState.Closed), 1);
+            var before = Render(character); var greenBefore = Centroid(before, (r, g, b) => r < 20 && g > 230 && b < 20);
+            var cyanBefore = Centroid(before, (r, g, b) => r < 20 && g > 230 && b > 230);
+            var profile = HandMotionProfile.Default(HandGesture.Heart);
+            character.SetMotion(rig, new(HandGesture.Heart, .5), profile);
+            var after = Render(character, "voxpet-motion-garment.png");
+            var greenAfter = Centroid(after, (r, g, b) => r < 20 && g > 230 && b < 20);
+            var cyanAfter = Centroid(after, (r, g, b) => r < 20 && g > 230 && b > 230);
+            var expected = MotionSurface.AttachmentTransform(character, MotionAttachment.LeftHand, 1).Transform(greenBefore);
+            check(greenBefore.X > 0 && greenAfter.X > 0 && (greenAfter - expected).Length < 1 && (greenAfter - greenBefore).Length > 20 && (cyanAfter - cyanBefore).Length < .1, "motion_sleeve_follows_hand_body_stays_aligned");
+            marker.AttachmentIndex = (int)MotionAttachment.Head; character.SetMotion(rig with { HeadMotion = true }, null, null);
+            character.Update(new(0, 0, 6, 0, 1, MouthState.Closed), 1);
+            var head = Render(character, "voxpet-motion-head.png"); var red = Centroid(head, (r, g, b) => r > 230 && g < 20 && b < 20);
+            var expectedHead = MotionSurface.AttachmentTransform(character, MotionAttachment.Head, 1).Transform(new Point(125.5, 105.5));
+            check(red.X > 0 && (red - expectedHead).Length < 1, "motion_head_decoration_uses_head_pivot");
+            marker.AttachmentIndex = (int)MotionAttachment.Mouth; character.Update(new(1, 0, 6, 0, 1, MouthState.Open), 1);
+            var mouth = Render(character, "voxpet-motion-mouth.png"); var redMouth = Centroid(mouth, (r, g, b) => r > 230 && g < 20 && b < 20);
+            var expectedMouth = MotionSurface.AttachmentTransform(character, MotionAttachment.Mouth, 1).Transform(new Point(125.5, 105.5));
+            check((redMouth - expectedMouth).Length < 1 && (redMouth - red).Length > 9, "motion_mouth_decoration_inherits_head_and_mouth");
+            marker.FollowPercent = 0;
+            check((Centroid(Render(character), (r, g, b) => r > 230 && g < 20 && b < 20) - new Point(125.5, 105.5)).Length < .1, "motion_zero_follow_preserves_placement");
+            character.CostumeLayers.Clear(); character.Update(new(0, 0, 0, 0, 1, MouthState.Closed), 3);
+            foreach (var gesture in Enum.GetValues<HandGesture>())
+            {
+                character.SetMotion(rig, null, null); var rest = Render(character); var sprite = character.Sprite;
+                character.SetMotion(rig, new(gesture, .5), HandMotionProfile.Default(gesture));
+                var frame = Render(character, "voxpet-motion-" + gesture + ".png");
+                check(!rest.SequenceEqual(frame) && rest.Take(512 * 285 * 4).SequenceEqual(frame.Take(512 * 285 * 4)) && ReferenceEquals(sprite, character.Sprite), "motion_" + gesture + "_hand_changes_face_preserved");
+            }
+            check(ReferenceEquals(main.ShowCharacter().DataContext, main.Model), "motion_broadcast_keeps_shared_model");
+            var source = HwndSource.FromHwnd(new WindowInteropHelper(main).Handle); int hits = 0, clicks = 0;
+            using (var inputs = new HandMotionInputs(source, _ => hits++, () => clicks++))
+            {
+                var keys = HandMotionSettings.Default() with { Profiles = HandMotionSettings.Default().Profiles.Select(p => p with { LeftClick = false }).ToArray() };
+                inputs.Configure(keys); check(inputs.Registered.Count == 1 && inputs.Conflicts.Count == 0, "motion_native_key_registration");
+                using (var otherSource = new HwndSource(new HwndSourceParameters("VoxPet-motion-conflict") { Width = 1, Height = 1, WindowStyle = 0 }))
+                using (var conflict = new HandMotionInputs(otherSource, _ => { }, () => { })) { conflict.Configure(keys); check(conflict.Conflicts.Count == 1, "motion_native_key_conflict_reported"); }
+                PostMessage(source.Handle, 0x0312, new(0x5300), new(0x31 << 16 | 3)); await Task.Delay(50);
+                check(hits == 1, "motion_native_wm_hotkey_dispatch");
+                inputs.Configure(HandMotionSettings.Default()); check(inputs.Registered.Count == 0 && inputs.MouseRegistered, "motion_native_switch_to_mouse_releases_key");
+                mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(50);
+                check(clicks == 1, "motion_native_left_down_signal");
+                inputs.Dispose(); mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(50);
+                check(clicks == 1 && !inputs.MouseRegistered, "motion_native_dispose_stops_mouse");
+            }
+            using (var reused = new HandMotionInputs(source, _ => { }, () => { }))
+            {
+                reused.Configure(HandMotionSettings.Default() with { Profiles = HandMotionSettings.Default().Profiles.Select(p => p with { LeftClick = false }).ToArray() });
+                check(reused.Registered.Count == 1, "motion_native_key_reusable_after_dispose");
+            }
+        }
+        finally { await hands.CloseAsync(); Directory.Delete(folder, true); }
+    }
+}

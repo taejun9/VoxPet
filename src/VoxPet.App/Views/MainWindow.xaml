@@ -365,7 +365,63 @@
                     <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
                   </StackPanel>
                 </TabItem>
+                <TabItem Header="움직임 연결">
+                  <StackPanel Margin="8,12,8,0" IsEnabled="{Binding CanAdjust}">
+                    <TextBlock Text="{Binding Selected.Label}" TextTrimming="CharacterEllipsis" FontWeight="Bold"/>
+                    <TextBlock Text="따라갈 부위" Margin="0,12,0,6"/>
+                    <ComboBox ItemsSource="{Binding AttachmentNames}" SelectedIndex="{Binding Selected.AttachmentIndex}" AutomationProperties.Name="의상 움직임 연결"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
+                    <TextBlock Text="몸통 + 양쪽 소매: 손 영역 안의 옷이 팔과 함께 움직입니다. 모자·안경은 머리, 얼굴 장식은 입에 자동 연결됩니다." TextWrapping="Wrap" FontSize="12" Margin="0,12,0,8"/>
+                    <TextBlock Text="{Binding Selected.FollowPercent, StringFormat=따라가는 정도 · {0:F0}%}"/>
+                    <Slider Value="{Binding Selected.FollowPercent}" Minimum="0" Maximum="100" AutomationProperties.Name="의상 움직임 영향도" Margin="0,8,0,8"/>
+                    <TextBlock Text="0%는 추가 움직임 없이 몸 전체만 따라갑니다. 위치·크기·연결 설정은 자동 저장됩니다." TextWrapping="Wrap" FontSize="11"/>
+                    <Button Content="의상 저장" Command="{Binding SaveCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"/>
+                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                  </StackPanel>
+                </TabItem>
+                <TabItem Header="손·연결" DataContext="{Binding Hands}">
+          <Viewbox Stretch="Uniform" StretchDirection="DownOnly" VerticalAlignment="Top">
+            <StackPanel Width="440" Margin="0,12,0,0" IsEnabled="{Binding CanEdit}">
+              <TabControl Background="#111927" BorderThickness="0" Foreground="#DDE4F0">
+                <TabItem Header="손동작"><StackPanel Margin="8,12,8,0">
+<ComboBox ItemsSource="{Binding Gestures}" SelectedIndex="{Binding SelectedIndex}" AutomationProperties.Name="손동작 종류" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox><CheckBox Content="선택 동작 사용" IsChecked="{Binding Enabled}"/>
+<ComboBox ItemsSource="{Binding Modes}" SelectedIndex="{Binding ModeIndex}" AutomationProperties.Name="손동작 실행 방식" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox><StackPanel Width="190" Margin="0,0,8,8"><TextBlock Text="간격 (2~3600초)"/><TextBox Text="{Binding Interval, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="간격 (2~3600초)"/></StackPanel><ComboBox ItemsSource="{Binding Inputs}" SelectedIndex="{Binding InputIndex}" AutomationProperties.Name="손동작 입력" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox><WrapPanel><StackPanel Width="190" Margin="0,0,8,0"><ComboBox ItemsSource="{Binding ModifierNames}" SelectedIndex="{Binding ModifierIndex}" AutomationProperties.Name="손동작 조합키" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel><StackPanel Width="190"><ComboBox ItemsSource="{Binding Keys}" SelectedIndex="{Binding KeyIndex}" AutomationProperties.Name="손동작 키" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel></WrapPanel>
+                  <WrapPanel><Button Content="동작 시험" Command="{Binding PreviewCommand}"/><Button Content="현재 동작 멈춤" Command="{Binding StopCommand}"/></WrapPanel>
+                  <TextBlock Text="좌클릭 동작은 한 개만 활성화됩니다. 항상·간격 모드는 입력 설정과 무관하게 실행됩니다. 시험은 마이크 없이 실행됩니다." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                  <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                </StackPanel></TabItem>
+                <TabItem Header="손 영역"><StackPanel Margin="8,12,8,0">
+<ComboBox ItemsSource="{Binding Sides}" SelectedIndex="{Binding SideIndex}" AutomationProperties.Name="손 영역 선택" Margin="0,5,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox><WrapPanel><CheckBox Content="이 손 / 날개 움직이기" IsChecked="{Binding LimbEnabled}"/><CheckBox Content="연결 영역 표시" IsChecked="{Binding Guides}"/></WrapPanel>
+                  <WrapPanel><StackPanel Width="190" Margin="0,0,8,8"><TextBlock Text="손 영역 X"/><TextBox Text="{Binding LimbX, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="손 영역 X"/></StackPanel><StackPanel Width="190" Margin="0,0,8,8"><TextBlock Text="손 영역 Y"/><TextBox Text="{Binding LimbY, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="손 영역 Y"/></StackPanel><StackPanel Width="190" Margin="0,0,8,8"><TextBlock Text="손 영역 너비"/><TextBox Text="{Binding LimbWidth, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="손 영역 너비"/></StackPanel><StackPanel Width="190" Margin="0,0,8,8"><TextBlock Text="손 영역 높이"/><TextBox Text="{Binding LimbHeight, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="손 영역 높이"/></StackPanel></WrapPanel>
+                  <local:CharacterView DataContext="{Binding Character}" Height="160" Margin="0,0,0,8"/>
+                  <WrapPanel><Button Content="동작 시험" Command="{Binding PreviewCommand}"/><Button Content="캐릭터 연결 초기화" Command="{Binding ResetRigCommand}"/></WrapPanel>
+                  <TextBlock Text="화면 기준 좌우입니다. 빨간 점은 손 회전축입니다. 팔과 소매만 들어가도록 영역을 조정하세요. 캐릭터별로 자동 저장됩니다." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                  <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                </StackPanel></TabItem>
+                <TabItem Header="머리·입"><StackPanel Margin="8,12,8,0">
+                  <CheckBox Content="머리 천천히 흔들기" IsChecked="{Binding HeadMotion}"/>
+                  <TextBlock Text="머리 아래 경계 (64~400)" Margin="0,8,0,4"/>
+                  <TextBox Text="{Binding HeadCut, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="머리 연결 경계"/>
+                  <TextBlock Text="입을 최대한 열었을 때 장식 이동량 (0~48)" Margin="0,12,0,4"/>
+                  <Slider Value="{Binding MouthTravel}" Minimum="0" Maximum="48" AutomationProperties.Name="입 장식 이동량"/>
+                  <TextBlock Text="{Binding MouthTravel, StringFormat={}{0:F1}}"/>
+                  <local:CharacterView DataContext="{Binding Character}" Height="160" Margin="0,8,0,8"/>
+                  <TextBlock Text="머리 경계 아래에 손 영역을 배치하세요. 의상 → 움직임 연결에서 머리·입·손을 선택하면 장식도 함께 움직입니다. 영역 표시는 방송창에도 보입니다." TextWrapping="Wrap" FontSize="11"/>
+                  <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                </StackPanel></TabItem>
+                <TabItem Header="동작 배치"><StackPanel Margin="8,12,8,0">
+                  <TextBlock Text="선택한 손동작의 추가 이동·크기" FontWeight="Bold"/>
+                  <WrapPanel Margin="0,12,0,0"><StackPanel Width="190" Margin="0,0,8,8"><TextBlock Text="손동작 X (-128~128)"/><TextBox Text="{Binding X, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="손동작 X (-128~128)"/></StackPanel><StackPanel Width="190" Margin="0,0,8,8"><TextBlock Text="손동작 Y (-128~128)"/><TextBox Text="{Binding Y, UpdateSourceTrigger=PropertyChanged}" Padding="5" AutomationProperties.Name="손동작 Y (-128~128)"/></StackPanel></WrapPanel>
+                  <TextBlock Text="크기 (50~150%)"/><Slider Value="{Binding ScalePercent}" Minimum="50" Maximum="150" AutomationProperties.Name="손동작 크기"/>
+                  <local:CharacterView DataContext="{Binding Character}" Height="160" Margin="0,8,0,8"/>
+                  <Button Content="동작 시험" Command="{Binding PreviewCommand}" HorizontalAlignment="Left"/>
+                  <TextBlock Text="연결된 손 장식과 소매에도 같은 이동·크기를 적용합니다. 설정은 자동 저장됩니다." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                  <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0"/>
+                </StackPanel></TabItem>
               </TabControl>
+            </StackPanel>
+          </Viewbox>
+        </TabItem>
+      </TabControl>
             </StackPanel>
           </Viewbox>
         </TabItem>

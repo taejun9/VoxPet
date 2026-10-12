@@ -162,3 +162,13 @@ MuteHotkey는 RegisterHotKey의 MOD_NOREPEAT로 Ctrl+Shift+M만 등록한다. �
 Core CostumeProfile/CostumeStore는8분류·유한 배치·GUID 관리 원본/원자적 JSON을 소유한다. App CostumeViewModel은 UI 컬렉션/선택·착용·명시 저장을 관리하고 IO/이미지 디코딩을 worker로 보낸다. frozen 최대1024px 이미지로 렌더하며 비착용/비선택 이미지는 메모리에서 해제한다. 최대24착용/100보관이다. 캐릭터512 Canvas의 마지막 레이어에서 좌표/균일 크기를 공유하고 대기 이동과 함께 움직인다. 표정 PNG/오디오 계산은 변경하지 않는다.
 
 SingleInstance는 사용자SID와 세션 범위 Local mutex를 사용한다. 두 번째 일반 실행은 등록 native 메시지로 기존 설정창에 복원을 요청한 뒤0으로 종료한다. 첫 실행만 모델/장치/UI를 생성한다. 방송창은 항상 AllowsTransparency=true이며 GreenBackground 바인딩만 바꿔 HWND를 유지한다. WGC를 권장하며 이전 plan018의 non-layered BitBlt 호환 대신 사용자 요청인 창 유지·native alpha를 선택했다.
+
+## 손·의상 연결 (plan020)
+
+HandMotionScheduler는 UI/오디오와 독립적인 monotonic 초로5동작을 항상/간격/입력 모드에서 실행한다.1.4초 한 동작만 재생하며 반복 입력은 같은 동작을 재시작하지 않는다. 지연된 간격은 횟수를 쌓지 않고 동작별 하나만 대기한다. CharacterRig는512좌표의 머리 경계/양손 영역/어깨 회전축을 갖고 캐릭터 ID별로 저장한다. 펠리는 보이는 오른쪽 날개만 기본 활성화한다.
+
+MotionSurface는 frozen 원본 PNG를 머리·몸통·팔 영역으로 clip하고 CharacterMotion의 동일한 관절 변환을 사용한다. 얼굴 위로 손 조각이 침범하지 않게 출력 clip을 적용한다. 의상 Auto 연결은 모자/안경/귀걸이=머리, 얼굴장식=입, 상의/겉옷/한벌=몸통+소매, 하의/망토=몸통이다. 입 연결은 머리 회전도 상속한다. 수동 연결/0~100% 영향도를 저장하며 소매는 캐릭터의 팔과 같은 영역을 나누고 같은 변환을 적용한다. 망토는 뒤 레이어로 기본 추가하고 enum8을 append해 이전 분류0~7을 유지한다.
+
+PNG를 자동 해부 분석하거나 손가락을 새로 그리지 않는다. 원본 팔/날개 조각의 회전·이동과 native 장난감 소품/효과로 동작을 표현한다. 그림에 따라 어깨/긴 머리 경계의 이음새가 보일 수 있으며 손 영역/머리 경계를 수동 조정한다. 머리 흔들림은 선택형이고 기본 꺼짐이다. 입 장식은 음량 기반 지정 이동량을 사용하며 이미지별 턱 윤곽을 자동 추적하지 않는다.
+
+HandMotionInputs는 선택된 RegisterHotKey(MOD_NOREPEAT)만 등록하고 좌클릭 동작이 켜졌을 때만 WH_MOUSE_LL을 설치한다. 버튼 down 메시지만 확인하며 data를 역참조하지 않고 원래 입력을 CallNextHookEx로 전달한다. UI 요청은 최대 하나만 예약하고 전역키 충돌은 표시한다. 종료 시작에 입력을 해제하고 scheduler/save timer를 정지한다. 설정은 로컬 motion.json에350ms 지연 자동 저장/worker gate/종료 flush로 보존한다. 의상 배치/연결도 자동 저장하고 revision으로 진행 중 저장 이후 변경을 보존한다.

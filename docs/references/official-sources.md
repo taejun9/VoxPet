@@ -70,3 +70,6 @@
 | Microsoft New-SelfSignedCertificate | https://learn.microsoft.com/en-us/powershell/module/pki/new-selfsignedcertificate?view=windowsserver2025-ps | 개인 서명 키 | 2026-10-12 | CodeSigningCert/SHA256/NonExportable·공개 CER와 개인키 구분 |
 
 | Microsoft Certificate Stores | https://learn.microsoft.com/en-us/windows/win32/seccrypto/managing-certificates-with-certificate-stores | Root 보호 | 2026-10-12 | 보호된 Root 저장소의 신뢰 확인 UI, CI 전용 LocalMachine 검증과 수동 사용자 신뢰 구분 |
+
+| Microsoft DrawingContext.PushClip | https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.drawingcontext.pushclip?view=windowsdesktop-10.0 | 비파괴 PNG 영역 렌더 | 2026-10-12 | clip/transform stack와 Pop의 수명 |
+| Microsoft LowLevelMouseProc | https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelmouseproc | 좌클릭 신호 | 2026-10-12 | 즉시 반환·CallNextHookEx로 원래 입력 전달 |

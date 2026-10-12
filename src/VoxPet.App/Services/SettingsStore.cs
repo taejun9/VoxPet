@@ -17,7 +17,7 @@ public sealed record UserSettings(AudioSettings Audio, bool Topmost = true, bool
         MicrophoneId = string.IsNullOrWhiteSpace(MicrophoneId) || MicrophoneId.Length > 1024 || MicrophoneId.Any(char.IsControl) ? null : MicrophoneId,
         MainWindow = MainWindow?.Normalize(),
         BroadcastWindow = BroadcastWindow?.Normalize(true),
-        SettingsTab = SettingsTab is >= 0 and < 6 ? SettingsTab : 0,
+        SettingsTab = SettingsTab is >= 0 and < 7 ? SettingsTab : 0,
         ExpressionSlotId = ExpressionSlotId is >= 0 and < 12 ? ExpressionSlotId : null,
         BuiltinExpression = BuiltinExpression is { } kind && Enum.IsDefined(kind) ? kind : null
     };

@@ -26,6 +26,8 @@ public sealed class CostumeItemViewModel : ObservableObject
     public double DisplayHeight => profile.BaseHeight * profile.Scale;
     public bool Enabled { get => profile.Enabled; set { if (value == profile.Enabled) return; SetEnabled(value); changed(this, nameof(Enabled)); } }
     public bool BehindCharacter { get => profile.BehindCharacter; set { if (value == profile.BehindCharacter) return; profile = profile with { BehindCharacter = value }; Notify(); Notify(nameof(ShowInFront)); Notify(nameof(ShowBehind)); changed(this, nameof(BehindCharacter)); } }
+    public int AttachmentIndex { get => (int)profile.Attachment; set { if (!Enum.IsDefined((MotionAttachment)value)) return; profile = profile with { Attachment = (MotionAttachment)value }; Notify(); changed(this, nameof(AttachmentIndex)); } }
+    public double FollowPercent { get => profile.Follow * 100; set { if (!double.IsFinite(value)) return; profile = profile with { Follow = Math.Clamp(value / 100, 0, 1) }; Notify(); changed(this, nameof(FollowPercent)); } }
     public bool ShowInFront => Enabled && !BehindCharacter;
     public bool ShowBehind => Enabled && BehindCharacter;
     public ImageSource? Image { get => image; internal set => Set(ref image, value); }
@@ -37,12 +39,16 @@ public sealed class CostumeItemViewModel : ObservableObject
 /// <summary>의상 편집·착용은 UI 소유, 파일/디코딩은 worker. 저장한 원본 복사본을 별도 관리한다.</summary>
 public sealed class CostumeViewModel : ObservableObject
 {
+    public string[] AttachmentNames { get; } = ["분류에 맞춰 자동 연결", "몸통", "머리", "입 (머리도 함께)", "화면 왼쪽 손", "화면 오른쪽 손 / 날개", "몸통 + 양쪽 소매"];
     public static string[] CategoryNames { get; } = ["모자", "안경", "얼굴장식", "귀걸이", "상의", "하의", "겉옷", "한벌옷", "망토"];
     private readonly CostumeStore store;
     private readonly bool persistent;
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly Dictionary<Guid, byte[]> memory = [];
     private bool busy, closing;
+    private bool dirty;
+    private long placementRevision;
+    private readonly System.Windows.Threading.DispatcherTimer saveTimer;
     private CostumeItemViewModel? selected;
     private CostumeCategory importCategory;
     private int filterIndex;
@@ -71,10 +77,12 @@ public sealed class CostumeViewModel : ObservableObject
     public CostumeViewModel(bool persistent, string? folder = null)
     {
         this.persistent = persistent; store = new(folder ?? Path.Combine(AppPaths.DataFolder, "Wardrobe"));
+        saveTimer = new(System.Windows.Threading.DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(350) };
+        saveTimer.Tick += AutoSaveTick;
         ImportCommand = new(async () => { if (ChooseImage?.Invoke() is { } path) await ImportAsync(path); }, () => CanEdit);
         SaveCommand = new(SaveAsync, () => CanEdit);
         DeleteCommand = new(DeleteAsync, () => CanAdjust);
-        RemoveAllCommand = new(() => { foreach (var item in Items) item.SetEnabled(false); ReleaseUnused(); Status = "모두 해제했습니다. 유지하려면 의상 저장을 누르세요."; }, () => CanEdit);
+        RemoveAllCommand = new(() => { foreach (var item in Items) item.SetEnabled(false); ReleaseUnused(); ScheduleSave(); Status = "모두 해제했습니다. 유지하려면 의상 저장을 누르세요."; }, () => CanEdit);
         UpLayerCommand = new(() => MoveLayer(1), () => CanAdjust && Items.IndexOf(Selected!) < Items.Count - 1);
         DownLayerCommand = new(() => MoveLayer(-1), () => CanAdjust && Items.IndexOf(Selected!) > 0);
         LeftCommand = new(() => Selected!.X -= 1, () => CanAdjust); RightCommand = new(() => Selected!.X += 1, () => CanAdjust);
@@ -93,7 +101,7 @@ public sealed class CostumeViewModel : ObservableObject
         var item = new CostumeItemViewModel(profile, (entry, property) =>
         {
             if (property == nameof(entry.Enabled)) _ = WearAsync(entry, entry.Enabled);
-            else Status = "미리보기에 반영했습니다. 유지하려면 의상 저장을 누르세요.";
+            else { Status = "미리보기에 반영했습니다. 마지막 배치를 자동 저장합니다."; ScheduleSave(); }
         });
         item.WearCommand = new(() => WearAsync(item, true), () => CanEdit); return item;
     }
@@ -166,12 +174,12 @@ public sealed class CostumeViewModel : ObservableObject
             item.SetEnabled(enabled); ReleaseUnused(); Status = enabled ? "착용했습니다. 위치/크기 조정은 미리보기에 즉시 반영됩니다. 의상 저장으로 유지하세요." : "해제했습니다. 유지하려면 의상 저장을 누르세요.";
         }
         catch (Exception error) when (Expected(error)) { item.SetEnabled(false); Status = "이미지를 읽지 못했거나 착용24개 제한입니다. 기존 보관 파일은 유지합니다."; }
-        finally { gate.Release(); SetBusy(false); }
+        finally { gate.Release(); SetBusy(false); if (!closing) ScheduleSave(); }
     }
     private void MoveLayer(int delta)
     {
         if (!CanAdjust) return; int current = Items.IndexOf(Selected!), next = current + delta;
-        if (next < 0 || next >= Items.Count) return; Items.Move(current, next); Notify(nameof(Filtered)); Notify(nameof(Selected)); Refresh(); Status = "겹치는 순서를 바꿨습니다. 목록의 아래 항목이 앞에 표시됩니다. 의상 저장을 누르세요.";
+        if (next < 0 || next >= Items.Count) return; Items.Move(current, next); ScheduleSave(); Notify(nameof(Filtered)); Notify(nameof(Selected)); Refresh(); Status = "겹치는 순서를 바꿨습니다. 목록의 아래 항목이 앞에 표시됩니다. 의상 저장을 누르세요.";
     }
     public async Task SaveAsync()
     {
@@ -191,5 +199,14 @@ public sealed class CostumeViewModel : ObservableObject
         catch (Exception error) when (Expected(error)) { Status = "삭제하지 못했습니다. 기존 보관함을 유지합니다."; }
         finally { gate.Release(); SetBusy(false); }
     }
-    public async Task CloseAsync() { closing = true; Refresh(); await gate.WaitAsync(); gate.Release(); }
+    private void ScheduleSave() { dirty = true; placementRevision++; if (persistent && !closing) { saveTimer.Stop(); saveTimer.Start(); } }
+    private async void AutoSaveTick(object? sender, EventArgs e) { saveTimer.Stop(); if (!closing && dirty) await FlushPlacementAsync(); }
+    private async Task FlushPlacementAsync()
+    {
+        await gate.WaitAsync();
+        try { long revision = placementRevision; var snapshot = Items.Select(item => item.Profile).ToArray(); CostumeStore.Validate(snapshot); if (persistent) await Task.Run(() => store.Save(snapshot)); if (revision == placementRevision) dirty = false; }
+        catch (Exception error) when (Expected(error)) { Status = "배치를 저장하지 못했습니다. 이름/저장 공간을 확인하세요. 이전 저장값은 유지합니다."; }
+        finally { gate.Release(); }
+    }
+    public async Task CloseAsync() { closing = true; saveTimer.Stop(); saveTimer.Tick -= AutoSaveTick; Refresh(); await gate.WaitAsync(); gate.Release(); if (dirty) await FlushPlacementAsync(); }
 }

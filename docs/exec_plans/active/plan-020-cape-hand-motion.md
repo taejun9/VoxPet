@@ -16,6 +16,8 @@ project_lead / plan_keeper
 
 기존 의상 JSON enum 숫자를 유지하면서 망토 추가 및 저장/재시작/조정. 마이크와 독립적인 손동작 시간축과 항상/간격/핫키·수동 시험/설정 저장. 두 캐릭터 화면에 같은 손 모션을 표시하고 좌클릭 기본 입력/선택형 전역 키의 등록/충돌/재설정/해제를 구현한다. 기존PNG 원본/12표정·8입 상태는 유지하고 별도4프레임 동작 PNG의 몸·손만 렌더한다. 할퀴기/장난감 총/손하트/장난감 칼/요술봉5종을 각각 설정·실행하며 개인 늘보군 동작 이미지를 별도 제공한다.
 
+의상은 자동 분류 연결 또는 몸통·머리·입·왼손·오른손·몸통+소매를 선택한다. 의상 위치/크기는 유지하면서 동일한 관절 변환으로 장식과 소매가 따라간다. 캐릭터별 머리 경계/손 영역 설정과 손동작 설정은 자동 저장/종료 flush한다.
+
 ## Non-Goals
 
 음성 저장/전송·추적, 원본 PNG 덮어쓰기·개인PNG 공개 업로드, 자동 팔 인식/관절 리깅, 기존 의상·슬롯·설정/ZIP 삭제, 인증기관 게시자 신원 확인 사칭.
@@ -26,19 +28,19 @@ CostumeProfile/CostumeViewModel 분류, CharacterViewModel/CharacterView 렌더�
 
 ## Constraints
 
-codex/plan-020-cape-hand-motion / .worktree/plan-020-cape-hand-motion. QA→동일 에이전트 자체 리뷰→계획 completed/리뷰 미러→main 병합/push→branch-d/worktree 정리. 사용자 보고 한국어 별칭. 서브에이전트 없음. VoiceLevel/마이크 엔진 수정 불필요. PNG 동작4프레임/frozen/vector head mask로 원본 보존. finite 좌표/시간, UI IO/디코딩 분리. 기존 김태중 자체 서명·수동 사용자 신뢰 절차 유지.
+codex/plan-020-cape-hand-motion / .worktree/plan-020-cape-hand-motion. QA→동일 에이전트 자체 리뷰→계획 completed/리뷰 미러→main 병합/push→branch-d/worktree 정리. 사용자 보고 한국어 별칭. 서브에이전트 없음. VoiceLevel/마이크 엔진 수정 불필요. frozen 원본 PNG/수동 clip/관절 transform으로 원본 보존. finite 좌표/시간, UI IO/디코딩 분리. 기존 김태중 자체 서명·수동 사용자 신뢰 절차 유지.
 
 ## Implementation Plan
 
-- [ ] 망토 append enum/9분류·기존 저장 호환/UI/시험.
-- [ ] Core 5종 손동작 스케줄러 always/interval/hotkey, 유한 시간/간격/지연·수동 입력과 저장 모델.
-- [ ] 원본 머리·표정 보존/별도4프레임 몸·손 렌더러와 공유 미리보기/방송, 손모션 설정 탭·초/핫키/영역 조정.
-- [ ] 전역 핫키 충돌/기존예약키·repeat/재등록/트레이·종료 수명.
-- [ ] Core/WPF/일반 시작/OBS/개인 서명 검증·원본 보존 ZIP·자체 리뷰·Git 수명.
+- [x] 망토 append enum/9분류·기존 저장 호환/UI/시험.
+- [x] Core 5종 손동작 스케줄러 always/interval/hotkey, 유한 시간/간격/지연·수동 입력과 저장 모델.
+- [x] 원본 머리·표정 보존/관절 연결 몸·손 렌더러와 공유 미리보기/방송, 손모션 설정 탭·초/핫키/영역 조정.
+- [x] 전역 핫키 충돌/기존예약키·repeat/재등록/트레이·종료 수명.
+- [x] Core/WPF/일반 시작/OBS/개인 서명 검증·원본 보존 ZIP·자체 리뷰·Git 수명.
 
 ## QA Plan
 
-verify_base.py/verify_app.py/diff/locked restore/format/analyzer/Release/Core. 망토 enum 기존숫자/저장·착용·겉옷 공존. 손 시간 경계·finite·반복/interval 변경/핫키 trigger·중복입력·중지·설정 손상/구버전 호환. 실제 WPF 양손만 이동/얼굴·입·의상 보존/공유 렌더/영역 편집과 모드·간격·핫키 설정, 실제 native 등록충돌/WM_HOTKEY·재설정·해제/트레이.7탭×4창크기 검정 선택·팝업 글씨와 접근성. 일반 EXE 5사례/중복 실행, OBS32.2.2 같은 HWND/WGC·배경/모션, 최종 개인 서명/아이콘·ZIP CRC·이전12PNG/원본 해시.
+verify_base.py/verify_app.py/diff/locked restore/format/analyzer/Release/Core. 망토 enum 기존숫자/저장·착용·겉옷 공존. 손 시간 경계·finite·반복/interval 변경/핫키 trigger·중복입력·중지·설정 손상/구버전 호환. 실제 WPF 팔/날개 영역만 이동/얼굴·입 보존/의상 연동/공유 렌더/영역 편집과 모드·간격·핫키 설정, 실제 native 등록충돌/WM_HOTKEY·재설정·해제/트레이.7탭×4창크기 검정 선택·팝업 글씨와 접근성. 일반 EXE9사례/중복 실행, OBS32.2.2 같은 HWND/WGC·배경/모션, 최종 개인 서명/아이콘·ZIP CRC·이전12PNG/원본 해시.
 
 ## Review Plan
 
@@ -48,6 +50,10 @@ QA 후 같은 에이전트 자체 리뷰. 기존 enum·저장 호환, 손 mask/�
 
 | date | decision | reason |
 |---|---|---|
+| 2026-10-12 | 기존 plan020 초안을 커밋으로 보존하고 plan021/022 main을 병합해 계속 작업 | 사용자가 이전 손 작업과 의상/장식 연동을 명시 요청 |
+| 2026-10-12 | 별도 AI 몸 PNG 대신 원본 frozen PNG의 수동 지정 머리/팔 영역을 WPF clip/transform으로 렌더하며 장난감 소품은 native geometry 사용 | 5캐릭터/12표정/8입과 원본 의상의 픽셀 및 스타일를 보존하고 소매에 정확히 동일한 변환 적용. 독립 PNG 재생보다 새 연결 요구에 적합 |
+| 2026-10-12 | 분류 기본 연결과 수동 연결/영향도, 캐릭터별 영역 및 선택형 머리 흔들림 제공. 펠리는 보이는 오른 날개만 기본 활성 | 측면 캐릭터와 임의 사용자 PNG를 자동 해부 인식 없이 조정 가능 |
+| 2026-10-12 | 새 WPF 모션/연결/저장/핫키 fixture 및 추가 탭 검사, smoke 상한 기본90초/개인120초 | 기존 시험을 유지하고 새 실제 UI/저장/입력 시험 시간을 확보; 통과 조건은 유지 |
 | 2026-10-12 | 손흔들기 대신 할퀴기/장난감 총/손하트/장난감 칼/요술봉5종, 동작별 실행 방식·간격·핫키 설정 | 사용자 구체적 답변 반영 |
 | 2026-10-12 | 별도 동작 몸·손 PNG를 기존 머리/입/눈과 합성, 한 번에 한 동작·중복 예약 없음 | 원본 및12표정·8입 보존과 독립 시간축 |
 | 2026-10-12 | 늘보군5동작4프레임은 imagegen으로 개인 자산만 생성, 공개 앱은 기존 code-native 고양이 작화 방식으로 생성 | 개인 배포 경계와 스타일 일치 |
@@ -60,8 +66,9 @@ QA 후 같은 에이전트 자체 리뷰. 기존 enum·저장 호환, 손 mask/�
 
 | date | role | note |
 |---|---|---|
+| 2026-10-12 | 제작 | 원본 팔·소매/머리·입 장식 연결, 망토,5동작 시간축/설정·캐릭터별 영역, 자동 저장 및 native 입력 구현. locked restore/Release 경고0·오류0, Core176/176 통과. Windows QA 대기 |
 | 2026-10-12 | 지도 | main clean/origin 동기화 확인. 현재 손 독립 모션 없음. 기존 PNG 한 장 구조/캐릭터 공유 렌더와 native hotkey 확인 |
 
 ## Completion Notes
 
-진행 중. 손동작 모습 선호 질문은 비동기로 제시했고 망토와 설정·시간축은 독립적으로 진행한다.
+손동작 초안을 보존한 커밋191ed11 이후 main7259318을 병합했다. 캐릭터5종/마지막 설정 복원을 포함해 사용자 최신 요청을 수행한다.

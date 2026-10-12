@@ -13,6 +13,14 @@ namespace VoxPet.App.ViewModels;
 public sealed class CharacterViewModel : ObservableObject
 {
     public System.Collections.ObjectModel.ObservableCollection<CostumeItemViewModel> CostumeLayers { get; internal set; } = [];
+    public CharacterRig Rig { get; private set; } = CharacterRig.Default(CharacterCatalog.DefaultId);
+    public MotionPose Motion { get; private set; } = MotionPose.Rest;
+    public bool ShowMotionGuides { get; internal set; }
+    private HandPlayback? playback;
+    private HandMotionProfile? handProfile;
+    public void SetMotion(CharacterRig rig, HandPlayback? hand, HandMotionProfile? selected)
+    { Rig = rig; playback = hand; handProfile = selected; RefreshMotion(); }
+    public void RefreshMotion() { Motion = CharacterMotion.Evaluate(Rig, current, now, playback, handProfile); Notify(nameof(Motion)); }
     private readonly Dictionary<ExpressionKind, ImageSource[,]> defaults = [];
     private ImageSource[,] sprites;
     private Dictionary<ExpressionKind, ImageSource[,]> personalDefaults = [];
@@ -151,7 +159,7 @@ public sealed class CharacterViewModel : ObservableObject
     public void Update(CharacterParameters state) => Update(state, now);
     public void Update(CharacterParameters state, double seconds)
     {
-        current = state; now = seconds;
+        current = state; now = seconds; RefreshMotion();
         // 3열에서는 기존 MouthState 계약을 유지하고 8열은 연속 음량으로 세밀하게 고른다.
         int mouth = sprites.GetLength(0) == MouthFrames.Count ? MouthFrames.Select(state.MouthOpen) : (int)state.Mouth;
         Sprite = sprites[mouth, profile.Blink && state.EyeOpen < .5 ? 0 : 1];
