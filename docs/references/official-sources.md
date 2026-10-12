@@ -66,3 +66,5 @@
 | OBS Window Capture Sources | https://obsproject.com/kb/window-capture-sources | 사용자 OBS32.2.2 창 캡처 | 2026-10-09 | 대상 창과 캡처 방식 설정/초록 배경 복구 안내 |
 
 | Microsoft New-SelfSignedCertificate | https://learn.microsoft.com/en-us/powershell/module/pki/new-selfsignedcertificate?view=windowsserver2025-ps | 개인 서명 키 | 2026-10-12 | CodeSigningCert/SHA256/NonExportable·공개 CER와 개인키 구분 |
+
+| Microsoft Certificate Stores | https://learn.microsoft.com/en-us/windows/win32/seccrypto/managing-certificates-with-certificate-stores | Root 보호 | 2026-10-12 | 보호된 Root 저장소의 신뢰 확인 UI, CI 전용 LocalMachine 검증과 수동 사용자 신뢰 구분 |
