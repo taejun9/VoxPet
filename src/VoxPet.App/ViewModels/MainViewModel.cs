@@ -75,7 +75,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private AudioSettings settings;
     private AudioDevice? selected;
     private bool busy, demo, closing, topmost, green, muted, characterBusy;
-    private string status = "마이크를 선택하고 입력 시작를 누르세요.";
+    private string status = "마이크를 선택하고 입력 시작을 누르세요.";
     private string characterStatus = "입3열 또는 상세8열 / 눈2행: 일반·눈감음. 투명 PNG의 중앙·바닥을 자동 정렬합니다.";
     private string metrics = "RMS 0.0000   Peak 0.0000   -120.0 dBFS";
     private double level, raw;
@@ -228,7 +228,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             Character.Update(animator.Update(0, clock.Elapsed.TotalSeconds), clock.Elapsed.TotalSeconds);
         }
     }
-    public string MuteHint => CharacterMuted ? "입 반응을 잠시 멈췄습니다. 마이크 해제는 입력 중지을 누르세요." : "음소거는 캐릭터 입만 멈춥니다. 마이크 입력은 계속 표시됩니다.";
+    public string MuteHint => CharacterMuted ? "입 반응을 잠시 멈췄습니다. 마이크 해제는 입력 중지를 누르세요." : "음소거는 캐릭터 입만 멈춥니다. 마이크 입력은 계속 표시됩니다.";
     public string MuteHotkeyStatus { get => muteHotkeyStatus; set => Set(ref muteHotkeyStatus, value); }
     public string CalibrationStatus { get => calibrationStatus; private set => Set(ref calibrationStatus, value); }
     public bool IsMeasuringNoise => calibration != null;
@@ -354,7 +354,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             }
             finally { refreshingDevices = false; }
             Status = Devices.Count == 0 ? "사용 가능한 마이크가 없습니다. 장치를 연결한 뒤 새로고침하세요." :
-                wanted != null && selected?.Id != wanted ? "마지막 마이크가 연결되지 않아 다른 장치를 표시합니다. 연결 후 새로고침하면 원래 선택을 복원합니다. 입력 시작로 시작하세요." : "마이크 준비 완료. 입력 시작를 누르면 로컬 분석을 시작합니다.";
+                wanted != null && selected?.Id != wanted ? "마지막 마이크가 연결되지 않아 다른 장치를 표시합니다. 연결 후 새로고침하면 원래 선택을 복원합니다. 입력 시작으로 시작하세요." : "마이크 준비 완료. 입력 시작을 누르면 로컬 분석을 시작합니다.";
         }
         catch { Status = "마이크 목록을 읽을 수 없습니다. Windows 마이크 권한과 연결을 확인하세요."; }
         finally { busy = false; RefreshCommands(); }
@@ -397,7 +397,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
     private void ToggleDemo()
     {
-        demo = true; ResetLevels(); RefreshCommands(); Status = "합성 데모 · 마이크를 사용하지 않습니다. 입력 중지으로 종료하세요.";
+        demo = true; ResetLevels(); RefreshCommands(); Status = "합성 데모 · 마이크를 사용하지 않습니다. 입력 중지로 종료하세요.";
     }
     /// <summary>
     /// 디코딩·정렬을 작업 스레드에서 마친 뒤 UI에 한 번만 적용한다.
@@ -438,7 +438,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         if (!MeasureNoiseCommand.CanExecute(null)) return;
         calibration = new(); recommendedGate = null; calibrationStarted = Stopwatch.GetTimestamp();
-        CalibrationStatus = "주변 소음 측정 중 · 3초간 말하지 마세요. 취소하거나 입력 중지으로 끝낼 수 있습니다.";
+        CalibrationStatus = "주변 소음 측정 중 · 3초간 말하지 마세요. 취소하거나 입력 중지로 끝낼 수 있습니다.";
         RefreshCommands();
     }
     private void ClearNoiseMeasurement(string message)
