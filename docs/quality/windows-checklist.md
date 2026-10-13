@@ -295,3 +295,16 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 로컬 증거: artifacts/qa/plan023/windows/gallery.html, windows/_temp/voxpet-screen-coverage.json, visual-review.json, obs-short-complete/, obs-long/, package-summary.json. 갤러리의225장 이름/해시를 시각 검토 기록에 보존했다.
 
 개인 PNG의 실제 Windows 모습·물리 마이크/권한/USB 제거·물리 키보드/Shell·실제 혼합 DPI/사용자 GPU는 이번 환경에서 시험하지 않았다. CI의 합성 자료/가짜 장치 결과로 해당 실기 합격을 주장하지 않는다. 개인 PNG는 외부 전송 없이 새 로컬 ZIP에만 동봉했다.
+
+
+## plan025 참고 디자인·두 캐릭터·이미지 조합 런타임
+
+2026-10-13 코드1dc9750의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38372703545), [OBS 합성 QA](https://github.com/taejun9/VoxPet/actions/runs/38372703485) 통과.
+
+- locked restore/formatter/analyzer/Release/publish, Core199/199, 경고0/오류0. WPF1487고유검사·실패0. 4창크기/7메뉴/25하위페이지 및 실데스크톱240화면의 가시성·선택값/팝업 검정 텍스트·스크롤 없음·PNG CRC/커버리지 확인. 합성 래스터 배율과 실제 DPI 시험은 구분한다.
+- 이미지 세트 등록/frozen PNG/두 창 공유/손상 등록 유지/무기 썸네일/입력 기록·해제/키 repeat 억제·다른 창에 전달/종료 훅 해제/등록 세트와 선택 재시작 복원/초기화 전 종료 보존 확인. 파츠 대체/숨김/소매·무기 포즈/Anchor/레이어/빠른 재시작은 Core 회귀로 확인했다.
+- 일반/김태중 자체 서명 EXE 시작 검증과 기존 방송창 OBS 합성 캡처 통과. 개인 파츠·실제 목소리·게임·사용자 OBS는 전송하거나 시험하지 않았다.
+- 선택 목록은 늘보군/펠리 두 종. root artifacts/VoxPet-reference-plan025.zip에 기존 개인 PNG13장을 로컬 복사하며 원본 byte equality와 ZIP CRC를 artifacts/qa/plan025/package-report.json에 기록한다. 과거 캐릭터 원본/패키지는 삭제하지 않는다.
+- 첫 실패는 새 fixture의 가상 작업 영역, 두 번째32실패는 신규 문자열 ComboBox 글자색이었다. 실제 화면 범위와 명시적 검정 템플릿으로 수정하고 전체 재실행했다.
+
+실제 마이크/OBS/게임 입력 권한·차단/장시간/실제 DPI는 기존 미확인 항목을 유지한다. 새 분리 파츠는 [제작 규격](../product/image-set-format.md)에 따라 준비해 로컬에서 시각 검증한다.

@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -34,12 +34,13 @@ project_lead / plan_keeper
 
 ## Implementation Plan
 
-- [ ] 파츠 Canvas/레이어/대체/포즈/Anchor/우선순위/연타 규칙 확정.
-- [ ] 이미지 세트 manifest·검증·액션 프레임 조합 엔진 구현.
-- [ ] WPF 로컬 등록·조합 렌더·액션/입력 연결·가이드 구현.
-- [ ] 전체 디자인과 반응형 내비게이션 개편.
-- [ ] 캐릭터 두 종·이전 설정 복구·문서와 QA 동기화.
-- [ ] QA → 자체 리뷰 → 완료 이동/미러 → main 병합/push → 브랜치/worktree 정리.
+- [x] 파츠 Canvas/레이어/대체/포즈/Anchor/우선순위/연타 규칙 확정.
+- [x] 이미지 세트 manifest·검증·액션 프레임 조합 엔진 구현.
+- [x] WPF 로컬 등록·조합 렌더·액션/입력 연결·가이드 구현.
+- [x] 전체 디자인과 반응형 내비게이션 개편.
+- [x] 캐릭터 두 종·이전 설정 복구·문서와 QA 동기화.
+- [x] QA → 자체 리뷰 → 완료 이동/미러.
+- main 병합/push 및 브랜치/worktree 정리는 이 검증된 완료 기록 커밋 이후 Git 수명 절차로 수행한다. 실패 시 중단하고 정확한 상태를 보고한다.
 
 ## QA Plan
 
@@ -67,8 +68,12 @@ QA 후 요구사항·바인딩·스레드·자산 경계·기존 PNG 호환성·
 |---|---|---|
 | 2026-10-13 | 검증 | 두 번째 Windows QA: 새 엔진/배경 키/복원/가시성 통과, 신규 ComboBox4개의 기본 문자열 템플릿이 흰 글씨를 적용한32검사 실패. 선택/팝업 템플릿의 검정색을 명시해 수정 |
 | 2026-10-13 | 검증 | 첫 Windows QA: build/Core198/publish 통과 후 새 fixture가 실제 runner보다 큰 가상 작업 영역을 사용해 화면 캡처 예외. 실제 SystemParameters.WorkArea로 수정하고 예외 시 검사 진행 기록도 보존 |
+| 2026-10-13 | 검증 | 최종 Core199 / Windows1487검사 실패0 / 실제 화면240 / OBS 합성 QA 통과 |
+| 2026-10-13 | 심사 | QA 이후 단일 에이전트 자체 리뷰 완료, 미해결 P1/P2 없음, 실기 경계 명시 |
 | 2026-10-13 | 설계 | main/origin 동기화 확인 후 별도 worktree와 계획 생성 |
 
 ## Completion Notes
 
-로컬 locked restore(공식 NuGet 취약성 확인 포함), Release 경고0/오류0, Core198/198, 문서·PNG·diff 검사 통과. Windows 실행 QA를 진행하고 완료 시 실제 결과를 기록한다.
+로컬 locked restore(공식 NuGet 취약성 확인 포함), formatter/analyzer, Release 경고0/오류0, Core199/199, 문서·PNG·diff 통과. 코드1dc9750의 Windows 전체 QA(38372703545)와 OBS 합성 QA(38372703485) 통과. WPF1487고유검사·실패0,240실제 화면 커버리지/PNG CRC, 일반/서명 재시작을 확인했다. 새 런타임과 기존 호환 경로의 바인딩/수명/자산 경계를 자체 리뷰했다.
+
+로컬 실행 패키지는 root artifacts/VoxPet-reference-plan025.zip 및 같은 이름의 폴더다. 기존 검증된 늘보군12PNG와 펠리1PNG만 복사하며 원본을 보존하고 외부 전송하지 않는다. 새 제작 틀/앱 내 가이드와 상세 이미지 세트 문서를 포함한다. 개인 새 분리 파츠·실제 게임/마이크/DPI/장시간은 별도 실기 항목이다.
