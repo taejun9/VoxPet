@@ -204,7 +204,7 @@ public partial class MainWindow : Window
     {
         bool compact = ActualWidth < 870 || ActualHeight < 600;
         LayoutRoot.Margin = new Thickness(compact ? 12 : 28);
-        TitleText.FontSize = compact ? 22 : 32;
+        TitleText.FontSize = compact ? 22 : 30;
         SubtitleText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
         StatusCard.Padding = new Thickness(compact ? 8 : 14);
         StatusCard.Margin = new Thickness(0, compact ? 8 : 16, 0, 0);
