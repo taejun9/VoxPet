@@ -62,6 +62,7 @@ QA 후 요구사항·바인딩·스레드·자산 경계·기존 PNG 호환성·
 
 | date | role | note |
 |---|---|---|
+| 2026-10-13 | 검증 | 첫 Windows QA: build/Core198/publish 통과 후 새 fixture가 실제 runner보다 큰 가상 작업 영역을 사용해 화면 캡처 예외. 실제 SystemParameters.WorkArea로 수정하고 예외 시 검사 진행 기록도 보존 |
 | 2026-10-13 | 설계 | main/origin 동기화 확인 후 별도 worktree와 계획 생성 |
 
 ## Completion Notes

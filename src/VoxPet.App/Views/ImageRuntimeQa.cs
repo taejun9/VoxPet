@@ -39,7 +39,7 @@ internal static class ImageRuntimeQa
         string folder = Path.Combine(Path.GetTempPath(), "VoxPet-image-qa-" + Guid.NewGuid());
         Directory.CreateDirectory(folder);
         var model = new MainViewModel(false, () => [], _ => throw new InvalidOperationException(), dataFolder: folder);
-        var window = new MainWindow(true, new Rect(0, 0, 1280, 820), model);
+        var window = new MainWindow(true, SystemParameters.WorkArea, model);
         try
         {
             window.Show(); await window.Ready;

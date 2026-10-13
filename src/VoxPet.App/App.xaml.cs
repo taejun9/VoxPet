@@ -215,6 +215,9 @@ public partial class App : Application
         catch (Exception ex)
         {
             File.WriteAllText(QaPath("voxpet-smoke-error.txt"), $"{ex.GetType().Name} HResult={ex.HResult:X8}");
+            string diagnostic = ErrorDiagnostics.Record(ex, "smoke", Path.GetDirectoryName(QaPath("voxpet-smoke-error.txt")));
+            if (File.Exists(diagnostic)) File.Copy(diagnostic, QaPath("voxpet-smoke-exception.json"), true);
+            File.WriteAllText(QaPath("voxpet-smoke-result.json"), JsonSerializer.Serialize(new { failures = failures + 1, failedChecks, passedChecks = passedChecks.Order().ToArray(), exceptionType = ex.GetType().Name }, new JsonSerializerOptions { WriteIndented = true }));
             Shutdown(1);
         }
         finally { PresentationTraceSources.DataBindingSource.Listeners.Remove(listener); listener.Dispose(); }

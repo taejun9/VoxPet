@@ -67,6 +67,7 @@ jobs:
             ${{ runner.temp }}/voxpet-smoke.png
             ${{ runner.temp }}/voxpet-smoke-error.txt
             ${{ runner.temp }}/voxpet-smoke-result.json
+            ${{ runner.temp }}/voxpet-smoke-exception.json
             ${{ runner.temp }}/voxpet-layout-*.png
             ${{ runner.temp }}/voxpet-layout-result.json
             ${{ runner.temp }}/voxpet-personal-*.png

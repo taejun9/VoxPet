@@ -76,3 +76,6 @@
 
 | Microsoft BitBlt | https://learn.microsoft.com/en-us/windows/win32/api/wingdi/nf-wingdi-bitblt | 실제 화면 캡처 | 2026-10-12 | SRCCOPY/CAPTUREBLT, desktop DC의 표시 픽셀과 layered 창 포함 |
 | Microsoft SetWindowPos | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwindowpos | 화면 z-order | 2026-10-12 | topmost와 실제 창 표시 순서 의미 |
+
+| Microsoft DWMWINDOWATTRIBUTE | https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute | Windows 캡션 다크 색상 | 2026-10-13 | 기본 창 조작 보존, immersive dark/caption/text/border 속성 |
+| Microsoft LowLevelKeyboardProc | https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc | 지정 키 down/up 감지 | 2026-10-13 | 즉시 반환, 원래 입력 전달, 반복 keydown 억제 |

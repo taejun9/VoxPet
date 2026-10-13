@@ -79,7 +79,7 @@ public partial class MainWindow : Window
         };
         SourceInitialized += (_, _) =>
         {
-            RestorePlacement(false);
+            WindowTheme.Apply(this); RestorePlacement(false);
             if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); EnableHandInputs(); EnableRuntimeInputs(); }
             else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
         };
