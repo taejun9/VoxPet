@@ -79,3 +79,5 @@
 
 | Microsoft DWMWINDOWATTRIBUTE | https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwmwindowattribute | Windows 캡션 다크 색상 | 2026-10-13 | 기본 창 조작 보존, immersive dark/caption/text/border 속성 |
 | Microsoft LowLevelKeyboardProc | https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc | 지정 키 down/up 감지 | 2026-10-13 | 즉시 반환, 원래 입력 전달, 반복 keydown 억제 |
+
+| Microsoft NETSDK1100 | https://learn.microsoft.com/en-us/dotnet/core/tools/sdk-errors/netsdk1100 | macOS Windows 대상 빌드 | 2026-10-13 | EnableWindowsTargeting으로 빌드 허용, WPF 실행 지원과 구분 |

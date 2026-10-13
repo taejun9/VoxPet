@@ -15,6 +15,7 @@
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1"/>
     <Resource Include="Assets/Characters/*.png"/>
     <Resource Include="Assets/VoxPet.ico"/>
+    <Resource Include="Assets/VoxPet.png"/>
     <Content Include="Assets/ImageSetTemplate/**/*" CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="Assets/Characters/manifest.json" CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="../../docs/distribution/*.txt" Exclude="../../docs/distribution/USER-GUIDE.txt" Link="Licenses/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>

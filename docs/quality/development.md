@@ -75,6 +75,12 @@ Licenses/와 자산 manifest/USER-GUIDE.txt를 함께 배포한다. macOS에서�
 자체 포함 runtime의 보안 업데이트는 SDK 갱신과 앱 재배포로 적용한다.
 기본 PNG 재생성은 개발용 Pillow가 필요하다. 앱 실행/빌드에는 Pillow가 필요 없다.
 
+## macOS 테스트 범위와 프로그램 아이콘
+
+macOS에서는 `EnableWindowsTargeting=true`로 Windows 대상 솔루션을 빌드·게시하고 Core 자동 테스트 및 Python 문서/자산 검사를 실행할 수 있다. 화면·WASAPI 마이크·트레이·전역 입력·OBS 출력은 Windows에서 검증한다. WPF는 Windows에서만 실행하므로 macOS에서 EXE를 직접 실행할 수 없다. 맥에서 화면을 직접 시험하려면 Windows 가상머신/원격 Windows 환경이 필요하며, macOS 네이티브 실행은 UI·오디오·입력·창 구현의 별도 이식 작업이다. [Microsoft WPF](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/overview/), [Windows 대상 빌드](https://learn.microsoft.com/en-us/dotnet/core/tools/sdk-errors/netsdk1100)를 따른다.
+
+지정한 프로그램 그림 원본은 `src/VoxPet.App/Assets/VoxPet-source.png`다. `python3 harness/scripts/generate_icon.py`는 Pillow로 원본의 배경과 여백을 보존해256px PNG 및16/24/32/48/64/128/256px ICO를 만든다. PNG는 앱 머리글, ICO는 EXE·두 창·트레이에 사용한다. 개인 캐릭터 시트와 별개인 사용자 지정 프로그램 아이콘이며 배포 리소스에 포함한다. Windows 개인 서명 QA는 EXE에서 추출한 아이콘 픽셀이 ICO와 일치하는지도 검사한다.
+
 ## 다섯 캐릭터 선택 회귀
 
 plan021 CharacterSelectionQa는 개인 자료 없이 합성 시트로 다섯 WPF 선택 항목, frozen 입/눈 상태, 두 창 공유, 누락/손상 시 선택 복구, 연속 선택의 최신 요청, 전체 표정 테스트 중 변경, 종료 중 읽기를 검사한다. LayoutQa는 캐릭터 선택 ComboBox와 안내까지4창크기에서 확인한다. startup-qa.ps1은 일반/서명 EXE의 펠리 ID 복원·종료 저장과 파일 누락/손상 복구를 추가 검사한다. 신규 실제 개인 PNG는 CI에 전송하지 않고 로컬 자산 검사와 개인 ZIP에만 포함한다. [캐릭터 목록](../product/character-library.md)을 따른다.

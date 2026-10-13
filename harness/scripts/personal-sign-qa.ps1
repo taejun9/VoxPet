@@ -26,7 +26,24 @@ try {
     Add-Type -AssemblyName System.Drawing
     $icon = [Drawing.Icon]::ExtractAssociatedIcon($exe)
     if ($null -eq $icon) { throw 'Executable icon missing' }
-    $icon.Dispose()
+    $expectedIcon = [Drawing.Icon]::new((Resolve-Path 'src/VoxPet.App/Assets/VoxPet.ico').Path, $icon.Width, $icon.Height)
+    $actualBitmap = $icon.ToBitmap()
+    $expectedBitmap = $expectedIcon.ToBitmap()
+    try {
+        if ($actualBitmap.Size -ne $expectedBitmap.Size) { throw 'Executable icon size mismatch' }
+        for ($y = 0; $y -lt $actualBitmap.Height; $y++) {
+            for ($x = 0; $x -lt $actualBitmap.Width; $x++) {
+                if ($actualBitmap.GetPixel($x, $y).ToArgb() -ne $expectedBitmap.GetPixel($x, $y).ToArgb()) {
+                    throw "Executable icon differs from supplied artwork at $x,$y"
+                }
+            }
+        }
+    } finally {
+        $actualBitmap.Dispose()
+        $expectedBitmap.Dispose()
+        $expectedIcon.Dispose()
+        $icon.Dispose()
+    }
     $tampered = Join-Path $env:RUNNER_TEMP ('VoxPet-tamper-' + [Guid]::NewGuid().ToString('N') + '.exe')
     try {
         Copy-Item $exe $tampered
@@ -35,7 +52,7 @@ try {
         $tamperStatus = (Get-AuthenticodeSignature -LiteralPath $tampered).Status.ToString()
         if ($tamperStatus -ne 'HashMismatch') { throw ('Tampered EXE accepted: ' + $tamperStatus) }
     } finally { Remove-Item $tampered -ErrorAction SilentlyContinue }
-    [ordered]@{signer=$name;subject=$certificate.Subject;thumbprint=$certificate.Thumbprint;notAfter=$certificate.NotAfter.ToUniversalTime().ToString('O');untrustedStatus=$untrusted.Status.ToString();trustedStatus=$verified.Status.ToString();tamperedStatus=$tamperStatus;publicCertificateOnly=$true;certificateAuthorityVerified=$false;privateKeyExported=$false;iconPresent=$true;exeSha256=(Get-FileHash $exe -Algorithm SHA256).Hash;cerSha256=(Get-FileHash $cer -Algorithm SHA256).Hash} | ConvertTo-Json | Set-Content "$output/publisher-signature.json" -Encoding utf8
+    [ordered]@{signer=$name;subject=$certificate.Subject;thumbprint=$certificate.Thumbprint;notAfter=$certificate.NotAfter.ToUniversalTime().ToString('O');untrustedStatus=$untrusted.Status.ToString();trustedStatus=$verified.Status.ToString();tamperedStatus=$tamperStatus;publicCertificateOnly=$true;certificateAuthorityVerified=$false;privateKeyExported=$false;iconPresent=$true;iconMatchesArtwork=$true;exeSha256=(Get-FileHash $exe -Algorithm SHA256).Hash;cerSha256=(Get-FileHash $cer -Algorithm SHA256).Hash} | ConvertTo-Json | Set-Content "$output/publisher-signature.json" -Encoding utf8
     Write-Host 'Personal signature QA: signature and tamper checks passed; run normal startup'
     Copy-Item 'artifacts/test-results/startup.json' 'artifacts/test-results/unsigned-startup.json'
     & "$PSScriptRoot/startup-qa.ps1" -Exe $exe -ScreenRun signed
