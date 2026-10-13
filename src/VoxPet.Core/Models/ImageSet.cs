@@ -36,7 +36,7 @@ public sealed record ImageSet(int Version, string CharacterId, int CanvasSize, P
     {
         if (Version != 1 || !CharacterCatalog.All.Any(c => c.Id == CharacterId) || CanvasSize is not (256 or 512 or 1024)) Fail("버전1 / 늘보군·펠리 / 256·512·1024 Canvas를 사용하세요.");
         if (Parts == null || Mouths == null || Expressions == null || Outfits == null || Weapons == null || Actions == null) Fail("필수 이미지 목록이 없습니다.");
-        if (Parts!.Length > 16 || Parts.Any(p => p == null || !Enum.IsDefined(p.Part)) || Parts.Select(p => p.Part).Distinct().Count() != Parts.Length) Fail("기본 파츠 슬롯이 중복되거나 잘못되었습니다.");
+        if (Parts!.Length != 6 || Parts.Any(p => p == null || !Enum.IsDefined(p.Part)) || Parts.Select(p => p.Part).Distinct().Count() != Parts.Length) Fail("기본 파츠6개를 중복 없이 등록하세요. 의상·장식은 별도 레이어에 등록합니다.");
         ImagePart[] required = [ImagePart.Head, ImagePart.Body, ImagePart.ArmL, ImagePart.ArmR, ImagePart.LegL, ImagePart.LegR];
         if (required.Except(Parts.Select(p => p.Part)).Any() || Parts.Any(p => p.Part is ImagePart.Eyes or ImagePart.Brows or ImagePart.Mouth or ImagePart.Weapon or ImagePart.Effect)) Fail("Head / Body / ArmL / ArmR / LegL / LegR를 각각 등록하세요. 얼굴·무기는 별도 목록입니다.");
         if (Mouths!.Length is not (3 or 8) || Expressions!.Length is < 1 or > 12 || Expressions.Any(e => e == null || !Enum.IsDefined(e.Kind)) || Expressions.Select(e => e.Kind).Distinct().Count() != Expressions.Length || !Expressions.Any(e => e.Kind == ExpressionKind.Neutral)) Fail("입3·8단계와 중복 없는 기본 표정이 필요합니다.");

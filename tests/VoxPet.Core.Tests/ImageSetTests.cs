@@ -79,6 +79,12 @@ public sealed class ImageSetTests
         Assert.Throws<ArgumentException>(() => (sample with { Actions = [sample.Actions[0] with { Frames = [frame] }] }).Validate());
     }
     [Fact]
+    public void DecorationCannotBypassHeadVisibilityThroughBaseParts()
+    {
+        var sample = Sample();
+        Assert.Throws<ArgumentException>(() => (sample with { Parts = [.. sample.Parts, new(ImagePart.FaceDecoration, "mustache.png")] }).Validate());
+    }
+    [Fact]
     public void IncompatibleWeaponIsNotDrawnAndMissingExpressionFallsBack()
     {
         var sample = Sample(); var player = new ImageSetPlayer(sample with { Weapons = [sample.Weapons[0] with { Template = ActionTemplate.Bow }] });

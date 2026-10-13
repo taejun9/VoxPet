@@ -10,7 +10,7 @@ VoxPet은 외부에서 준비한 그림을 입력에 따라 조합한다. 앱 �
 
 ## 파츠와 레이어
 
-필수 `Parts`는 Head·Body·ArmL·ArmR·LegL·LegR 각1장이다. 머리 기본 PNG에 눈/입을 그려 넣지 않는다. 눈·눈썹·입이 따로 조합되므로 완성 얼굴을 사용하면 중복된다. 펠리도 같은 이름을 쓰되 ArmL/R에는 날개 그림을 배치한다. 필요 없는 측면 파츠는 같은 Canvas의 완전 투명 PNG로 등록한다.
+기본 `Parts`는 Head·Body·ArmL·ArmR·LegL·LegR 각1장, 정확히6개다. 의상과 얼굴장식은 별도 Outfits 레이어에 넣어 숨김·Anchor 규칙을 따른다. 머리 기본 PNG에 눈/입을 그려 넣지 않는다. 눈·눈썹·입이 따로 조합되므로 완성 얼굴을 사용하면 중복된다. 펠리도 같은 이름을 쓰되 ArmL/R에는 날개 그림을 배치한다. 필요 없는 측면 파츠는 같은 Canvas의 완전 투명 PNG로 등록한다.
 
 고정 순서:
 
@@ -30,7 +30,7 @@ VoxPet은 외부에서 준비한 그림을 입력에 따라 조합한다. 앱 �
 
 `Replace: {"ArmR":"arm-fire.png"}`는 기본 오른팔을 숨기고 지정 PNG 한 장으로 대체한다. `{"ArmR":null}`은 팔과 해당 소매를 숨긴다. 각 프레임은 기본 상태에서 독립적으로 조합하며 이전 프레임의 Replace를 상속하지 않는다. 액션이 끝나면 기본 상태로 복귀한다. 새 입력은 진행 중인 액션을 취소하고 첫 프레임부터 즉시 재시작한다. 대기열은 없다.
 
-무기와 의상은 `Layers` 배열이며 각 레이어에 `Part`, `Anchor`, `Poses`가 있다. 모든 레이어에 `idle`이 필요하다. 예: `Poses: {"idle":"gun-idle.png","ready":"gun-ready.png","fire":"gun-fire.png","return":"gun-return.png"}`. 무기 본체는 Weapon, 총구 화염·탄/화살 등은 Effect이다. Effect의 없는 포즈는 표시하지 않으며 idle에서는 표시하지 않는다. 무기는 템플릿이 일치하는 액션과만 결합한다. 같은 템플릿의 모든 프레임 포즈에 무기 본체가 있어야 등록된다. 관리 미리보기와 idle 출력은 동일 PNG를 사용하며 앱이 임의로 회전하지 않는다.
+무기와 의상은 `Layers` 배열이며 각 레이어에 `Part`, `Anchor`, `Poses`가 있다. 모든 레이어에 `idle`이 필요하다. 예: `Poses: {"idle":"gun-idle.png","ready":"gun-ready.png","fire":"gun-fire.png","return":"gun-return.png"}`. 무기 본체는 Weapon, 총구 화염·탄/화살 등은 Effect이다. Effect의 없는 포즈는 표시하지 않으며 idle에서는 표시하지 않는다. 무기는 템플릿이 일치하는 액션과만 결합한다. 같은 템플릿의 모든 프레임 포즈에 무기 본체가 있어야 등록된다. 관리 미리보기와 idle 출력은 동일 PNG를 사용한다. 관리 썸네일은 투명 여백만 잘라 크게 보여 주고, 실제 출력은 원래 Canvas와 방향을 유지하며 앱이 임의로 회전하지 않는다.
 
 방향은 오른쪽을 기준으로 준비한다. Firearm은 총구 오른쪽, Bow는 오른쪽 발사, TwoHand는 오른쪽, OneHand의 idle은 오른쪽15°다. 휘두르기/발사 각도는 포즈별 PNG로 준비한다. 이 방향은 제작 규격이며 픽셀의 의미를 자동 판별하지는 않는다.
 

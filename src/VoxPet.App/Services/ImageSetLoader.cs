@@ -1,11 +1,13 @@
 using System.IO;
 using System.Text.Json;
+using System.Windows;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using VoxPet.Core.Models;
 
 namespace VoxPet.App.Services;
 
-public sealed record LoadedImageSet(ImageSet Definition, IReadOnlyDictionary<string, BitmapSource> Images);
+public sealed record LoadedImageSet(ImageSet Definition, IReadOnlyDictionary<string, BitmapSource> Images, IReadOnlyDictionary<string, BitmapSource> Previews);
 
 /// <summary>worker에서 제한된 로컬 PNG만 읽는다. 심볼릭 링크·경로 탈출·과대 이미지/JSON을 거부한다.</summary>
 public static class ImageSetLoader
@@ -34,7 +36,24 @@ public static class ImageSetLoader
             var decoder = new PngBitmapDecoder(file, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
             var bitmap = decoder.Frames[0]; bitmap.Freeze(); images.Add(name, bitmap);
         }
-        return new(definition, images);
+        var previews = definition.Weapons.Select(w => w.Layers.Single(l => l.Part == ImagePart.Weapon).Poses["idle"]).Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(name => name, name => Preview(images[name]), StringComparer.OrdinalIgnoreCase);
+        return new(definition, images, previews);
+    }
+    // 관리 썸네일만 투명 여백을 제거한다. 실제 출력은 원본 Canvas/방향을 그대로 사용한다.
+    private static BitmapSource Preview(BitmapSource source)
+    {
+        var rgba = new FormatConvertedBitmap(source, PixelFormats.Bgra32, null, 0);
+        int width = source.PixelWidth, height = source.PixelHeight;
+        byte[] pixels = new byte[width * height * 4]; rgba.CopyPixels(pixels, width * 4, 0);
+        int left = width, top = height, right = -1, bottom = -1;
+        for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+        {
+            if (pixels[(y * width + x) * 4 + 3] == 0) continue;
+            left = Math.Min(left, x); top = Math.Min(top, y); right = Math.Max(right, x); bottom = Math.Max(bottom, y);
+        }
+        if (right < left) return source;
+        var crop = new CroppedBitmap(source, new Int32Rect(left, top, right - left + 1, bottom - top + 1)); crop.Freeze(); return crop;
     }
     internal static void OrdinaryFile(string file, string root)
     {

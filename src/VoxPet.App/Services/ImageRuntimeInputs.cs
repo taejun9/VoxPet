@@ -34,6 +34,8 @@ public sealed class ImageRuntimeInputs : IDisposable
         bool wantsMouse = enabled && leftClick;
         if (scene == sceneRevision && bindings.SequenceEqual(wanted) && KeyboardRegistered == (wanted.Length > 0) && MouseRegistered == wantsMouse) return;
         Clear(); scene = sceneRevision; bindings = wanted;
+        foreach (uint key in bindings.Select(b => b.Key).Distinct())
+            if (GetAsyncKeyState((int)key) < 0) pressed.Add(key);
         if (bindings.Length > 0) keyboardHook = SetWindowsHookEx(13, keyboard, GetModuleHandle(null), 0);
         if (wantsMouse) mouseHook = SetWindowsHookEx(14, mouse, GetModuleHandle(null), 0);
     }

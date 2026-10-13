@@ -47,6 +47,7 @@ internal static class ImageRuntimeQa
             check(await model.Runtime.ImportAsync(template), "imageset_import_synthetic_template");
             model.Runtime.OutfitIndex = 1; model.Runtime.WeaponIndex = 1; model.Runtime.PlayCommand.Execute(null);
             model.Runtime.Update(0, 1, true, ExpressionKind.Happy);
+            check(model.Runtime.WeaponPreview is System.Windows.Media.Imaging.BitmapSource preview && preview.PixelWidth < 512 && preview.IsFrozen, "imageset_weapon_preview_trims_transparent_canvas_only");
             check(model.Runtime.IsActive && model.Character.RuntimeLayers is { Count: > 6 } layers && layers.All(l => l.Image.IsFrozen), "imageset_frozen_shared_layers");
             check(model.Character.Name.StartsWith("늘보군"), "imageset_character_name");
             window.SettingsTabs.SelectedIndex = 6; window.UpdateLayout();
@@ -70,6 +71,9 @@ internal static class ImageRuntimeQa
             string packId = Path.GetFileName(Directory.GetDirectories(Path.Combine(folder, "ImageSets")).Single());
             var preferences = new RuntimePreferences(new() { ["neulbo"] = new(packId, 0, 0, 0) }, [new(RuntimeOperation.Play, 0x51, 0)], true);
             check(new RuntimePreferencesStore(Path.Combine(folder, "image-runtime.json")).Save(preferences), "imageset_restart_fixture_saved");
+            var cold = new MainViewModel(true, () => [], _ => throw new InvalidOperationException(), dataFolder: folder, initialSettings: new(new()));
+            await cold.DisposeAsync();
+            check(new RuntimePreferencesStore(Path.Combine(folder, "image-runtime.json")).Load().Characters.ContainsKey("neulbo"), "imageset_close_before_initialization_preserves_registration");
             await window.ShutdownAsync(); window.Close();
             var restored = new MainViewModel(true, () => [], _ => throw new InvalidOperationException(), charactersFolder: Path.Combine(folder, "missing-characters"), dataFolder: folder, initialSettings: new(new()));
             var restoredWindow = new MainWindow(true, new Rect(0, 0, 1000, 730), restored);

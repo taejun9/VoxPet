@@ -27,7 +27,7 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     private RuntimePreferences preferences = RuntimePreferences.Default();
     private LoadedImageSet? loaded;
     private ImageSetPlayer? player;
-    private bool closing, importing, selectionBusy;
+    private bool closing, importing, selectionBusy, initialized;
     private long activationRevision;
     public bool IsImporting => importing;
     public long SceneRevision => activationRevision;
@@ -43,8 +43,8 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     private string status = "동일 Canvas의 PNG와 imageset.json을 준비해 등록하세요.";
     private RuntimeOperation? recording;
     public bool IsActive => loaded != null;
-    public bool CanConfigure => !closing && !importing && !selectionBusy;
-    public bool CanUse => IsActive && !closing && !importing && !selectionBusy;
+    public bool CanConfigure => initialized && !closing && !importing && !selectionBusy;
+    public bool CanUse => initialized && IsActive && !closing && !importing && !selectionBusy;
     public bool LeftClick { get => preferences.LeftClick; set { preferences = preferences with { LeftClick = value }; Changed(); } }
     public RuntimeBinding[] Bindings => preferences.Bindings;
     private static readonly string[] OperationNames = ["액션 실행", "다음 액션", "이전 액션", "다음 표정", "이전 표정", "다음 의상", "이전 의상", "기본 상태 복귀"];
@@ -53,7 +53,7 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     public string[] ActionNames => ActionCount == 0 ? ["등록 액션 없음"] : loaded!.Definition.Actions.Select(a => a.Name).ToArray();
     public string[] OutfitNames => new[] { "의상 없음" }.Concat(loaded?.Definition.Outfits.Select(o => o.Name) ?? []).ToArray();
     public string[] WeaponNames => new[] { "무기 없음" }.Concat(loaded?.Definition.Weapons.Select(w => w.Name) ?? []).ToArray();
-    public ImageSource? WeaponPreview => loaded != null && weapon >= 0 ? loaded.Images[loaded.Definition.Weapons[weapon].Layers.First(l => l.Part == ImagePart.Weapon).Poses["idle"]] : null;
+    public ImageSource? WeaponPreview => loaded != null && weapon >= 0 ? loaded.Previews[loaded.Definition.Weapons[weapon].Layers.First(l => l.Part == ImagePart.Weapon).Poses["idle"]] : null;
     public int ActionIndex { get => action; set { if (!CanUse || value < 0 || value >= ActionCount || !Set(ref action, value)) return; player?.Stop(); Changed(); } }
     public int OutfitIndex { get => outfit + 1; set { if (!CanUse || value < 0 || value >= OutfitNames.Length || !Set(ref outfit, value - 1, nameof(OutfitIndex))) return; Changed(); } }
     public int WeaponIndex { get => weapon + 1; set { if (!CanUse || value < 0 || value >= WeaponNames.Length || !Set(ref weapon, value - 1, nameof(WeaponIndex))) return; Notify(nameof(WeaponPreview)); Changed(); } }
@@ -69,8 +69,8 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     {
         this.character = character; this.persistent = persistent; this.currentId = currentId; this.seconds = seconds; this.expression = expression;
         library = Path.Combine(folder, "ImageSets"); store = new(Path.Combine(folder, "image-runtime.json"));
-        ImportCommand = new(async () => { string? path = ChooseManifest?.Invoke(); if (path != null) await ImportAsync(path); }, () => !closing && !importing && !selectionBusy);
-        RestoreCommand = new(async () => { string id = currentId(); long revision = activationRevision; var pack = await PrepareAsync(id, true); if (!closing && currentId() == id && activationRevision == revision && pack != null) { Activate(pack); Changed(); } }, () => !closing && !importing && !selectionBusy);
+        ImportCommand = new(async () => { string? path = ChooseManifest?.Invoke(); if (path != null) await ImportAsync(path); }, () => CanConfigure);
+        RestoreCommand = new(async () => { string id = currentId(); long revision = activationRevision; var pack = await PrepareAsync(id, true); if (!closing && currentId() == id && activationRevision == revision && pack != null) { Activate(pack); Changed(); } }, () => CanConfigure);
         LegacyCommand = new(async () => { if (LegacyRequested != null && await LegacyRequested()) { Changed(); Status = "기존 PNG 시트로 전환했습니다. 등록 세트는 보존합니다."; } }, () => CanUse);
         PlayCommand = new(() => Execute(RuntimeOperation.Play), () => CanUse && ActionCount > 0);
         ResetCommand = new(() => Execute(RuntimeOperation.Reset), () => CanUse);
@@ -78,8 +78,12 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     }
     public async Task InitializeAsync()
     {
-        if (persistent) preferences = await Task.Run(store.Load);
-        if (closing) return; Notify(nameof(LeftClick)); Notify(nameof(BindingRows));
+        if (initialized || closing) return;
+        var saved = persistent ? await Task.Run(store.Load) : RuntimePreferences.Default();
+        if (closing) return;
+        preferences = saved; initialized = true;
+        Notify(nameof(LeftClick)); Notify(nameof(BindingRows)); Notify(nameof(CanConfigure));
+        ImportCommand.Refresh(); RestoreCommand.Refresh(); InputsChanged?.Invoke();
     }
     public async Task<LoadedImageSet?> PrepareAsync(string id, bool force = false)
     {
@@ -107,7 +111,7 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     }
     public async Task<bool> ImportAsync(string path)
     {
-        if (closing || importing) return false;
+        if (!CanConfigure) return false;
         string id = currentId(); importing = true; importDone = new(TaskCreationOptions.RunContinuationsAsynchronously); Notify(nameof(IsImporting)); Notify(nameof(CanUse)); Notify(nameof(CanConfigure)); InputsChanged?.Invoke();
         try
         {
@@ -191,7 +195,7 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     private async void SaveTick(object? sender, EventArgs e) { saveTimer.Stop(); if (!closing) await FlushAsync(); }
     private async Task FlushAsync()
     {
-        if (!persistent) return;
+        if (!persistent || !initialized) return;
         await saveGate.WaitAsync();
         try { var snapshot = preferences; if (!await Task.Run(() => store.Save(snapshot))) Status = "세트 설정 저장 실패 · 저장 공간과 권한을 확인하세요."; }
         finally { saveGate.Release(); }

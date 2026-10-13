@@ -379,7 +379,7 @@
                   <StackPanel Margin="8,12,8,0" DataContext="{Binding DataContext.Runtime, RelativeSource={RelativeSource AncestorType=Window}}">
                     <TextBlock Text="의상 프리셋" FontSize="18" FontWeight="Bold"/>
                     <TextBlock Text="몸통과 양쪽 소매를 하나의 세트로 착용합니다." TextWrapping="Wrap" Foreground="{StaticResource TextSecondary}" Margin="0,8,0,16"/>
-                    <ComboBox ItemsSource="{Binding OutfitNames}" SelectedIndex="{Binding OutfitIndex}" IsEnabled="{Binding CanUse}" MinHeight="36"/>
+                    <ComboBox ItemsSource="{Binding OutfitNames}" SelectedIndex="{Binding OutfitIndex}" IsEnabled="{Binding CanUse}" MinHeight="36" Foreground="Black"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
                     <Border Background="{StaticResource Checkerboard}" CornerRadius="8" Margin="0,14,0,12" Padding="8">
                       <local:CharacterView DataContext="{Binding DataContext.Character, RelativeSource={RelativeSource AncestorType=Window}}" Height="200"/>
                     </Border>
@@ -445,10 +445,10 @@
                     <TextBlock Text="02  액션 · 무기 · 의상" FontSize="16" FontWeight="Bold"/>
                     <TextBlock Text="캐릭터 → 이미지 세트에서 먼저 등록하세요." TextWrapping="Wrap" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,6,0,12"/>
                     <StackPanel IsEnabled="{Binding CanUse}">
-                      <TextBlock Text="액션"/><ComboBox ItemsSource="{Binding ActionNames}" SelectedIndex="{Binding ActionIndex}" Margin="0,6,0,10"/>
+                      <TextBlock Text="액션"/><ComboBox ItemsSource="{Binding ActionNames}" SelectedIndex="{Binding ActionIndex}" Margin="0,6,0,10" Foreground="Black"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
                       <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
-                        <StackPanel Margin="0,0,8,0"><TextBlock Text="의상 프리셋"/><ComboBox ItemsSource="{Binding OutfitNames}" SelectedIndex="{Binding OutfitIndex}" Margin="0,6,0,10"/></StackPanel>
-                        <StackPanel Grid.Column="1"><TextBlock Text="무기 이미지 세트"/><ComboBox ItemsSource="{Binding WeaponNames}" SelectedIndex="{Binding WeaponIndex}" Margin="0,6,0,10"/></StackPanel>
+                        <StackPanel Margin="0,0,8,0"><TextBlock Text="의상 프리셋"/><ComboBox ItemsSource="{Binding OutfitNames}" SelectedIndex="{Binding OutfitIndex}" Margin="0,6,0,10" Foreground="Black"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
+                        <StackPanel Grid.Column="1"><TextBlock Text="무기 이미지 세트"/><ComboBox ItemsSource="{Binding WeaponNames}" SelectedIndex="{Binding WeaponIndex}" Margin="0,6,0,10" Foreground="Black"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox></StackPanel>
                       </Grid>
                       <Border Background="{StaticResource Checkerboard}" CornerRadius="8" Height="72" Margin="0,0,0,8"><Image Source="{Binding WeaponPreview}" Stretch="Uniform"/></Border>
                       <WrapPanel><Button Content="▶ 액션 재생" Command="{Binding PlayCommand}" Style="{StaticResource PrimaryButton}"/><Button Content="기본 상태 복귀" Command="{Binding ResetCommand}"/></WrapPanel>
