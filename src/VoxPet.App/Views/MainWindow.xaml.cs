@@ -20,6 +20,7 @@ public partial class MainWindow : Window
     private ExpressionHotkeys? hotkeys;
     private MuteHotkey? muteHotkey;
     private HandMotionInputs? handInputs;
+    private ImageRuntimeInputs? runtimeInputs;
     private TrayService? tray;
     internal bool IsInTray { get; private set; }
     internal bool TrayIconVisible => tray?.Visible == true;
@@ -56,6 +57,11 @@ public partial class MainWindow : Window
             var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 PNG 시트 선택 (3열 또는8열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
             return dialog.ShowDialog(this) == true ? dialog.FileName : null;
         };
+        Model.Runtime.ChooseManifest += () =>
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "이미지 조합 세트 등록", Filter = "이미지 세트 (*.json)|*.json", CheckFileExists = true, Multiselect = false };
+            return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+        };
         Model.Wardrobe.ChooseImage += () =>
         {
             var dialog = new Microsoft.Win32.OpenFileDialog { Title = "의상 이미지 추가", Filter = "이미지|*.png;*.jpg;*.jpeg;*.bmp;*.gif", CheckFileExists = true };
@@ -68,15 +74,16 @@ public partial class MainWindow : Window
         };
         PreviewKeyDown += (_, e) =>
         {
+            if (Model.Runtime.Capture(e.Key == Key.System ? e.SystemKey : e.Key, Keyboard.Modifiers)) { e.Handled = true; return; }
             if (Model.HandleMuteKey(e.Key, Keyboard.Modifiers, e.IsRepeat) || Model.HandleExpressionKey(e.Key, Keyboard.Modifiers, e.IsRepeat)) e.Handled = true;
         };
         SourceInitialized += (_, _) =>
         {
             RestorePlacement(false);
-            if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); EnableHandInputs(); }
+            if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); EnableHandInputs(); EnableRuntimeInputs(); }
             else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
         };
-        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); handInputs?.Dispose(); tray?.Dispose(); };
+        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); handInputs?.Dispose(); runtimeInputs?.Dispose(); tray?.Dispose(); };
         Loaded += async (_, _) =>
         {
             if (initializationStarted) return; initializationStarted = true;
@@ -163,10 +170,51 @@ public partial class MainWindow : Window
         handInputs = new(source, gesture => Model.Hands.Trigger(gesture), Model.Hands.LeftClick);
         Model.Hands.InputsChanged += ConfigureHandInputs; ConfigureHandInputs(); return handInputs;
     }
+    private void EnableRuntimeInputs()
+    {
+        runtimeInputs = new(HwndSource.FromHwnd(new WindowInteropHelper(this).Handle), Model.Runtime.Execute);
+        Model.Runtime.InputsChanged += ConfigureRuntimeInputs; ConfigureRuntimeInputs();
+    }
+    private void ConfigureRuntimeInputs()
+    {
+        if (runtimeInputs == null) return;
+        var runtime = Model.Runtime; runtimeInputs.Configure(runtime.Bindings, runtime.LeftClick, runtime.CanUse && !runtime.Recording, runtime.SceneRevision);
+        ConfigureHandInputs();
+        if (runtime.CanUse && !runtime.Recording) runtime.ReportInputStatus(
+            runtime.Bindings.Length > 0 && !runtimeInputs.KeyboardRegistered || runtime.LeftClick && !runtimeInputs.MouseRegistered
+            ? "입력 감지 등록 실패 · 화면의 액션 재생 버튼을 사용하세요." : "전역 입력 준비 · 원래 키와 클릭은 게임에 전달합니다.");
+    }
+    private async void ExportImageTemplate(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "제작 틀을 저장할 폴더 선택" };
+        if (dialog.ShowDialog(this) != true) return;
+        string id = Model.SelectedCharacter.Id;
+        string target = Path.Combine(dialog.FolderName, "VoxPet-" + id + "-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            await Task.Run(() =>
+            {
+                string source = Path.Combine(AppContext.BaseDirectory, "Assets", "ImageSetTemplate");
+                var pack = ImageSetLoader.Load(Path.Combine(source, "imageset.json"));
+                Directory.CreateDirectory(target);
+                foreach (string file in pack.Definition.Files) File.Copy(Path.Combine(source, file), Path.Combine(target, file));
+                File.WriteAllText(Path.Combine(target, "imageset.json"), JsonSerializer.Serialize(pack.Definition with { CharacterId = id }, VoxPet.Core.Models.ImageSet.JsonOptions));
+            });
+            MessageBox.Show(this, $"제작 틀을 저장했습니다. 예제 PNG를 캐릭터 그림으로 교체하세요.\n{target}", "VoxPet 제작 가이드");
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException or JsonException)
+        { MessageBox.Show(this, "제작 틀 저장 실패: " + error.Message, "VoxPet 제작 가이드"); }
+    }
+    private void RecordRuntimeKey(object sender, RoutedEventArgs e)
+    {
+        if (sender is System.Windows.Controls.Button { Tag: VoxPet.Core.Models.RuntimeOperation operation }) Model.Runtime.Record(operation);
+    }
     private void ConfigureHandInputs()
     {
         if (handInputs == null) return;
-        var settings = Model.Hands.Snapshot(); handInputs.Configure(settings);
+        var settings = Model.Hands.Snapshot();
+        if (Model.Runtime.IsActive) settings = settings with { Profiles = settings.Profiles.Select(p => p with { Enabled = false }).ToArray() };
+        handInputs.Configure(settings);
         bool needsMouse = settings.Profiles.Any(profile => profile.Enabled && profile.LeftClick && profile.Mode == VoxPet.Core.Models.HandTriggerMode.Hotkey);
         Model.Hands.Status = handInputs.Conflicts.Count > 0 || needsMouse && !handInputs.MouseRegistered
             ? "입력 등록 실패 · 다른 앱과의 키 충돌을 확인하세요. 손동작 시험 버튼은 사용할 수 있습니다."
@@ -203,13 +251,19 @@ public partial class MainWindow : Window
     private void UpdateResponsiveLayout()
     {
         bool compact = ActualWidth < 870 || ActualHeight < 600;
-        LayoutRoot.Margin = new Thickness(compact ? 12 : 28);
-        TitleText.FontSize = compact ? 22 : 30;
+        LayoutRoot.Margin = new Thickness(compact ? 10 : 18);
+        NavigationRail.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        NavigationColumn.Width = new GridLength(compact ? 0 : 148);
+        if (compact) SettingsTabs.ClearValue(System.Windows.Controls.Control.TemplateProperty);
+        else SettingsTabs.Template = (System.Windows.Controls.ControlTemplate)FindResource("ContentOnlyTabs");
+        ProjectHeading.Visibility = ActualWidth < 640 ? Visibility.Collapsed : Visibility.Visible;
+        HeaderTray.Visibility = ActualWidth < 640 ? Visibility.Collapsed : Visibility.Visible;
+        TitleText.FontSize = compact ? 22 : 26;
         SubtitleText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
         StatusCard.Padding = new Thickness(compact ? 8 : 14);
         StatusCard.Margin = new Thickness(0, compact ? 8 : 16, 0, 0);
         PreviewCard.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
-        PanelsGrid.ColumnDefinitions[1].Width = new GridLength(compact ? 0 : 24);
+        PanelsGrid.ColumnDefinitions[1].Width = new GridLength(compact ? 0 : 16);
         PanelsGrid.ColumnDefinitions[2].Width = compact ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         System.Windows.Controls.Grid.SetColumn(SettingsTabs, compact ? 0 : 2);
         PreviewCard.Height = Math.Max(280, SettingsTabs.ActualHeight);
@@ -253,5 +307,5 @@ public partial class MainWindow : Window
     /// <summary>
     /// 캡처 종료·설정 저장 후 방송창을 닫고 다음 Closing을 허용한다.
     /// </summary>
-    public async Task ShutdownAsync() { handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
+    public async Task ShutdownAsync() { runtimeInputs?.Dispose(); Model.Runtime.InputsChanged -= ConfigureRuntimeInputs; handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
 }

@@ -38,7 +38,7 @@ public sealed record HandMotionSettings(HandMotionProfile[] Profiles, Dictionary
         foreach (var profile in Profiles) profile.Validate();
         if (Rigs != null)
         {
-            if (Rigs.Count > 7 || Rigs.Any(pair => pair.Value == null || pair.Key is not ("custom" or "builtin") && !CharacterCatalog.All.Any(character => character.Id == pair.Key))) throw new ArgumentException("캐릭터 연결 설정을 확인하세요.");
+            if (Rigs.Count > 7 || Rigs.Any(pair => pair.Value == null || pair.Key is not ("custom" or "builtin" or "drawing-neulbo" or "neulbo-man" or "neulbo-girl") && !CharacterCatalog.All.Any(character => character.Id == pair.Key))) throw new ArgumentException("캐릭터 연결 설정을 확인하세요.");
             foreach (var rig in Rigs.Values) rig.Validate();
         }
         var keys = Profiles.Where(profile => profile.Enabled && profile.Mode == HandTriggerMode.Hotkey && !profile.LeftClick).Select(profile => profile.Shortcut).ToArray();

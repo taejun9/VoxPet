@@ -1,0 +1,28 @@
+<UserControl x:Class="VoxPet.App.Views.ImageSetGuide" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <StackPanel>
+    <TextBlock Text="캐릭터 제작 가이드" FontSize="18" FontWeight="Bold"/>
+    <TextBlock Text="동일 Canvas에 제자리에 그린 투명 PNG를 준비하세요." TextWrapping="Wrap" Foreground="{StaticResource TextSecondary}" Margin="0,7,0,12"/>
+    <Border Background="{StaticResource Checkerboard}" CornerRadius="8" Padding="10">
+      <Grid Height="144"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="190"/></Grid.ColumnDefinitions>
+        <Viewbox><Canvas Width="180" Height="180">
+          <Ellipse Width="80" Height="60" Fill="#A7D0E3" Canvas.Left="50" Canvas.Top="6"/>
+          <Rectangle Width="72" Height="64" RadiusX="16" RadiusY="16" Fill="#3280B7" Canvas.Left="54" Canvas.Top="70"/>
+          <Rectangle Width="25" Height="53" RadiusX="12" RadiusY="12" Fill="#7BB8D7" Canvas.Left="23" Canvas.Top="70"/>
+          <Rectangle Width="25" Height="53" RadiusX="12" RadiusY="12" Fill="#7BB8D7" Canvas.Left="132" Canvas.Top="70"/>
+          <Rectangle Width="28" Height="36" RadiusX="10" RadiusY="10" Fill="#A7D0E3" Canvas.Left="57" Canvas.Top="140"/>
+          <Rectangle Width="28" Height="36" RadiusX="10" RadiusY="10" Fill="#A7D0E3" Canvas.Left="95" Canvas.Top="140"/>
+        </Canvas></Viewbox>
+        <StackPanel Grid.Column="1" VerticalAlignment="Center"><TextBlock Text="Head.png · 머리"/><TextBlock Text="Body.png · 몸통"/><TextBlock Text="Arm_L / Arm_R · 양팔"/><TextBlock Text="Leg_L / Leg_R · 양다리"/><TextBlock Text="256 / 512 권장 / 1024px" Foreground="{StaticResource AccentHover}" FontSize="11" Margin="0,8,0,0"/></StackPanel>
+      </Grid>
+    </Border>
+    <TextBlock Text="01  뒤에서 앞으로" FontWeight="Bold" Margin="0,12,0,5"/>
+    <TextBlock Text="망토 뒤 → 왼팔 → 다리 → 몸통 → 하의 → 상의 → 신발 → 머리 → 눈·눈썹 → 입 → 얼굴장식 → 오른팔 → 무기 → 효과" TextWrapping="Wrap" FontSize="12"/>
+    <TextBlock Text="02  액션은 파츠 교체" FontWeight="Bold" Margin="0,12,0,5"/>
+    <TextBlock Text="각 프레임의 Replace에 ArmR 등을 지정합니다. PNG면 대체, null이면 숨김. 종료하면 기본 파츠로 복귀하고 연타하면 첫 프레임부터 다시 시작합니다." TextWrapping="Wrap" FontSize="12"/>
+    <TextBlock Text="03  소매와 무기는 같은 포즈" FontWeight="Bold" Margin="0,12,0,5"/>
+    <TextBlock Text="ready / fire / return처럼 같은 포즈 이름을 사용합니다. 액션에 맞는 팔·소매·무기를 함께 준비하세요. 총구·활 발사 방향은 오른쪽, 한손 idle은 오른쪽15°입니다. 앱이 그림을 회전해 맞추지 않습니다." TextWrapping="Wrap" FontSize="12"/>
+    <TextBlock Text="04  얼굴과 말하기" FontWeight="Bold" Margin="0,12,0,5"/>
+    <TextBlock Text="표정은 눈·눈썹, 음량은 입3·8단계를 담당합니다. 안경은 Head / Eye / Face, 콧수염은 Mouth Anchor에 등록합니다. MouthOffsets가 입 단계마다 장식을 이동합니다." TextWrapping="Wrap" FontSize="12"/>
+    <TextBlock Text="캐릭터 → 이미지 세트 → 제작 틀 저장으로 JSON과 예제 PNG를 받으세요. 위치와 크기는 외부 그림 도구에서 맞춥니다." TextWrapping="Wrap" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,12,0,0"/>
+  </StackPanel>
+</UserControl>

@@ -161,6 +161,11 @@ public sealed class MotionSurface : FrameworkElement
     {
         base.OnRender(drawing); if (model == null) return;
         drawing.PushClip(new RectangleGeometry(CanvasRect));
+        if (model.RuntimeLayers is { } layers)
+        {
+            foreach (var layer in layers) drawing.DrawImage(layer.Image, new Rect(layer.Offset.X, layer.Offset.Y, 512, 512));
+            drawing.Pop(); return;
+        }
         Costumes(drawing, true);
         if (model.PreviousSprite != null) Sprite(drawing, model.PreviousSprite, model.PreviousOpacity);
         Sprite(drawing, model.Sprite, model.Blend);

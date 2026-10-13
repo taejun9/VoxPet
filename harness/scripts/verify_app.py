@@ -19,6 +19,13 @@ for name in manifest['states'] + [name for states in expressions.values() for na
     data = (assets / name).read_bytes()
     if data[:8] != b'\x89PNG\r\n\x1a\n' or struct.unpack('>II', data[16:24]) != (512, 512) or data[25] != 6:
         errors.append(f'Invalid RGBA PNG contract: {name}')
+# 조합 제작 틀은 개인 자료 없이 재생성한 합성 PNG다. 모든 파일의 동일 Canvas 계약을 확인한다.
+example = ROOT / 'src/VoxPet.App/Assets/ImageSetTemplate'
+image_set = json.loads((example / 'imageset.json').read_text(encoding='utf-8'))
+for path in example.glob('*.png'):
+    data = path.read_bytes()
+    if data[:8] != b'\x89PNG\r\n\x1a\n' or struct.unpack('>II', data[16:24]) != (image_set['CanvasSize'],) * 2 or data[25] != 6:
+        errors.append(f'Invalid image-set template RGBA PNG: {path.name}')
 # MVP의 저장·네트워크·UI 동기 대기 금지 계약을 소스 텍스트에서 검사한다.
 # 주석도 검색 대상이므로 정적 검사 통과가 런타임 개인정보 검증을 대신하지 않는다.
 for path in (ROOT / 'src').rglob('*.cs'):

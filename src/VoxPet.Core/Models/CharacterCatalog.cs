@@ -8,9 +8,6 @@ public static class CharacterCatalog
     public const string DefaultId = "neulbo";
     public static IReadOnlyList<CharacterDefinition> All { get; } = Array.AsReadOnly<CharacterDefinition>([
         new(DefaultId, "늘보군", "늘보군.png"),
-        new("drawing-neulbo", "그림 늘보군", "그림 늘보군.png"),
-        new("neulbo-man", "늘보맨", "늘보맨.png"),
-        new("neulbo-girl", "늘보걸", "늘보걸.png"),
         new("pelly", "펠리", "펠리.png", true)
     ]);
     public static string NormalizeId(string? id) => All.Any(item => item.Id == id) ? id! : DefaultId;

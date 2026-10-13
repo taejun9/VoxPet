@@ -16,6 +16,16 @@ public sealed class CharacterViewModel : ObservableObject
     public CharacterRig Rig { get; private set; } = CharacterRig.Default(CharacterCatalog.DefaultId);
     public MotionPose Motion { get; private set; } = MotionPose.Rest;
     public bool ShowMotionGuides { get; internal set; }
+    public IReadOnlyList<RuntimeLayer>? RuntimeLayers { get; private set; }
+    public ExpressionKind ExpressionKind => profile.Kind;
+    public bool IsBlinking => profile.Blink && current.EyeOpen < .5;
+    private string runtimeName = "";
+    public void SetRuntimeLayers(IReadOnlyList<RuntimeLayer>? layers, string? displayName = null)
+    {
+        bool changed = (RuntimeLayers == null) != (layers == null);
+        if (displayName != null) runtimeName = displayName;
+        RuntimeLayers = layers; Notify(nameof(RuntimeLayers)); if (changed || displayName != null) Notify(nameof(Name));
+    }
     private HandPlayback? playback;
     private HandMotionProfile? handProfile;
     public void SetMotion(CharacterRig rig, HandPlayback? hand, HandMotionProfile? selected)
@@ -109,7 +119,7 @@ public sealed class CharacterViewModel : ObservableObject
         return () => { Apply(savedProfile, savedSprites); UsesCustomSheet = savedCustom; Name = savedName; };
     }
     private static bool Expected(Exception ex) => ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or FormatException or OverflowException or COMException;
-    public string Name { get => name; private set => Set(ref name, value); }
+    public string Name { get => RuntimeLayers != null ? runtimeName : name; private set => Set(ref name, value); }
     public ImageSource Sprite { get => sprite; private set => Set(ref sprite, value); }
     public ImageSource? PreviousSprite { get => previousSprite; private set => Set(ref previousSprite, value); }
     public double Blend { get => blend; private set { if (Set(ref blend, value)) Notify(nameof(PreviousOpacity)); } }

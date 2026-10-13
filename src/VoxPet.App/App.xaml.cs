@@ -192,6 +192,7 @@ public partial class App : Application
             if (closingWindow.IsVisible) failures++;
             await CharacterQa.RunAsync(main, Check);
             await CharacterSelectionQa.RunAsync(Check);
+            await ImageRuntimeQa.RunAsync(Check);
             await SettingsPersistenceQa.RunAsync(Check);
             await ExpressionQa.RunAsync(main, Check);
             await DetailedCharacterQa.RunAsync(Check);

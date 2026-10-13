@@ -40,6 +40,9 @@ public sealed class SettingsTests : IDisposable
     [Theory]
     [InlineData("null")]
     [InlineData("\"unknown\"")]
+    [InlineData("\"drawing-neulbo\"")]
+    [InlineData("\"neulbo-man\"")]
+    [InlineData("\"neulbo-girl\"")]
     [InlineData("\"../private.png\"")]
     public void InvalidCharacterPreservesOtherSettings(string id)
     {

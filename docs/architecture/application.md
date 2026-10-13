@@ -172,3 +172,11 @@ MotionSurface는 frozen 원본 PNG를 머리/팔 연결 지점에서 CharacterMo
 PNG를 자동 해부 분석하거나 손가락을 새로 그리지 않는다. 원본 팔/날개 영역의 연속 변형과 native 장난감 소품/효과로 동작을 표현한다. 그림에 따라 어깨/긴 머리 경계의 이음새가 보일 수 있으며 손 영역/머리 경계를 수동 조정한다. 머리 흔들림은 선택형이고 기본 꺼짐이다. 입 장식은 음량 기반 지정 이동량을 사용하며 이미지별 턱 윤곽을 자동 추적하지 않는다.
 
 HandMotionInputs는 선택된 RegisterHotKey(MOD_NOREPEAT)만 등록하고 좌클릭 동작이 켜졌을 때만 WH_MOUSE_LL을 설치한다. 버튼 down 메시지만 확인하며 data를 역참조하지 않고 원래 입력을 CallNextHookEx로 전달한다. UI 요청은 최대 하나만 예약하고 전역키 충돌은 표시한다. 종료 시작에 입력을 해제하고 scheduler/save timer를 정지한다. 설정은 로컬 motion.json에350ms 지연 자동 저장/worker gate/종료 flush로 보존한다. 의상 배치/연결도 자동 저장하고 revision으로 진행 중 저장 이후 변경을 보존한다.
+
+## 이미지 조합 런타임 v1
+
+Core의 ImageSet은 Canvas·파일·파츠·포즈·대체·소매·무기 계약을 검증한다. ImageSetPlayer는 monotonic 초에서 현재 프레임을 선택하고 기본 파츠를 Replace로 대체한 뒤 눈/입·프리셋·무기·효과를 고정 순서로 조합한다. 새 입력은 재시작하며 종료하면 idle이다. 포즈/Anchor 계약은 [규격](../product/image-set-format.md)을 따른다.
+
+App의 ImageSetLoader는 worker에서 bounded PNG를 읽고 frozen bitmap을 준비한다. 전체 검증 뒤 로컬 복사와 설정 저장을 수행하고 마지막에 UI 상태를 교체한다. 실패는 기존 세트를 유지한다. 선택/복원 경합은 캐릭터 ID와 적용 revision을 확인하고 종료 시 진행 중인 등록을 기다린다. ImageRuntimeViewModel은 기존60Hz timer의 음량·blink·표정을 받아 이미지 목록을 만든다. 두 창의 MotionSurface는 같은 목록을 렌더한다. 새 모드에서는 기존 mesh·의상·벡터 손동작 렌더를 함께 그리지 않는다.
+
+ImageRuntimeInputs는 선택된 키와 좌클릭 down을 low-level hook에서 감지해 Dispatcher에 짧은 명령을 예약한다. 키 repeat를 억제하고 원래 이벤트를 전달한다. 설정/전환/종료 때 generation을 바꿔 이전 대기 명령을 무효화한다. 오디오 callback에 입력·파일·렌더 작업을 추가하지 않는다. 작은 창은 기존7개 상단 탭과 Viewbox를 사용하고 넓은 창은 사이드 메뉴와 공통 미리보기를 사용한다.

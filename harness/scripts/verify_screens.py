@@ -37,9 +37,10 @@ for angle in [0, 6, 12]: expected.add(f'attachment-head-{angle}')
 for level in range(3): expected.add(f'attachment-mouth-{level}')
 for case in ['broadcast-transparent', 'broadcast-green-again', 'broadcast-while-settings-in-tray', 'settings-restored-from-tray', 'settings-initial', 'settings-initial-broadcast', 'settings-restarted', 'settings-restarted-broadcast']:
     expected.add(case)
-for character in ['neulbo', 'drawing-neulbo', 'neulbo-man', 'neulbo-girl', 'pelly']: expected.add('selection-' + character)
+for character in ['neulbo', 'pelly']: expected.add('selection-' + character)
 for run in ['unsigned', 'signed']:
     for case in ['fresh12', 'restart-reversed12', 'legacy3-slot', 'corrupt-state', 'restart-pelly', 'missing-character', 'corrupt-character', 'restart-settings', 'public6']: expected.add(f'startup-{run}-{case}')
+expected.update(['imageset-preview', 'imageset-broadcast'])
 records = []
 for name in sorted(expected):
     metadata = json.loads((args.folder / f'voxpet-screen-{name}.json').read_text())

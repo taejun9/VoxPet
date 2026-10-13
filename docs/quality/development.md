@@ -146,3 +146,7 @@ plan023은 기존 WPF RenderTargetBitmap 검사와 별도로 표시된 HWND 영�
 `ScreenSceneQa`는 공개 고양이와 실제 Wardrobe.ImportAsync로 읽은 합성 의상을 사용한다. 7탭21페이지×4창크기84장,12표정×3입×2눈72장과 설정창12장,5손동작×4시점20장,머리/입 연결6장,방송/트레이4장,선택5장,설정 초기/재생성4장,일반/서명9사례씩18장으로225장을 수집한다. `python3 harness/scripts/verify_screens.py <RUNNER_TEMP>`는 소스의 탭/표정 정의와 coverage·foreground·PNG 크기/CRC를 검사한다. 직접 시각 검토는 자동 검사와 별도 단계다.
 
 화면 증거는 GITHUB_ACTIONS=true와 RUNNER_TEMP가 있는 일회용 runner만 생성한다. 일반 시작 캡처에는 추가로 검증된 AppPaths.QaFolder와 VOXPET_QA_SCREEN_NAME이 필요하다. 정상 사용자 실행에는 화면 저장을 추가하지 않는다. 기본 workflow는 개인 PNG/실제 설정/음성 대신 공용·합성 자료만 사용한다.
+
+## 이미지 조합 세트 회귀
+
+plan025부터 현재 캐릭터 선택은 늘보군/펠리 두 종이다. 이전 plan021 다섯 종 회귀 기록은 과거 결과다. ImageSetTests는 파츠 대체/숨김·소매/무기 포즈·Anchor·표정/입 우선순위·연타 재시작·레이어 순서·경로·설정 복구를 검사한다. ImageRuntimeQa는 제공 합성 틀의 로컬 등록/두 창 공유/frozen 이미지/손상 등록 보존/키 기록·해제와 배경 창 키 입력 전달을 Windows에서 시험한다. 개인 파츠는 CI에 보내지 않는다. `python3 harness/scripts/generate_imageset_template.py`는 표준 라이브러리만 사용해 배포 가능한 합성 제작 틀을 재생성한다.

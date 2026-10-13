@@ -1,0 +1,141 @@
+{
+  "Version": 1,
+  "CharacterId": "neulbo",
+  "CanvasSize": 512,
+  "Parts": [
+    {
+      "Part": "Head",
+      "File": "head.png"
+    },
+    {
+      "Part": "Body",
+      "File": "body.png"
+    },
+    {
+      "Part": "ArmL",
+      "File": "arm-l.png"
+    },
+    {
+      "Part": "ArmR",
+      "File": "arm-r.png"
+    },
+    {
+      "Part": "LegL",
+      "File": "leg-l.png"
+    },
+    {
+      "Part": "LegR",
+      "File": "leg-r.png"
+    }
+  ],
+  "Mouths": [
+    "mouth-0.png",
+    "mouth-1.png",
+    "mouth-2.png"
+  ],
+  "Expressions": [
+    {
+      "Kind": "Neutral",
+      "EyesOpen": "eyes-open.png",
+      "EyesClosed": "eyes-closed.png"
+    },
+    {
+      "Kind": "Happy",
+      "EyesOpen": "eyes-happy.png",
+      "EyesClosed": "eyes-closed.png"
+    }
+  ],
+  "Outfits": [
+    {
+      "Name": "제작 예제 · 파란 소매",
+      "Layers": [
+        {
+          "Part": "ArmR",
+          "Anchor": "Canvas",
+          "Poses": {
+            "idle": "sleeve-idle.png",
+            "ready": "sleeve-ready.png",
+            "fire": "sleeve-fire.png",
+            "return": "sleeve-return.png"
+          }
+        }
+      ]
+    }
+  ],
+  "Weapons": [
+    {
+      "Name": "제작 예제 · 장난감 권총",
+      "Template": "Firearm",
+      "Layers": [
+        {
+          "Part": "Weapon",
+          "Anchor": "Canvas",
+          "Poses": {
+            "idle": "gun-idle.png",
+            "ready": "gun-ready.png",
+            "fire": "gun-fire.png",
+            "return": "gun-return.png"
+          }
+        },
+        {
+          "Part": "Effect",
+          "Anchor": "Canvas",
+          "Poses": {
+            "idle": "effect-idle.png",
+            "fire": "effect-fire.png"
+          }
+        }
+      ]
+    }
+  ],
+  "Actions": [
+    {
+      "Name": "권총 발사",
+      "Template": "Firearm",
+      "Frames": [
+        {
+          "DurationMs": 80,
+          "Pose": "ready",
+          "Replace": {
+            "ArmR": "arm-ready.png"
+          }
+        },
+        {
+          "DurationMs": 80,
+          "Pose": "fire",
+          "Replace": {
+            "ArmR": "arm-fire.png"
+          }
+        },
+        {
+          "DurationMs": 80,
+          "Pose": "fire",
+          "Replace": {
+            "ArmR": "arm-fire.png"
+          }
+        },
+        {
+          "DurationMs": 100,
+          "Pose": "return",
+          "Replace": {
+            "ArmR": "arm-return.png"
+          }
+        }
+      ]
+    }
+  ],
+  "MouthOffsets": [
+    {
+      "X": 0,
+      "Y": 0
+    },
+    {
+      "X": 0,
+      "Y": 2
+    },
+    {
+      "X": 0,
+      "Y": 5
+    }
+  ]
+}

@@ -25,7 +25,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private int characterLoads;
     private long characterRevision;
     public IReadOnlyList<CharacterDefinition> Characters => CharacterCatalog.All;
-    public bool CanChooseCharacter => !closing && !characterBusy;
+    public bool CanChooseCharacter => !closing && !characterBusy && !Runtime.IsImporting;
     public CharacterDefinition SelectedCharacter
     {
         get => selectedCharacter;
@@ -86,6 +86,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public ExpressionViewModel Expressions { get; }
     public CostumeViewModel Wardrobe { get; }
     public HandMotionViewModel Hands { get; }
+    public ImageRuntimeViewModel Runtime { get; }
     private string MotionCharacterId => Character.UsesCustomSheet ? "custom" : Character.IsBuiltInDefault ? "builtin" : appliedCharacter.Id;
     public Func<int, bool>? IsGlobalExpressionKey { get; set; }
     public Func<bool>? IsGlobalMuteKey { get; set; }
@@ -144,6 +145,9 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Hands = new(Character, persistSettings, folder, () => clock.Elapsed.TotalSeconds);
         var saved = persistSettings ? initialSettings?.Normalize() ?? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         selectedCharacter = appliedCharacter = Characters.Single(item => item.Id == saved.CharacterId);
+        Runtime = new(Character, persistSettings, folder, () => appliedCharacter.Id, () => clock.Elapsed.TotalSeconds, kind => Expressions.PreviewBuiltinAsync((int)kind));
+        Runtime.LegacyRequested = () => SelectCharacterAsync(appliedCharacter.Id, true);
+        Runtime.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Runtime.IsImporting)) RefreshCommands(); };
         preferredMicrophoneId = saved.MicrophoneId; mainPlacement = saved.MainWindow; broadcastPlacement = saved.BroadcastWindow;
         broadcastWidth = broadcastPlacement?.Width ?? 480; broadcastHeight = broadcastPlacement?.Height ?? 480;
         broadcastOpen = saved.BroadcastOpen; muted = saved.CharacterMuted; settingsTab = saved.SettingsTab;
@@ -165,8 +169,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             var path = ChooseCharacterSheet?.Invoke();
             if (path != null) await ImportCharacterAsync(path);
-        }, () => !closing && !characterBusy);
-        DefaultCharacterCommand = new(() => { Expressions.RestoreCharacter(); Hands.SetCharacter(MotionCharacterId); CharacterStatus = "선택한 캐릭터의 평상 모습으로 복원했습니다."; }, () => !closing && !characterBusy);
+        }, () => !closing && !characterBusy && !Runtime.IsImporting);
+        DefaultCharacterCommand = new(() => { if (Runtime.IsActive) { Runtime.LegacyCommand.Execute(null); return; } Expressions.RestoreCharacter(); Hands.SetCharacter(MotionCharacterId); CharacterStatus = "선택한 캐릭터의 평상 모습으로 복원했습니다."; }, () => !closing && !characterBusy && !Runtime.IsImporting);
         ConversationCommand = new(() => ApplyPreset(ReactionPreset.Conversation));
         SoftVoiceCommand = new(() => ApplyPreset(ReactionPreset.SoftVoice));
         SnappyCommand = new(() => ApplyPreset(ReactionPreset.Snappy));
@@ -263,6 +267,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     // 관련 속성과 명령의 CanExecuteChanged를 함께 갱신해 버튼 상태가 실제 수명을 반영하게 한다.
     private void RefreshCommands()
     {
+        Runtime.SetSelectionBusy(characterBusy || closing);
         Notify(nameof(CanChooseDevice)); Notify(nameof(CanChooseCharacter)); Notify(nameof(DemoLabel));
         StartCommand.Refresh(); StopCommand.Refresh(); RefreshCommand.Refresh(); DemoCommand.Refresh();
         ImportCharacterCommand.Refresh(); DefaultCharacterCommand.Refresh();
@@ -272,8 +277,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public async Task InitializeAsync()
     {
         int? startupSlot = expressionSlotId; var startupBuiltin = builtinExpression;
+        await Runtime.InitializeAsync();
+        var startupPack = await Runtime.PrepareAsync(SelectedCharacter.Id);
         // 개인 PNG는 실행 폴더에서만 읽는다. 공개 배포에 없으면 내장 고양이를 유지한다.
-        if (persistSettings)
+        if (persistSettings && startupPack == null)
         {
             string id = SelectedCharacter.Id;
             bool loaded = File.Exists(Path.Combine(charactersFolder, SelectedCharacter.FileName)) && await SelectCharacterAsync(id);
@@ -285,12 +292,13 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 CharacterStatus = "캐릭터 파일을 읽지 못했습니다. 내장 고양이로 시작합니다. 개인 패키지의 Characters 폴더를 확인하세요.";
             }
         }
+        Runtime.Activate(startupPack);
         characterInitialized = true;
         await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await Hands.InitializeAsync(); Hands.SetCharacter(MotionCharacterId); await RefreshDevicesAsync();
         settingsReady = true;
     }
     /// <summary>전체 가족을 worker에서 읽고 최신 요청만 적용한다. 실패하면 선택과 현재 그림을 되돌린다.</summary>
-    public async Task<bool> SelectCharacterAsync(string id)
+    public async Task<bool> SelectCharacterAsync(string id, bool legacy = false)
     {
         var item = Characters.FirstOrDefault(entry => entry.Id == id);
         if (closing || item == null) return false;
@@ -301,12 +309,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             bool changed = await Expressions.ChangeCharacterAsync(async () =>
             {
-                var family = await Task.Run(() => CharacterViewModel.LoadFamily(Path.Combine(charactersFolder, item.FileName)));
+                var pack = legacy ? null : await Runtime.PrepareAsync(item.Id);
+                var family = pack == null ? await Task.Run(() => CharacterViewModel.LoadFamily(Path.Combine(charactersFolder, item.FileName))) : null;
                 return () =>
                 {
-                    Character.SetDefault(family, item.Name); appliedCharacter = item; Hands.SetCharacter(item.Id);
-                    CharacterStatus = $"{item.Name}{(item.SideView ? " · 측면" : "")} · 입{Character.MouthFrameCount}단계 / 눈 깜박임 · 두 창에 적용했습니다." +
-                        (family.Warnings > 0 ? " 일부 표정 파일은 평상 모습으로 표시합니다." : "");
+                    if (family != null) Character.SetDefault(family, item.Name);
+                    appliedCharacter = item; Runtime.Activate(pack); Hands.SetCharacter(item.Id);
+                    CharacterStatus = $"{item.Name}{(item.SideView ? " · 측면" : "")} · 입{pack?.Definition.Mouths.Length ?? Character.MouthFrameCount}단계 / 눈 깜박임 · 두 창에 적용했습니다." +
+                        (family?.Warnings > 0 ? " 일부 표정 파일은 평상 모습으로 표시합니다." : "");
                 };
             });
             if (!changed && !closing && request == characterRevision) CharacterStatus = "캐릭터 변경을 취소했습니다. 다시 선택하세요.";
@@ -404,7 +414,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
                 return () =>
                 {
-                    Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path)); Hands.SetCharacter("custom");
+                    Runtime.UseSheet(); Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path)); Hands.SetCharacter("custom");
                     CharacterStatus = "캐릭터 적용 완료 · 미리보기와 방송창에 함께 적용됩니다.";
                 };
             });
@@ -493,6 +503,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         VoiceLevel = processor.VoiceLevel; RawLevel = running || demo ? result.Raw : 0;
         Metrics = $"RMS {measured.Rms:F4}   Peak {measured.Peak:F4}   {measured.Dbfs:F1} dBFS{(measured.Peak >= 1 ? " · CLIP" : "")}";
         Hands.Update(now); Character.Update(animator.Update(VoiceLevel, now), now);
+        Runtime.Update(now, VoiceLevel, Character.IsBlinking, Character.ExpressionKind);
     }
     internal Action PauseVisualForQa()
     {
@@ -533,8 +544,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         ClearNoiseMeasurement("앱 종료로 측정을 취소했습니다.");
         closing = true; timer.Stop(); timer.Tick -= Tick; saveTimer.Stop(); saveTimer.Tick -= SaveTimerTick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
-        var expressionClose = Expressions.CloseAsync(); var handsClose = Hands.CloseAsync();
-        await session.DisposeAsync(); await expressionClose; await handsClose; await Wardrobe.CloseAsync(); ResetLevels();
+        var expressionClose = Expressions.CloseAsync(); var handsClose = Hands.CloseAsync(); var runtimeClose = Runtime.CloseAsync();
+        await session.DisposeAsync(); await expressionClose; await handsClose; await runtimeClose; await Wardrobe.CloseAsync(); ResetLevels();
         await FlushSettingsAsync();
     }
 }

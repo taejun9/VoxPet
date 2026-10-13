@@ -68,7 +68,7 @@ public sealed class HandMotionTests : IDisposable
         Assert.Throws<ArgumentException>(() => (CharacterRig.Default("neulbo") with { HeadCutY = 320 }).Validate());
     }
     [Fact]
-    public void AllFiveCharacterRigsAndGesturesStayFiniteAndSettle()
+    public void BothCharacterRigsAndGesturesStayFiniteAndSettle()
     {
         var state = new CharacterParameters(1, 5, 3, 0, 1, MouthState.Open);
         foreach (var character in CharacterCatalog.All)

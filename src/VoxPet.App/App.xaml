@@ -2,17 +2,17 @@
   <!-- 앱 전체 색상과 기본 컨트롤 스타일. 오디오/캐릭터 상태는 스타일에 포함하지 않는다. -->
   <Application.Resources>
     <!-- 디자인 시스템 브러시 -->
-    <SolidColorBrush x:Key="Accent" Color="#4EE2BE"/>
-    <SolidColorBrush x:Key="AccentHover" Color="#66ECCB"/>
-    <SolidColorBrush x:Key="AccentPressed" Color="#38CBA7"/>
-    <SolidColorBrush x:Key="AccentSubtle" Color="#16312E"/>
-    <SolidColorBrush x:Key="SurfaceCard" Color="#162234"/>
-    <SolidColorBrush x:Key="SurfaceCardAlt" Color="#1C2A3E"/>
-    <SolidColorBrush x:Key="SurfaceBorder" Color="#25364E"/>
-    <SolidColorBrush x:Key="SurfaceBorderHover" Color="#3D5373"/>
+    <SolidColorBrush x:Key="Accent" Color="#1677FF"/>
+    <SolidColorBrush x:Key="AccentHover" Color="#4493FF"/>
+    <SolidColorBrush x:Key="AccentPressed" Color="#075ADB"/>
+    <SolidColorBrush x:Key="AccentSubtle" Color="#102B4B"/>
+    <SolidColorBrush x:Key="SurfaceCard" Color="#0D202E"/>
+    <SolidColorBrush x:Key="SurfaceCardAlt" Color="#142D3E"/>
+    <SolidColorBrush x:Key="SurfaceBorder" Color="#24465E"/>
+    <SolidColorBrush x:Key="SurfaceBorderHover" Color="#397099"/>
     <SolidColorBrush x:Key="TextPrimary" Color="#F1F5F9"/>
-    <SolidColorBrush x:Key="TextSecondary" Color="#8FA4BC"/>
-    <SolidColorBrush x:Key="TextMuted" Color="#627790"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#9DB5C9"/>
+    <SolidColorBrush x:Key="TextMuted" Color="#708A9E"/>
 
     <Style TargetType="TextBlock">
       <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
@@ -49,24 +49,24 @@
     <!-- 모던 세그먼트/언더라인 탭 아이템 -->
     <Style TargetType="TabItem">
       <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
-      <Setter Property="Background" Value="#152132"/>
+      <Setter Property="Background" Value="#112838"/>
       <Setter Property="Padding" Value="8,7"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="TabItem">
-            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="0,0,0,2" CornerRadius="7,7,0,0" Padding="{TemplateBinding Padding}" Margin="0,0,3,0">
+            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="Transparent" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}" Margin="0,0,3,0">
               <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="TabBorder" Property="Background" Value="#1E2C40"/>
+                <Setter TargetName="TabBorder" Property="Background" Value="#193C54"/>
                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
               </Trigger>
               <Trigger Property="IsSelected" Value="True">
-                <Setter TargetName="TabBorder" Property="Background" Value="#25364C"/>
+                <Setter TargetName="TabBorder" Property="Background" Value="#1069EA"/>
                 <Setter TargetName="TabBorder" Property="BorderBrush" Value="{StaticResource Accent}"/>
-                <Setter Property="Foreground" Value="{StaticResource Accent}"/>
+                <Setter Property="Foreground" Value="White"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
               </Trigger>
               <Trigger Property="IsKeyboardFocused" Value="True">
@@ -80,7 +80,7 @@
 
     <!-- 모던 인풋 텍스트박스 -->
     <Style TargetType="TextBox">
-      <Setter Property="Background" Value="#111A27"/>
+      <Setter Property="Background" Value="#081925"/>
       <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
       <Setter Property="CaretBrush" Value="{StaticResource Accent}"/>
       <Setter Property="BorderBrush" Value="{StaticResource SurfaceBorder}"/>
@@ -99,7 +99,7 @@
               </Trigger>
               <Trigger Property="IsKeyboardFocused" Value="True">
                 <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource Accent}"/>
-                <Setter TargetName="Border" Property="Background" Value="#152132"/>
+                <Setter TargetName="Border" Property="Background" Value="#112838"/>
               </Trigger>
               <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="Border" Property="Opacity" Value="0.4"/>
@@ -113,7 +113,7 @@
     <!-- 모던 인터랙티브 버튼 -->
     <Style TargetType="Button">
       <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-      <Setter Property="Background" Value="#25354C"/>
+      <Setter Property="Background" Value="#18374D"/>
       <Setter Property="BorderBrush" Value="{StaticResource SurfaceBorder}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Padding" Value="14,8"/>
@@ -129,11 +129,11 @@
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Panel" Property="Background" Value="#304460"/>
+                <Setter TargetName="Panel" Property="Background" Value="#24516F"/>
                 <Setter TargetName="Panel" Property="BorderBrush" Value="{StaticResource SurfaceBorderHover}"/>
               </Trigger>
               <Trigger Property="IsPressed" Value="True">
-                <Setter TargetName="Panel" Property="Background" Value="#1C293C"/>
+                <Setter TargetName="Panel" Property="Background" Value="#102C40"/>
                 <Setter TargetName="Panel" Property="BorderBrush" Value="{StaticResource SurfaceBorder}"/>
               </Trigger>
               <Trigger Property="IsKeyboardFocused" Value="True">
@@ -163,8 +163,8 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
               </Grid.ColumnDefinitions>
-              <Border x:Name="CheckBorder" Width="18" Height="18" CornerRadius="5" Background="#142030" BorderBrush="#324560" BorderThickness="1.5" VerticalAlignment="Center">
-                <Path x:Name="CheckMark" Data="M 3,9 L 7,13 L 15,4" Stroke="#0C1B18" StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+              <Border x:Name="CheckBorder" Width="18" Height="18" CornerRadius="5" Background="#102B3E" BorderBrush="#335D79" BorderThickness="1.5" VerticalAlignment="Center">
+                <Path x:Name="CheckMark" Data="M 3,9 L 7,13 L 15,4" Stroke="#FFFFFF" StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center"/>
               </Border>
               <ContentPresenter Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" RecognizesAccessKey="True"/>
             </Grid>
@@ -198,7 +198,7 @@
         <Setter.Value>
           <ControlTemplate TargetType="Slider">
             <Grid VerticalAlignment="Center">
-              <Border Height="6" CornerRadius="3" Background="#162232" BorderBrush="#25354A" BorderThickness="1" VerticalAlignment="Center" Margin="5,0"/>
+              <Border Height="6" CornerRadius="3" Background="#0C2334" BorderBrush="#274A65" BorderThickness="1" VerticalAlignment="Center" Margin="5,0"/>
               <Track x:Name="PART_Track">
                 <Track.DecreaseRepeatButton>
                   <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
@@ -223,7 +223,7 @@
                     <Thumb.Template>
                       <ControlTemplate TargetType="Thumb">
                         <Grid Width="16" Height="16" Cursor="Hand">
-                          <Ellipse Fill="{StaticResource Accent}" Stroke="#E3FBF4" StrokeThickness="1.5"/>
+                          <Ellipse Fill="{StaticResource Accent}" Stroke="#CCE4FF" StrokeThickness="1.5"/>
                         </Grid>
                       </ControlTemplate>
                     </Thumb.Template>
@@ -239,7 +239,7 @@
     <!-- 모던 프로그레스 바 -->
     <Style TargetType="ProgressBar">
       <Setter Property="Foreground" Value="{StaticResource Accent}"/>
-      <Setter Property="Background" Value="#141E2D"/>
+      <Setter Property="Background" Value="#0B1C29"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Height" Value="8"/>
       <Setter Property="Template">
@@ -257,7 +257,7 @@
 
     <!-- 리스트박스 및 항목 스타일 -->
     <Style TargetType="ListBox">
-      <Setter Property="Background" Value="#141F2E"/>
+      <Setter Property="Background" Value="#0B1C29"/>
       <Setter Property="BorderBrush" Value="{StaticResource SurfaceBorder}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
@@ -274,15 +274,39 @@
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="ItemBorder" Property="Background" Value="#1F2E42"/>
+                <Setter TargetName="ItemBorder" Property="Background" Value="#183C55"/>
               </Trigger>
               <Trigger Property="IsSelected" Value="True">
-                <Setter TargetName="ItemBorder" Property="Background" Value="#263850"/>
+                <Setter TargetName="ItemBorder" Property="Background" Value="#104A86"/>
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
+    </Style>
+
+    <DrawingBrush x:Key="Checkerboard" TileMode="Tile" Viewport="0,0,20,20" ViewportUnits="Absolute" Stretch="Fill">
+      <DrawingBrush.Drawing><DrawingGroup>
+        <GeometryDrawing Brush="#172C39" Geometry="M0,0 L20,0 20,20 0,20Z"/>
+        <GeometryDrawing Brush="#213B4A" Geometry="M0,0 L10,0 10,10 0,10Z M10,10 L20,10 20,20 10,20Z"/>
+      </DrawingGroup></DrawingBrush.Drawing>
+    </DrawingBrush>
+    <Style x:Key="NavigationItem" TargetType="ListBoxItem">
+      <Setter Property="Padding" Value="12,12"/><Setter Property="Margin" Value="0,3"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
+        <Border x:Name="Nav" Background="Transparent" CornerRadius="7" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsSelected" Value="True"><Setter TargetName="Nav" Property="Background" Value="{StaticResource Accent}"/><Setter Property="Foreground" Value="White"/></Trigger>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Nav" Property="BorderBrush" Value="{StaticResource AccentHover}"/><Setter TargetName="Nav" Property="BorderThickness" Value="1"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <ControlTemplate x:Key="ContentOnlyTabs" TargetType="TabControl">
+      <ContentPresenter x:Name="PART_SelectedContentHost" ContentSource="SelectedContent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+    </ControlTemplate>
+    <Style x:Key="PrimaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="Background" Value="{StaticResource Accent}"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderBrush" Value="{StaticResource AccentHover}"/>
     </Style>
   </Application.Resources>
 </Application>

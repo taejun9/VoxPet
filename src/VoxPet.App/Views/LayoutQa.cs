@@ -89,7 +89,7 @@ internal static class LayoutQa
                     if (sectionTabs != null) sectionTabs.SelectedIndex = page;
                     await Task.Delay(30); main.UpdateLayout();
                     var controls = Descendants(root).Where(element => element.IsVisible &&
-                        (element is Slider or CheckBox or ComboBox or TextBox || element is Button { Command: not null })).ToArray();
+                        (element is Slider or CheckBox or ComboBox or TextBox || element is Button)).ToArray();
                     count += controls.Length;
                     foreach (var control in controls)
                     {
