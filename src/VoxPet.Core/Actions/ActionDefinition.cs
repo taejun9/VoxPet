@@ -16,11 +16,12 @@ public sealed record ActionDefinition
     {
         Id = DefinitionValidation.Id(id, nameof(id)); Name = DefinitionValidation.Text(name, nameof(name));
         DurationMs = DefinitionValidation.Positive(durationMs, nameof(durationMs));
+        if (durationMs < 1) throw new ArgumentOutOfRangeException(nameof(durationMs), "동작 길이는1ms 이상이어야 합니다.");
         if (priority is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(priority));
         Priority = priority; Playback = playback ?? new(); Playback.Validate();
         CompatibilityTag = compatibilityTag is null ? null : DefinitionValidation.Id(compatibilityTag, nameof(compatibilityTag));
         var events = DefinitionValidation.Copy(timeline, nameof(timeline));
-        if (events.Any(e => e.TimeMs >= durationMs || e.DurationMs > durationMs - e.TimeMs)) throw new ArgumentException("이벤트가 동작 길이를 벗어납니다.");
+        if (events.Any(e => e.TimeMs > durationMs || e.DurationMs > durationMs - e.TimeMs)) throw new ArgumentException("이벤트가 동작 길이를 벗어납니다.");
         Timeline = Array.AsReadOnly(events.OrderBy(e => e.TimeMs).ToArray());
     }
 }

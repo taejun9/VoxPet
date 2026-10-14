@@ -61,3 +61,5 @@ Phase 1 실행/검증은 [완료 plan-028](../exec_plans/completed/plan-028-runt
 Phase 2는 mouth/expression/pose/action/attachment 불변 데이터와 LegacyImageSetAdapter를 추가한다. 원본 v1 객체를 신규 정의 내부에 보관하지 않는다. full-canvas PNG는 원래 논리 크기/좌표를 유지하며 Legacy3/Legacy8 입 threshold를 명시적 곡선으로 표현한다. 프레임별 고유 pose ID와 원래 포즈 이름을 함께 보존해 같은 fire 이름의 여러 프레임도 소실하지 않는다. Layer는 소매/부위 숨김 의존성과 무기 템플릿 호환/효과 표시 정책을 담는다. 부모 Anchor를 이용한 실제 합성과 엔진 실행은 후속 단계에서 한다.
 
 Phase 3은 MotionEngine의 Voice/Idle/Blink source와 기존 CharacterAnimator wrapper를 구현했다. wrapper는 기존3단계 입/6DIP body/2~6초 blink를 유지한다. caller time/delta만 사용하고 source의 local 이동/회전은 합산, 배율은 곱, 입은 max, 눈은 min으로 합성한다. 변환 계층과 Action 우선순위는 이후 Runtime 단계에서 결합한다.
+
+Phase 4는 Generic ActionEngine과 손동작 호환 adapter를 구현했다. timeline은 ms, 재생 시간은 caller monotonic seconds다. 최소 동작 길이1ms, once/loop, interrupt/priority, idle 복귀/hold, transient effect 만료를 지원한다. Sound는 예약 무동작이다. non-interruptible action은 System100만 중단한다. Legacy scheduler의 간격/always/입력 예약은 adapter에 남기고 재생 수명은 같은 ActionEngine으로 처리한다.
