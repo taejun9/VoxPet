@@ -17,7 +17,7 @@ public partial class MainWindow : Window
 {
     public MainViewModel Model { get; }
     public StudioShellViewModel Studio { get; private set; } = null!;
-    public void ShowStudio(int page = 0) { LayoutRoot.Visibility = Visibility.Collapsed; StudioSurface.Visibility = Visibility.Visible; Studio.Page = page; }
+    public void ShowStudio(int page = 0) { LayoutRoot.Visibility = Visibility.Collapsed; StudioSurface.Visibility = Visibility.Visible; Studio.Page = page; if (page == 5) Studio.Editor.StartPreview(); }
     public void ShowLegacySettings(int tab) { Studio.Editor.PausePreview(); StudioSurface.Visibility = Visibility.Collapsed; LayoutRoot.Visibility = Visibility.Visible; Model.SettingsTab = tab; UpdateResponsiveLayout(); }
     private void ReturnStudio(object sender, RoutedEventArgs e) => ShowStudio();
     private CharacterWindow? character;

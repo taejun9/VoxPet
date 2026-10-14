@@ -38,7 +38,8 @@ public sealed class EditorCanvas : FrameworkElement
         for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++) if ((x + y) % 2 == 0) drawing.DrawRectangle(Brushes.Gainsboro, null, new Rect(box.X + x * stepX, box.Y + y * stepY, stepX, stepY));
         if (model?.Scene == null) return;
         drawing.PushTransform(new TranslateTransform(box.X, box.Y));
-        RenderFrameDrawing.Draw(drawing, model.Scene.Frame, model.Scene.Images, width: box.Width, height: box.Height); drawing.Pop();
+        drawing.PushTransform(new MatrixTransform(RenderFrameDrawing.Matrix(VoxPet.Core.Character.AffineTransform2D.FromTransform(model.Scene.Frame.ViewportTransform))));
+        RenderFrameDrawing.Draw(drawing, model.Scene.Frame, model.Scene.Images, width: box.Width, height: box.Height); drawing.Pop(); drawing.Pop();
         if (model.Page != 2 || !model.Guides || model.Document == null) return;
         var rig = model.Scene.Runtime.CurrentRig.Static;
         foreach (var anchor in model.Document.Package.Character.Anchors)

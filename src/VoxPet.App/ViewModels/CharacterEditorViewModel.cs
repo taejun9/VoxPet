@@ -28,15 +28,26 @@ public sealed class CharacterEditorViewModel : ObservableObject
     public CharacterDocument? Document { get; private set; }
     public CharacterRuntimeViewModel? Scene { get; private set; }
     public bool HasDocument => Document != null;
+    public bool CanInteract => !busy && !closing;
     public bool CanEdit => HasDocument && !busy && !closing;
     public bool CanExport => CanEdit && pendingForms.Count == 0 && !pending && !detailPending;
     private bool busy, closing, pending, detailPending, loadingFields, playing, guides = true;
     private long revision;
+    private readonly SemaphoreSlim worker = new(1, 1);
     private readonly Dictionary<string, Dictionary<string, string>> pendingForms = [];
     private string? bankId;
     private string FormKey(bool detailForm) => $"{Page}/{Selected?.Id ?? "metadata"}/{bankId ?? ""}/" + (detailForm ? SelectedDetail?.Id ?? "detail" : "main");
     public string[] SpriteBanks => Document?.Package.Character.SpriteSheet?.Expressions.Select(e => e.Id).ToArray() ?? [];
-    public string? SpriteBank { get => bankId; set { if (!busy && Set(ref bankId, value)) ReloadRows(); } }
+    public string? SpriteBank
+    {
+        get => bankId;
+        set
+        {
+            if (busy || !Set(ref bankId, value)) return;
+            ReloadRows();
+            if (value != null && Expressions.Any(e => e.Id == value)) { PreviewExpression = value; Scene?.Runtime.SetExpression(value); Notify(nameof(PreviewExpression)); UpdateFrame(); }
+        }
+    }
     public RelayCommand DiscardCommand { get; }
     public AsyncCommand AddPoseCommand { get; }
     private int page;
@@ -105,7 +116,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     private void Refresh()
     {
-        foreach (string name in new[] { nameof(HasDocument), nameof(CanEdit), nameof(CanExport), nameof(IsBusy), nameof(Document), nameof(Scene), nameof(Expressions), nameof(Actions), nameof(Attachments), nameof(Duration), nameof(PreviewState), nameof(SpriteBanks), nameof(SpriteBank) }) Notify(name);
+        foreach (string name in new[] { nameof(HasDocument), nameof(CanInteract), nameof(CanEdit), nameof(CanExport), nameof(IsBusy), nameof(Document), nameof(Scene), nameof(Expressions), nameof(Actions), nameof(Attachments), nameof(Duration), nameof(PreviewState), nameof(SpriteBanks), nameof(SpriteBank) }) Notify(name);
         foreach (var c in new[] { NewCommand, ImportCommand, ApplyCommand, ApplyDetailCommand, AddCommand, DeleteCommand, AddDetailCommand, DeleteDetailCommand, AddPoseCommand, ReplaceImageCommand, ValidateCommand, ExportCommand }) c.Refresh();
         foreach (var c in new[] { PlayCommand, StopCommand, ExpressionCommand, AttachmentCommand, DiscardCommand }) c.Refresh();
         Changed?.Invoke();
@@ -114,18 +125,24 @@ public sealed class CharacterEditorViewModel : ObservableObject
     {
         if (busy || closing) return false;
         string formKey = FormKey(detailApply);
-        long request = ++revision; busy = true; Refresh();
+        long request = ++revision; busy = true; Refresh(); await worker.WaitAsync();
         try
         {
             var result = await Task.Run(() => { var next = edit(); var prepared = CharacterPackageLibrary.Decode(next.Package); return (Next: next, Images: prepared.Images, Runtime: next.Package.CreateRuntime(new Random(1))); });
             if (closing || request != revision) return false;
+            var previousScene = resetForms ? null : Scene;
             Scene?.Stop(); Document = result.Next; Scene = new(result.Runtime, result.Images); time = 0; playing = true;
+            string? expression = previousScene?.Runtime.State.ExpressionId;
+            if (expression != null && Expressions.Any(e => e.Id == expression)) Scene.Runtime.SetExpression(expression);
+            foreach (string id in previousScene?.Runtime.Attachments.EnabledIds ?? []) if (Attachments.Any(a => a.Id == id)) Scene.Runtime.Attachments.SetEnabled(id, true);
+            if (resetForms) { PreviewExpression = Expressions.FirstOrDefault()?.Id; PreviewAction = Actions.FirstOrDefault()?.Id; PreviewAttachment = Attachments.FirstOrDefault()?.Id; }
+            Notify(nameof(PreviewExpression)); Notify(nameof(PreviewAction)); Notify(nameof(PreviewAttachment));
             if (resetForms) { pendingForms.Clear(); bankId = Document.Package.Character.SpriteSheet?.Expressions.FirstOrDefault()?.Id; } else if (!preserveForms) pendingForms.Remove(formKey);
             if (bankId != null && !Document.Package.Character.SpriteSheet!.Expressions.Any(e => e.Id == bankId)) bankId = Document.Package.Character.SpriteSheet.Expressions.FirstOrDefault()?.Id;
             pending = detailPending = false; ReloadRows(); UpdateFrame(); Status = "편집 내용을 적용했습니다. 검증 후 내보낼 수 있습니다."; return true;
         }
         catch (Exception e) when (Expected(e)) { Status = "적용 실패 · 원본과 마지막 미리보기를 유지합니다. " + e.Message; return false; }
-        finally { busy = false; Refresh(); }
+        finally { worker.Release(); busy = false; Refresh(); }
     }
     private static bool Expected(Exception e) => CharacterPackageLibrary.Expected(e) || e is InvalidOperationException;
     public Task<bool> OpenAsync(string path) => TransactionAsync(() => new(new VoxPetPackageLoader().Load(path)), resetForms: true);
@@ -225,7 +242,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
         if (c != null) switch (SelectedDetail?.Item)
             {
                 case ActionTimelineEvent e:
-                    Field(DetailFields, "time", "시간 (ms)", e.TimeMs); Field(DetailFields, "kind", "이벤트", e.Kind, Enum.GetNames<ActionEventKind>()); Field(DetailFields, "target", "대상 ID", e.Target, c.Anchors.Select(a => a.Id).Concat(c.Parts.Select(p => p.Id)).Append("eyes").Append("mouth")); Field(DetailFields, "value", "값 / PNG / 상태 ID", e.Value, asset: e.Kind is ActionEventKind.Sprite or ActionEventKind.Effect); Field(DetailFields, "enabled", "표시 / 착용", e.Enabled, Booleans); Field(DetailFields, "duration", "효과 길이 (ms)", e.DurationMs); Field(DetailFields, "hasTransform", "변환 사용", e.Transform != null, Booleans); TransformFields(DetailFields, e.Transform ?? Transform2D.Identity); break;
+                    Field(DetailFields, "time", "시간 (ms)", e.TimeMs); Field(DetailFields, "kind", "이벤트", e.Kind, Enum.GetNames<ActionEventKind>()); Field(DetailFields, "target", "대상 ID", e.Target, c.Anchors.Select(a => a.Id).Concat(c.Parts.Select(p => p.Id)).Append("eyes").Append("mouth")); Field(DetailFields, "value", "값 / PNG / 상태 ID", e.Value, asset: true); Field(DetailFields, "enabled", "표시 / 착용", e.Enabled, Booleans); Field(DetailFields, "duration", "효과 길이 (ms)", e.DurationMs); Field(DetailFields, "hasTransform", "변환 사용", e.Transform != null, Booleans); TransformFields(DetailFields, e.Transform ?? Transform2D.Identity); break;
                 case TriggerDefinition t:
                     Field(DetailFields, "id", "트리거 ID", t.Id); Field(DetailFields, "kind", "종류", t.Kind, Enum.GetNames<TriggerKind>()); Field(DetailFields, "key", "키 / 수동 ID", t.Key); Field(DetailFields, "button", "마우스 버튼", t.Button, ["left", "right", "middle"]); Field(DetailFields, "modifiers", "조합 키", t.Modifiers.ToString()); Field(DetailFields, "threshold", "음량 경계 (0~1)", t.Threshold); Field(DetailFields, "interval", "간격 (초)", t.IntervalSeconds); Field(DetailFields, "immediate", "바로 시작", t.StartImmediately, Booleans); Field(DetailFields, "enabled", "사용", t.Enabled, Booleans); break;
                 case AttachmentLayer l:
@@ -284,7 +301,14 @@ public sealed class CharacterEditorViewModel : ObservableObject
             if (owner is ActionDefinition a)
             {
                 var events = a.Timeline.ToList(); var triggers = a.Triggers.ToList();
-                if (item is ActionTimelineEvent evt) events[events.IndexOf(evt)] = new(N(v, "time"), E<ActionEventKind>(v, "kind"), Opt(v, "target"), Opt(v, "value"), B(v, "hasTransform") ? T(v) : null, B(v, "enabled"), N(v, "duration"));
+                if (item is ActionTimelineEvent evt)
+                {
+                    var kind = E<ActionEventKind>(v, "kind");
+                    events[events.IndexOf(evt)] = new(N(v, "time"), kind,
+                        kind is ActionEventKind.Transform or ActionEventKind.Visibility or ActionEventKind.Sprite or ActionEventKind.Effect ? Opt(v, "target") : null,
+                        kind is ActionEventKind.Transform or ActionEventKind.Visibility ? null : Opt(v, "value"),
+                        kind is ActionEventKind.Transform or ActionEventKind.Effect && B(v, "hasTransform") ? T(v) : null, B(v, "enabled"), kind == ActionEventKind.Effect ? N(v, "duration") : 0);
+                }
                 if (item is TriggerDefinition tr) triggers[triggers.IndexOf(tr)] = new(S(v, "id"), a.Id, E<TriggerKind>(v, "kind"), Opt(v, "key"), Opt(v, "button"), Enum.Parse<TriggerModifiers>(S(v, "modifiers")), N(v, "threshold"), N(v, "interval"), B(v, "immediate"), B(v, "enabled"));
                 d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers);
             }
@@ -420,15 +444,17 @@ public sealed class CharacterEditorViewModel : ObservableObject
     public async Task ValidateAsync()
     {
         if (Document == null || !CanExport) return;
-        try { await Task.Run(() => new VoxPetPackageLoader().Load(new MemoryStream(Document.Export()))); Status = "검증 통과 · 패키지 재읽기와 모든 PNG 참조를 확인했습니다."; }
+        var document = Document; busy = true; Refresh(); await worker.WaitAsync();
+        try { await Task.Run(() => new VoxPetPackageLoader().Load(new MemoryStream(document.Export()))); Status = "검증 통과 · 패키지 재읽기와 모든 PNG 참조를 확인했습니다."; }
         catch (Exception e) when (Expected(e)) { Status = "검증 실패 · " + e.Message; }
+        finally { worker.Release(); busy = false; Refresh(); }
     }
     public async Task<bool> ExportAsync(string path)
     {
-        if (Document == null || !CanExport) return false; busy = true; Refresh(); var package = Document.Package;
+        if (Document == null || !CanExport) return false; busy = true; Refresh(); var package = Document.Package; await worker.WaitAsync();
         try { await Task.Run(() => new VoxPetPackageExporter().Export(package, path)); Status = ".voxpet 내보내기 완료 · " + Path.GetFileName(path); return true; }
         catch (Exception e) when (Expected(e)) { Status = "내보내기 실패 · " + e.Message; return false; }
-        finally { busy = false; Refresh(); }
+        finally { worker.Release(); busy = false; Refresh(); }
     }
     private void ResetPreview()
     {
@@ -444,8 +470,8 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     private void UpdateFrame() { if (Scene == null) return; Scene.Update(time, Voice); Notify(nameof(Scene)); Notify(nameof(PreviewState)); }
     private void Tick(object? sender, EventArgs e)
-    { double now = clock.Elapsed.TotalSeconds, dt = now - previous; previous = now; if (playing) time += dt; UpdateFrame(); }
+    { double now = clock.Elapsed.TotalSeconds, dt = now - previous; previous = now; if (playing) { time += dt; Set(ref scrub, Math.Min(Duration, time * 1000), nameof(Scrub)); } UpdateFrame(); }
     public void StartPreview() { previous = clock.Elapsed.TotalSeconds; timer.Start(); }
     public void PausePreview() { timer.Stop(); }
-    public Task CloseAsync() { closing = true; revision++; timer.Stop(); timer.Tick -= Tick; Scene?.Stop(); Refresh(); return Task.CompletedTask; }
+    public async Task CloseAsync() { closing = true; revision++; timer.Stop(); timer.Tick -= Tick; Scene?.Stop(); Refresh(); await worker.WaitAsync(); worker.Release(); }
 }

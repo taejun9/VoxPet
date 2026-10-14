@@ -20,6 +20,8 @@ internal static class CharacterEditorQa
     [DllImport("user32.dll")] private static extern void mouse_event(uint flags, uint x, uint y, uint data, UIntPtr extra);
     private static T? Find<T>(DependencyObject parent) where T : DependencyObject
     { if (parent is T t) return t; for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++) if (Find<T>(VisualTreeHelper.GetChild(parent, i)) is { } value) return value; return null; }
+    private static IEnumerable<T> FindAll<T>(DependencyObject parent) where T : DependencyObject
+    { if (parent is T item) yield return item; for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++) foreach (var child in FindAll<T>(VisualTreeHelper.GetChild(parent, i))) yield return child; }
     private static void Set(CharacterEditorViewModel editor, string key, string value, bool detail = false) => (detail ? editor.DetailFields : editor.Fields).Single(f => f.Key == key).Value = value;
     public static async Task RunAsync(Action<bool, string> check)
     {
@@ -65,7 +67,9 @@ internal static class CharacterEditorQa
             editor.Page = 5; await editor.AddAsync(); editor.Selected = editor.Rows.Last(); Set(editor, "name", "QA Action"); Set(editor, "priority", "80"); await editor.ApplyAsync(); await editor.AddDetailAsync();
             Set(editor, "target", "head", true); Set(editor, "x", "30", true); await editor.ApplyDetailAsync();
             editor.AddTriggerNext = true; await editor.AddDetailAsync(); editor.SelectedDetail = editor.Details.Last(r => r.Item is VoxPet.Core.Triggers.TriggerDefinition); Set(editor, "kind", "VoiceThreshold", true); Set(editor, "threshold", "0.5", true); await editor.ApplyDetailAsync();
-            editor.Seek(500); check(editor.Scene!.Runtime.State.ActionId == editor.Document.Package.Character.Actions.Last().Id && Math.Abs(editor.Scene.Frame.Layers.Single(l => l.Id == "part-head").X - 30) < .001, "editor_action_timeline_scrub_frame");
+            editor.Seek(500);
+            double parentX = editor.Scene!.Runtime.Pose.Transforms.GetValueOrDefault("body")?.X ?? 0;
+            check(editor.Scene.Runtime.State.ActionId == editor.Document.Package.Character.Actions.Last().Id && editor.Scene.Runtime.Actions.Current.Transforms["head"].X == 30 && Math.Abs(editor.Scene.Frame.Layers.Single(l => l.Id == "part-head").X - parentX - 30) < .001, "editor_action_timeline_scrub_frame");
             await editor.AddPoseAsync(); Set(editor, "sprite:head", "숨김", true); await editor.ApplyDetailAsync(); check(editor.Document.Package.Character.Poses.Last().Sprites["head"] == null, "editor_pose_override_edit");
             await ScreenEvidence.CaptureAsync(window, "editor-actions", check, new { wireframe = 8 });
             editor.Page = 6; await editor.AddAsync(); editor.Selected = editor.Rows.Last(); Set(editor, "category", "faceDecoration"); Set(editor, "name", "QA Attachment"); await editor.ApplyAsync();
@@ -82,6 +86,11 @@ internal static class CharacterEditorQa
             foreach (string id in editor.Scene!.Runtime.Attachments.EnabledIds) exportedRuntime.Attachments.SetEnabled(id, true);
             var exportedFrame = exportedRuntime.Update(new(0, 0, editor.Voice));
             check(JsonSerializer.Serialize(exportedFrame) == JsonSerializer.Serialize(editor.Scene.Frame), "editor_export_reload_runtime_frame_exact");
+            var broadcastModel = new NativeCharacterViewModel(new CharacterViewModel(), false, folder, () => 0);
+            check(await broadcastModel.ImportAsync(export), "editor_export_broadcast_worker_decode");
+            foreach (string id in editor.Scene.Runtime.Attachments.EnabledIds) broadcastModel.Scene!.Runtime.Attachments.SetEnabled(id, true);
+            broadcastModel.Update(0, editor.Voice);
+            check(JsonSerializer.Serialize(broadcastModel.Scene!.Frame) == JsonSerializer.Serialize(editor.Scene.Frame), "editor_preview_broadcast_frame_exact"); await broadcastModel.CloseAsync();
             mainModel.PauseVisualForQa();
             check(await mainModel.Packages.ImportAsync(export), "editor_export_select_broadcast_package"); await window.Studio.RefreshAsync(); window.ShowStudio(1); window.Studio.Selected = window.Studio.Cards.Single(c => c.Legacy == null);
             await ScreenEvidence.CaptureAsync(window, "editor-library", check, new { wireframe = 2 });
@@ -104,6 +113,37 @@ internal static class CharacterEditorQa
             editor.Page = 3; await editor.AddAsync(); check(editor.Document.Package.Character.SpriteSheet.Selector.Frames.Count == 4 && editor.Document.Package.Character.SpriteSheet.Expressions.All(e => e.Open.Count == 4), "editor_full_sprite_all_banks_frame_count");
             check(editor.Document.Package.Character.CanvasWidth == 768 && editor.Document.Package.Character.CanvasHeight == 384, "editor_non_square_canvas_preserved");
             editor.Page = 7; await editor.ValidateAsync(); check(editor.Status.StartsWith("검증 통과"), "editor_full_sprite_validate_export");
+            editor.Page = 6; await editor.AddAsync(); string attachment = editor.Document.Package.Character.Attachments[0].Id;
+            editor.Page = 5; await editor.AddAsync(); editor.Selected = editor.Rows.Last();
+            foreach (var kind in Enum.GetValues<ActionEventKind>())
+            {
+                editor.AddTriggerNext = false; await editor.AddDetailAsync(); editor.SelectedDetail = editor.Details.Last(r => r.Item is ActionTimelineEvent);
+                Set(editor, "kind", kind.ToString(), true); Set(editor, "target", kind is ActionEventKind.Visibility or ActionEventKind.Sprite ? "sprite" : "root", true);
+                Set(editor, "value", kind switch { ActionEventKind.Pose => "idle", ActionEventKind.Expression => "happy", ActionEventKind.Attachment => attachment, ActionEventKind.Sound => "reserved.wav", _ => alternate }, true);
+                Set(editor, "duration", "100", true); await editor.ApplyDetailAsync();
+                check(editor.Document.Package.Character.Actions[0].Timeline.Last().Kind == kind, "editor_timeline_payload_" + kind);
+            }
+            editor.Page = 7; await editor.ValidateAsync(); check(editor.Status.StartsWith("검증 통과"), "editor_all_event_types_valid_package");
+            var finalExport = Path.Combine(folder, "all-events.voxpet"); check(await editor.ExportAsync(finalExport), "editor_all_event_types_export");
+            check(new VoxPetPackageLoader().Load(finalExport).Character.Actions[0].Timeline.Count == 8, "editor_all_event_types_reload");
+            foreach (var size in new[] { new Size(1000, 730), new Size(960, 540), new Size(640, 480), new Size(480, 320) })
+            {
+                window.Width = size.Width; window.Height = size.Height;
+                for (int page = 0; page < 8; page++)
+                {
+                    editor.Page = page; window.UpdateLayout(); await Task.Delay(20);
+                    var view = Find<CharacterEditorView>(window)!; var editorCanvas = Find<EditorCanvas>(view)!;
+                    check(double.IsFinite(editorCanvas.ActualHeight) && editorCanvas.ActualHeight is >= 180 and < 450, $"editor_bounded_canvas_{size.Width}x{size.Height}_{page}");
+                    var field = FindAll<System.Windows.Controls.TextBox>(view).FirstOrDefault(t => t.IsVisible && t.DataContext is EditorField);
+                    if (field != null)
+                    {
+                        field.BringIntoView(); window.UpdateLayout(); await Task.Delay(20);
+                        var bounds = field.TransformToAncestor(window).TransformBounds(new Rect(0, 0, field.ActualWidth, field.ActualHeight));
+                        check(new Rect(0, 0, window.ActualWidth, window.ActualHeight).Contains(new Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2)), $"editor_input_reachable_{size.Width}x{size.Height}_{page}");
+                        check(field.Foreground is SolidColorBrush brush && brush.Color.R < 128 && brush.Color.G < 128 && brush.Color.B < 128, $"editor_input_contrast_{size.Width}x{size.Height}_{page}");
+                    }
+                }
+            }
         }
         finally { await window.ShutdownAsync(); window.Close(); Directory.Delete(folder, true); }
     }

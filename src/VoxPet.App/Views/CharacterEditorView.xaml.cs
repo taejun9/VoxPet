@@ -9,7 +9,7 @@ public partial class CharacterEditorView : UserControl
     private CharacterEditorViewModel? attached;
     public CharacterEditorView()
     {
-        InitializeComponent(); DataContextChanged += (_, _) => Attach(); Loaded += (_, _) => Attach(); Unloaded += (_, _) => attached?.PausePreview();
+        InitializeComponent(); DataContextChanged += (_, _) => Attach(); Loaded += (_, _) => Attach(); Unloaded += (_, _) => attached?.PausePreview(); IsVisibleChanged += (_, _) => { if (IsVisible) attached?.StartPreview(); else attached?.PausePreview(); };
     }
     private void Attach()
     {
@@ -25,7 +25,7 @@ public partial class CharacterEditorView : UserControl
                 return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : null;
             };
         }
-        model.StartPreview();
+        if (IsVisible) model.StartPreview();
     }
     private string? Pick(string title, string filter)
     { var dialog = new Microsoft.Win32.OpenFileDialog { Title = title, Filter = filter, CheckFileExists = true }; return dialog.ShowDialog(Window.GetWindow(this)) == true ? dialog.FileName : null; }
