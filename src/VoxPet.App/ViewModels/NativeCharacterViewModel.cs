@@ -67,6 +67,23 @@ public sealed class NativeCharacterViewModel : ObservableObject
         catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { if (!closing) Status = "캐릭터 적용 실패 · 기존 출력과 원본을 유지합니다. " + e.Message; return false; }
         finally { io.Release(); busy = false; Notify(nameof(IsBusy)); InputsChanged?.Invoke(); }
     }
+    public async Task<LoadedCharacterPackage?> LoadForEditorAsync(string id)
+    {
+        if (closing) return null; await io.WaitAsync();
+        try { return await Task.Run(() => library.Load(id)); }
+        catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "보관함 읽기 실패 · " + e.Message; return null; }
+        finally { io.Release(); }
+    }
+    public async Task<bool> DeleteAsync(string id)
+    {
+        if (closing || busy) return false;
+        if (Loaded?.LibraryId == id) await DeactivateAsync(); await io.WaitAsync();
+        try { await Task.Run(() => library.Delete(id)); Status = "관리 복사본을 삭제했습니다. 사용자의 원본 파일은 유지합니다."; return true; }
+        catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "삭제 실패 · " + e.Message; return false; }
+        finally { io.Release(); await RefreshAsync(); }
+    }
+    public string InputStatus { get; private set; } = "";
+    public void ReportInputStatus(string message) { InputStatus = message; Notify(nameof(InputStatus)); }
     public void Update(double now, double voice)
     {
         if (scene == null || closing) return;

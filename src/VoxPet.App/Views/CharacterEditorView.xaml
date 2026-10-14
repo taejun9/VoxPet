@@ -1,0 +1,59 @@
+<UserControl x:Class="VoxPet.App.Views.CharacterEditorView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:VoxPet.App.Views" Foreground="#172A3A">
+ <UserControl.Resources>
+  <Style TargetType="Button"><Setter Property="Padding" Value="10,7"/><Setter Property="Margin" Value="3"/><Setter Property="Background" Value="#347FFF"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderThickness" Value="0"/></Style>
+  <Style TargetType="TextBox"><Setter Property="Background" Value="White"/><Setter Property="Foreground" Value="#172A3A"/><Setter Property="BorderBrush" Value="#CAD5E1"/><Setter Property="Padding" Value="5"/></Style>
+  <Style TargetType="ComboBox"><Setter Property="Background" Value="White"/><Setter Property="Foreground" Value="#172A3A"/><Setter Property="MinHeight" Value="29"/></Style>
+  <DataTemplate x:Key="FieldTemplate">
+   <Grid Margin="0,3"><Grid.ColumnDefinitions><ColumnDefinition Width="125"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="#172A3A" Margin="0,0,8,0"/>
+    <TextBox Grid.Column="1" Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}"><TextBox.Style><Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}"><Style.Triggers><DataTrigger Binding="{Binding HasChoices}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBox.Style></TextBox>
+    <ComboBox Grid.Column="1" ItemsSource="{Binding Choices}" Text="{Binding Value,UpdateSourceTrigger=PropertyChanged}" IsEditable="True"><ComboBox.Style><Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasChoices}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></ComboBox.Style></ComboBox>
+    <Button Grid.Column="2" Content="PNG" Click="PickAsset" Padding="5,3"><Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsAsset}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Button.Style></Button>
+   </Grid>
+  </DataTemplate>
+ </UserControl.Resources>
+ <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+ <Grid Background="#F1F4F8" Margin="8" MinWidth="1010" MinHeight="630">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <DockPanel Margin="0,0,0,8">
+   <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"><Button Content="검증" Command="{Binding ValidateCommand}"/><Button Content=".voxpet 내보내기" Command="{Binding ExportCommand}"/></StackPanel>
+   <StackPanel Orientation="Horizontal"><TextBlock Text="캐릭터 편집기" FontSize="20" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,14,0"/><Button Content="새 캐릭터" Command="{Binding NewCommand}"/><Button Content="불러오기" Command="{Binding ImportCommand}"/></StackPanel>
+  </DockPanel>
+  <Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+   <ListBox ItemsSource="{Binding Pages}" SelectedIndex="{Binding Page}" Background="White" Foreground="#172A3A" BorderThickness="0" Margin="0,0,8,0"/>
+   <Grid Grid.Column="1"><Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/><ColumnDefinition Width="350"/></Grid.ColumnDefinitions>
+    <DockPanel Background="White" Margin="0,0,8,0">
+     <WrapPanel DockPanel.Dock="Bottom" Margin="3"><Button Content="+ 추가" Command="{Binding AddCommand}"/><Button Content="삭제" Command="{Binding DeleteCommand}"/></WrapPanel>
+     <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" DisplayMemberPath="Name" Background="White" Foreground="#172A3A" BorderThickness="0"/>
+    </DockPanel>
+    <Grid Grid.Column="1" Margin="0,0,8,0"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <local:EditorCanvas MinWidth="150" MinHeight="180"/>
+     <StackPanel Grid.Row="1" Background="White" Margin="0,8,0,0">
+      <ComboBox ItemsSource="{Binding SpriteBanks}" SelectedItem="{Binding SpriteBank}" Margin="8,3" ToolTip="full-sprite 표정 bank 선택"/>
+      <CheckBox Content="앵커 시각화" IsChecked="{Binding Guides}" Foreground="#172A3A" Margin="8"/>
+      <TextBlock Text="음량 시뮬레이션" Margin="8,3" Foreground="#172A3A"/><Slider Minimum="0" Maximum="1" Value="{Binding Voice}" Margin="8"/>
+      <TextBlock Text="{Binding PreviewState}" Margin="8,3" TextWrapping="Wrap" Foreground="#172A3A"/>
+      <ComboBox ItemsSource="{Binding Expressions}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewExpression}" Margin="8,3"/>
+      <Button Content="표정 적용" Command="{Binding ExpressionCommand}"/>
+      <ComboBox ItemsSource="{Binding Actions}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewAction}" Margin="8,3"/>
+      <WrapPanel><Button Content="동작 재생" Command="{Binding PlayCommand}"/><Button Content="중지" Command="{Binding StopCommand}"/></WrapPanel>
+      <TextBlock Text="동작 타임라인 (ms)" Foreground="#172A3A" Margin="8,3"/><Slider Minimum="0" Maximum="{Binding Duration}" Value="{Binding Scrub}" Margin="8"/>
+      <ComboBox ItemsSource="{Binding Attachments}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewAttachment}" Margin="8,3"/><Button Content="부착물 착용 / 해제" Command="{Binding AttachmentCommand}"/>
+     </StackPanel>
+    </Grid>
+    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Background="White" Padding="10">
+     <StackPanel><TextBlock Text="항목 설정" FontSize="15" FontWeight="Bold" Margin="0,0,0,8" Foreground="#172A3A"/>
+      <ItemsControl ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource FieldTemplate}"/>
+      <WrapPanel><Button Content="설정 적용" Command="{Binding ApplyCommand}" Margin="0,8"/><Button Content="미적용 입력 취소" Command="{Binding DiscardCommand}"/></WrapPanel>
+      <TextBlock Text="타임라인 · 트리거 / 레이어" FontWeight="Bold" Foreground="#172A3A" Margin="0,15,0,6"/>
+      <ListBox ItemsSource="{Binding Details}" SelectedItem="{Binding SelectedDetail}" DisplayMemberPath="Name" Height="110" Background="White" Foreground="#172A3A"/>
+      <WrapPanel><Button Content="이벤트 / 레이어 추가" Click="AddDetail"/><Button Content="트리거 추가" Click="AddTrigger"/><Button Content="포즈 추가" Command="{Binding AddPoseCommand}"/><Button Content="삭제" Command="{Binding DeleteDetailCommand}"/></WrapPanel>
+      <ItemsControl ItemsSource="{Binding DetailFields}" ItemTemplate="{StaticResource FieldTemplate}"/><Button Content="상세 적용" Command="{Binding ApplyDetailCommand}"/>
+     </StackPanel>
+    </ScrollViewer>
+   </Grid>
+  </Grid>
+  <TextBlock Grid.Row="2" Text="{Binding Status}" TextWrapping="Wrap" Margin="4,8,4,0" Foreground="#172A3A"/>
+ </Grid>
+ </ScrollViewer>
+</UserControl>

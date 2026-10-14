@@ -145,7 +145,7 @@ public sealed class ImageRuntimeViewModel : ObservableObject
         string expressionId = kind.ToString().ToLowerInvariant();
         player.Runtime.SetExpression(player.Runtime.Definition.Expressions.Any(e => e.Id == expressionId) ? expressionId : "neutral");
         player.Runtime.Attachments.Restore(new[] { outfit >= 0 ? "outfit-" + outfit : null, weapon >= 0 ? "weapon-" + weapon : null }.OfType<string>());
-        var composed = player.Update(now, level, blink);
+        var composed = player.Update(now, level, blink); character.SetRuntimeScene(player);
         character.SetRuntimeLayers(composed.Layers.Select(layer => new RuntimeLayer(loaded.Images[layer.Asset], new(layer.X * 512 / loaded.Definition.CanvasSize, layer.Y * 512 / loaded.Definition.CanvasSize))).ToArray());
     }
     public void Execute(RuntimeOperation operation)

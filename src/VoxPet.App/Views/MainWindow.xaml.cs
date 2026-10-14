@@ -16,6 +16,10 @@ namespace VoxPet.App.Views;
 public partial class MainWindow : Window
 {
     public MainViewModel Model { get; }
+    public StudioShellViewModel Studio { get; private set; } = null!;
+    public void ShowStudio(int page = 0) { LayoutRoot.Visibility = Visibility.Collapsed; StudioSurface.Visibility = Visibility.Visible; Studio.Page = page; }
+    public void ShowLegacySettings(int tab) { Studio.Editor.PausePreview(); StudioSurface.Visibility = Visibility.Collapsed; LayoutRoot.Visibility = Visibility.Visible; Model.SettingsTab = tab; UpdateResponsiveLayout(); }
+    private void ReturnStudio(object sender, RoutedEventArgs e) => ShowStudio();
     private CharacterWindow? character;
     private ExpressionHotkeys? hotkeys;
     private MuteHotkey? muteHotkey;
@@ -36,6 +40,10 @@ public partial class MainWindow : Window
     {
         Model = model ?? new(persistSettings: !smoke);
         InitializeComponent(); DataContext = Model;
+        Studio = new(Model, !smoke); StudioSurface.DataContext = Studio; Studio.SettingsRequested += ShowLegacySettings;
+        Studio.ChoosePackage += () => { var dialog = new Microsoft.Win32.OpenFileDialog { Title = "VoxPet 캐릭터 등록", Filter = "VoxPet (*.voxpet)|*.voxpet", CheckFileExists = true }; return dialog.ShowDialog(this) == true ? dialog.FileName : null; };
+        Studio.ChooseExport += () => { var dialog = new Microsoft.Win32.SaveFileDialog { Title = "캐릭터 내보내기", Filter = "VoxPet (*.voxpet)|*.voxpet", DefaultExt = ".voxpet", AddExtension = true, FileName = Studio.Selected?.Name ?? "character" }; return dialog.ShowDialog(this) == true ? dialog.FileName : null; };
+        if (smoke) ShowLegacySettings(Model.SettingsTab); else ShowStudio();
         Width = Model.MainPlacement?.Width ?? Math.Min(Width, Math.Max(MinWidth, initialWorkArea.Width - 32));
         Height = Model.MainPlacement?.Height ?? Math.Min(Height, Math.Max(MinHeight, initialWorkArea.Height - 32));
         WindowStartupLocation = WindowStartupLocation.Manual;
@@ -92,6 +100,7 @@ public partial class MainWindow : Window
             {
                 RestorePlacement(true); RememberPlacement();
                 await Model.InitializeAsync();
+                if (!smoke) await Studio.RefreshAsync();
                 if (!shuttingDown && Model.BroadcastOpen) ShowCharacter();
                 RememberPlacement(); ready.TrySetResult();
                 if (!smoke && AppPaths.QaFolder is { } folder)
@@ -183,6 +192,7 @@ public partial class MainWindow : Window
         if (runtimeInputs == null) return;
         var runtime = Model.Runtime; runtimeInputs.Configure(runtime.Bindings, runtime.LeftClick, runtime.CanUse && !runtime.Recording && !Model.Packages.IsActive, runtime.SceneRevision);
         nativeInputs?.Configure(Model.Packages.Scene?.Runtime.Definition.Actions.SelectMany(action => action.Triggers) ?? [], Model.Packages.IsActive && !Model.Packages.IsBusy, Model.Packages.MouseEnabled, Model.Packages.SceneRevision);
+        if (Model.Packages.IsActive && nativeInputs != null) Model.Packages.ReportInputStatus(nativeInputs.Status);
         ConfigureHandInputs();
         if (runtime.CanUse && !runtime.Recording) runtime.ReportInputStatus(
             runtime.Bindings.Length > 0 && !runtimeInputs.KeyboardRegistered || runtime.LeftClick && !runtimeInputs.MouseRegistered
@@ -311,5 +321,5 @@ public partial class MainWindow : Window
     /// <summary>
     /// 캡처 종료·설정 저장 후 방송창을 닫고 다음 Closing을 허용한다.
     /// </summary>
-    public async Task ShutdownAsync() { nativeInputs?.Dispose(); Model.Packages.InputsChanged -= ConfigureRuntimeInputs; runtimeInputs?.Dispose(); Model.Runtime.InputsChanged -= ConfigureRuntimeInputs; handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
+    public async Task ShutdownAsync() { nativeInputs?.Dispose(); Model.Packages.InputsChanged -= ConfigureRuntimeInputs; runtimeInputs?.Dispose(); Model.Runtime.InputsChanged -= ConfigureRuntimeInputs; handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; await Studio.CloseAsync(); await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
 }

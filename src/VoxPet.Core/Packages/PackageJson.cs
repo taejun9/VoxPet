@@ -53,7 +53,7 @@ public static class PackageJson
     public static CharacterDefinition ReadCharacter(byte[] bytes, IEnumerable<ActionDefinition>? actions = null, IEnumerable<AttachmentDefinition>? attachments = null)
     {
         using var doc = Parse(bytes); var e = doc.RootElement; Schema(e); var canvas = P(e, "canvas");
-        var parts = A(e, "parts").Select(p => new CharacterPart(S(p, "id")!, S(p, "type", "custom")!, Path(S(p, "file")), S(p, "anchor"), I(p, "zIndex"), T(P(p, "transform")), S(p, "side"))).ToArray();
+        var parts = A(e, "parts").Select(p => new CharacterPart(S(p, "id")!, S(p, "type", "custom")!, Path(S(p, "file")), S(p, "anchor"), I(p, "zIndex"), T(P(p, "transform")), S(p, "side"), B(p, "visible", true))).ToArray();
         var anchors = new List<AnchorDefinition>(); var anchorData = P(e, "anchors");
         if (anchorData.ValueKind == JsonValueKind.Object)
             foreach (var p in anchorData.EnumerateObject()) anchors.Add(new(p.Name, parent: S(p.Value, "parent"), transform: T(p.Value)));
@@ -89,7 +89,7 @@ public static class PackageJson
     {
         c.SchemaVersion,
         canvas = new { width = c.CanvasWidth, height = c.CanvasHeight },
-        parts = c.Parts.Select(p => new { p.Id, p.Type, file = p.Asset, p.Anchor, p.Side, p.ZIndex, transform = Transform(p.Transform) }),
+        parts = c.Parts.Select(p => new { p.Id, p.Type, file = p.Asset, p.Anchor, p.Side, p.ZIndex, p.Visible, transform = Transform(p.Transform) }),
         anchors = c.Anchors.ToDictionary(a => a.Id, a => new { a.X, a.Y, a.Parent, a.Transform.ScaleX, a.Transform.ScaleY, a.Transform.Rotation }),
         mouth = c.Mouth is null ? null : new { c.Mouth.Anchor, mode = "frames", c.Mouth.Frames, c.Mouth.Curve, c.Mouth.ZIndex, frameTransforms = c.Mouth.FrameTransforms.Select(Transform) },
         spriteSheet = c.SpriteSheet is null ? null : new { c.SpriteSheet.Part, c.SpriteSheet.Curve, expressions = c.SpriteSheet.Expressions.Select(e => new { e.Id, e.Open, e.Closed, e.Blink }) },

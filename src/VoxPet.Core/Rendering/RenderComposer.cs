@@ -62,6 +62,7 @@ public sealed class RenderComposer
         var fullSprite = definition.SpriteSheet?.Expressions.FirstOrDefault(e => e.Id == expressionId) ?? definition.SpriteSheet?.Expressions.FirstOrDefault();
         foreach (var part in definition.Parts)
         {
+            if (!action.Visibility.GetValueOrDefault(part.Id, part.Visible)) continue;
             string baseline = part.Asset;
             if (part.Id == definition.SpriteSheet?.Part && fullSprite != null)
                 baseline = fullSprite.Blink && (context.Input.Blink ?? context.Motion.EyeOpen < .5) ? fullSprite.Closed[mouthFrame] : fullSprite.Open[mouthFrame];

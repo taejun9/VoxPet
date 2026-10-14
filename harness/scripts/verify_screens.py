@@ -21,6 +21,8 @@ for tab, item in enumerate(tabs.findall('w:TabItem', ns)):
     pages = len(nested.findall('w:TabItem', ns)) if nested is not None else 1
     for width, height in [(1000, 730), (960, 540), (640, 480), (480, 320)]:
         for page in range(pages): expected.add(f'layout-{width}x{height}-tab-{tab}-{page}')
+for name in ['home','library','basic','parts','anchors','face','expressions','actions','attachments','export']:
+    expected.add('editor-'+name)
 expressions = ['neutral', 'happy', 'sad', 'angry', 'surprised', 'sleepy', 'confused', 'excited', 'love', 'smug', 'playful', 'shy']
 # Enum names are read from the source so the evidence contract follows the established twelve-slot order.
 import re
