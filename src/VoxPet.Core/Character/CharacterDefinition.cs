@@ -13,6 +13,7 @@ public sealed record CharacterDefinition
     public double CanvasHeight { get; }
     public IReadOnlyList<CharacterPart> Parts { get; }
     public IReadOnlyList<AnchorDefinition> Anchors { get; }
+    public RigDefinition Rig { get; }
     public MouthDefinition? Mouth { get; }
     public IReadOnlyList<ExpressionDefinition> Expressions { get; }
     public IReadOnlyList<PoseDefinition> Poses { get; }
@@ -36,6 +37,7 @@ public sealed record CharacterDefinition
         CanvasHeight = DefinitionValidation.Positive(canvasHeight, nameof(canvasHeight));
         Parts = DefinitionValidation.Copy(parts, nameof(parts));
         Anchors = DefinitionValidation.Copy(anchors ?? [], nameof(anchors));
+        Rig = new(Anchors);
         Mouth = mouth;
         Expressions = DefinitionValidation.Copy(expressions ?? [], nameof(expressions));
         Poses = DefinitionValidation.Copy(poses ?? [], nameof(poses));
@@ -76,19 +78,6 @@ public sealed record CharacterDefinition
             if (!valid) throw new ArgumentException("액션 이벤트 참조가 없습니다.", nameof(actions));
         }
 
-        // 반복 순회로 깊은 사용자 계층에서도 stack overflow 없이 cycle을 검사한다.
-        var complete = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var anchor in Anchors)
-        {
-            var path = new HashSet<string>(StringComparer.Ordinal);
-            string? current = anchor.Id;
-            while (current is not null && !complete.Contains(current))
-            {
-                if (!path.Add(current)) throw new ArgumentException("Anchor 부모 계층이 순환합니다.", nameof(anchors));
-                current = byId[current].Parent;
-            }
-            complete.UnionWith(path);
-        }
     }
 
     private static void Unique(IEnumerable<string> ids)

@@ -9,7 +9,8 @@ public sealed record AttachmentLayer
     public string Asset { get; }
     public string Anchor { get; }
     public int ZIndex { get; }
-    public Transform2D Transform { get; }
+    public Transform2D Transform => Placement.Local;
+    public AttachmentTransform Placement { get; }
     public AttachmentInheritance Inherit { get; }
     public IReadOnlyDictionary<string, string> Poses { get; }
     public IReadOnlyList<string> RequiredVisibleParts { get; }
@@ -17,10 +18,12 @@ public sealed record AttachmentLayer
     public bool HideOnMissingPose { get; }
     public AttachmentLayer(string id, string asset, string anchor = "root", int zIndex = 0, Transform2D? transform = null,
         AttachmentInheritance? inherit = null, IReadOnlyDictionary<string, string>? poses = null,
-        IEnumerable<string>? requiredVisibleParts = null, bool onlyDuringAction = false, bool hideOnMissingPose = false)
+        IEnumerable<string>? requiredVisibleParts = null, bool onlyDuringAction = false, bool hideOnMissingPose = false, AttachmentTransform? placement = null)
     {
         Id = DefinitionValidation.Id(id, nameof(id)); Asset = DefinitionValidation.Asset(asset, ".png", nameof(asset));
-        Anchor = DefinitionValidation.Id(anchor, nameof(anchor)); ZIndex = zIndex; Transform = transform ?? Transform2D.Identity; Inherit = inherit ?? new();
+        Anchor = DefinitionValidation.Id(anchor, nameof(anchor)); ZIndex = zIndex;
+        if (transform is not null && placement is not null && transform != placement.Local) throw new ArgumentException("변환을 하나로 지정하세요.");
+        Placement = placement ?? new AttachmentTransform(transform); Inherit = inherit ?? new();
         var copy = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var pair in poses ?? new Dictionary<string, string>())
         {
