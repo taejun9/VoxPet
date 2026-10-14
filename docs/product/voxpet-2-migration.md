@@ -67,3 +67,5 @@ Phase 4는 Generic ActionEngine과 손동작 호환 adapter를 구현했다. tim
 Phase 5는 플랫폼 독립 TriggerEngine/Definition/Event와 ActionBinding/Settings를 구현했다. raw down/up 반복 억제와 key-up 없는 Windows pulse를 구분하고 voice rising edge, 지연 interval coalesce, mouse/manual 요청을 지원한다. Legacy binding의 Enabled/Mode/Interval/Shortcut/X/Y/Scale을 보존한다. Windows 입력 API·기존 콜백은 App에 남기고 공통 이벤트를 추가한다. 실제 Windows1491개 검사와 OBS 합성 회귀를 통과했다. 현재 tick의 요청 출처는 후속 Runtime의 자동 예약/명시 입력 구분에 사용한다.
 
 Phase 6은 RigDefinition/RigMotionSolver의 부모 affine 합성과 AttachmentSystem의 독립 상속/분류 충돌을 구현했다. mouth motion은 다른 상속 옵션과 독립이며 콧수염의 mapped point 이동을 시험했다. Follow는 local bone 변환을 먼저 가중한다. 기존 wardrobe JSON/이미지 bytes와 크기/위치/영향도/레이어·garment 정보를 adapter가 보존한다. 실제 격자/pixel 출력은 중앙 Runtime/App 통합에서 검증한다.
+
+Phase 7 중앙 CharacterRuntime은 caller time/voice/input에서 Trigger/Action/Motion/Rig/Attachment를 조정해 최종 RenderFrame을 만든다. renderer에는 입/표정/동작/상속/priority 판단을 남기지 않는다. matrix/logical size/viewport 이동과 pure mesh 계약을 포함하며 기존 ImageSet의 frozen composition 동등성을 검증했다. App 및 legacy mesh/sprite 연결은 Phase 9에서 진행한다.

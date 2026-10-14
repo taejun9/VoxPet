@@ -41,6 +41,17 @@ public sealed class AttachmentSystem
         foreach (string id in copy)
             if (!selected.Contains(id) && selected.All(other => !Conflicts(definitions[id], definitions[other]))) selected.Add(id);
     }
+    public IReadOnlyList<string> ForFrame(IReadOnlyDictionary<string, bool> overrides)
+    {
+        var result = selected.ToList();
+        foreach (var pair in overrides)
+        {
+            if (!definitions.TryGetValue(pair.Key, out var item)) throw new ArgumentException("부착물 참조가 없습니다.");
+            result.Remove(pair.Key);
+            if (pair.Value) { result.RemoveAll(other => Conflicts(item, definitions[other])); result.Add(pair.Key); }
+        }
+        return Array.AsReadOnly(result.ToArray());
+    }
     public IReadOnlyList<ResolvedAttachmentLayer> Resolve(RigPose rig, ActionState? action = null, IReadOnlySet<string>? visibleParts = null, IEnumerable<string>? ids = null, string? compatibilityTag = null)
     {
         ArgumentNullException.ThrowIfNull(rig); action ??= ActionState.Idle;

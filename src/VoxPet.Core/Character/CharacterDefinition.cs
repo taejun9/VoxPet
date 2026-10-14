@@ -1,5 +1,6 @@
 using VoxPet.Core.Actions;
 using VoxPet.Core.Attachments;
+using VoxPet.Core.Motion;
 
 namespace VoxPet.Core.Character;
 
@@ -14,6 +15,8 @@ public sealed record CharacterDefinition
     public IReadOnlyList<CharacterPart> Parts { get; }
     public IReadOnlyList<AnchorDefinition> Anchors { get; }
     public RigDefinition Rig { get; }
+    public MotionProfile Motion { get; }
+    public FaceDefinition Face { get; }
     public MouthDefinition? Mouth { get; }
     public IReadOnlyList<ExpressionDefinition> Expressions { get; }
     public IReadOnlyList<PoseDefinition> Poses { get; }
@@ -29,7 +32,7 @@ public sealed record CharacterDefinition
     public CharacterDefinition(IEnumerable<CharacterPart> parts, IEnumerable<AnchorDefinition>? anchors = null,
         double canvasWidth = DefaultCanvasSize, double canvasHeight = DefaultCanvasSize, int schemaVersion = CurrentSchemaVersion,
         MouthDefinition? mouth = null, IEnumerable<ExpressionDefinition>? expressions = null, IEnumerable<PoseDefinition>? poses = null,
-        IEnumerable<ActionDefinition>? actions = null, IEnumerable<AttachmentDefinition>? attachments = null)
+        IEnumerable<ActionDefinition>? actions = null, IEnumerable<AttachmentDefinition>? attachments = null, MotionProfile? motion = null, FaceDefinition? face = null)
     {
         if (schemaVersion != CurrentSchemaVersion) throw new ArgumentOutOfRangeException(nameof(schemaVersion));
         SchemaVersion = schemaVersion;
@@ -38,6 +41,7 @@ public sealed record CharacterDefinition
         Parts = DefinitionValidation.Copy(parts, nameof(parts));
         Anchors = DefinitionValidation.Copy(anchors ?? [], nameof(anchors));
         Rig = new(Anchors);
+        Motion = motion ?? MotionProfile.Default; Face = face ?? new();
         Mouth = mouth;
         Expressions = DefinitionValidation.Copy(expressions ?? [], nameof(expressions));
         Poses = DefinitionValidation.Copy(poses ?? [], nameof(poses));
@@ -52,6 +56,7 @@ public sealed record CharacterDefinition
             throw new ArgumentException("Anchor ID가 중복됩니다.", nameof(anchors));
 
         var byId = Anchors.ToDictionary(anchor => anchor.Id, StringComparer.Ordinal);
+        if (Face.RequiredVisiblePart is not null && !Parts.Any(p => p.Id == Face.RequiredVisiblePart)) throw new ArgumentException("얼굴 표시 파츠 참조가 없습니다.");
         foreach (var part in Parts)
             if (part.Anchor is not null && !byId.ContainsKey(part.Anchor)) throw new ArgumentException("파츠의 Anchor가 없습니다.", nameof(parts));
         foreach (var anchor in Anchors)
@@ -71,7 +76,8 @@ public sealed record CharacterDefinition
                 ActionEventKind.Expression => Expressions.Any(e => e.Id == entry.Value),
                 ActionEventKind.Attachment => Attachments.Any(a => a.Id == entry.Value),
                 ActionEventKind.Transform => byId.ContainsKey(entry.Target!) || Parts.Any(p => p.Id == entry.Target),
-                ActionEventKind.Visibility or ActionEventKind.Sprite => Parts.Any(p => p.Id == entry.Target),
+                ActionEventKind.Visibility or ActionEventKind.Sprite => Parts.Any(p => p.Id == entry.Target) ||
+                    entry.Target == "mouth" && mouth is not null || entry.Target is "eyes" or "brows" && Expressions.Count != 0,
                 ActionEventKind.Effect => byId.ContainsKey(entry.Target!),
                 _ => true
             };

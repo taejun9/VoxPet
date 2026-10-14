@@ -3,6 +3,7 @@ using VoxPet.Core.Actions;
 using VoxPet.Core.Attachments;
 using VoxPet.Core.Character;
 using VoxPet.Core.Models;
+using VoxPet.Core.Motion;
 
 namespace VoxPet.Core.Legacy;
 
@@ -35,7 +36,7 @@ public static class LegacyImageSetAdapter
         AnchorDefinition[] anchors = [new("root"), new("body", parent: "root"), new("head", parent: "root"),
             new("face", parent: "head"), new("eyes", parent: "head"), new("mouth", parent: "head")];
         var mouth = new MouthDefinition(source.Mouths, curve: source.Mouths.Length == 3 ? "legacy3" : "legacy8",
-            frameTransforms: source.MouthOffsets?.Select(offset => new Transform2D(offset.X, offset.Y)));
+            frameTransforms: source.MouthOffsets?.Select(offset => new Transform2D(offset.X, offset.Y)), zIndex: (int)ImagePart.Mouth * 10);
         var expressions = source.Expressions.Select(e => new ExpressionDefinition(e.Kind.ToString().ToLowerInvariant(), e.EyesOpen, e.EyesClosed, e.Brows));
         var poses = new List<PoseDefinition>(); var actions = new List<ActionDefinition>();
         for (int a = 0; a < source.Actions.Length; a++)
@@ -58,7 +59,8 @@ public static class LegacyImageSetAdapter
             attachments.Add(new($"outfit-{o}", source.Outfits[o].Name, "legacyOutfit", Layers(source.Outfits[o].Layers, false), exclusiveGroup: "legacyOutfit"));
         for (int w = 0; w < source.Weapons.Length; w++)
             attachments.Add(new($"weapon-{w}", source.Weapons[w].Name, "handAccessory", Layers(source.Weapons[w].Layers, true), source.Weapons[w].Template.ToString(), "legacyWeapon"));
-        return new(parts, anchors, source.CanvasSize, source.CanvasSize, mouth: mouth, expressions: expressions, poses: poses, actions: actions, attachments: attachments);
+        return new(parts, anchors, source.CanvasSize, source.CanvasSize, mouth: mouth, expressions: expressions, poses: poses, actions: actions, attachments: attachments,
+            motion: MotionProfile.LegacyImageSet, face: new(eyesZIndex: (int)ImagePart.Eyes * 10, browsZIndex: (int)ImagePart.Brows * 10, requiredVisiblePart: "head"));
     }
     private static IEnumerable<AttachmentLayer> Layers(IEnumerable<PoseLayer> layers, bool weapon) => layers.Select(layer =>
     {
