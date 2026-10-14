@@ -6,6 +6,8 @@ using System.Windows.Threading;
 using VoxPet.App.Services;
 using VoxPet.Core.Models;
 using VoxPet.Core.Services;
+using VoxPet.Core.Legacy;
+using VoxPet.Core.Character;
 
 namespace VoxPet.App.ViewModels;
 
@@ -26,7 +28,7 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     private readonly DispatcherTimer saveTimer;
     private RuntimePreferences preferences = RuntimePreferences.Default();
     private LoadedImageSet? loaded;
-    private ImageSetPlayer? player;
+    private CharacterRuntimeViewModel? player;
     private bool closing, importing, selectionBusy, initialized;
     private long activationRevision;
     public bool IsImporting => importing;
@@ -65,6 +67,7 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     public RelayCommand ResetCommand { get; }
     public event Func<string?>? ChooseManifest;
     public event Action? InputsChanged;
+    public event Action? Activated;
     public ImageRuntimeViewModel(CharacterViewModel character, bool persistent, string folder, Func<string> currentId, Func<double> seconds, Func<ExpressionKind, Task> expression)
     {
         this.character = character; this.persistent = persistent; this.currentId = currentId; this.seconds = seconds; this.expression = expression;
@@ -98,8 +101,11 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     }
     public void Activate(LoadedImageSet? pack)
     {
-        activationRevision++; recording = null; Notify(nameof(BindingRows));
-        loaded = pack; player = pack == null ? null : new(pack.Definition);
+        Activated?.Invoke(); activationRevision++; recording = null; Notify(nameof(BindingRows));
+        loaded = pack;
+        player = pack == null ? null : new(new CharacterRuntime(new LegacyImageSetSource(pack.Definition).Load(), startedAt: seconds()),
+            pack.Images.ToDictionary(pair => pair.Key, pair => (ImageSource)pair.Value, StringComparer.OrdinalIgnoreCase), seconds());
+        character.SetRuntimeScene(player);
         var saved = preferences.Characters.GetValueOrDefault(currentId());
         action = pack == null ? 0 : Math.Clamp(saved?.Action ?? 0, 0, Math.Max(0, pack.Definition.Actions.Length - 1));
         outfit = pack == null ? -1 : Math.Clamp(saved?.Outfit ?? -1, -1, pack.Definition.Outfits.Length - 1);
@@ -136,8 +142,11 @@ public sealed class ImageRuntimeViewModel : ObservableObject
     public void Update(double now, double level, bool blink, ExpressionKind kind)
     {
         if (loaded == null || player == null) return;
-        var composed = player.Compose(now, level, blink, kind, outfit, weapon);
-        character.SetRuntimeLayers(composed.Select(layer => new RuntimeLayer(loaded.Images[layer.File], new(layer.Offset.X * 512 / loaded.Definition.CanvasSize, layer.Offset.Y * 512 / loaded.Definition.CanvasSize))).ToArray());
+        string expressionId = kind.ToString().ToLowerInvariant();
+        player.Runtime.SetExpression(player.Runtime.Definition.Expressions.Any(e => e.Id == expressionId) ? expressionId : "neutral");
+        player.Runtime.Attachments.Restore(new[] { outfit >= 0 ? "outfit-" + outfit : null, weapon >= 0 ? "weapon-" + weapon : null }.OfType<string>());
+        var composed = player.Update(now, level, blink);
+        character.SetRuntimeLayers(composed.Layers.Select(layer => new RuntimeLayer(loaded.Images[layer.Asset], new(layer.X * 512 / loaded.Definition.CanvasSize, layer.Y * 512 / loaded.Definition.CanvasSize))).ToArray());
     }
     public void Execute(RuntimeOperation operation)
     {
@@ -147,7 +156,7 @@ public sealed class ImageRuntimeViewModel : ObservableObject
             case RuntimeOperation.Play:
                 if (weapon >= 0 && ActionCount > 0 && loaded!.Definition.Weapons[weapon].Template != loaded.Definition.Actions[action].Template)
                 { Status = "액션과 무기의 템플릿이 다릅니다. 같은 템플릿의 무기를 선택하세요."; return; }
-                player!.Play(action, seconds()); break;
+                player!.Runtime.RequestAction("action-" + action); break;
             case RuntimeOperation.NextAction: if (ActionCount > 0) ActionIndex = (action + 1) % ActionCount; break;
             case RuntimeOperation.PreviousAction: if (ActionCount > 0) ActionIndex = (action + ActionCount - 1) % ActionCount; break;
             case RuntimeOperation.NextExpression: ChangeExpression(1); break;

@@ -6,13 +6,34 @@ using VoxPet.App.Services;
 using System.Runtime.InteropServices;
 using VoxPet.Core.Models;
 using VoxPet.Core.Services;
+using VoxPet.Core.Legacy;
+using VoxPet.Core.Character;
 
 namespace VoxPet.App.ViewModels;
 
 /// <summary>두 창이 공유하는 frozen PNG와 표정·모션 상태. UI 스레드에서만 갱신한다.</summary>
 public sealed class CharacterViewModel : ObservableObject
 {
-    public System.Collections.ObjectModel.ObservableCollection<CostumeItemViewModel> CostumeLayers { get; internal set; } = [];
+    private System.Collections.ObjectModel.ObservableCollection<CostumeItemViewModel> costumeLayers = [];
+    private readonly HashSet<CostumeItemViewModel> subscribedCostumes = [];
+    public System.Collections.ObjectModel.ObservableCollection<CostumeItemViewModel> CostumeLayers
+    {
+        get => costumeLayers;
+        internal set
+        {
+            costumeLayers.CollectionChanged -= CostumesChanged;
+            foreach (var item in subscribedCostumes) item.PropertyChanged -= CostumeChanged;
+            subscribedCostumes.Clear(); costumeLayers = value; costumeLayers.CollectionChanged += CostumesChanged; SynchronizeCostumes();
+        }
+    }
+    private void CostumesChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e) => SynchronizeCostumes();
+    private void CostumeChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => RefreshMotion();
+    private void SynchronizeCostumes()
+    {
+        foreach (var item in subscribedCostumes.Where(item => !costumeLayers.Contains(item)).ToArray()) { item.PropertyChanged -= CostumeChanged; subscribedCostumes.Remove(item); }
+        foreach (var item in costumeLayers) if (subscribedCostumes.Add(item)) item.PropertyChanged += CostumeChanged;
+        RefreshMotion();
+    }
     public CharacterRig Rig { get; private set; } = CharacterRig.Default(CharacterCatalog.DefaultId);
     public MotionPose Motion { get; private set; } = MotionPose.Rest;
     public bool ShowMotionGuides { get; internal set; }
@@ -26,11 +47,51 @@ public sealed class CharacterViewModel : ObservableObject
         if (displayName != null) runtimeName = displayName;
         RuntimeLayers = layers; Notify(nameof(RuntimeLayers)); if (changed || displayName != null) Notify(nameof(Name));
     }
+    private CharacterRuntimeViewModel? runtimeScene;
+    private readonly LegacySpriteSheetRuntime legacy = new();
+    private CharacterRuntimeViewModel legacyScene = null!;
+    public VoxPet.Core.Actions.ActionEngine LegacyActions => legacyScene.Runtime.Actions;
+    public CharacterRuntimeViewModel RuntimeScene => runtimeScene ?? legacyScene;
+    public void SetRuntimeScene(CharacterRuntimeViewModel? scene)
+    {
+        runtimeScene = scene; Notify(nameof(RuntimeScene)); Notify(nameof(OutputTransform));
+    }
     private HandPlayback? playback;
     private HandMotionProfile? handProfile;
     public void SetMotion(CharacterRig rig, HandPlayback? hand, HandMotionProfile? selected)
     { Rig = rig; playback = hand; handProfile = selected; RefreshMotion(); }
-    public void RefreshMotion() { Motion = CharacterMotion.Evaluate(Rig, current, now, playback, handProfile); Notify(nameof(Motion)); }
+    public void RefreshMotion()
+    {
+        if (legacyScene == null) return;
+        legacy.Rig = Rig; legacy.ShowGuides = ShowMotionGuides; legacy.Parameters = current; legacy.Playback = playback; legacy.HandProfile = handProfile;
+        legacy.Costumes = CostumeLayers.Where(item => item.Enabled && item.Image != null)
+            .Select(item => new LegacyCostumeLayer(item.Profile, "legacy/costume-" + item.Id.ToString("N") + ".png")).ToArray();
+        SetLegacyImages(); legacyScene.Update(now, Math.Clamp(current.MouthOpen, 0, 1));
+        Motion = legacy.Motion; Notify(nameof(Motion));
+        Sprite = legacyScene.Images[legacy.Sprite]; Blend = legacy.Blend;
+        if (!legacy.HasPrevious) PreviousSprite = null;
+        Bounce = -current.BodyBounce;
+        TearLeftY = legacy.TearLeftY; TearRightY = legacy.TearRightY;
+        TearLeftOpacity = legacy.TearLeftOpacity; TearRightOpacity = legacy.TearRightOpacity;
+    }
+    private ImageSource[,]? cachedSprites;
+    private ImageSource? cachedPrevious;
+    private CharacterRig? cachedGuideRig;
+    private bool cachedGuides;
+    private (Guid Id, ImageSource? Image)[] cachedCostumes = [];
+    private void SetLegacyImages()
+    {
+        var costumes = CostumeLayers.Where(item => item.Enabled && item.Image != null).Select(item => (item.Id, item.Image)).ToArray();
+        if (ReferenceEquals(cachedSprites, sprites) && ReferenceEquals(cachedPrevious, PreviousSprite) && cachedGuides == ShowMotionGuides &&
+            (!ShowMotionGuides || cachedGuideRig == Rig) && costumes.SequenceEqual(cachedCostumes)) return;
+        cachedSprites = sprites; cachedPrevious = PreviousSprite; cachedGuides = ShowMotionGuides; cachedGuideRig = Rig; cachedCostumes = costumes;
+        var images = new Dictionary<string, ImageSource>(LegacyDrawingAssets.All);
+        for (int m = 0; m < sprites.GetLength(0); m++) for (int e = 0; e < 2; e++) images.Add(LegacySpriteSheetAdapter.Asset(m, e), sprites[m, e]);
+        if (PreviousSprite != null) images.Add("legacy/previous.png", PreviousSprite);
+        foreach (var item in CostumeLayers.Where(item => item.Enabled && item.Image != null)) images.Add("legacy/costume-" + item.Id.ToString("N") + ".png", item.Image!);
+        if (ShowMotionGuides) images.Add("legacy/guides.png", LegacyDrawingAssets.Guides(Rig));
+        legacyScene.SetImages(images);
+    }
     private readonly Dictionary<ExpressionKind, ImageSource[,]> defaults = [];
     private ImageSource[,] sprites;
     private Dictionary<ExpressionKind, ImageSource[,]> personalDefaults = [];
@@ -45,7 +106,7 @@ public sealed class CharacterViewModel : ObservableObject
     private string name = "Violet Cat · 기본 캐릭터";
     private ImageSource sprite;
     private ImageSource? previousSprite;
-    private double bounce, blend = 1, transitionStart, now;
+    private double bounce, blend = 1, now;
     private double tearLeftY, tearRightY, tearLeftOpacity, tearRightOpacity;
 
     public CharacterViewModel()
@@ -74,6 +135,9 @@ public sealed class CharacterViewModel : ObservableObject
                 _ => ExpressionKind.Happy
             }]);
         sprites = defaults[ExpressionKind.Neutral]; sprite = sprites[0, 1];
+        legacyScene = new(new CharacterRuntime(new LegacySpriteSheetSource(3).Load(), processor: legacy),
+            new Dictionary<string, ImageSource> { [LegacySpriteSheetAdapter.Asset(0, 1)] = sprite });
+        costumeLayers.CollectionChanged += CostumesChanged; RefreshMotion();
     }
     /// <summary>개인 실행 폴더의 선택적 기본 PNG를 비동기로 읽는다. 실패해도 내장 캐릭터로 시작하며 원본과 저장 슬롯은 수정하지 않는다.</summary>
     public async Task<bool> LoadDefaultAsync(string path)
@@ -90,7 +154,7 @@ public sealed class CharacterViewModel : ObservableObject
     /// <summary>worker에서 가족 전체를 준비한다. UI 적용과 분리하여 오래된 선택 결과를 버린다.</summary>
     internal static CharacterFamily LoadFamily(string path)
     {
-        var family = new Dictionary<ExpressionKind, ImageSource[,]> { [ExpressionKind.Neutral] = CharacterSheetLoader.Load(path) };
+        var family = new Dictionary<ExpressionKind, ImageSource[,]> { [ExpressionKind.Neutral] = LegacyCharacterImporter.Load(path) };
         int warnings = 0;
         string folder = Path.Combine(Path.GetDirectoryName(path)!, Path.GetFileNameWithoutExtension(path) + "-표정");
         foreach (var kind in Enum.GetValues<ExpressionKind>().Where(kind => kind != ExpressionKind.Neutral))
@@ -99,7 +163,7 @@ public sealed class CharacterViewModel : ObservableObject
             if (!File.Exists(variant)) continue;
             try
             {
-                var sheet = CharacterSheetLoader.Load(variant);
+                var sheet = LegacyCharacterImporter.Load(variant);
                 if (sheet.GetLength(0) != family[ExpressionKind.Neutral].GetLength(0) || sheet[0, 0].Width != family[ExpressionKind.Neutral][0, 0].Width)
                     throw new ArgumentException("기본 표정 시트의 크기와 입 단계가 같아야 합니다.");
                 family.Add(kind, sheet);
@@ -124,7 +188,16 @@ public sealed class CharacterViewModel : ObservableObject
     public ImageSource? PreviousSprite { get => previousSprite; private set => Set(ref previousSprite, value); }
     public double Blend { get => blend; private set { if (Set(ref blend, value)) Notify(nameof(PreviousOpacity)); } }
     public double PreviousOpacity => 1 - Blend;
-    public double Bounce { get => bounce; private set => Set(ref bounce, value); }
+    public double Bounce { get => bounce; private set { if (Set(ref bounce, value)) Notify(nameof(OutputTransform)); } }
+    public Transform OutputTransform
+    {
+        get
+        {
+            if (runtimeScene?.UseViewportTransform != true) return new TranslateTransform(0, Bounce);
+            var affine = AffineTransform2D.FromTransform(runtimeScene.Frame.ViewportTransform);
+            return new MatrixTransform(affine.M11, affine.M12, affine.M21, affine.M22, affine.OffsetX, affine.OffsetY);
+        }
+    }
     public double TearLeftX => profile.TearLeft * 512 - 5;
     public double TearRightX => profile.TearRight * 512 - 5;
     public double TearLeftY { get => tearLeftY; private set => Set(ref tearLeftY, value); }
@@ -150,11 +223,12 @@ public sealed class CharacterViewModel : ObservableObject
         }
         var snapshot = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32);
         snapshot.Render(visual); snapshot.Freeze();
-        PreviousSprite = snapshot; transitionStart = now; Blend = 0;
+        PreviousSprite = snapshot; Blend = 0;
         profile = expression;
         var builtin = personalDefaults.TryGetValue(expression.Kind, out var variant) ? variant :
             personalDefaults.TryGetValue(ExpressionKind.Neutral, out var neutral) ? neutral : defaults[expression.Kind];
         sprites = sheet ?? builtin; UsesCustomSheet = sheet != null;
+        legacy.Apply(expression, sprites.GetLength(0), now);
         Name = sheet == null ? $"{defaultName} · {expression.Name}" : $"{expression.Name} · 사용자 캐릭터";
         Notify(nameof(TearLeftX)); Notify(nameof(TearRightX)); Update(current, now);
     }
@@ -172,18 +246,6 @@ public sealed class CharacterViewModel : ObservableObject
     public void Update(CharacterParameters state, double seconds)
     {
         current = state; now = seconds; RefreshMotion();
-        // 3열에서는 기존 MouthState 계약을 유지하고 8열은 연속 음량으로 세밀하게 고른다.
-        int mouth = sprites.GetLength(0) == MouthFrames.Count ? MouthFrames.Select(state.MouthOpen) : (int)state.Mouth;
-        Sprite = sprites[mouth, profile.Blink && state.EyeOpen < .5 ? 0 : 1];
-        Bounce = -state.BodyBounce;
-        Blend = PreviousSprite == null ? 1 : ExpressionMotion.Blend(now - transitionStart);
-        if (Blend >= 1) PreviousSprite = null;
-        var left = ExpressionMotion.Tear(now);
-        var right = ExpressionMotion.Tear(now, .45);
-        TearLeftY = profile.TearTop * 512 + left.Offset;
-        TearRightY = profile.TearTop * 512 + right.Offset;
-        TearLeftOpacity = profile.Tears ? left.Opacity * Blend : 0;
-        TearRightOpacity = profile.Tears ? right.Opacity * Blend : 0;
     }
     /// <summary>저장용 3×2 또는 8×2 RGBA PNG를 작업 스레드에서 인코딩한다. 모든 원본 이미지는 frozen이다.</summary>
     public static byte[] EncodeSheet(ImageSource[,] sheet)

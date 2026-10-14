@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     private MuteHotkey? muteHotkey;
     private HandMotionInputs? handInputs;
     private ImageRuntimeInputs? runtimeInputs;
+    private NativeCharacterInputs? nativeInputs;
     private TrayService? tray;
     internal bool IsInTray { get; private set; }
     internal bool TrayIconVisible => tray?.Visible == true;
@@ -54,7 +55,7 @@ public partial class MainWindow : Window
         };
         Model.ChooseCharacterSheet += () =>
         {
-            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 PNG 시트 선택 (3열 또는8열×2행)", Filter = "PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
+            var dialog = new Microsoft.Win32.OpenFileDialog { Title = "캐릭터 불러오기", Filter = "캐릭터 (*.png;*.voxpet)|*.png;*.voxpet|VoxPet 패키지 (*.voxpet)|*.voxpet|PNG 시트 (*.png)|*.png", CheckFileExists = true, Multiselect = false };
             return dialog.ShowDialog(this) == true ? dialog.FileName : null;
         };
         Model.Runtime.ChooseManifest += () =>
@@ -83,7 +84,7 @@ public partial class MainWindow : Window
             if (!smoke) { EnableExpressionHotkeys(); EnableMuteHotkey(); EnableHandInputs(); EnableRuntimeInputs(); }
             else Model.Expressions.HotkeyStatus = "QA: 전역 단축키 별도 fixture에서 검증 · F12는 앱 안에서 사용";
         };
-        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); handInputs?.Dispose(); runtimeInputs?.Dispose(); tray?.Dispose(); };
+        Closed += (_, _) => { hotkeys?.Dispose(); muteHotkey?.Dispose(); handInputs?.Dispose(); runtimeInputs?.Dispose(); nativeInputs?.Dispose(); tray?.Dispose(); };
         Loaded += async (_, _) =>
         {
             if (initializationStarted) return; initializationStarted = true;
@@ -173,12 +174,15 @@ public partial class MainWindow : Window
     private void EnableRuntimeInputs()
     {
         runtimeInputs = new(HwndSource.FromHwnd(new WindowInteropHelper(this).Handle), Model.Runtime.Execute);
+        nativeInputs = new(HwndSource.FromHwnd(new WindowInteropHelper(this).Handle), Model.Packages.Input);
+        Model.Packages.InputsChanged += ConfigureRuntimeInputs;
         Model.Runtime.InputsChanged += ConfigureRuntimeInputs; ConfigureRuntimeInputs();
     }
     private void ConfigureRuntimeInputs()
     {
         if (runtimeInputs == null) return;
-        var runtime = Model.Runtime; runtimeInputs.Configure(runtime.Bindings, runtime.LeftClick, runtime.CanUse && !runtime.Recording, runtime.SceneRevision);
+        var runtime = Model.Runtime; runtimeInputs.Configure(runtime.Bindings, runtime.LeftClick, runtime.CanUse && !runtime.Recording && !Model.Packages.IsActive, runtime.SceneRevision);
+        nativeInputs?.Configure(Model.Packages.Scene?.Runtime.Definition.Actions.SelectMany(action => action.Triggers) ?? [], Model.Packages.IsActive && !Model.Packages.IsBusy, Model.Packages.MouseEnabled, Model.Packages.SceneRevision);
         ConfigureHandInputs();
         if (runtime.CanUse && !runtime.Recording) runtime.ReportInputStatus(
             runtime.Bindings.Length > 0 && !runtimeInputs.KeyboardRegistered || runtime.LeftClick && !runtimeInputs.MouseRegistered
@@ -213,7 +217,7 @@ public partial class MainWindow : Window
     {
         if (handInputs == null) return;
         var settings = Model.Hands.Snapshot();
-        if (Model.Runtime.IsActive) settings = settings with { Profiles = settings.Profiles.Select(p => p with { Enabled = false }).ToArray() };
+        if (Model.Runtime.IsActive || Model.Packages.IsActive) settings = settings with { Profiles = settings.Profiles.Select(p => p with { Enabled = false }).ToArray() };
         handInputs.Configure(settings);
         bool needsMouse = settings.Profiles.Any(profile => profile.Enabled && profile.LeftClick && profile.Mode == VoxPet.Core.Models.HandTriggerMode.Hotkey);
         Model.Hands.Status = handInputs.Conflicts.Count > 0 || needsMouse && !handInputs.MouseRegistered
@@ -307,5 +311,5 @@ public partial class MainWindow : Window
     /// <summary>
     /// 캡처 종료·설정 저장 후 방송창을 닫고 다음 Closing을 허용한다.
     /// </summary>
-    public async Task ShutdownAsync() { runtimeInputs?.Dispose(); Model.Runtime.InputsChanged -= ConfigureRuntimeInputs; handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
+    public async Task ShutdownAsync() { nativeInputs?.Dispose(); Model.Packages.InputsChanged -= ConfigureRuntimeInputs; runtimeInputs?.Dispose(); Model.Runtime.InputsChanged -= ConfigureRuntimeInputs; handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
 }

@@ -20,6 +20,12 @@ public interface IRenderGeometryProvider
     RenderMesh? Compose(string layerId, bool garment, double follow, RuntimeRenderContext context);
 }
 
+/// <summary>기존 full-sprite 등 호환 조합도 Core에서 최종 frame을 결정한다.</summary>
+public interface IRuntimeFrameProcessor
+{
+    RenderFrame Process(RuntimeRenderContext context, RenderFrame frame);
+}
+
 public sealed class RenderComposer
 {
     private readonly CharacterDefinition definition;

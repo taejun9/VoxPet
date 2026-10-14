@@ -1,0 +1,73 @@
+# plan-036-app-runtime
+
+## Status
+
+active
+
+## Owner
+
+project_lead / plan_keeper
+
+## User Request
+
+첨부 자료의 모든 단계를 순서대로 완성한다. Phase 9에서 중앙 Runtime을 실제 WPF 앱에 연결한다.
+
+## Goal
+
+ImageSet와 native package, 기존 sprite-sheet/표정/의상/손동작을 공통 CharacterRuntime과 RenderFrame 경계로 연결한다. frozen bitmap 준비·보관함 IO는 worker에서 수행하고 MainViewModel의 캐릭터 조정 책임은 Runtime VM으로 옮긴다. 두 창과 후속 편집 미리보기는 같은 Runtime/renderer를 사용한다.
+
+## Non-Goals
+
+Phase 10의 화면 개편은 후속 계획에서 수행한다. 마이크 처리·음성 저장/전송·개인 PNG 공개·기존 설정 삭제는 하지 않는다.
+
+## Context Map
+
+- [전체 계약](../../product/voxpet-2-migration.md)
+- [패키지 규격](../../product/voxpet-package-format.md)
+- src/VoxPet.App/ViewModels/CharacterViewModel.cs, ImageRuntimeViewModel.cs, MainViewModel.cs
+- src/VoxPet.App/Views/MotionSurface.cs, CharacterView.xaml
+- src/VoxPet.Core/Character/CharacterRuntime.cs, Rendering/RenderComposer.cs
+
+## Constraints
+
+Core에 WPF/Win32/NAudio를 넣지 않는다. tick에 파일/JSON 처리를 넣지 않는다. 기존 QA 공개 API와 saved settings·원본 이미지를 보존한다. UI 외부 body bounce DIP와 기존 연결 mesh/tear/240ms transition을 유지한다. 전역 입력 예약 키와 기본 mouse off를 유지한다.
+전용 codex/plan-036-app-runtime / .worktree/plan-036-app-runtime에서 작업한다. 서브에이전트 없이 QA 이후 자체 리뷰한다.
+
+## Implementation Plan
+
+- [ ] 공통 Runtime VM/bitmap source와 RenderFrame 전용 WPF renderer를 구현한다.
+- [ ] ImageSet 실행을 LegacyImageSetSource/Runtime으로 전환하고 기존 명령·설정을 유지한다.
+- [ ] LegacySpriteSheetAdapter/Source/Importer, pure legacy geometry/composition과 expression transition을 연결한다.
+- [ ] native .voxpet 보관함 import/restore/selection과 안전 decode·input lifetime을 연결한다.
+- [ ] MainViewModel 조정 책임 축소와 두 창 공유를 검증한다.
+- [ ] Core/Windows WPF/OBS 회귀와 synthetic native package 시험을 수행한다.
+- [ ] QA → 자체 리뷰 → 완료 이동/미러 → main 병합/push → branch -d → worktree 정리를 수행한다.
+
+## QA Plan
+
+verify_base/verify_app/diff check, SDK10.0.401 locked restore/format/Release build/Core tests. App 변경 후 task branch를 CI에 올려 Windows smoke·OBS를 통과하고 JSON/TRX/화면 artifact를 확인한 뒤 main에 병합한다. public/synthetic fixture만 전송한다. macOS에서는 WPF 실행 불가이며 실제 마이크/물리 입력은 기존 실기 체크리스트를 따른다.
+
+## Review Plan
+
+QA 후 단일 에이전트 자체 리뷰. runtime/renderer 경계, legacy pixel·시간·저장 상태 보존, worker/frozen/cache, 종료 중 입력/로드, native 파일 실패 복구와 개인정보를 검토한다.
+
+## Decision Log
+
+| date | decision | reason |
+|---|---|---|
+| 2026-10-14 | UI 시각 개편보다 Runtime/renderer 연결과 legacy 회귀를 먼저 검증한다. | Phase 9/10 순서와 기존 동작 보존 계약을 따른다. |
+
+| 2026-10-15 | legacy PNG/mesh/vector migration pixel QA의 채널 평균 오차≤1/255, 변경 byte≤1%를 사전 기준으로 둔다. JSON에 사례별 오차를 기록하고 기존 독립 color-centroid/얼굴 보존 QA도 필수로 통과한다. | 같은 WPF의 opaque DrawingImage/triangle 경계 raster 차이는 한정하되 모션/배치 변화는 실패시킨다. |
+
+## Progress Log
+
+| date | role | note |
+|---|---|---|
+| 2026-10-14 | 설계 | Phase 8 검증·main push·작업 정리 후 전용 계획을 작성했다. |
+
+| 2026-10-15 | 제작 | ImageSet와 sprite-sheet를 중앙 Runtime/Core frame으로 연결했다. Main의 animation 조정은 CharacterRuntimeCoordinator에 옮겼다. native worker decode/보관함/선택과 입력 lifetime을 추가했다. |
+| 2026-10-15 | 검증 | 중간 Release build 경고0·오류0, Core345/345(신규7), 문서/자산 검사 통과. Windows QA와 최종 formatter 검사 진행 중. |
+
+## Completion Notes
+
+진행 중. 전체 목표는 Phase 10 및 최종 마이그레이션 리뷰까지 유지한다.

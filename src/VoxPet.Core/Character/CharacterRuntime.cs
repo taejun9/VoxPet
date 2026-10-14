@@ -22,6 +22,7 @@ public sealed class CharacterRuntime
     private readonly MotionEngine motion;
     private readonly RigMotionSolver rig;
     private readonly RenderComposer composer;
+    private readonly IRuntimeFrameProcessor? processor;
     private readonly Dictionary<string, ActionDefinition> actionById;
     private readonly LinkedList<string> automatic = new();
     private readonly Dictionary<string, LinkedListNode<string>> pending = new(StringComparer.Ordinal);
@@ -30,11 +31,11 @@ public sealed class CharacterRuntime
     private string expression = "neutral";
     public CharacterRuntime(CharacterDefinition definition, Random? random = null, MotionEngine? motion = null,
         IReadOnlyDictionary<string, AssetDimensions>? dimensions = null, IRenderGeometryProvider? geometry = null, double startedAt = 0,
-        IEnumerable<TriggerDefinition>? triggers = null)
+        IEnumerable<TriggerDefinition>? triggers = null, IRuntimeFrameProcessor? processor = null)
     {
         ArgumentNullException.ThrowIfNull(definition); Definition = definition; last = DefinitionValidation.Finite(startedAt, nameof(startedAt));
         if (startedAt < 0) throw new ArgumentOutOfRangeException(nameof(startedAt));
-        this.motion = motion ?? definition.Motion.CreateEngine(random); Actions = new(definition.Poses); Attachments = new(definition.Attachments);
+        this.processor = processor; this.motion = motion ?? definition.Motion.CreateEngine(random); Actions = new(definition.Poses); Attachments = new(definition.Attachments);
         rig = new(definition.Rig); CurrentRig = rig.Resolve(); composer = new(definition, dimensions, geometry);
         actionById = definition.Actions.ToDictionary(a => a.Id, StringComparer.Ordinal);
         expression = definition.Expressions.FirstOrDefault(e => e.Id == "neutral")?.Id ?? definition.Expressions.FirstOrDefault()?.Id ?? "neutral";
@@ -100,6 +101,7 @@ public sealed class CharacterRuntime
         var selected = Attachments.ForFrame(Actions.Current.Attachments);
         var context = new RuntimeRenderContext(input, Pose, Actions.Current, CurrentRig);
         Frame = composer.Compose(context, chosenExpression, MouthFrame, Attachments, selected, viewport);
+        if (processor != null) Frame = processor.Process(context, Frame);
         State = new(input.VoiceLevel, chosenExpression, Actions.Current.ActionId, selected); return Frame;
     }
 }

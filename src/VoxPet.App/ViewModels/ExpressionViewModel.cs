@@ -202,7 +202,7 @@ public sealed class ExpressionViewModel : ObservableObject
         NotSupportedException or FormatException or OverflowException or COMException;
     private async Task<ImageSource[,]?> LoadSheetAsync(ExpressionProfile profile)
     {
-        return profile.SheetId == null ? null : await Task.Run(() => CharacterSheetLoader.Load(store.ReadSheet(profile)));
+        return profile.SheetId == null ? null : await Task.Run(() => LegacyCharacterImporter.Load(store.ReadSheet(profile)));
     }
     /// <summary>연속 입력의 오래된 IO 결과를 버린다. 실패하면 표시 중인 표정을 유지한다.</summary>
     public async Task ActivateAsync(int index)
@@ -250,7 +250,7 @@ public sealed class ExpressionViewModel : ObservableObject
         var slot = Selected; SetBusy(true);
         try
         {
-            var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
+            var sheet = await Task.Run(() => LegacyCharacterImporter.Load(path));
             if (closing) return false;
             slot.UseSheet(sheet); Status = "시트 적용 준비 완료 · 눈물 위치를 조정하고 미리보기·저장을 누르세요.";
             return true;

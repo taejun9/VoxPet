@@ -7,7 +7,8 @@ namespace VoxPet.Core.Legacy;
 /// <summary>기존 간격·입력 예약 규칙은 유지하고 재생 수명은 ActionEngine에 위임한다.</summary>
 public sealed class LegacyHandMotionSchedulerAdapter
 {
-    private readonly ActionEngine engine = new();
+    private readonly ActionEngine engine;
+    public LegacyHandMotionSchedulerAdapter(ActionEngine? engine = null) => this.engine = engine ?? new();
     private readonly ActionDefinition[] actions = Enum.GetValues<HandGesture>().Select(g => new ActionDefinition(g.ToString(), g.ToString(), HandMotionScheduler.Duration * 1000, [])).ToArray();
     private HandMotionProfile[] profiles = [];
     private readonly double[] next = new double[5];

@@ -25,7 +25,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private int characterLoads;
     private long characterRevision;
     public IReadOnlyList<CharacterDefinition> Characters => CharacterCatalog.All;
-    public bool CanChooseCharacter => characterInitialized && !closing && !characterBusy && !Runtime.IsImporting;
+    public bool CanChooseCharacter => characterInitialized && !closing && !characterBusy && !Runtime.IsImporting && !Packages.IsBusy;
     public CharacterDefinition SelectedCharacter
     {
         get => selectedCharacter;
@@ -37,7 +37,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
     private readonly AudioSession session = new();
     private readonly AudioLevelProcessor processor = new();
-    private readonly CharacterAnimator animator = new();
+    private CharacterRuntimeCoordinator characterRuntime = null!;
     private readonly SettingsStore store;
     private readonly SemaphoreSlim settingsGate = new(1, 1);
     private readonly DispatcherTimer saveTimer;
@@ -87,6 +87,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public CostumeViewModel Wardrobe { get; }
     public HandMotionViewModel Hands { get; }
     public ImageRuntimeViewModel Runtime { get; }
+    public NativeCharacterViewModel Packages { get; }
     private string MotionCharacterId => Character.UsesCustomSheet ? "custom" : Character.IsBuiltInDefault ? "builtin" : appliedCharacter.Id;
     public Func<int, bool>? IsGlobalExpressionKey { get; set; }
     public Func<bool>? IsGlobalMuteKey { get; set; }
@@ -146,7 +147,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         var saved = persistSettings ? initialSettings?.Normalize() ?? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         selectedCharacter = appliedCharacter = Characters.Single(item => item.Id == saved.CharacterId);
         Runtime = new(Character, persistSettings, folder, () => appliedCharacter.Id, () => clock.Elapsed.TotalSeconds, kind => Expressions.PreviewBuiltinAsync((int)kind));
+        Packages = new(Character, persistSettings, folder, () => clock.Elapsed.TotalSeconds);
+        characterRuntime = new(Character, Hands, Runtime, Packages);
         Runtime.LegacyRequested = () => SelectCharacterAsync(appliedCharacter.Id, true);
+        Packages.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Packages.IsBusy)) RefreshCommands(); };
+        Runtime.Activated += () => { if (Packages.IsActive) _ = Packages.DeactivateAsync(); };
         Runtime.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Runtime.IsImporting)) RefreshCommands(); };
         preferredMicrophoneId = saved.MicrophoneId; mainPlacement = saved.MainWindow; broadcastPlacement = saved.BroadcastWindow;
         broadcastWidth = broadcastPlacement?.Width ?? 480; broadcastHeight = broadcastPlacement?.Height ?? 480;
@@ -169,8 +174,8 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             var path = ChooseCharacterSheet?.Invoke();
             if (path != null) await ImportCharacterAsync(path);
-        }, () => !closing && !characterBusy && !Runtime.IsImporting);
-        DefaultCharacterCommand = new(() => { if (Runtime.IsActive) { Runtime.LegacyCommand.Execute(null); return; } Expressions.RestoreCharacter(); Hands.SetCharacter(MotionCharacterId); CharacterStatus = "선택한 캐릭터의 평상 모습으로 복원했습니다."; }, () => !closing && !characterBusy && !Runtime.IsImporting);
+        }, () => !closing && !characterBusy && !Runtime.IsImporting && !Packages.IsBusy);
+        DefaultCharacterCommand = new(() => { if (Packages.IsActive) _ = Packages.DeactivateAsync(); if (Runtime.IsActive) { Runtime.LegacyCommand.Execute(null); return; } Expressions.RestoreCharacter(); Hands.SetCharacter(MotionCharacterId); CharacterStatus = "선택한 캐릭터의 평상 모습으로 복원했습니다."; }, () => !closing && !characterBusy && !Runtime.IsImporting && !Packages.IsBusy);
         ConversationCommand = new(() => ApplyPreset(ReactionPreset.Conversation));
         SoftVoiceCommand = new(() => ApplyPreset(ReactionPreset.SoftVoice));
         SnappyCommand = new(() => ApplyPreset(ReactionPreset.Snappy));
@@ -225,7 +230,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         {
             if (!Set(ref muted, value)) return;
             Notify(nameof(MuteHint)); processor.Reset(); VoiceLevel = 0;
-            Character.Update(animator.Update(0, clock.Elapsed.TotalSeconds), clock.Elapsed.TotalSeconds);
+            characterRuntime.Update(0, clock.Elapsed.TotalSeconds);
         }
     }
     public string MuteHint => CharacterMuted ? "입 반응을 잠시 멈췄습니다. 마이크 해제는 입력 중지를 누르세요." : "음소거는 캐릭터 입만 멈춥니다. 마이크 입력은 계속 표시됩니다.";
@@ -295,6 +300,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Runtime.Activate(startupPack);
         characterInitialized = true;
         await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await Hands.InitializeAsync(); Hands.SetCharacter(MotionCharacterId); await RefreshDevicesAsync();
+        await Packages.InitializeAsync();
         settingsReady = true;
     }
     /// <summary>전체 가족을 worker에서 읽고 최신 요청만 적용한다. 실패하면 선택과 현재 그림을 되돌린다.</summary>
@@ -314,7 +320,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
                 return () =>
                 {
                     if (family != null) Character.SetDefault(family, item.Name);
-                    appliedCharacter = item; Runtime.Activate(pack); Hands.SetCharacter(item.Id);
+                    if (characterInitialized) _ = Packages.DeactivateAsync(); appliedCharacter = item; Runtime.Activate(pack); Hands.SetCharacter(item.Id);
                     CharacterStatus = $"{item.Name}{(item.SideView ? " · 측면" : "")} · 입{pack?.Definition.Mouths.Length ?? Character.MouthFrameCount}단계 / 눈 깜박임 · 두 창에 적용했습니다." +
                         (family?.Warnings > 0 ? " 일부 표정 파일은 평상 모습으로 표시합니다." : "");
                 };
@@ -405,16 +411,21 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     /// </summary>
     public async Task<bool> ImportCharacterAsync(string path)
     {
+        if (path.EndsWith(".voxpet", StringComparison.OrdinalIgnoreCase))
+        {
+            if (closing || characterBusy || Runtime.IsImporting || Packages.IsBusy) return false;
+            bool imported = await Packages.ImportAsync(path); CharacterStatus = Packages.Status; return imported;
+        }
         if (closing || characterBusy) return false;
         characterLoads++; characterBusy = true; CharacterStatus = "캐릭터 시트를 읽는 중…"; RefreshCommands();
         try
         {
             return await Expressions.ChangeCharacterAsync(async () =>
             {
-                var sheet = await Task.Run(() => CharacterSheetLoader.Load(path));
+                var sheet = await Task.Run(() => LegacyCharacterImporter.Load(path));
                 return () =>
                 {
-                    Runtime.UseSheet(); Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path)); Hands.SetCharacter("custom");
+                    _ = Packages.DeactivateAsync(); Runtime.UseSheet(); Character.UseSheet(sheet, Path.GetFileNameWithoutExtension(path)); Hands.SetCharacter("custom");
                     CharacterStatus = "캐릭터 적용 완료 · 미리보기와 방송창에 함께 적용됩니다.";
                 };
             });
@@ -474,7 +485,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     {
         processor.Reset(); VoiceLevel = 0; RawLevel = 0; Metrics = "RMS 0.0000   Peak 0.0000   -120.0 dBFS";
         previousTime = clock.Elapsed.TotalSeconds;
-        Character.Update(animator.Update(0, previousTime), previousTime);
+        characterRuntime.Update(0, previousTime);
     }
     /// <summary>
     /// DispatcherTimer의 UI 갱신. 입력 종료를 감지하면 중지하고, 나머지는 최신 측정값 한 개로 계산한다.
@@ -502,8 +513,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         if ((!running && !demo) || CharacterMuted) processor.Reset();
         VoiceLevel = processor.VoiceLevel; RawLevel = running || demo ? result.Raw : 0;
         Metrics = $"RMS {measured.Rms:F4}   Peak {measured.Peak:F4}   {measured.Dbfs:F1} dBFS{(measured.Peak >= 1 ? " · CLIP" : "")}";
-        Hands.Update(now); Character.Update(animator.Update(VoiceLevel, now), now);
-        Runtime.Update(now, VoiceLevel, Character.IsBlinking, Character.ExpressionKind);
+        characterRuntime.Update(VoiceLevel, now);
     }
     internal Action PauseVisualForQa()
     {
@@ -545,7 +555,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         closing = true; timer.Stop(); timer.Tick -= Tick; saveTimer.Stop(); saveTimer.Tick -= SaveTimerTick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
         var expressionClose = Expressions.CloseAsync(); var handsClose = Hands.CloseAsync(); var runtimeClose = Runtime.CloseAsync();
-        await session.DisposeAsync(); await expressionClose; await handsClose; await runtimeClose; await Wardrobe.CloseAsync(); ResetLevels();
+        await session.DisposeAsync(); await expressionClose; await handsClose; await runtimeClose; await Packages.CloseAsync(); await Wardrobe.CloseAsync(); ResetLevels();
         await FlushSettingsAsync();
     }
 }

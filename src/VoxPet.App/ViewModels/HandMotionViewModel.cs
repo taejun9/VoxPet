@@ -9,7 +9,7 @@ namespace VoxPet.App.ViewModels;
 /// <summary>UI 스레드 설정과 시간축. 저장 snapshot은 worker에서 직렬 처리한다.</summary>
 public sealed class HandMotionViewModel : ObservableObject
 {
-    private readonly HandMotionScheduler scheduler = new();
+    private readonly HandMotionScheduler scheduler;
     private readonly HandMotionStore store;
     private readonly bool persistent;
     private readonly Func<double> seconds;
@@ -62,6 +62,7 @@ public sealed class HandMotionViewModel : ObservableObject
     public HandMotionSettings Snapshot() => settings with { Profiles = [.. settings.Profiles], Rigs = settings.Rigs == null ? null : new(settings.Rigs) };
     public HandMotionViewModel(CharacterViewModel character, bool persistent, string folder, Func<double> seconds)
     {
+        scheduler = new(character.LegacyActions);
         this.character = character; this.persistent = persistent; this.seconds = seconds; store = new(Path.Combine(folder, "motion.json"));
         PreviewCommand = new(() => Trigger((HandGesture)selected, true), () => CanEdit);
         StopCommand = new(() => { scheduler.Cancel(); character.SetMotion(Rig, null, null); }, () => CanEdit);

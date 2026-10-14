@@ -10,6 +10,7 @@ public sealed class ActionEngine
     private double started, lastTime;
     public ActionState Current { get; private set; } = ActionState.Idle;
     public ActionDefinition? Definition => active;
+    public double LastTime => lastTime;
     public ActionEngine(IEnumerable<PoseDefinition>? poses = null)
     {
         var copy = DefinitionValidation.Copy(poses ?? [], nameof(poses));
