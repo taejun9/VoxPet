@@ -8,6 +8,7 @@ using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Actions;
 using VoxPet.Core.Character;
+using VoxPet.Core.Attachments;
 using VoxPet.Core.Legacy;
 using VoxPet.Core.Models;
 using VoxPet.Core.Packages;
@@ -64,11 +65,11 @@ internal static class RuntimeIntegrationQa
             await Task.Run(() =>
             {
                 var original = ImageSetLoader.Load(template).Definition; var definition = new LegacyImageSetSource(original).Load();
-                var action = new ActionDefinition("qa-action", "QA 동작", 300, [new(0, ActionEventKind.Transform, "head", transform: new(x: 10))],
+                var action = new ActionDefinition("qa-action", "QA 동작", 300, [new(0, ActionEventKind.Transform, "head", transform: new(x: 10)), new(0, ActionEventKind.Attachment, value: "qa-cloth")],
                     triggers: [new("qa-key", "qa-action", TriggerKind.Hotkey, "q", modifiers: TriggerModifiers.Ctrl | TriggerModifiers.Alt), new("qa-mouse", "qa-action", TriggerKind.Mouse, button: "left")]);
                 definition = new CharacterDefinition(definition.Parts, definition.Anchors, mouth: definition.Mouth, expressions: definition.Expressions,
-                    actions: [action], motion: definition.Motion, face: definition.Face);
-                var manifest = new VoxPetManifest("qa.native", "Synthetic Native", "1.0", "VoxPet QA", actions: ["actions/qa.json"]);
+                    actions: [action], attachments: [new AttachmentDefinition("qa-cloth", "Synthetic Cloth", "top", [new("cloth", definition.Parts.First(p => p.Id == "body").Asset, placement: new(deformWithRig: true))])], motion: definition.Motion, face: definition.Face);
+                var manifest = new VoxPetManifest("qa.native", "Synthetic Native", "1.0", "VoxPet QA", actions: ["actions/qa.json"], attachments: ["attachments/cloth.json"]);
                 var assets = definition.Assets.ToDictionary(path => path, path => File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(template)!, path)));
                 new VoxPetPackageExporter().Export(new VoxPetPackageValidator().Validate(manifest, definition, assets), packagePath);
             });
@@ -80,7 +81,11 @@ internal static class RuntimeIntegrationQa
             check(scene.Runtime.MouthFrame == 2, "runtime_native_voice_mouth");
             model.Packages.Input(new(TriggerKind.Hotkey, "q", modifiers: TriggerModifiers.Ctrl | TriggerModifiers.Alt, isPulse: true)); model.Packages.Update(now + .2, 0);
             check(scene.Runtime.State.ActionId == "qa-action" && scene.Frame.Layers.Single(l => l.Id == "part-head").X == 10, "runtime_native_trigger_action_frame");
+            check(scene.Frame.Layers.Any(l => l.Id.StartsWith("attachment-") && l.Mesh != null), "runtime_native_garment_action_geometry");
+            Render(new MotionSurface { DataContext = model.Character }, Path.Combine(evidence, "voxpet-runtime-native-garment.png"));
             model.Packages.Update(now + .6, 0); check(scene.Runtime.State.ActionId == null, "runtime_native_action_returns_idle");
+            await model.Expressions.PreviewBuiltinAsync((int)ExpressionKind.Happy); model.Packages.Update(now + .7, 0);
+            check(scene.Runtime.State.ExpressionId == "happy", "runtime_native_existing_expression_selection_maps_to_package");
             Render(new MotionSurface { DataContext = model.Character }, Path.Combine(evidence, "voxpet-runtime-native-frame.png"));
             var broadcast = window.ShowCharacter(); check(ReferenceEquals(broadcast.DataContext, model), "runtime_native_two_windows_share_model");
             var prior = model.Character.RuntimeScene;

@@ -20,6 +20,11 @@ public interface IRenderGeometryProvider
     RenderMesh? Compose(string layerId, bool garment, double follow, RuntimeRenderContext context);
 }
 
+public interface IPlacedRenderGeometryProvider : IRenderGeometryProvider
+{
+    RenderMesh? Compose(ResolvedAttachmentLayer layer, RuntimeRenderContext context);
+}
+
 /// <summary>기존 full-sprite 등 호환 조합도 Core에서 최종 frame을 결정한다.</summary>
 public interface IRuntimeFrameProcessor
 {
@@ -82,7 +87,7 @@ public sealed class RenderComposer
         }
         foreach (var attachment in attachments.Compose(rig, action, context.Action.ActionId is null ? null : definition.Actions.FirstOrDefault(a => a.Id == context.Action.ActionId)?.CompatibilityTag, visible, selectedIds))
         {
-            RenderMesh? mesh = attachment.Placement.DeformWithRig ? geometry?.Compose(attachment.Id, true, attachment.Placement.Follow, context) : null;
+            RenderMesh? mesh = attachment.Placement.DeformWithRig ? geometry is IPlacedRenderGeometryProvider placed ? placed.Compose(attachment, context) : geometry?.Compose(attachment.Id, true, attachment.Placement.Follow, context) : null;
             if (attachment.Placement.DeformWithRig && geometry is null && action.IsPlaying) throw new InvalidOperationException("garment 연결 격자 provider가 필요합니다.");
             Layer(attachment.Id, attachment.Asset, attachment.ZIndex, attachment.Matrix, attachment.Placement.Width, attachment.Placement.Height, mesh);
         }

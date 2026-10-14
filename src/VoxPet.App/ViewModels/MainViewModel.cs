@@ -160,6 +160,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Expressions.AppearanceSelected += (slot, kind) =>
         {
             if (closing) return;
+            Packages.FollowLegacyExpression(Character.ExpressionKind);
             expressionSlotId = slot; builtinExpression = kind; Hands.SetCharacter(MotionCharacterId); ScheduleSettingsSave();
         };
         StartCommand = new(StartAsync, () => CanChooseDevice && SelectedDevice != null);

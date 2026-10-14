@@ -73,6 +73,9 @@ QA 후 단일 에이전트 자체 리뷰. runtime/renderer 경계, legacy pixel�
 | 2026-10-15 | 검증 | 첫 Windows run38595897122는 Core345 통과/24pixel·native 복원 검사 통과 후 frozen scene의 공유 engine 시간보다 이전 scheduler clock에서 실패했다. native mouse pulse30ms 확인도 실패했다. scheduler는 engine.LastTime도 clamp하고 click 검사는 최대500ms event 전달을 확인하도록 보완한다. OBS38595897181 성공. |
 | 2026-10-15 | 심사 | scene 변경 전 WM_HOTKEY는 고유 registration ID로 차단하고 native 목록 읽기 실패도 복구한다. pixel 수치/새 frame PNG를 Windows artifact에 포함한다. |
 
+| 2026-10-15 | 검증 | 두 번째 Windows38599080687 성공: Core349, WPF1533/0, pixel24개 최대 평균 byte오차0.00002861/변경비율0.00001907. OBS38599080563 성공. |
+| 2026-10-15 | 제작 | 추가 리뷰에서 native garment가 선택되는 action의 geometry 경계를 발견해 공통 AnchorDelta/9×9 native rig provider를 연결한다. 기존 표정 선택도 native expression ID에 연결하고 실제 WPF 회귀를 추가한다. |
+
 ## Completion Notes
 
 진행 중. 전체 목표는 Phase 10 및 최종 마이그레이션 리뷰까지 유지한다.

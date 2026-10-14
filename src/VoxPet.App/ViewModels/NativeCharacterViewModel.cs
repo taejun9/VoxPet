@@ -51,12 +51,14 @@ public sealed class NativeCharacterViewModel : ObservableObject
         long request = ++revision; busy = true; Notify(nameof(IsBusy)); InputsChanged?.Invoke(); await io.WaitAsync();
         try
         {
-            var prepared = await Task.Run(load);
+            double startedAt = seconds();
+            var result = await Task.Run(() => { var prepared = load(); return (Prepared: prepared, Runtime: prepared.Package.CreateRuntime(startedAt: startedAt)); });
+            var prepared = result.Prepared;
             if (closing || request != revision) return false;
             if (persistent) await Task.Run(() => library.Select(prepared.LibraryId));
             if (closing || request != revision) return false;
             Loaded = prepared; double now = seconds();
-            scene?.Stop(); scene = new(prepared.Package.CreateRuntime(startedAt: now), prepared.Images, now);
+            scene?.Stop(); scene = new(result.Runtime, prepared.Images, startedAt);
             // 신규 scene의 첫 frame을 만든 뒤 한 번에 공유 모델에 적용한다.
             scene.UseViewportTransform = true; scene.Update(now, 0); character.SetRuntimeLayers([], prepared.Package.Manifest.Name); character.SetRuntimeScene(scene);
             Status = prepared.Package.Manifest.Name + " · .voxpet 캐릭터 적용 완료";
@@ -72,6 +74,14 @@ public sealed class NativeCharacterViewModel : ObservableObject
     }
     public void Input(TriggerEvent input) { if (!closing && !busy) scene?.Input(input); }
     public void Play(string id) { if (!closing && !busy) scene?.Runtime.RequestAction(id); }
+    public void FollowLegacyExpression(VoxPet.Core.Models.ExpressionKind kind)
+    {
+        if (scene == null || closing || busy) return;
+        string id = kind.ToString().ToLowerInvariant();
+        var expressions = scene.Runtime.Definition.Expressions;
+        string? target = expressions.FirstOrDefault(e => e.Id == id)?.Id ?? expressions.FirstOrDefault(e => e.Id == "neutral")?.Id ?? expressions.FirstOrDefault()?.Id;
+        if (target != null) scene.Runtime.SetExpression(target);
+    }
     public void Expression(string id) { if (!closing && !busy) scene?.Runtime.SetExpression(id); }
     public async Task DeactivateAsync()
     {

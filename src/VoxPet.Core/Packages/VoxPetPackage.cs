@@ -18,7 +18,8 @@ public sealed class VoxPetPackage
         Dimensions = new ReadOnlyDictionary<string, AssetDimensions>(dimensions.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase));
     }
     public byte[] ReadAsset(string path) => assets.TryGetValue(PackagePath.Normalize(path), out var bytes) ? bytes.ToArray() : throw new VoxPetPackageException("자산이 없습니다.");
-    public CharacterRuntime CreateRuntime(Random? random = null, double startedAt = 0) => new(Character, random, dimensions: Dimensions, startedAt: startedAt);
+    public CharacterRuntime CreateRuntime(Random? random = null, double startedAt = 0) => new(Character, random, dimensions: Dimensions, startedAt: startedAt,
+        geometry: Character.Attachments.Any(a => a.Layers.Any(l => l.Placement.DeformWithRig)) ? new RigRenderGeometryProvider(Character) : null);
 }
 public sealed class VoxPetPackageSource(VoxPetPackage package) : ICharacterDefinitionSource
 {

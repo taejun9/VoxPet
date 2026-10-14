@@ -67,13 +67,7 @@ public sealed class AttachmentSystem
                 if (layer.Poses.Count != 0 && !layer.Poses.TryGetValue(action.PoseName ?? "idle", out asset!))
                 { if (layer.HideOnMissingPose) continue; asset = layer.Asset; }
                 if (!rig.Static.TryGetValue(layer.Anchor, out var baseline)) throw new ArgumentException("부착물 Anchor가 없습니다.");
-                var animated = rig.Bone(layer.Placement.Follow)[layer.Anchor]; var delta = animated.Compose(baseline.Inverse());
-                var bone = Filter(delta, baseline, animated, layer.Inherit, 1);
-                if (layer.Inherit.MouthMotion)
-                {
-                    var extra = baseline.Compose(animated.Inverse()).Compose(rig.Mouth(layer.Placement.Follow)[layer.Anchor]).Compose(baseline.Inverse());
-                    bone = bone.Compose(extra);
-                }
+                var bone = AnchorDelta(rig, layer.Anchor, layer.Placement.Follow, layer.Inherit);
                 var origin = layer.Placement.Space == AttachmentSpace.Canvas ? bone : bone.Compose(baseline);
                 var matrix = origin.Compose(AffineTransform2D.FromTransform(layer.Transform));
                 string renderId = "attachment-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(item.Id)) + "-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(layer.Id));
@@ -84,6 +78,17 @@ public sealed class AttachmentSystem
     }
     public IReadOnlyList<ResolvedAttachmentLayer> Compose(RigPose rig, ActionState action, string? compatibilityTag, IReadOnlySet<string>? visibleParts = null, IEnumerable<string>? ids = null)
         => Resolve(rig, action, visibleParts, ids, compatibilityTag);
+    internal static AffineTransform2D AnchorDelta(RigPose rig, string anchor, double follow, AttachmentInheritance inherit)
+    {
+        var baseline = rig.Static[anchor]; var animated = rig.Bone(follow)[anchor];
+        var delta = animated.Compose(baseline.Inverse()); var bone = Filter(delta, baseline, animated, inherit, 1);
+        if (inherit.MouthMotion)
+        {
+            var extra = baseline.Compose(animated.Inverse()).Compose(rig.Mouth(follow)[anchor]).Compose(baseline.Inverse());
+            bone = bone.Compose(extra);
+        }
+        return bone;
+    }
     private static AffineTransform2D Filter(AffineTransform2D delta, AffineTransform2D baseline, AffineTransform2D animated, AttachmentInheritance inherit, double follow)
     {
         if (follow == 0) return AffineTransform2D.Identity;

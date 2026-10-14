@@ -26,6 +26,10 @@ LegacyRenderGeometryProvider는 기존 ConnectedMotion의 연결 삼각형과 �
 
 ImageRuntimeViewModel은 imageset.json 관리·설정/기존 명령 호환 wrapper로 남고 ImageSetPlayer를 정상 App 실행에 사용하지 않는다. LegacyMotionReference는 public/synthetic Windows pixel 회귀에서만 생성하는 기준 renderer다. 사용자 실행 경로에서는 생성하지 않는다. Legacy의 최종 참조/삭제 판단은 전체 마이그레이션 리뷰에서 수행한다.
 
+## Native garment 격자
+
+native package의 `deformWithRig` 레이어에는 RigRenderGeometryProvider를 연결한다. 선택 전 worker에서 고정9×9 Canvas grid의 정적 가중치를 준비하고 tick에서는 필요한 Anchor delta만 계산한다. 각 점은 세 가까운 Anchor의 filtered delta를 역거리 제곱으로 가중하고128삼각형을 출력한다. Anchor에 일치하는 control point는 해당 변환을 그대로 사용한다. Follow와 위치/회전/배율/입 상속은 AttachmentSystem과 같은 AnchorDelta를 사용한다. source triangle은 레이어의 선택 Anchor delta를 먼저 반영해 source placement와 root 이동을 중복 적용하지 않는다. 모든 Anchor가 같은 변환이거나 Follow0이면 기존 affine만 적용한다. 기존 시트/소매의 정확한 픽셀 호환은 별도 LegacyRenderGeometryProvider를 유지한다.
+
 ## 검증 경계
 
 Core 단위 테스트는 기존 패키지/이미지 세트/모션 회귀와 중앙 시트/공유 ActionEngine/garment mesh를 검사한다. RuntimeIntegrationQa는 v1 대비 pixel 오차를 JSON에 기록하고 native worker decode·voice·trigger/action/idle·공유 scene·손상 복구·관리 복사본 재실행·입력 등록/해제를 실제 WPF에서 검사한다. 기존 HandMotionQa의 color centroid/얼굴 보존, ExpressionQa와 OBS 검사는 계속 필수다.
