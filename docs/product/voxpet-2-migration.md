@@ -63,3 +63,5 @@ Phase 2는 mouth/expression/pose/action/attachment 불변 데이터와 LegacyIma
 Phase 3은 MotionEngine의 Voice/Idle/Blink source와 기존 CharacterAnimator wrapper를 구현했다. wrapper는 기존3단계 입/6DIP body/2~6초 blink를 유지한다. caller time/delta만 사용하고 source의 local 이동/회전은 합산, 배율은 곱, 입은 max, 눈은 min으로 합성한다. 변환 계층과 Action 우선순위는 이후 Runtime 단계에서 결합한다.
 
 Phase 4는 Generic ActionEngine과 손동작 호환 adapter를 구현했다. timeline은 ms, 재생 시간은 caller monotonic seconds다. 최소 동작 길이1ms, once/loop, interrupt/priority, idle 복귀/hold, transient effect 만료를 지원한다. Sound는 예약 무동작이다. non-interruptible action은 System100만 중단한다. Legacy scheduler의 간격/always/입력 예약은 adapter에 남기고 재생 수명은 같은 ActionEngine으로 처리한다.
+
+Phase 5는 플랫폼 독립 TriggerEngine/Definition/Event와 ActionBinding/Settings를 구현했다. raw down/up 반복 억제와 key-up 없는 Windows pulse를 구분하고 voice rising edge, 지연 interval coalesce, mouse/manual 요청을 지원한다. Legacy binding의 Enabled/Mode/Interval/Shortcut/X/Y/Scale을 보존한다. Windows 입력 API·기존 콜백은 App에 남기고 공통 이벤트를 추가한다. 실제 Windows1491개 검사와 OBS 합성 회귀를 통과했다. 현재 tick의 요청 출처는 후속 Runtime의 자동 예약/명시 입력 구분에 사용한다.
