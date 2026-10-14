@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -35,13 +35,13 @@ Core에 WPF/Win32/NAudio를 넣지 않는다. tick에 파일/JSON 처리를 넣�
 
 ## Implementation Plan
 
-- [ ] 공통 Runtime VM/bitmap source와 RenderFrame 전용 WPF renderer를 구현한다.
-- [ ] ImageSet 실행을 LegacyImageSetSource/Runtime으로 전환하고 기존 명령·설정을 유지한다.
-- [ ] LegacySpriteSheetAdapter/Source/Importer, pure legacy geometry/composition과 expression transition을 연결한다.
-- [ ] native .voxpet 보관함 import/restore/selection과 안전 decode·input lifetime을 연결한다.
-- [ ] MainViewModel 조정 책임 축소와 두 창 공유를 검증한다.
-- [ ] Core/Windows WPF/OBS 회귀와 synthetic native package 시험을 수행한다.
-- [ ] QA → 자체 리뷰 → 완료 이동/미러 → main 병합/push → branch -d → worktree 정리를 수행한다.
+- [x] 공통 Runtime VM/bitmap source와 RenderFrame 전용 WPF renderer를 구현한다.
+- [x] ImageSet 실행을 LegacyImageSetSource/Runtime으로 전환하고 기존 명령·설정을 유지한다.
+- [x] LegacySpriteSheetAdapter/Source/Importer, pure legacy geometry/composition과 expression transition을 연결한다.
+- [x] native .voxpet 보관함 import/restore/selection과 안전 decode·input lifetime을 연결한다.
+- [x] MainViewModel 조정 책임 축소와 두 창 공유를 검증한다.
+- [x] Core/Windows WPF/OBS 회귀와 synthetic native package 시험을 수행한다.
+- [x] QA → 자체 리뷰 → 완료 이동/미러 → main 병합/push → branch -d → worktree 정리를 수행한다.
 
 ## QA Plan
 
@@ -76,6 +76,15 @@ QA 후 단일 에이전트 자체 리뷰. runtime/renderer 경계, legacy pixel�
 | 2026-10-15 | 검증 | 두 번째 Windows38599080687 성공: Core349, WPF1533/0, pixel24개 최대 평균 byte오차0.00002861/변경비율0.00001907. OBS38599080563 성공. |
 | 2026-10-15 | 제작 | 추가 리뷰에서 native garment가 선택되는 action의 geometry 경계를 발견해 공통 AnchorDelta/9×9 native rig provider를 연결한다. 기존 표정 선택도 native expression ID에 연결하고 실제 WPF 회귀를 추가한다. |
 
+| 2026-10-15 | 검증 | 최종 Windows38603070570/OBS38603070843 성공. Core351/351, WPF1535/0, desktop225 coverage 및 일반/서명 startup, native garment/표정/입력/보관함·pixel24 확인. |
+| 2026-10-15 | 심사 | QA 후 단일 에이전트 자체 리뷰. renderer 판단 제거·공유 engine/source·worker 준비·old clock/queued input/원본 보존을 확인했다. |
+
 ## Completion Notes
 
-진행 중. 전체 목표는 Phase 10 및 최종 마이그레이션 리뷰까지 유지한다.
+Phase 9 완료. 최종 구현1e1b57f에서 Windows [38603070570](https://github.com/taejun9/VoxPet/actions/runs/38603070570) 및 OBS [38603070843](https://github.com/taejun9/VoxPet/actions/runs/38603070843) 통과. local/Windows Core351/351, WPF1535/0, format/Release build 경고0·오류0, 하네스 및 실제225화면 coverage/일반·서명 startup 검사 통과. artifact TRX/JSON을 직접 확인하고 native garment frame을 시각 검토했다. pixel24사례 최대 평균 byte오차0.00002861/변경비율0.00001907이다.
+
+중앙 Runtime VM/서비스, Frame-only renderer, ImageSet/sprite-sheet source, 공유 ActionEngine/legacy mesh/transition/tear와 native package 보관함·worker decode/runtime 준비·입력 lifetime을 연결했다. 같은 Frame을 두 창이 공유한다. native garment/Follow/독립 상속과 기존 표정 선택도 연결한다. 최초 Windows frozen-clock 실패는 shared engine 시간을 coalesce해 수정하고 full-sprite bank를 공통 정의/codec으로 표현했다.
+
+QA 이후 자체 리뷰를 수행했다. native 액션/착용 조작의 새 화면과 상세 input 상태/에디터 UI는 Phase 10에서 제공한다. 기존 시트/설정/원본/개인 PNG는 보존했다. Windows 물리 마이크·혼합 DPI/실기·장시간 검증은 기존 체크리스트 한계를 유지한다. OBS WGC/alpha/chroma/same-HWND 통과, BitBlt 호환 제한은 기존대로 남는다.
+
+완료 기록 검사 후 main 병합/push·정리를 수행한다. 전체 목표는 Phase 10 및 최종 마이그레이션 리뷰까지 active다.

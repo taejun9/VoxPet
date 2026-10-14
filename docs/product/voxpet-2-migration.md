@@ -71,3 +71,5 @@ Phase 6은 RigDefinition/RigMotionSolver의 부모 affine 합성과 AttachmentSy
 Phase 7 중앙 CharacterRuntime은 caller time/voice/input에서 Trigger/Action/Motion/Rig/Attachment를 조정해 최종 RenderFrame을 만든다. renderer에는 입/표정/동작/상속/priority 판단을 남기지 않는다. matrix/logical size/viewport 이동과 pure mesh 계약을 포함하며 기존 ImageSet의 frozen composition 동등성을 검증했다. App 및 legacy mesh/sprite 연결은 Phase 9에서 진행한다.
 
 Phase 8은 bounded ZIP+JSON+PNG loader/validator/package source와 공통 codec/exporter를 구현했다. [패키지 규격](voxpet-package-format.md)에 지원 필드·상한·경로/CRC/실제 해제/PNG 검사를 기록했다. minimal package와 지원 모델·PNG bytes·Runtime frame 왕복 시험을 통과했다. native attachment 저장도 같은 codec을 쓰며 기존 wardrobe 원본을 유지한다.
+
+Phase 9는 [plan-036](../exec_plans/completed/plan-036-app-runtime.md)의 Runtime VM/서비스와 Frame-only renderer를 연결했다. ImageSet 및 full-sprite bank/legacy mesh·표정·손동작과 native package의 worker decode/보관함/입력/garment를 동일 중앙 경계에서 재생한다. Core351, Windows1535 및 OBS 회귀를 통과했다. [Runtime 아키텍처](../architecture/voxpet-2-runtime.md)를 기록했으며 Phase 10의10화면 UI와 최종 전체 리뷰는 계속 진행한다.

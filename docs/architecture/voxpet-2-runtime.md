@@ -1,6 +1,6 @@
 # VoxPet 2.0 Runtime과 App 연결
 
-[전체 개발 계약](../product/voxpet-2-migration.md)과 [패키지 규격](../product/voxpet-package-format.md)을 구현하는 중앙 경계다. Phase 9 진행 중이며 최종 Windows 결과는 완료 계획/리뷰에 기록한다. Phase 10 화면은 후속 계획에서 연결한다.
+[전체 개발 계약](../product/voxpet-2-migration.md)과 [패키지 규격](../product/voxpet-package-format.md)을 구현하는 중앙 경계다. Phase 9 연결은 [완료 계획](../exec_plans/completed/plan-036-app-runtime.md)과 [자체 리뷰](../reviews/plan-036-app-runtime-review.md)의 Windows/OBS 검증을 통과했다. Phase 10 화면과 최종 전체 리뷰는 후속 계획에서 연결한다.
 
 ## 데이터와 실행
 
