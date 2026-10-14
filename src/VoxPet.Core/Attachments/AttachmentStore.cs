@@ -1,3 +1,6 @@
+using System.Text;
+using System.Text.Json;
+using VoxPet.Core.Packages;
 using VoxPet.Core.Character;
 using VoxPet.Core.Legacy;
 using VoxPet.Core.Services;
@@ -31,4 +34,36 @@ public sealed class AttachmentStore(string folder)
     }
     // 반환 데이터는 원래 PNG/JPG/BMP/GIF bytes다. PNG 참조로의 재인코딩은 App worker가 담당한다.
     public byte[] ReadLegacyImage(Guid id) => legacy.ReadImage(id);
+    private string NativePath => Path.Combine(folder, "attachments-v2.json");
+    public AttachmentInventory LoadNative()
+    {
+        if (!File.Exists(NativePath)) return new([], []);
+        try
+        {
+            using var stream = File.OpenRead(NativePath); byte[] bytes = VoxPetPackageLoader.ReadBounded(stream, new VoxPetPackageLimits().JsonBytes);
+            using var doc = PackageJson.Parse(bytes); var root = doc.RootElement;
+            if (root.GetProperty("schemaVersion").GetInt32() != 2) throw new VoxPetPackageException("부착물 저장 버전 오류입니다.");
+            var definitions = root.GetProperty("definitions").EnumerateArray().Select(e => PackageJson.ReadAttachment(Encoding.UTF8.GetBytes(e.GetRawText()))).ToArray();
+            new AttachmentSystem(definitions);
+            return new(definitions, root.GetProperty("enabledIds").EnumerateArray().Select(e => e.GetString()!));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or ArgumentException or InvalidOperationException or VoxPetPackageException or KeyNotFoundException)
+        { return new([], [], true); }
+    }
+    public void SaveNative(AttachmentInventory inventory)
+    {
+        ArgumentNullException.ThrowIfNull(inventory); new AttachmentSystem(inventory.Definitions);
+        using var memory = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(memory))
+        {
+            writer.WriteStartObject(); writer.WriteNumber("schemaVersion", 2); writer.WriteStartArray("definitions");
+            foreach (var definition in inventory.Definitions) writer.WriteRawValue(PackageJson.WriteAttachment(definition));
+            writer.WriteEndArray(); writer.WritePropertyName("enabledIds"); JsonSerializer.Serialize(writer, inventory.EnabledIds); writer.WriteEndObject();
+        }
+        if (memory.Length > new VoxPetPackageLimits().JsonBytes) throw new VoxPetPackageException("부착물 저장 크기 상한입니다.");
+        Directory.CreateDirectory(folder); string temporary = NativePath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try { File.WriteAllBytes(temporary, memory.ToArray()); File.Move(temporary, NativePath, true); }
+        finally { if (File.Exists(temporary)) File.Delete(temporary); }
+    }
+
 }

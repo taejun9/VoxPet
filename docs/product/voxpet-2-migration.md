@@ -69,3 +69,5 @@ Phase 5는 플랫폼 독립 TriggerEngine/Definition/Event와 ActionBinding/Sett
 Phase 6은 RigDefinition/RigMotionSolver의 부모 affine 합성과 AttachmentSystem의 독립 상속/분류 충돌을 구현했다. mouth motion은 다른 상속 옵션과 독립이며 콧수염의 mapped point 이동을 시험했다. Follow는 local bone 변환을 먼저 가중한다. 기존 wardrobe JSON/이미지 bytes와 크기/위치/영향도/레이어·garment 정보를 adapter가 보존한다. 실제 격자/pixel 출력은 중앙 Runtime/App 통합에서 검증한다.
 
 Phase 7 중앙 CharacterRuntime은 caller time/voice/input에서 Trigger/Action/Motion/Rig/Attachment를 조정해 최종 RenderFrame을 만든다. renderer에는 입/표정/동작/상속/priority 판단을 남기지 않는다. matrix/logical size/viewport 이동과 pure mesh 계약을 포함하며 기존 ImageSet의 frozen composition 동등성을 검증했다. App 및 legacy mesh/sprite 연결은 Phase 9에서 진행한다.
+
+Phase 8은 bounded ZIP+JSON+PNG loader/validator/package source와 공통 codec/exporter를 구현했다. [패키지 규격](voxpet-package-format.md)에 지원 필드·상한·경로/CRC/실제 해제/PNG 검사를 기록했다. minimal package와 지원 모델·PNG bytes·Runtime frame 왕복 시험을 통과했다. native attachment 저장도 같은 codec을 쓰며 기존 wardrobe 원본을 유지한다.
