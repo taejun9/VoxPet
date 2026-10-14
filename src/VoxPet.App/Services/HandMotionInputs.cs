@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using VoxPet.Core.Models;
+using VoxPet.Core.Triggers;
 
 namespace VoxPet.App.Services;
 
@@ -17,6 +18,8 @@ public sealed class HandMotionInputs : IDisposable
     private IntPtr mouseHook;
     private bool disposed;
     private int pendingClick;
+    private int generation;
+    public event Action<TriggerEvent>? Triggered;
     public IReadOnlyCollection<HandGesture> Registered => registered.Values.Select(profile => profile.Gesture).ToArray();
     public bool MouseRegistered => mouseHook != IntPtr.Zero;
     public List<HandGesture> Conflicts { get; } = [];
@@ -44,6 +47,7 @@ public sealed class HandMotionInputs : IDisposable
     public void Configure(HandMotionSettings settings)
     {
         if (disposed) return; settings.Validate();
+        generation++;
         foreach (int id in registered.Keys) UnregisterHotKey(source.Handle, id);
         registered.Clear(); Conflicts.Clear();
         foreach (var profile in settings.Profiles.Where(profile => profile.Enabled && profile.Mode == HandTriggerMode.Hotkey && !profile.LeftClick))
@@ -60,11 +64,16 @@ public sealed class HandMotionInputs : IDisposable
     {
         if (!disposed && mouseHook != IntPtr.Zero && code >= 0 && message.ToInt64() == 0x0201 && Interlocked.Exchange(ref pendingClick, 1) == 0)
         {
+            int revision = generation;
             // hook를 즉시 반환하며 UI 작업은 하나만 예약한다. data 구조를 역참조하지 않는다.
             _ = source.Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
             {
                 Interlocked.Exchange(ref pendingClick, 0);
-                if (!disposed && mouseHook != IntPtr.Zero) click();
+                if (!disposed && mouseHook != IntPtr.Zero && revision == generation)
+                {
+                    Triggered?.Invoke(new(TriggerKind.Mouse, button: "left", isPulse: true));
+                    click();
+                }
             });
         }
         return CallNextHookEx(mouseHook, code, message, data);
@@ -74,13 +83,18 @@ public sealed class HandMotionInputs : IDisposable
         if (!disposed && message == 0x0312 && registered.TryGetValue((int)wParam.ToInt64(), out var profile))
         {
             long keys = lParam.ToInt64();
-            if ((keys & 0xffff) == profile.Shortcut.Modifiers && ((keys >> 16) & 0xffff) == profile.Shortcut.Key) { handled = true; activate(profile.Gesture); }
+            if ((keys & 0xffff) == profile.Shortcut.Modifiers && ((keys >> 16) & 0xffff) == profile.Shortcut.Key)
+            {
+                handled = true; Triggered?.Invoke(HotkeyTriggerProvider.FromLegacy(profile.Shortcut.Key, profile.Shortcut.Modifiers));
+                activate(profile.Gesture);
+            }
         }
         return IntPtr.Zero;
     }
     public void Dispose()
     {
         if (disposed) return; disposed = true;
+        generation++;
         foreach (int id in registered.Keys) UnregisterHotKey(source.Handle, id);
         registered.Clear(); source.RemoveHook(Message);
         if (mouseHook != IntPtr.Zero) { UnhookWindowsHookEx(mouseHook); mouseHook = IntPtr.Zero; }

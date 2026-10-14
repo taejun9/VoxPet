@@ -43,6 +43,7 @@ public sealed record CharacterDefinition
         Attachments = DefinitionValidation.Copy(attachments ?? [], nameof(attachments));
         Unique(Expressions.Select(e => e.Id)); Unique(Poses.Select(p => p.Id));
         Unique(Actions.Select(a => a.Id)); Unique(Attachments.Select(a => a.Id));
+        Unique(Actions.SelectMany(a => a.Triggers).Select(t => t.Id));
         if (Parts.Count == 0 || Parts.Select(part => part.Id).Distinct(StringComparer.Ordinal).Count() != Parts.Count)
             throw new ArgumentException("중복하지 않는 파츠ID가 최소 하나 필요합니다.", nameof(parts));
         if (Anchors.Select(anchor => anchor.Id).Distinct(StringComparer.Ordinal).Count() != Anchors.Count)

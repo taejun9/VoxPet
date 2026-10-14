@@ -1,4 +1,5 @@
 using VoxPet.Core.Character;
+using VoxPet.Core.Triggers;
 
 namespace VoxPet.Core.Actions;
 
@@ -11,8 +12,9 @@ public sealed record ActionDefinition
     public string? CompatibilityTag { get; }
     public ActionPlayback Playback { get; }
     public IReadOnlyList<ActionTimelineEvent> Timeline { get; }
+    public IReadOnlyList<TriggerDefinition> Triggers { get; }
     public ActionDefinition(string id, string name, double durationMs, IEnumerable<ActionTimelineEvent> timeline,
-        int priority = 50, ActionPlayback? playback = null, string? compatibilityTag = null)
+        int priority = 50, ActionPlayback? playback = null, string? compatibilityTag = null, IEnumerable<TriggerDefinition>? triggers = null)
     {
         Id = DefinitionValidation.Id(id, nameof(id)); Name = DefinitionValidation.Text(name, nameof(name));
         DurationMs = DefinitionValidation.Positive(durationMs, nameof(durationMs));
@@ -23,5 +25,6 @@ public sealed record ActionDefinition
         var events = DefinitionValidation.Copy(timeline, nameof(timeline));
         if (events.Any(e => e.TimeMs > durationMs || e.DurationMs > durationMs - e.TimeMs)) throw new ArgumentException("이벤트가 동작 길이를 벗어납니다.");
         Timeline = Array.AsReadOnly(events.OrderBy(e => e.TimeMs).ToArray());
+        Triggers = new ActionBinding(id, triggers ?? []).Triggers;
     }
 }

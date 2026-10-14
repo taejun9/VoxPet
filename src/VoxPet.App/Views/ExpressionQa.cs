@@ -8,6 +8,7 @@ using System.Windows.Media.Imaging;
 using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Models;
+using VoxPet.Core.Triggers;
 
 namespace VoxPet.App.Views;
 
@@ -113,6 +114,7 @@ internal static class ExpressionQa
         // 실제 RegisterHotKey/WM_HOTKEY + 합성 키 입력이다. 물리 키보드 실기와 구분한다.
         using var probe = new HwndSource(new HwndSourceParameters("VoxPet key QA") { Width = 100, Height = 100 });
         var hotkeys = main.EnableExpressionHotkeys();
+        var signals = new List<TriggerEvent>(); hotkeys.Triggered += signals.Add;
         check(hotkeys.Registered.Count == 11 && !hotkeys.Registered.Contains(11), "expression_global_F1_F11_F12_reserved");
         using (var collision = new ExpressionHotkeys(probe, _ => { }))
             check(collision.Registered.Count == 0 && collision.Conflicts.Count == 11, "expression_global_conflicts_reported");
@@ -123,6 +125,8 @@ internal static class ExpressionQa
         main.WindowState = WindowState.Minimized; await Task.Delay(100);
         Hotkey(0x72); await Task.Delay(300);
         check(character.Name.Contains("슬픔"), "expression_global_key_while_minimized");
+        check(signals.Any(signal => signal.Kind == TriggerKind.Hotkey && signal.Key == "f3" &&
+            signal.Modifiers == (TriggerModifiers.Ctrl | TriggerModifiers.Shift) && signal.IsPulse), "expression_platform_neutral_hotkey_pulse");
         main.Model.CharacterMuted = false;
         Hotkey(0x4d); await Task.Delay(100);
         check(main.Model.CharacterMuted && main.Model.VoiceLevel == 0, "mute_global_key_while_minimized");

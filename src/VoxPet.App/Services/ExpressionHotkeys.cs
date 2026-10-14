@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Windows.Interop;
+using VoxPet.Core.Triggers;
 
 namespace VoxPet.App.Services;
 
@@ -11,6 +12,7 @@ public sealed class ExpressionHotkeys : IDisposable
     private readonly Action<int> activate;
     private readonly HashSet<int> registered = [];
     private bool disposed;
+    public event Action<TriggerEvent>? Triggered;
     /// <summary>전역 등록에 성공한 0기반 슬롯 번호. 실제 키는 F(slot+1)이다.</summary>
     public IReadOnlyCollection<int> Registered => registered;
     public List<int> Conflicts { get; } = [];
@@ -39,7 +41,7 @@ public sealed class ExpressionHotkeys : IDisposable
         if (!disposed && message == 0x0312 && registered.Contains(slot) &&
             (keys & 0xffff) == 6 && ((keys >> 16) & 0xffff) == 0x70 + slot)
         {
-            handled = true; activate(slot);
+            handled = true; Triggered?.Invoke(HotkeyTriggerProvider.FromLegacy((uint)(0x70 + slot), 6)); activate(slot);
         }
         return IntPtr.Zero;
     }

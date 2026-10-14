@@ -7,6 +7,7 @@ using System.Windows.Media.Imaging;
 using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Models;
+using VoxPet.Core.Triggers;
 using VoxPet.Core.Services;
 
 namespace VoxPet.App.Views;
@@ -116,17 +117,22 @@ internal static class HandMotionQa
             var source = HwndSource.FromHwnd(new WindowInteropHelper(main).Handle); int hits = 0, clicks = 0;
             using (var inputs = new HandMotionInputs(source, _ => hits++, () => clicks++))
             {
+                var signals = new List<TriggerEvent>(); inputs.Triggered += signals.Add;
                 var keys = HandMotionSettings.Default() with { Profiles = HandMotionSettings.Default().Profiles.Select(p => p with { LeftClick = false }).ToArray() };
                 inputs.Configure(keys); check(inputs.Registered.Count == 1 && inputs.Conflicts.Count == 0, "motion_native_key_registration");
                 using (var otherSource = new HwndSource(new HwndSourceParameters("VoxPet-motion-conflict") { Width = 1, Height = 1, WindowStyle = 0 }))
                 using (var conflict = new HandMotionInputs(otherSource, _ => { }, () => { })) { conflict.Configure(keys); check(conflict.Conflicts.Count == 1, "motion_native_key_conflict_reported"); }
                 PostMessage(source.Handle, 0x0312, new(0x5300), new(0x31 << 16 | 3)); await Task.Delay(50);
                 check(hits == 1, "motion_native_wm_hotkey_dispatch");
+                check(signals.Count == 1 && signals[0].Kind == TriggerKind.Hotkey && signals[0].Key == "1" &&
+                    signals[0].Modifiers == (TriggerModifiers.Ctrl | TriggerModifiers.Alt) && signals[0].IsPulse, "motion_platform_neutral_hotkey_pulse");
                 inputs.Configure(HandMotionSettings.Default()); check(inputs.Registered.Count == 0 && inputs.MouseRegistered, "motion_native_switch_to_mouse_releases_key");
                 mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(50);
                 check(clicks == 1, "motion_native_left_down_signal");
+                check(signals.Count == 2 && signals[1].Kind == TriggerKind.Mouse && signals[1].Button == "left", "motion_platform_neutral_mouse_pulse");
                 inputs.Dispose(); mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(50);
                 check(clicks == 1 && !inputs.MouseRegistered, "motion_native_dispose_stops_mouse");
+                check(signals.Count == 2, "motion_platform_neutral_dispose_stops_events");
             }
             using (var reused = new HandMotionInputs(source, _ => { }, () => { }))
             {
