@@ -59,3 +59,5 @@ Runtime은 원본 형식을 알지 않고 정의를 받는다. LegacyImageSet/Le
 Phase 1 실행/검증은 [완료 plan-028](../exec_plans/completed/plan-028-runtime-foundation.md)과 [자체 리뷰](../reviews/plan-028-runtime-foundation-review.md)에 기록한다. 사용자는 이후 모든 단계의 연속 진행을 승인했다. 단계마다 별도 계획/QA/리뷰/Git 수명을 완료하며 전체 목표는 Phase 10과 최종 마이그레이션 리뷰다.
 
 Phase 2는 mouth/expression/pose/action/attachment 불변 데이터와 LegacyImageSetAdapter를 추가한다. 원본 v1 객체를 신규 정의 내부에 보관하지 않는다. full-canvas PNG는 원래 논리 크기/좌표를 유지하며 Legacy3/Legacy8 입 threshold를 명시적 곡선으로 표현한다. 프레임별 고유 pose ID와 원래 포즈 이름을 함께 보존해 같은 fire 이름의 여러 프레임도 소실하지 않는다. Layer는 소매/부위 숨김 의존성과 무기 템플릿 호환/효과 표시 정책을 담는다. 부모 Anchor를 이용한 실제 합성과 엔진 실행은 후속 단계에서 한다.
+
+Phase 3은 MotionEngine의 Voice/Idle/Blink source와 기존 CharacterAnimator wrapper를 구현했다. wrapper는 기존3단계 입/6DIP body/2~6초 blink를 유지한다. caller time/delta만 사용하고 source의 local 이동/회전은 합산, 배율은 곱, 입은 max, 눈은 min으로 합성한다. 변환 계층과 Action 우선순위는 이후 Runtime 단계에서 결합한다.
