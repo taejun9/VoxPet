@@ -75,6 +75,8 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 | 2026-10-15 | 검증 | 초기 구현 Release build 경고0·오류0, Core355/355(기존351+편집 보존4), locked restore/format/문서·자산·diff 검사 통과. Windows 새 화면/사용자 workflow QA는 아직 미수행이다. |
 | 2026-10-15 | 설계 | 후속 보완: full-sprite의 모든 표정 bank 선택/교체, 포즈·부착물 pose map 입력, 작은 화면 배치, pending 입력과 상세 선택 수명, 실제10화면·create/edit/export/reimport 및 기존전체 Windows QA를 요구한다. 이 항목들이 검증되기 전에는 Phase 10 완료로 판정하지 않는다. |
 
+| 2026-10-15 | 검증 | 첫 Windows38611644232는 Core355 통과 후 normal startup fresh12 실패, OBS38611644208도 창 초기화 실패. 초기 read-only 음량 ProgressBar binding을 OneWay로 명시하고 sanitized startup/OBS error JSON artifact 수집을 보완한다. |
+
 ## Completion Notes
 
 진행 중. 이 계획과 최종 migration audit가 모두 검증되기 전에는 전체 목표를 완료로 표시하지 않는다.

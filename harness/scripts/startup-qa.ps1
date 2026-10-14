@@ -89,6 +89,8 @@ public static class VoxPetStartupNative {
         $readyPath=Join-Path $data 'startup-ready.json'
         if ($process.HasExited -or -not (Test-Path $readyPath) -or (Test-Path (Join-Path $data 'last-error.json'))) {
             Copy-Item $stderr ('artifacts/test-results/startup-'+$case+'-stderr.txt')
+            $diagnostic=Join-Path $data 'last-error.json'
+            if(Test-Path $diagnostic){Copy-Item $diagnostic ('artifacts/test-results/startup-'+$case+'-error.json');Get-Content $diagnostic | Write-Output}
             Get-Content $stderr | Write-Output
             throw ('Normal startup failed: '+$case)
         }

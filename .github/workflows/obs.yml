@@ -40,4 +40,5 @@ jobs:
           path: |
             artifacts/obs-qa/
             ${{ runner.temp }}/voxpet-qa-error.txt
+            ${{ runner.temp }}/voxpet-qa-exception.json
           if-no-files-found: warn

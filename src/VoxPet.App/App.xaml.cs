@@ -107,6 +107,8 @@ public partial class App : Application
         catch (Exception ex)
         {
             File.WriteAllText(QaPath("voxpet-qa-error.txt"), ex.GetType().Name);
+            string diagnostic = ErrorDiagnostics.Record(ex, "obs-qa");
+            if (File.Exists(diagnostic)) File.Copy(diagnostic, QaPath("voxpet-qa-exception.json"), true);
             Shutdown(1);
         }
     }
