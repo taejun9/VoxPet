@@ -22,7 +22,7 @@ public sealed class LegacyHandMotionSchedulerAdapter
     }
     public void Configure(HandMotionSettings settings, double seconds)
     {
-        Time(seconds); settings.Validate(); seconds = Math.Max(last, seconds); last = seconds;
+        Time(seconds); settings.Validate(); seconds = Math.Max(Math.Max(last, engine.LastTime), seconds); last = seconds;
         var ordered = settings.Profiles.OrderBy(profile => profile.Gesture).ToArray();
         for (int i = 0; i < 5; i++)
         {
@@ -38,7 +38,7 @@ public sealed class LegacyHandMotionSchedulerAdapter
     public bool Trigger(HandGesture gesture, double seconds, bool preview = false)
     {
         Time(seconds); if (stopped || !Enum.IsDefined(gesture) || profiles.Length != 5) return false;
-        seconds = Math.Max(last, seconds); last = seconds;
+        seconds = Math.Max(Math.Max(last, engine.LastTime), seconds); last = seconds;
         var profile = profiles[(int)gesture];
         if (!preview && (!profile.Enabled || profile.Mode != HandTriggerMode.Hotkey)) return false;
         if (!engine.TryPlay(actions[(int)gesture], seconds, restart: false)) return false;
@@ -47,7 +47,7 @@ public sealed class LegacyHandMotionSchedulerAdapter
     public HandPlayback? Update(double seconds)
     {
         Time(seconds); if (stopped || profiles.Length != 5) return null;
-        seconds = Math.Max(last, seconds); last = seconds;
+        seconds = Math.Max(Math.Max(last, engine.LastTime), seconds); last = seconds;
         for (int i = 0; i < 5; i++)
             if (profiles[i].Enabled && profiles[i].Mode == HandTriggerMode.Interval && seconds >= next[i])
             {

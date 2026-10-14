@@ -18,6 +18,7 @@ public sealed class NativeCharacterInputs : IDisposable
     private IntPtr mouse;
     private bool disposed;
     private int generation;
+    private int nextId = 0x6500;
     private long revision = -1;
     private readonly HashSet<string> buttons = [];
     private bool mouseSetting, active;
@@ -52,11 +53,14 @@ public sealed class NativeCharacterInputs : IDisposable
         Clear(); revision = sceneRevision; active = enabled; mouseSetting = mouseEnabled;
         if (!enabled) { Status = ""; return; }
         var configured = definitions.ToArray();
-        int failures = 0, id = 0x6500;
+        int failures = 0;
         foreach (var group in configured.Where(t => t.Enabled && t.Kind == TriggerKind.Hotkey).GroupBy(t => (t.Key, t.Modifiers)))
         {
             var definition = group.First(); var binding = Binding(definition);
-            if (registered.Count >= 128 || binding == null || !RegisterHotKey(source.Handle, ++id, binding.Modifiers | 0x4000, binding.Key)) { failures++; continue; }
+            // scene 변경 때 이전 WM_HOTKEY가 새 scene에 전달되지 않도록 HWND 수명 중 ID를 재사용하지 않는다.
+            if (registered.Count >= 128 || binding == null || nextId >= 0xbfff) { failures++; continue; }
+            int id = ++nextId;
+            if (!RegisterHotKey(source.Handle, id, binding.Modifiers | 0x4000, binding.Key)) { failures++; continue; }
             registered.Add(id, new(TriggerKind.Hotkey, definition.Key, modifiers: definition.Modifiers, isPulse: true));
         }
         if (mouseEnabled) foreach (var trigger in configured.Where(t => t.Enabled && t.Kind == TriggerKind.Mouse)) buttons.Add(trigger.Button!);

@@ -35,3 +35,7 @@ JSON은 depth32와 중복 속성을 검사한다. PNG는 signature/IHDR/8bit 형
 VoxPetPackageLoader/Validator는 준비된 package abstraction을 만든다. VoxPetPackageSource는 원본 형식을 Runtime에 드러내지 않고 CharacterDefinition만 제공한다. PNG는 원본 bytes를 보존하며 읽기 API는 복사본을 반환한다. Exporter는 공통 JSON codec으로 문서와 모든 보유 PNG를 ZIP으로 만들고 같은 loader로 다시 검증한 뒤 파일을 원자적으로 교체한다. 지원 데이터/PNG/Runtime 프레임의 왕복을 시험한다. 알 수 없는 JSON 확장 속성은 지원 계약에 포함하지 않는다.
 
 AttachmentStore의 native index는 attachments-v2.json이며 공통 attachment codec을 사용한다. 기존 wardrobe.json과 PNG/JPG/BMP/GIF 관리 원본은 계속 읽고 수정하지 않는다. 잘못된 index는 recovered 상태로 읽으며 원본 파일을 덮지 않는다.
+
+## full-sprite 시트 호환 표현
+
+분리 mouth와 별개로 character의 선택 `spriteSheet`는 `{part, curve, expressions:[{id, open:[PNG…], closed:[PNG…], blink}]}`를 지원한다. part는 기존 파츠ID, expression id는 기존 표정ID이며 모든 bank는 동일1~16입 단계다. curve는 일반 mouth와 같고 기존3/8열은 legacy3/legacy8이다. 분리 mouth와 동시에 지정하지 않는다. Runtime은 같은 mouth/blink 시간축으로 해당 파츠의 PNG를 선택하고 분리 eyes/mouth를 중복으로 덧그리지 않는다. 모든 bank PNG의 검증·원본 bytes·export/load 왕복을 동일하게 적용한다.

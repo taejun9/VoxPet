@@ -229,6 +229,11 @@ public sealed class CharacterViewModel : ObservableObject
             personalDefaults.TryGetValue(ExpressionKind.Neutral, out var neutral) ? neutral : defaults[expression.Kind];
         sprites = sheet ?? builtin; UsesCustomSheet = sheet != null;
         legacy.Apply(expression, sprites.GetLength(0), now);
+        // source의 정의도 실제 시트/표정과 동기화한다. scheduler가 참조하는 중앙 ActionEngine은 유지한다.
+        var engine = legacyScene.Runtime.Actions;
+        legacyScene = new(new CharacterRuntime(new LegacySpriteSheetSource(sprites.GetLength(0), expression).Load(), processor: legacy,
+            startedAt: Math.Max(now, engine.LastTime), actions: engine), legacyScene.Images, Math.Max(now, engine.LastTime));
+        cachedSprites = null;
         Name = sheet == null ? $"{defaultName} · {expression.Name}" : $"{expression.Name} · 사용자 캐릭터";
         Notify(nameof(TearLeftX)); Notify(nameof(TearRightX)); Update(current, now);
     }

@@ -74,6 +74,8 @@ jobs:
             ${{ runner.temp }}/voxpet-expression-*.png
             ${{ runner.temp }}/voxpet-costume-*.png
             ${{ runner.temp }}/voxpet-motion-*.png
+            ${{ runner.temp }}/voxpet-runtime-*.png
+            ${{ runner.temp }}/voxpet-runtime-*.json
             ${{ runner.temp }}/voxpet-screen-*.png
             ${{ runner.temp }}/voxpet-screen-*.json
           if-no-files-found: warn

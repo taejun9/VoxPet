@@ -65,6 +65,10 @@ public static class PackageJson
             mouth = new(A(mouthData, "frames").Select(v => Path(v.GetString())), S(mouthData, "anchor", "mouth")!, S(mouthData, "curve", "smooth")!, offsets, I(mouthData, "zIndex", 300));
         }
         var expressions = A(e, "expressions").Select(v => new ExpressionDefinition(S(v, "id")!, Path(S(v, "eyesOpen")), Path(S(v, "eyesClosed")), S(v, "brows") is { } brows ? Path(brows) : null, S(v, "name"))).ToArray();
+        var sheetData = P(e, "spriteSheet"); SpriteSheetDefinition? sheet = null;
+        if (sheetData.ValueKind == JsonValueKind.Object)
+            sheet = new(S(sheetData, "part")!, A(sheetData, "expressions").Select(v => new SpriteSheetExpression(S(v, "id")!,
+                A(v, "open").Select(x => Path(x.GetString())), A(v, "closed").Select(x => Path(x.GetString())), B(v, "blink", true))), S(sheetData, "curve", "smooth")!);
         var poses = A(e, "poses").Select(v => new PoseDefinition(S(v, "id")!, S(v, "name"),
             P(v, "sprites").ValueKind == JsonValueKind.Object ? P(v, "sprites").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.ValueKind == JsonValueKind.Null ? null : Path(p.Value.GetString())) : null,
             P(v, "transforms").ValueKind == JsonValueKind.Object ? P(v, "transforms").EnumerateObject().ToDictionary(p => p.Name, p => T(p.Value)) : null)).ToList();
@@ -79,7 +83,7 @@ public static class PackageJson
         var faceData = P(e, "face"); var face = new FaceDefinition(S(faceData, "eyesAnchor", "eyes")!, S(faceData, "browsAnchor", "face")!,
             I(faceData, "eyesZIndex", 280), I(faceData, "browsZIndex", 290), S(faceData, "requiredVisiblePart"));
         return new(parts, anchors, N(canvas, "width", 512), N(canvas, "height", 512), mouth: mouth, expressions: expressions, poses: poses,
-            actions: actionList, attachments: attachments, motion: profile, face: face);
+            actions: actionList, attachments: attachments, motion: profile, face: face, spriteSheet: sheet);
     }
     public static byte[] WriteCharacter(CharacterDefinition c) => JsonSerializer.SerializeToUtf8Bytes(new
     {
@@ -88,6 +92,7 @@ public static class PackageJson
         parts = c.Parts.Select(p => new { p.Id, p.Type, file = p.Asset, p.Anchor, p.Side, p.ZIndex, transform = Transform(p.Transform) }),
         anchors = c.Anchors.ToDictionary(a => a.Id, a => new { a.X, a.Y, a.Parent, a.Transform.ScaleX, a.Transform.ScaleY, a.Transform.Rotation }),
         mouth = c.Mouth is null ? null : new { c.Mouth.Anchor, mode = "frames", c.Mouth.Frames, c.Mouth.Curve, c.Mouth.ZIndex, frameTransforms = c.Mouth.FrameTransforms.Select(Transform) },
+        spriteSheet = c.SpriteSheet is null ? null : new { c.SpriteSheet.Part, c.SpriteSheet.Curve, expressions = c.SpriteSheet.Expressions.Select(e => new { e.Id, e.Open, e.Closed, e.Blink }) },
         expressions = c.Expressions.Select(v => new { v.Id, v.Name, v.EyesOpen, v.EyesClosed, v.Brows }),
         poses = c.Poses.Select(p => new { p.Id, p.Name, p.Sprites, transforms = p.Transforms.ToDictionary(v => v.Key, v => Transform(v.Value)) }),
         face = new { c.Face.EyesAnchor, c.Face.BrowsAnchor, c.Face.EyesZIndex, c.Face.BrowsZIndex, c.Face.RequiredVisiblePart },

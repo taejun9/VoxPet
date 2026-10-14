@@ -59,6 +59,8 @@ QA 후 단일 에이전트 자체 리뷰. runtime/renderer 경계, legacy pixel�
 
 | 2026-10-15 | legacy PNG/mesh/vector migration pixel QA의 채널 평균 오차≤1/255, 변경 byte≤1%를 사전 기준으로 둔다. JSON에 사례별 오차를 기록하고 기존 독립 color-centroid/얼굴 보존 QA도 필수로 통과한다. | 같은 WPF의 opaque DrawingImage/triangle 경계 raster 차이는 한정하되 모션/배치 변화는 실패시킨다. |
 
+| 2026-10-15 | full-sprite의 모든 mouth/eye asset을 CharacterDefinition.SpriteSheet로 표현하고 codec/RenderComposer도 같은 bank를 지원한다. | LegacySpriteSheetSource를 processor 없이는 재생할 수 없는 불완전한 정의로 두지 않는다. 기존 표정 extras/mesh만 호환 processor에 남긴다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -67,6 +69,9 @@ QA 후 단일 에이전트 자체 리뷰. runtime/renderer 경계, legacy pixel�
 
 | 2026-10-15 | 제작 | ImageSet와 sprite-sheet를 중앙 Runtime/Core frame으로 연결했다. Main의 animation 조정은 CharacterRuntimeCoordinator에 옮겼다. native worker decode/보관함/선택과 입력 lifetime을 추가했다. |
 | 2026-10-15 | 검증 | 중간 Release build 경고0·오류0, Core345/345(신규7), 문서/자산 검사 통과. Windows QA와 최종 formatter 검사 진행 중. |
+
+| 2026-10-15 | 검증 | 첫 Windows run38595897122는 Core345 통과/24pixel·native 복원 검사 통과 후 frozen scene의 공유 engine 시간보다 이전 scheduler clock에서 실패했다. native mouse pulse30ms 확인도 실패했다. scheduler는 engine.LastTime도 clamp하고 click 검사는 최대500ms event 전달을 확인하도록 보완한다. OBS38595897181 성공. |
+| 2026-10-15 | 심사 | scene 변경 전 WM_HOTKEY는 고유 registration ID로 차단하고 native 목록 읽기 실패도 복구한다. pixel 수치/새 frame PNG를 Windows artifact에 포함한다. |
 
 ## Completion Notes
 

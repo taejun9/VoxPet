@@ -39,6 +39,7 @@ public sealed class NativeCharacterViewModel : ObservableObject
         if (!persistent || closing) return;
         await io.WaitAsync();
         try { var entries = await Task.Run(library.List); if (!closing) { Entries.Clear(); foreach (var entry in entries) Entries.Add(entry); } }
+        catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { if (!closing) Status = "캐릭터 보관함 읽기 실패 · 기존 파일을 유지합니다. " + e.Message; }
         finally { io.Release(); }
     }
     public async Task<bool> ImportAsync(string path)

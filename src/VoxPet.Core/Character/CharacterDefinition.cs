@@ -18,11 +18,12 @@ public sealed record CharacterDefinition
     public MotionProfile Motion { get; }
     public FaceDefinition Face { get; }
     public MouthDefinition? Mouth { get; }
+    public SpriteSheetDefinition? SpriteSheet { get; }
     public IReadOnlyList<ExpressionDefinition> Expressions { get; }
     public IReadOnlyList<PoseDefinition> Poses { get; }
     public IReadOnlyList<ActionDefinition> Actions { get; }
     public IReadOnlyList<AttachmentDefinition> Attachments { get; }
-    public IEnumerable<string> Assets => Parts.Select(p => p.Asset).Concat(Mouth?.Frames ?? [])
+    public IEnumerable<string> Assets => Parts.Select(p => p.Asset).Concat(Mouth?.Frames ?? []).Concat(SpriteSheet?.Assets ?? [])
         .Concat(Expressions.SelectMany(e => new[] { e.EyesOpen, e.EyesClosed, e.Brows }.OfType<string>()))
         .Concat(Poses.SelectMany(p => p.Sprites.Values.OfType<string>()))
         .Concat(Attachments.SelectMany(a => a.Layers).SelectMany(l => new[] { l.Asset }.Concat(l.Poses.Values)))
@@ -32,7 +33,7 @@ public sealed record CharacterDefinition
     public CharacterDefinition(IEnumerable<CharacterPart> parts, IEnumerable<AnchorDefinition>? anchors = null,
         double canvasWidth = DefaultCanvasSize, double canvasHeight = DefaultCanvasSize, int schemaVersion = CurrentSchemaVersion,
         MouthDefinition? mouth = null, IEnumerable<ExpressionDefinition>? expressions = null, IEnumerable<PoseDefinition>? poses = null,
-        IEnumerable<ActionDefinition>? actions = null, IEnumerable<AttachmentDefinition>? attachments = null, MotionProfile? motion = null, FaceDefinition? face = null)
+        IEnumerable<ActionDefinition>? actions = null, IEnumerable<AttachmentDefinition>? attachments = null, MotionProfile? motion = null, FaceDefinition? face = null, SpriteSheetDefinition? spriteSheet = null)
     {
         if (schemaVersion != CurrentSchemaVersion) throw new ArgumentOutOfRangeException(nameof(schemaVersion));
         SchemaVersion = schemaVersion;
@@ -42,7 +43,7 @@ public sealed record CharacterDefinition
         Anchors = DefinitionValidation.Copy(anchors ?? [], nameof(anchors));
         Rig = new(Anchors);
         Motion = motion ?? MotionProfile.Default; Face = face ?? new();
-        Mouth = mouth;
+        Mouth = mouth; SpriteSheet = spriteSheet;
         Expressions = DefinitionValidation.Copy(expressions ?? [], nameof(expressions));
         Poses = DefinitionValidation.Copy(poses ?? [], nameof(poses));
         Actions = DefinitionValidation.Copy(actions ?? [], nameof(actions));
@@ -57,6 +58,8 @@ public sealed record CharacterDefinition
 
         var byId = Anchors.ToDictionary(anchor => anchor.Id, StringComparer.Ordinal);
         if (Face.RequiredVisiblePart is not null && !Parts.Any(p => p.Id == Face.RequiredVisiblePart)) throw new ArgumentException("얼굴 표시 파츠 참조가 없습니다.");
+        if (spriteSheet != null && (mouth != null || !Parts.Any(p => p.Id == spriteSheet.Part) || spriteSheet.Expressions.Any(e => !Expressions.Any(x => x.Id == e.Id))))
+            throw new ArgumentException("full-sprite의 파츠/표정 참조를 확인하세요. 분리 mouth와 함께 사용하지 않습니다.");
         foreach (var part in Parts)
             if (part.Anchor is not null && !byId.ContainsKey(part.Anchor)) throw new ArgumentException("파츠의 Anchor가 없습니다.", nameof(parts));
         foreach (var anchor in Anchors)

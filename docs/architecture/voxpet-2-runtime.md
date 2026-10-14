@@ -18,6 +18,8 @@ NativeCharacterInputs는 플랫폼 API를 App에 유지하고 configured key와 
 
 ## Legacy 보존 경계
 
+CharacterDefinition.SpriteSheet는 full-canvas의 모든 mouth/eye bank를 표현한다. LegacySpriteSheetSource가 생성한 정의는 별도 processor 없이도 같은 CharacterRuntime으로 mouth/blink를 재생하며 패키지 codec이 모든 frame asset을 보존한다.
+
 LegacyCharacterImporter는 기존 PNG 시트를 worker에서 RGBA 검증/잘라내기/정렬한다. private 가족과 저장 표정 슬롯은 변경하지 않는다. LegacySpriteSheetRuntime은 full-sprite의3/8입·눈 선택,240ms 표정 blend·눈물·손동작 소품·의상 배치를 Core에서 frame으로 만든다. 중단된 표정의 flattened snapshot 인코딩만 WPF 이미지 준비 경계에 남는다. 손동작 scheduler는 CharacterRuntime.Actions와 동일 ActionEngine을 사용한다.
 
 LegacyRenderGeometryProvider는 기존 ConnectedMotion의 연결 삼각형과 머리/입/손 pivot affine를 계산한다. 원본 픽셀은 비파괴로 유지한다. garment에는 캐릭터와 같은 mesh를 전달하며 Follow0은 변형하지 않는다. 의상 collection/property 변경은 즉시 새 Core frame으로 반영한다.

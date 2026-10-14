@@ -31,11 +31,11 @@ public sealed class CharacterRuntime
     private string expression = "neutral";
     public CharacterRuntime(CharacterDefinition definition, Random? random = null, MotionEngine? motion = null,
         IReadOnlyDictionary<string, AssetDimensions>? dimensions = null, IRenderGeometryProvider? geometry = null, double startedAt = 0,
-        IEnumerable<TriggerDefinition>? triggers = null, IRuntimeFrameProcessor? processor = null)
+        IEnumerable<TriggerDefinition>? triggers = null, IRuntimeFrameProcessor? processor = null, ActionEngine? actions = null)
     {
         ArgumentNullException.ThrowIfNull(definition); Definition = definition; last = DefinitionValidation.Finite(startedAt, nameof(startedAt));
         if (startedAt < 0) throw new ArgumentOutOfRangeException(nameof(startedAt));
-        this.processor = processor; this.motion = motion ?? definition.Motion.CreateEngine(random); Actions = new(definition.Poses); Attachments = new(definition.Attachments);
+        this.processor = processor; this.motion = motion ?? definition.Motion.CreateEngine(random); Actions = actions ?? new(definition.Poses); Attachments = new(definition.Attachments);
         rig = new(definition.Rig); CurrentRig = rig.Resolve(); composer = new(definition, dimensions, geometry);
         actionById = definition.Actions.ToDictionary(a => a.Id, StringComparer.Ordinal);
         expression = definition.Expressions.FirstOrDefault(e => e.Id == "neutral")?.Id ?? definition.Expressions.FirstOrDefault()?.Id ?? "neutral";
@@ -80,7 +80,8 @@ public sealed class CharacterRuntime
                 automatic.RemoveFirst(); pending.Remove(node.Value);
                 if (Actions.TryPlay(actionById[node.Value], input.Time)) break;
             }
-        Pose = motion.Update(input.VoiceLevel, input.Time, input.DeltaTime); MouthFrame = Definition.Mouth is null ? 0 : MouthController.Select(Definition.Mouth, Pose.MouthOpen);
+        Pose = motion.Update(input.VoiceLevel, input.Time, input.DeltaTime); var selector = Definition.Mouth ?? Definition.SpriteSheet?.Selector;
+        MouthFrame = selector is null ? 0 : MouthController.Select(selector, Pose.MouthOpen);
         var transforms = new Dictionary<string, Transform2D>(StringComparer.Ordinal); Transform2D viewport = Transform2D.Identity;
         foreach (var pair in Pose.Transforms)
         {

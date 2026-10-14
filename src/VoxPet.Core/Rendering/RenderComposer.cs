@@ -54,9 +54,13 @@ public sealed class RenderComposer
         }
         void Layer(string id, string asset, int z, AffineTransform2D matrix, double? width = null, double? height = null, RenderMesh? mesh = null)
             => layers.Add(new(id, asset, zIndex: z, matrix: matrix, width: width ?? definition.CanvasWidth, height: height ?? definition.CanvasHeight, mesh: mesh));
+        var fullSprite = definition.SpriteSheet?.Expressions.FirstOrDefault(e => e.Id == expressionId) ?? definition.SpriteSheet?.Expressions.FirstOrDefault();
         foreach (var part in definition.Parts)
         {
-            string? asset = Sprite(part.Id, part.Asset); if (asset is null) continue; visible.Add(part.Id);
+            string baseline = part.Asset;
+            if (part.Id == definition.SpriteSheet?.Part && fullSprite != null)
+                baseline = fullSprite.Blink && (context.Input.Blink ?? context.Motion.EyeOpen < .5) ? fullSprite.Closed[mouthFrame] : fullSprite.Open[mouthFrame];
+            string? asset = Sprite(part.Id, baseline); if (asset is null) continue; visible.Add(part.Id);
             var matrix = Anchor(part.Anchor).Compose(AffineTransform2D.FromTransform(part.Transform));
             if (!rig.Static.ContainsKey(part.Id) && action.Transforms.TryGetValue(part.Id, out var transform)) matrix = matrix.Compose(AffineTransform2D.FromTransform(transform));
             Layer("part-" + part.Id, asset, part.ZIndex, matrix, mesh: geometry?.Compose(part.Id, false, 1, context));
@@ -64,7 +68,7 @@ public sealed class RenderComposer
         string? required = definition.Face.RequiredVisiblePart ?? definition.Parts.FirstOrDefault(p => p.Type == "head")?.Id;
         bool faceVisible = required is null || visible.Contains(required);
         var expression = definition.Expressions.FirstOrDefault(e => e.Id == expressionId) ?? definition.Expressions.FirstOrDefault(e => e.Id == "neutral") ?? definition.Expressions.FirstOrDefault();
-        if (faceVisible && expression is not null)
+        if (definition.SpriteSheet is null && faceVisible && expression is not null)
         {
             string? eyes = Sprite("eyes", context.Input.Blink ?? context.Motion.EyeOpen < .5 ? expression.EyesClosed : expression.EyesOpen);
             if (eyes is not null) Layer("face-eyes", eyes, definition.Face.EyesZIndex, Anchor(definition.Face.EyesAnchor));

@@ -1,6 +1,7 @@
 using VoxPet.Core.Character;
 using VoxPet.Core.Legacy;
 using VoxPet.Core.Models;
+using VoxPet.Core.Packages;
 using VoxPet.Core.Services;
 using Xunit;
 
@@ -25,6 +26,33 @@ public sealed class LegacyRuntimeIntegrationTests
         legacy.Parameters = legacy.Parameters with { MouthOpen = .90, EyeOpen = 0 };
         runtime.Update(new(11.3, .8, .9)); Assert.Equal("legacy/sprite-7-1.png", legacy.Sprite);
     }
+    [Theory]
+    [InlineData(3, .6, 2)]
+    [InlineData(8, .90, 7)]
+    public void SpriteSheetSourceIsPlayableWithoutLegacyProcessor(int count, double voice, int mouth)
+    {
+        var runtime = new CharacterRuntime(new LegacySpriteSheetSource(count).Load(), new Random(1));
+        var frame = runtime.Update(new(1, 1, voice, blink: true));
+        Assert.Equal(mouth, runtime.MouthFrame); Assert.Single(frame.Layers);
+        Assert.Equal(LegacySpriteSheetAdapter.Asset(mouth, 0), frame.Layers[0].Asset);
+        var awake = runtime.Update(new(2, 1, voice, blink: false)); Assert.Equal(LegacySpriteSheetAdapter.Asset(mouth, 1), awake.Layers[0].Asset);
+    }
+    [Fact]
+    public void FullSpriteBankSurvivesPackageCodecWithoutSeparateFaceLayers()
+    {
+        var definition = new LegacySpriteSheetSource(8, ExpressionProfile.Default(1) with { Blink = false }).Load();
+        byte[] png = File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "ImageSetTemplate", "body.png"));
+        var assets = definition.Assets.ToDictionary(path => path, _ => png);
+        Assert.Equal(16, assets.Count);
+        var package = new VoxPetPackageValidator().Validate(new("sheet", "Full Sprite", "1"), definition, assets);
+        byte[] archive = new VoxPetPackageExporter().Export(package);
+        var loaded = new VoxPetPackageLoader().Load(new MemoryStream(archive));
+        Assert.Equal("legacy8", loaded.Character.SpriteSheet!.Curve); Assert.False(loaded.Character.SpriteSheet.Expressions[0].Blink);
+        var runtime = loaded.CreateRuntime(); var frame = runtime.Update(new(1, 1, 1, blink: true));
+        Assert.Single(frame.Layers); Assert.Equal("legacy/sprite-7-1.png", frame.Layers[0].Asset);
+        foreach (string path in loaded.AssetPaths) Assert.Equal(png, loaded.ReadAsset(path));
+        Assert.Equal(archive, new VoxPetPackageExporter().Export(loaded));
+    }
     [Fact]
     public void SharedActionEngineOwnsLegacyHandLifetime()
     {
@@ -36,6 +64,20 @@ public sealed class LegacyRuntimeIntegrationTests
         Assert.Contains(active.Layers, l => l.Id == "legacy-prop-Heart" && l.Opacity > 0);
         legacy.Playback = scheduler.Update(2.5); legacy.HandProfile = null;
         var ended = runtime.Update(new(2.5, 1, 0)); Assert.Null(runtime.State.ActionId); Assert.DoesNotContain(ended.Layers, l => l.Id.StartsWith("legacy-prop-"));
+    }
+    [Fact]
+    public void SharedSchedulerCoalescesOlderCallerTimeAfterFrozenRuntimeFrame()
+    {
+        var runtime = new CharacterRuntime(new LegacySpriteSheetSource(3).Load());
+        var scheduler = new HandMotionScheduler(runtime.Actions);
+        scheduler.Configure(HandMotionSettings.Default(), 1);
+        runtime.Update(new(100, 100, 0));
+        // Windows frozen scene QA와 캐릭터/표정 변경의 이전 clock sample을 모두 수용한다.
+        scheduler.Configure(HandMotionSettings.Default(), 2);
+        Assert.True(scheduler.Trigger(HandGesture.Heart, 3, true));
+        var playback = scheduler.Update(4); Assert.NotNull(playback); Assert.Equal(0, playback!.Progress);
+        Assert.Equal(100, runtime.Actions.LastTime);
+        Assert.Null(scheduler.Update(101.5));
     }
     [Fact]
     public void GarmentMeshMapsSourceVerticesAndKeepsFollowZeroAndSnapshots()

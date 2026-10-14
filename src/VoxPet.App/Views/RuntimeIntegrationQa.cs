@@ -97,7 +97,10 @@ internal static class RuntimeIntegrationQa
                 PostMessage(source.Handle, 0x0312, new IntPtr(0x6501), IntPtr.Zero); await Task.Delay(30);
                 check(pulses.Count == 1 && pulses[0].IsPulse && pulses[0].Modifiers == (TriggerModifiers.Ctrl | TriggerModifiers.Alt), "runtime_native_wm_hotkey_pulse");
                 inputs.Configure(triggers, true, true, 2); check(inputs.MouseRegistered, "runtime_native_mouse_explicit_enable");
-                mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(30);
+                PostMessage(source.Handle, 0x0312, new IntPtr(0x6501), IntPtr.Zero); await Task.Delay(30);
+                check(pulses.Count == 1, "runtime_native_scene_change_ignores_old_key_message");
+                mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero);
+                for (int i = 0; i < 20 && !pulses.Any(p => p.Kind == TriggerKind.Mouse); i++) await Task.Delay(25);
                 check(pulses.Any(p => p.Kind == TriggerKind.Mouse && p.Button == "left" && p.IsPulse), "runtime_native_mouse_pulse");
                 int count = pulses.Count;
                 inputs.Dispose();
