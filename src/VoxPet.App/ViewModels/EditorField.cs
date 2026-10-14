@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Windows.Media;
 
 namespace VoxPet.App.ViewModels;
 
@@ -17,7 +18,7 @@ public sealed class EditorField : ObservableObject
         Choices = (choices ?? []).ToArray(); IsAsset = asset;
     }
 }
-public sealed record EditorRow(string Id, string Name, object Item)
+public sealed record EditorRow(string Id, string Name, object Item, ImageSource? Image = null)
 {
     public override string ToString() => Name;
 }

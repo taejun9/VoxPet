@@ -24,7 +24,7 @@
    <Grid Grid.Column="1"><Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/><ColumnDefinition Width="350"/></Grid.ColumnDefinitions>
     <DockPanel Background="White" Margin="0,0,8,0">
      <WrapPanel DockPanel.Dock="Bottom" Margin="3"><Button Content="+ 추가" Command="{Binding AddCommand}"/><Button Content="삭제" Command="{Binding DeleteCommand}"/></WrapPanel>
-     <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" DisplayMemberPath="Name" Background="White" Foreground="#172A3A" BorderThickness="0"/>
+     <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected}" Background="White" Foreground="#172A3A" BorderThickness="0"><ListBox.ItemTemplate><DataTemplate><StackPanel Margin="3"><Image Source="{Binding Image}" Height="48" Stretch="Uniform"/><TextBlock Text="{Binding Name}" TextWrapping="Wrap" Foreground="#172A3A"/></StackPanel></DataTemplate></ListBox.ItemTemplate></ListBox>
     </DockPanel>
     <Grid Grid.Column="1" Margin="0,0,8,0"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
      <local:EditorCanvas MinWidth="150" MinHeight="180"/>
@@ -36,7 +36,7 @@
       <ComboBox ItemsSource="{Binding Expressions}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewExpression}" Margin="8,3"/>
       <Button Content="표정 적용" Command="{Binding ExpressionCommand}"/>
       <ComboBox ItemsSource="{Binding Actions}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewAction}" Margin="8,3"/>
-      <WrapPanel><Button Content="동작 재생" Command="{Binding PlayCommand}"/><Button Content="중지" Command="{Binding StopCommand}"/></WrapPanel>
+      <WrapPanel><Button Content="미리보기 / 동작 재생" Command="{Binding PlayCommand}"/><Button Content="중지" Command="{Binding StopCommand}"/></WrapPanel>
       <TextBlock Text="동작 타임라인 (ms)" Foreground="#172A3A" Margin="8,3"/><Slider Minimum="0" Maximum="{Binding Duration}" Value="{Binding Scrub}" Margin="8"/>
       <ComboBox ItemsSource="{Binding Attachments}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewAttachment}" Margin="8,3"/><Button Content="부착물 착용 / 해제" Command="{Binding AttachmentCommand}"/>
      </StackPanel>
@@ -45,7 +45,7 @@
      <StackPanel><TextBlock Text="항목 설정" FontSize="15" FontWeight="Bold" Margin="0,0,0,8" Foreground="#172A3A"/>
       <ItemsControl ItemsSource="{Binding Fields}" ItemTemplate="{StaticResource FieldTemplate}"/>
       <WrapPanel><Button Content="설정 적용" Command="{Binding ApplyCommand}" Margin="0,8"/><Button Content="미적용 입력 취소" Command="{Binding DiscardCommand}"/></WrapPanel>
-      <TextBlock Text="타임라인 · 트리거 / 레이어" FontWeight="Bold" Foreground="#172A3A" Margin="0,15,0,6"/>
+      <TextBlock Text="Sound 이벤트는 예약 항목이며 재생하지 않습니다." TextWrapping="Wrap" FontSize="11" Foreground="#526778" Margin="0,8"/><TextBlock Text="타임라인 · 트리거 / 레이어" FontWeight="Bold" Foreground="#172A3A" Margin="0,15,0,6"/>
       <ListBox ItemsSource="{Binding Details}" SelectedItem="{Binding SelectedDetail}" DisplayMemberPath="Name" Height="110" Background="White" Foreground="#172A3A"/>
       <WrapPanel><Button Content="이벤트 / 레이어 추가" Click="AddDetail"/><Button Content="트리거 추가" Click="AddTrigger"/><Button Content="포즈 추가" Command="{Binding AddPoseCommand}"/><Button Content="삭제" Command="{Binding DeleteDetailCommand}"/></WrapPanel>
       <ItemsControl ItemsSource="{Binding DetailFields}" ItemTemplate="{StaticResource FieldTemplate}"/><Button Content="상세 적용" Command="{Binding ApplyDetailCommand}"/>

@@ -19,6 +19,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 {
     private readonly bool persistSettings;
     private readonly string charactersFolder;
+    internal string CharacterFolder => charactersFolder;
     private CharacterDefinition selectedCharacter;
     private CharacterDefinition appliedCharacter;
     private bool characterInitialized;

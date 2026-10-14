@@ -6,7 +6,7 @@
 
 `manifest.json`은 필수다. `format=voxpet`, `formatVersion=2`, `id/name/version`, 선택 author/description/thumbnail, 기본 `character=character.json`, 선택 actions/attachments 문서 경로 배열을 담는다. 캐릭터 version은 문자열이며 formatVersion과 독립이다. character 참조 문서와 최소1PNG 파츠가 필요하며 action/attachment/thumbnail은 생략할 수 있다.
 
-character 문서는 schemaVersion2, canvas.width/height(기본512×512), parts(id/type/file/anchor/side/zIndex/transform), anchors 이름별 x/y/parent/scaleX/scaleY/rotation, 선택 mouth/expressions/poses/motion/face를 담는다. parent가 null/생략이면 Canvas 기준이고 지정하면 부모 기준 local 좌표다. 표준 Anchor와 custom ID를 지원한다. PNG 실제 해상도와 logical Canvas를 분리한다.
+character 문서는 schemaVersion2, canvas.width/height(기본512×512), parts(id/type/file/anchor/side/zIndex/transform/visible), anchors 이름별 x/y/parent/scaleX/scaleY/rotation, 선택 mouth/expressions/poses/motion/face를 담는다. parent가 null/생략이면 Canvas 기준이고 지정하면 부모 기준 local 좌표다. 표준 Anchor와 custom ID를 지원한다. PNG 실제 해상도와 logical Canvas를 분리한다. visible 생략 시 true이며 false 파츠와 의존 얼굴은 숨긴다. Action visibility가 명시되면 그 값으로 재정의한다.
 
 mouth는 frames mode,1~16 상대 PNG 경로, anchor, curve(smooth/linear/legacy3/legacy8), 선택 frameTransforms/zIndex다. expressions는 id/name/eyesOpen/eyesClosed/선택 brows다. poses는 id/name과 target별 sprites(null=숨김)/transforms snapshot이다. face는 눈/눈썹 Anchor/z-order 및 선택 requiredVisiblePart다.
 

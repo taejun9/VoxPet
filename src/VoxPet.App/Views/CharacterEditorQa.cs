@@ -1,5 +1,8 @@
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using VoxPet.Core.Editing;
+using VoxPet.Core.Motion;
 using System.Windows;
 using System.Windows.Media;
 using VoxPet.App.ViewModels;
@@ -25,7 +28,10 @@ internal static class CharacterEditorQa
         var window = new MainWindow(true, new Rect(0, 0, 1400, 900), mainModel); var editor = window.Studio.Editor;
         try
         {
-            window.Show(); await window.Ready; window.Width = 1280; window.Height = 820; window.Left = 0; window.Top = 0; window.ShowStudio();
+            window.Show(); await window.Ready;
+            var workArea = SystemParameters.WorkArea;
+            window.Width = Math.Min(1280, workArea.Width - 48); window.Height = Math.Min(820, workArea.Height - 48);
+            window.Left = workArea.Left + 24; window.Top = workArea.Top + 24; window.ShowStudio();
             await ScreenEvidence.CaptureAsync(window, "editor-home", check, new { wireframe = 1 });
             await editor.NewAsync(); check(editor.HasDocument && editor.Scene != null, "editor_new_character_common_runtime"); window.ShowStudio(5);
             Set(editor, "name", "QA Editor"); Set(editor, "author", "VoxPet QA"); await editor.ApplyAsync();
@@ -35,7 +41,8 @@ internal static class CharacterEditorQa
             check(!editor.Document.Package.Character.Parts.Single(p => p.Id == "head").Visible && !editor.Scene!.Frame.Layers.Any(l => l.Id == "part-head"), "editor_part_visibility_runtime");
             Set(editor, "visible", "True"); await editor.ApplyAsync();
             Set(editor, "z", "225"); editor.Selected = editor.Rows.First(); editor.Selected = editor.Rows.Single(r => r.Id == "head");
-            check(editor.Fields.Single(f => f.Key == "z").Value == "225" && !editor.CanExport, "editor_pending_selection_preserved_blocks_export"); await editor.ApplyAsync();
+            check(editor.Fields.Single(f => f.Key == "z").Value == "225" && !editor.CanExport, "editor_pending_selection_preserved_blocks_export");
+            var pendingDocument = editor.Document; await editor.AddAsync(); check(ReferenceEquals(pendingDocument, editor.Document) && editor.Fields.Single(f => f.Key == "z").Value == "225", "editor_pending_structural_edit_preserved"); await editor.ApplyAsync();
             await ScreenEvidence.CaptureAsync(window, "editor-parts", check, new { wireframe = 4 });
             editor.Page = 2; editor.Selected = editor.Rows.Single(r => r.Id == "head"); var old = editor.Document.Package.Character.Anchors.Single(a => a.Id == "head");
             var world = editor.Scene!.Runtime.CurrentRig.Static["head"].Map(0, 0); await editor.MoveAnchorAsync("head", world.X + 25, world.Y + 15);
@@ -65,17 +72,38 @@ internal static class CharacterEditorQa
             Set(editor, "anchor", "mouth", true); Set(editor, "mouthMotion", "True", true); Set(editor, "x", "15", true); Set(editor, "y", "20", true); Set(editor, "width", "50", true); Set(editor, "height", "60", true); Set(editor, "pose:idle", editor.Document.Package.AssetPaths.First(), true); await editor.ApplyDetailAsync();
             string att = editor.Document.Package.Character.Attachments.Last().Id; editor.PreviewAttachment = att; editor.AttachmentCommand.Execute(null); check(editor.Scene!.Runtime.Attachments.EnabledIds.Contains(att) && editor.Scene.Frame.Layers.Any(l => l.Id.StartsWith("attachment-")), "editor_attachment_same_runtime_preview");
             await ScreenEvidence.CaptureAsync(window, "editor-attachments", check, new { wireframe = 9 });
-            editor.Page = 7; await editor.ValidateAsync(); check(editor.Status.StartsWith("검증 통과"), "editor_validate_package_reload"); string export = Path.Combine(folder, "edited.voxpet"); check(await editor.ExportAsync(export), "editor_export_atomic_voxpet");
+            editor.Page = 7; editor.PausePreview(); editor.Seek(0); await editor.ValidateAsync(); check(editor.Status.StartsWith("검증 통과"), "editor_validate_package_reload"); string export = Path.Combine(folder, "edited.voxpet"); check(await editor.ExportAsync(export), "editor_export_atomic_voxpet");
             await ScreenEvidence.CaptureAsync(window, "editor-export", check, new { wireframe = 10 });
             var decoded = await Task.Run(() => new VoxPetPackageLoader().Load(export)); var original = editor.Document.Package;
             check(decoded.Manifest.Name == original.Manifest.Name && decoded.Character.Mouth!.Frames.Count == 16 && decoded.Character.Poses.Count == original.Character.Poses.Count && decoded.Character.Attachments.Count == 1, "editor_export_reload_supported_models");
             check(original.AssetPaths.All(p => original.ReadAsset(p).SequenceEqual(decoded.ReadAsset(p))), "editor_export_reload_original_png_bytes");
+            check(new CharacterDocument(decoded).Export().SequenceEqual(editor.Document.Export()), "editor_export_reload_all_supported_fields_exact");
+            var exportedRuntime = decoded.CreateRuntime(new Random(1));
+            foreach (string id in editor.Scene!.Runtime.Attachments.EnabledIds) exportedRuntime.Attachments.SetEnabled(id, true);
+            var exportedFrame = exportedRuntime.Update(new(0, 0, editor.Voice));
+            check(JsonSerializer.Serialize(exportedFrame) == JsonSerializer.Serialize(editor.Scene.Frame), "editor_export_reload_runtime_frame_exact");
+            mainModel.PauseVisualForQa();
             check(await mainModel.Packages.ImportAsync(export), "editor_export_select_broadcast_package"); await window.Studio.RefreshAsync(); window.ShowStudio(1); window.Studio.Selected = window.Studio.Cards.Single(c => c.Legacy == null);
             await ScreenEvidence.CaptureAsync(window, "editor-library", check, new { wireframe = 2 });
             var preview = decoded.CreateRuntime(new Random(1)); preview.Update(new(0, 0, 0)); mainModel.Packages.Update(mainModel.Packages.Scene!.Runtime.Actions.LastTime, 0);
             check(mainModel.Packages.Scene.Runtime.Definition.Mouth!.Frames.Count == editor.Scene!.Runtime.Definition.Mouth!.Frames.Count, "editor_broadcast_uses_exported_definition");
             window.ShowStudio(5); check(await editor.OpenAsync(export), "editor_import_exported_package"); check(editor.Document.Package.Manifest.Name == "QA Editor", "editor_reimport_metadata_preserved");
             var capture = editor.Document; string bad = Path.Combine(folder, "bad.voxpet"); File.WriteAllText(bad, "bad"); check(!await editor.OpenAsync(bad) && ReferenceEquals(capture, editor.Document), "editor_failed_import_keeps_document");
+            // Full-canvas imports expose every expression bank and preserve all untouched PNG frames.
+            string asset = original.AssetPaths.First(); string alternate = original.AssetPaths.Last();
+            var sheet = new VoxPet.Core.Character.CharacterDefinition([new CharacterPart("sprite", "sprite", asset, "root")], [new AnchorDefinition("root")], 768, 384,
+                expressions: [new("neutral", asset, asset), new("happy", alternate, alternate)],
+                spriteSheet: new("sprite", [new("neutral", [asset, asset, asset], [asset, asset, asset]), new("happy", [alternate, alternate, alternate], [alternate, alternate, alternate])]),
+                motion: new MotionProfile(blinkEnabled: false, idleEnabled: false, bodyAnchor: "root", headAnchor: "root"));
+            var sheetPackage = new VoxPetPackageValidator().Validate(new("qa.editor.sheet", "Sheet", "1.0"), sheet, original.AssetPaths.ToDictionary(p => p, original.ReadAsset));
+            check(await editor.OpenPackageAsync(sheetPackage), "editor_full_sprite_import"); editor.PausePreview(); editor.Page = 3; editor.SpriteBank = "happy"; Set(editor, "closed", asset); Set(editor, "bankBlink", "False"); await editor.ApplyAsync();
+            check(editor.Document!.Package.Character.SpriteSheet!.Expressions[0].Closed[0] == asset && editor.Document.Package.Character.SpriteSheet.Expressions[1].Closed[0] == asset && !editor.Document.Package.Character.SpriteSheet.Expressions[1].Blink, "editor_full_sprite_selected_bank_edit");
+            editor.Page = 4; await editor.AddAsync(); editor.Selected = editor.Rows.Last(); string addedExpression = editor.Selected.Id;
+            Set(editor, "id", "qa-renamed"); await editor.ApplyAsync(); check(editor.Document.Package.Character.SpriteSheet.Expressions.Any(e => e.Id == "qa-renamed"), "editor_full_sprite_expression_add_rename");
+            editor.Selected = editor.Rows.Single(r => r.Id == "qa-renamed"); await editor.DeleteAsync(); check(editor.Document.Package.Character.SpriteSheet.Expressions.Count == 2, "editor_full_sprite_expression_delete");
+            editor.Page = 3; await editor.AddAsync(); check(editor.Document.Package.Character.SpriteSheet.Selector.Frames.Count == 4 && editor.Document.Package.Character.SpriteSheet.Expressions.All(e => e.Open.Count == 4), "editor_full_sprite_all_banks_frame_count");
+            check(editor.Document.Package.Character.CanvasWidth == 768 && editor.Document.Package.Character.CanvasHeight == 384, "editor_non_square_canvas_preserved");
+            editor.Page = 7; await editor.ValidateAsync(); check(editor.Status.StartsWith("검증 통과"), "editor_full_sprite_validate_export");
         }
         finally { await window.ShutdownAsync(); window.Close(); Directory.Delete(folder, true); }
     }

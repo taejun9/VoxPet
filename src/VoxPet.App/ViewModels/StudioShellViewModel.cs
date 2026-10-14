@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows.Media;
 using VoxPet.App.Services;
+using VoxPet.App.Views;
 using VoxPet.Core.Models;
 using VoxPet.Core.Packages;
 using CharacterCatalogEntry = VoxPet.Core.Models.CharacterDefinition;
@@ -25,6 +26,7 @@ public sealed class StudioShellViewModel : ObservableObject
     public string Search { get => search; set { if (Set(ref search, value)) Notify(nameof(Filtered)); } }
     public int Page { get => page; set { if (Set(ref page, value)) { Notify(nameof(IsHome)); Notify(nameof(IsLibrary)); Notify(nameof(IsEditor)); Notify(nameof(IsAttachments)); Notify(nameof(IsActions)); if (IsEditor) Editor.StartPreview(); else Editor.PausePreview(); if (value == 4) SettingsRequested?.Invoke(0); } } }
     public bool IsHome => page == 0;
+    public bool IsLegacy => !Main.Packages.IsActive;
     public bool IsAttachments => page == 2;
     public bool IsActions => page == 3;
     public IReadOnlyList<VoxPet.Core.Attachments.AttachmentDefinition> LiveAttachments => Main.Packages.Scene?.Runtime.Definition.Attachments ?? [];
@@ -50,7 +52,7 @@ public sealed class StudioShellViewModel : ObservableObject
     {
         Main = main; this.persistent = persistent;
         RefreshCommand = new(RefreshAsync, () => !busy && !closing);
-        ImportCommand = new(async () => { if (ChoosePackage?.Invoke() is { } path) { await Main.Packages.ImportAsync(path); await RefreshAsync(); } }, () => !busy && !closing);
+        ImportCommand = new(async () => { if (ChoosePackage?.Invoke() is { } path) { await Main.Packages.ImportAsync(path); Status = Main.Packages.Status; await RefreshAsync(); } }, () => !busy && !closing);
         NewCommand = new(async () => { await Editor.NewAsync(); Page = 5; }, () => !busy && !closing);
         SelectCommand = new(async () => { if (Selected == null) return; if (Selected.Legacy is { } legacy) await Main.SelectCharacterAsync(legacy.Id); else await Main.Packages.SelectAsync(Selected.LibraryId); Status = Main.Packages.IsActive ? Main.Packages.Status : Main.CharacterStatus; }, () => Selected != null && !busy && !closing);
         EditCommand = new(async () =>
@@ -62,7 +64,8 @@ public sealed class StudioShellViewModel : ObservableObject
         ExportCommand = new(async () => { if (Selected == null || ChooseExport?.Invoke() is not { } path) return; var loaded = await Main.Packages.LoadForEditorAsync(Selected.LibraryId); if (loaded != null) try { await Task.Run(() => new VoxPetPackageExporter().Export(loaded.Package, path)); Status = "캐릭터 내보내기 완료"; } catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "내보내기 실패 · " + e.Message; } }, () => Selected?.Legacy == null && Selected != null && !busy && !closing);
         DeleteCommand = new(async () => { if (Selected != null) { await Main.Packages.DeleteAsync(Selected.LibraryId); Status = Main.Packages.Status; await RefreshAsync(); } }, () => Selected?.Legacy == null && Selected != null && !busy && !closing);
         QuickPlayCommand = new(() => { if (Main.Packages.Scene is { } scene && scene.Runtime.Definition.Actions.FirstOrDefault() is { } action) Main.Packages.Play(action.Id); else Main.Hands.PreviewCommand.Execute(null); }, () => !closing);
-        Main.Packages.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Packages.Scene)) { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(LiveExpressions)); Notify(nameof(RuntimeState)); } };
+        Main.Packages.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Packages.Scene)) { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(LiveExpressions)); Notify(nameof(RuntimeState)); Notify(nameof(IsLegacy)); } };
+        Main.Character.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Character.RuntimeScene)) Notify(nameof(RuntimeState)); };
         Main.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.VoiceLevel)) Notify(nameof(RuntimeState)); };
     }
     private void RefreshCommands() { foreach (var c in new[] { RefreshCommand, ImportCommand, NewCommand, SelectCommand, EditCommand, ExportCommand, DeleteCommand }) c.Refresh(); }
@@ -72,11 +75,23 @@ public sealed class StudioShellViewModel : ObservableObject
         try
         {
             await Main.Packages.RefreshAsync(); var cards = new List<CharacterCard>();
-            foreach (var legacy in Main.Characters) cards.Add(new("legacy-" + legacy.Id, legacy.Name, legacy.Id, "v1", "", "기존 PNG 시트 · 기존 설정 유지", null, legacy));
+            foreach (var legacy in Main.Characters)
+            {
+                ImageSource? image = null;
+                string path = Path.Combine(Main.CharacterFolder, legacy.FileName);
+                try { if (File.Exists(path)) image = await Task.Run(() => LegacyCharacterImporter.Load(path)[0, 1]); }
+                catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { /* Original remains available to the legacy recovery flow. */ }
+                cards.Add(new("legacy-" + legacy.Id, legacy.Name, legacy.Id, "v1", "", "기존 PNG 시트 · 기존 설정 유지", image, legacy));
+            }
             foreach (var entry in Main.Packages.Entries)
             {
                 var loaded = await Main.Packages.LoadForEditorAsync(entry.LibraryId); if (loaded == null) continue;
-                var m = loaded.Package.Manifest; ImageSource? image = m.Thumbnail is { } t ? loaded.Images[t] : loaded.Images.Values.FirstOrDefault();
+                var m = loaded.Package.Manifest; ImageSource? image = m.Thumbnail is { } t ? loaded.Images[t] : await Task.Run(() =>
+                {
+                    var runtime = loaded.Package.CreateRuntime(new Random(1)); var frame = runtime.Update(new(0, 0, 0, false));
+                    var group = new DrawingGroup(); using (var drawing = group.Open()) RenderFrameDrawing.Draw(drawing, frame, loaded.Images);
+                    group.Freeze(); var thumbnail = new DrawingImage(group); thumbnail.Freeze(); return thumbnail;
+                });
                 cards.Add(new(entry.LibraryId, m.Name, m.Id, m.Version, m.Author, m.Description, image));
             }
             if (closing) return; Cards.Clear(); foreach (var card in cards) Cards.Add(card); Selected = Cards.FirstOrDefault(c => c.LibraryId == id) ?? Cards.FirstOrDefault(); Notify(nameof(Filtered));

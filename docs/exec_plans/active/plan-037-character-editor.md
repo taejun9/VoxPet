@@ -77,6 +77,8 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 
 | 2026-10-15 | 검증 | 첫 Windows38611644232는 Core355 통과 후 normal startup fresh12 실패, OBS38611644208도 창 초기화 실패. 초기 read-only 음량 ProgressBar binding을 OneWay로 명시하고 sanitized startup/OBS error JSON artifact 수집을 보완한다. |
 
+| 2026-10-15 | 검증 | startup/OBS 초기화 수정 후 OBS38614568856 통과. Windows38614568737는 일반 시작을 통과했지만 editor 첫 desktop capture 경계 검사에서 중단했다. 새 fixture를 작업 영역 내부로 배치하고 non-square Canvas 비율·시트 bank 깜빡임/표정 추가·삭제·ID 변경·미적용 구조 편집 보호·전체 캐릭터 thumbnail을 보완한다. |
+
 ## Completion Notes
 
 진행 중. 이 계획과 최종 migration audit가 모두 검증되기 전에는 전체 목표를 완료로 표시하지 않는다.

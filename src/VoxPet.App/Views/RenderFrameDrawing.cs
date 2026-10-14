@@ -9,9 +9,11 @@ namespace VoxPet.App.Views;
 internal static class RenderFrameDrawing
 {
     internal static Matrix Matrix(AffineTransform2D value) => new(value.M11, value.M12, value.M21, value.M22, value.OffsetX, value.OffsetY);
-    internal static void Draw(DrawingContext drawing, RenderFrame frame, IReadOnlyDictionary<string, ImageSource> images, bool props = true)
+    internal static void Draw(DrawingContext drawing, RenderFrame frame, IReadOnlyDictionary<string, ImageSource> images, bool props = true, double width = 512, double height = 512)
     {
-        drawing.PushTransform(new ScaleTransform(512 / frame.CanvasWidth, 512 / frame.CanvasHeight));
+        double scale = Math.Min(width / frame.CanvasWidth, height / frame.CanvasHeight);
+        drawing.PushTransform(new TranslateTransform((width - scale * frame.CanvasWidth) / 2, (height - scale * frame.CanvasHeight) / 2));
+        drawing.PushTransform(new ScaleTransform(scale, scale));
         drawing.PushClip(new RectangleGeometry(new Rect(0, 0, frame.CanvasWidth, frame.CanvasHeight)));
         foreach (var layer in frame.Layers)
         {
@@ -39,6 +41,6 @@ internal static class RenderFrameDrawing
             }
             drawing.Pop();
         }
-        drawing.Pop(); drawing.Pop();
+        drawing.Pop(); drawing.Pop(); drawing.Pop();
     }
 }

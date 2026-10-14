@@ -36,7 +36,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     private string? bankId;
     private string FormKey(bool detailForm) => $"{Page}/{Selected?.Id ?? "metadata"}/{bankId ?? ""}/" + (detailForm ? SelectedDetail?.Id ?? "detail" : "main");
     public string[] SpriteBanks => Document?.Package.Character.SpriteSheet?.Expressions.Select(e => e.Id).ToArray() ?? [];
-    public string? SpriteBank { get => bankId; set { if (Set(ref bankId, value)) LoadFields(); } }
+    public string? SpriteBank { get => bankId; set { if (!busy && Set(ref bankId, value)) ReloadRows(); } }
     public RelayCommand DiscardCommand { get; }
     public AsyncCommand AddPoseCommand { get; }
     private int page;
@@ -48,9 +48,9 @@ public sealed class CharacterEditorViewModel : ObservableObject
     private double previous;
     public string Status { get => status; private set => Set(ref status, value); }
     public bool IsBusy => busy;
-    public int Page { get => page; set { if (value < 0 || value >= Pages.Length || !Set(ref page, value)) return; ReloadRows(); } }
-    public EditorRow? Selected { get => selected; set { if (Set(ref selected, value)) LoadFields(); } }
-    public EditorRow? SelectedDetail { get => detail; set { if (Set(ref detail, value)) LoadDetailFields(); } }
+    public int Page { get => page; set { if (busy || value < 0 || value >= Pages.Length || !Set(ref page, value)) return; ReloadRows(); } }
+    public EditorRow? Selected { get => selected; set { if (!busy && Set(ref selected, value)) LoadFields(); } }
+    public EditorRow? SelectedDetail { get => detail; set { if (!busy && Set(ref detail, value)) LoadDetailFields(); } }
     public bool Guides { get => guides; set { if (Set(ref guides, value)) Notify(nameof(Scene)); } }
     public double Voice { get => voice; set { if (Set(ref voice, Math.Clamp(value, 0, 1))) UpdateFrame(); } }
     public double Scrub { get => scrub; set { if (Set(ref scrub, Math.Max(0, value))) Seek(value); } }
@@ -97,7 +97,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
         ReplaceImageCommand = new(async () => { if (ChoosePng?.Invoke() is { } path) await ReplaceImageAsync(path); }, () => CanEdit);
         ValidateCommand = new(ValidateAsync, () => CanExport);
         ExportCommand = new(async () => { if (ChooseExport?.Invoke() is { } path) await ExportAsync(path); }, () => CanExport);
-        PlayCommand = new(() => { ResetPreview(); string? id = Selected?.Item is ActionDefinition a ? a.Id : Actions.FirstOrDefault(a => a.Id == PreviewAction)?.Id ?? Actions.FirstOrDefault()?.Id; if (id != null) Scene?.Runtime.RequestAction(id); playing = true; UpdateFrame(); }, () => CanExport && Actions.Count > 0);
+        PlayCommand = new(() => { ResetPreview(); string? id = Selected?.Item is ActionDefinition a ? a.Id : Actions.FirstOrDefault(a => a.Id == PreviewAction)?.Id ?? Actions.FirstOrDefault()?.Id; if (id != null) Scene?.Runtime.RequestAction(id); playing = true; UpdateFrame(); }, () => CanExport);
         StopCommand = new(() => { playing = false; Scene?.Stop(); UpdateFrame(); }, () => CanEdit);
         ExpressionCommand = new(() => { if (PreviewExpression != null) Scene?.Runtime.SetExpression(PreviewExpression); UpdateFrame(); }, () => CanEdit);
         AttachmentCommand = new(() => { if (PreviewAttachment != null && Scene != null) { bool enabled = Scene.Runtime.Attachments.EnabledIds.Contains(PreviewAttachment); Scene.Runtime.Attachments.SetEnabled(PreviewAttachment, !enabled); UpdateFrame(); } }, () => CanEdit);
@@ -119,8 +119,9 @@ public sealed class CharacterEditorViewModel : ObservableObject
         {
             var result = await Task.Run(() => { var next = edit(); var prepared = CharacterPackageLibrary.Decode(next.Package); return (Next: next, Images: prepared.Images, Runtime: next.Package.CreateRuntime(new Random(1))); });
             if (closing || request != revision) return false;
-            Scene?.Stop(); Document = result.Next; Scene = new(result.Runtime, result.Images); time = 0; playing = false;
+            Scene?.Stop(); Document = result.Next; Scene = new(result.Runtime, result.Images); time = 0; playing = true;
             if (resetForms) { pendingForms.Clear(); bankId = Document.Package.Character.SpriteSheet?.Expressions.FirstOrDefault()?.Id; } else if (!preserveForms) pendingForms.Remove(formKey);
+            if (bankId != null && !Document.Package.Character.SpriteSheet!.Expressions.Any(e => e.Id == bankId)) bankId = Document.Package.Character.SpriteSheet.Expressions.FirstOrDefault()?.Id;
             pending = detailPending = false; ReloadRows(); UpdateFrame(); Status = "편집 내용을 적용했습니다. 검증 후 내보낼 수 있습니다."; return true;
         }
         catch (Exception e) when (Expected(e)) { Status = "적용 실패 · 원본과 마지막 미리보기를 유지합니다. " + e.Message; return false; }
@@ -149,18 +150,20 @@ public sealed class CharacterEditorViewModel : ObservableObject
     {
         string? id = selected?.Id, detailId = detail?.Id; Rows.Clear(); Details.Clear(); Fields.Clear(); DetailFields.Clear(); selected = detail = null;
         if (Document == null) return; var c = Document.Package.Character;
+        ImageSource? Image(string? asset) => asset != null && Scene!.Images.TryGetValue(asset, out var image) ? image : null;
         IEnumerable<EditorRow> rows = Page switch
         {
-            1 => c.Parts.Select(p => new EditorRow(p.Id, p.Id + " · " + p.Type, p)),
+            1 => c.Parts.Select(p => new EditorRow(p.Id, p.Id + " · " + p.Type, p, Image(p.Asset))),
             2 => c.Anchors.Select(a => new EditorRow(a.Id, a.Id, a)),
-            3 => Enumerable.Range(0, c.Mouth?.Frames.Count ?? c.SpriteSheet?.Selector.Frames.Count ?? 0).Select(i => new EditorRow(i.ToString(), "입 프레임 " + i, i)),
-            4 => c.Expressions.Select(e => new EditorRow(e.Id, e.Name, e)),
+            3 => Enumerable.Range(0, c.Mouth?.Frames.Count ?? c.SpriteSheet?.Selector.Frames.Count ?? 0).Select(i => new EditorRow(i.ToString(), "입 프레임 " + i, i, Image(c.Mouth?.Frames[i] ?? (c.SpriteSheet?.Expressions.FirstOrDefault(e => e.Id == bankId) ?? c.SpriteSheet?.Expressions[0])?.Open[i]))),
+            4 => c.Expressions.Select(e => new EditorRow(e.Id, e.Name, e, Image(e.EyesOpen))),
             5 => c.Actions.Select(a => new EditorRow(a.Id, a.Name, a)),
-            6 => c.Attachments.Select(a => new EditorRow(a.Id, a.Name, a)),
+            6 => c.Attachments.Select(a => new EditorRow(a.Id, a.Name, a, Image(a.Layers.FirstOrDefault()?.Asset))),
             _ => []
         };
         foreach (var row in rows) Rows.Add(row); selected = Rows.FirstOrDefault(r => r.Id == id) ?? Rows.FirstOrDefault();
-        Notify(nameof(Selected)); LoadFields(); if (detailId != null) SelectedDetail = Details.FirstOrDefault(r => r.Id == detailId) ?? Details.FirstOrDefault(); Refresh();
+        Notify(nameof(Selected)); LoadFields(); if (detailId != null) { detail = Details.FirstOrDefault(r => r.Id == detailId) ?? Details.FirstOrDefault(); Notify(nameof(SelectedDetail)); LoadDetailFields(); }
+        Refresh();
     }
     private void Field(ObservableCollection<EditorField> fields, string key, string label, object? value, IEnumerable<string>? choices = null, bool asset = false)
     {
@@ -195,7 +198,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 Field(Fields, "anchor", "입 앵커", c.Mouth?.Anchor ?? "mouth", anchorIds); Field(Fields, "z", "입 Z-index", c.Mouth?.ZIndex ?? 300);
                 int index = Selected?.Item is int i ? i : 0;
                 if (c.Mouth is { } mouth) { Field(Fields, "asset", "입 PNG", mouth.Frames[index], asset: true); TransformFields(Fields, mouth.FrameTransforms[index]); }
-                if (c.SpriteSheet is { } bank) { var b = bank.Expressions.FirstOrDefault(e => e.Id == bankId) ?? bank.Expressions[0]; Field(Fields, "open", "눈 뜸 PNG", b.Open[index], asset: true); Field(Fields, "closed", "눈 감음 PNG", b.Closed[index], asset: true); }
+                if (c.SpriteSheet is { } bank) { Field(Fields, "sheetPart", "전체 시트 파츠", bank.Part, c.Parts.Select(p => p.Id)); var b = bank.Expressions.FirstOrDefault(e => e.Id == bankId) ?? bank.Expressions[0]; Field(Fields, "open", "눈 뜸 PNG", b.Open[index], asset: true); Field(Fields, "closed", "눈 감음 PNG", b.Closed[index], asset: true); Field(Fields, "bankBlink", "선택 표정 깜빡임", b.Blink, Booleans); }
                 MotionFields(c); break;
             case 4 when Selected?.Item is ExpressionDefinition e:
                 Field(Fields, "id", "ID", e.Id); Field(Fields, "name", "이름", e.Name); Field(Fields, "open", "눈 뜸 PNG", e.EyesOpen, asset: true); Field(Fields, "closed", "눈 감음 PNG", e.EyesClosed, asset: true); Field(Fields, "brows", "눈썹 PNG (선택)", e.Brows, asset: true);
@@ -209,7 +212,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 Field(Fields, "id", "ID", attachment.Id); Field(Fields, "name", "이름", attachment.Name); Field(Fields, "category", "분류", attachment.Category, AttachmentSystem.Categories); Field(Fields, "tag", "호환 태그", attachment.CompatibilityTag); Field(Fields, "group", "배타 그룹", attachment.ExclusiveGroup);
                 foreach (var layer in attachment.Layers) Details.Add(new(layer.Id, layer.Id, layer)); break;
         }
-        RestoreForm(Fields, false); loadingFields = false; SelectedDetail = Details.FirstOrDefault(); pending = pendingForms.ContainsKey(FormKey(false)); Refresh();
+        RestoreForm(Fields, false); loadingFields = false; detail = Details.FirstOrDefault(); Notify(nameof(SelectedDetail)); LoadDetailFields(); pending = pendingForms.ContainsKey(FormKey(false)); Refresh();
     }
     private void MotionFields(CharacterDefinition c)
     {
@@ -252,7 +255,9 @@ public sealed class CharacterEditorViewModel : ObservableObject
     private static TEnum E<TEnum>(Dictionary<string, string> v, string key) where TEnum : struct, Enum => Enum.Parse<TEnum>(S(v, key));
     public async Task ApplyAsync()
     {
-        if (Document == null) return; var doc = Document; var item = Selected?.Item; int selectedPage = Page; var v = Values(Fields);
+        if (Document == null) return; var doc = Document; var item = Selected?.Item; int selectedPage = Page; string? selectedBank = bankId; var v = Values(Fields);
+        if (v.TryGetValue("id", out var newId) && Selected != null && newId != Selected.Id && pendingForms.Keys.Any(k => k != FormKey(false)))
+        { Status = "ID 변경 전에 다른 미적용 입력을 적용하거나 취소하세요."; return; }
         await TransactionAsync(() => selectedPage == 0 ? doc.Metadata(S(v, "id"), S(v, "name"), S(v, "version"), S(v, "author"), S(v, "description"), Opt(v, "thumbnail"), N(v, "width"), N(v, "height")) : doc.Edit(d =>
         {
             switch (selectedPage)
@@ -262,10 +267,10 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 case 3:
                     int index = item is int i ? i : 0;
                     if (d.Mouth is { } m) { var frames = m.Frames.ToArray(); var offsets = m.FrameTransforms.ToArray(); frames[index] = S(v, "asset"); offsets[index] = T(v); d.Mouth = new(frames, S(v, "anchor"), S(v, "curve"), offsets, I(v, "z")); }
-                    if (d.SpriteSheet is { } bank) { var banks = bank.Expressions.ToArray(); int bi = Array.FindIndex(banks, e => e.Id == bankId); if (bi < 0) bi = 0; var a = banks[bi]; var open = a.Open.ToArray(); var closed = a.Closed.ToArray(); open[index] = S(v, "open"); closed[index] = S(v, "closed"); banks[bi] = new(a.Id, open, closed, a.Blink); d.SpriteSheet = new(bank.Part, banks, S(v, "curve")); }
+                    if (d.SpriteSheet is { } bank) { var banks = bank.Expressions.ToArray(); int bi = Array.FindIndex(banks, e => e.Id == selectedBank); if (bi < 0) bi = 0; var a = banks[bi]; var open = a.Open.ToArray(); var closed = a.Closed.ToArray(); open[index] = S(v, "open"); closed[index] = S(v, "closed"); banks[bi] = new(a.Id, open, closed, B(v, "bankBlink")); d.SpriteSheet = new(S(v, "sheetPart"), banks, S(v, "curve")); }
                     d.Motion = new(B(v, "blink"), N(v, "min"), N(v, "max"), N(v, "blinkDuration"), B(v, "idleMotion"), N(v, "breathing"), N(v, "sway"), N(v, "mouthWeight"), N(v, "bodyBounce"), N(v, "headBounce"), N(v, "headRotation"), N(v, "mouthTravel"), S(v, "bodyAnchor"), S(v, "headAnchor"), B(v, "viewport")); break;
                 case 4 when item is ExpressionDefinition e:
-                    d.Expressions[d.Expressions.FindIndex(x => x.Id == e.Id)] = new(S(v, "id"), S(v, "open"), S(v, "closed"), Opt(v, "brows"), S(v, "name")); d.Face = new(S(v, "eyesAnchor"), S(v, "browsAnchor"), I(v, "eyesZ"), I(v, "browsZ"), Opt(v, "required")); break;
+                    d.Expressions[d.Expressions.FindIndex(x => x.Id == e.Id)] = new(S(v, "id"), S(v, "open"), S(v, "closed"), Opt(v, "brows"), S(v, "name")); if (d.SpriteSheet is { } sheet) d.SpriteSheet = new(sheet.Part, sheet.Expressions.Select(b => b.Id == e.Id ? new SpriteSheetExpression(S(v, "id"), b.Open, b.Closed, b.Blink) : b), sheet.Curve); d.Face = new(S(v, "eyesAnchor"), S(v, "browsAnchor"), I(v, "eyesZ"), I(v, "browsZ"), Opt(v, "required")); break;
                 case 5 when item is ActionDefinition a: d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), N(v, "duration"), a.Timeline, I(v, "priority"), new(E<ActionPlaybackMode>(v, "mode"), B(v, "interrupt"), B(v, "idle")), Opt(v, "tag"), a.Triggers.Select(t => new TriggerDefinition(t.Id, S(v, "id"), t.Kind, t.Key, t.Button, t.Modifiers, t.Threshold, t.IntervalSeconds, t.StartImmediately, t.Enabled))); break;
                 case 6 when item is AttachmentDefinition a: d.Attachments[d.Attachments.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), S(v, "category"), a.Layers, Opt(v, "tag"), Opt(v, "group")); break;
             }
@@ -300,6 +305,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     public async Task AddAsync()
     {
+        if (!CanChangeStructure()) return;
         if (Document == null) return; var doc = Document; int p = Page; string id = "item-" + Guid.NewGuid().ToString("N")[..8];
         await TransactionAsync(() => doc.Edit(d =>
         {
@@ -312,7 +318,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                     if (d.Mouth is { } m) { if (m.Frames.Count >= 16) throw new ArgumentException("입은16프레임까지입니다."); d.Mouth = new(m.Frames.Append(m.Frames[^1]), m.Anchor, "smooth", m.FrameTransforms.Append(Transform2D.Identity), m.ZIndex); }
                     else if (d.SpriteSheet is { } bank) { if (bank.Selector.Frames.Count >= 16) throw new ArgumentException("입은16프레임까지입니다."); d.SpriteSheet = new(bank.Part, bank.Expressions.Select(e => new SpriteSheetExpression(e.Id, e.Open.Append(e.Open[^1]), e.Closed.Append(e.Closed[^1]), e.Blink)), "smooth"); }
                     else d.Mouth = new([asset], d.Anchors.FirstOrDefault(a => a.Id == "mouth")?.Id ?? d.Anchors.First().Id); break;
-                case 4: d.Expressions.Add(new(id, asset, asset, name: "새 표정")); break;
+                case 4: d.Expressions.Add(new(id, asset, asset, name: "새 표정")); if (d.SpriteSheet is { } sheet) { var bank = sheet.Expressions[0]; d.SpriteSheet = new(sheet.Part, sheet.Expressions.Append(new SpriteSheetExpression(id, bank.Open, bank.Closed, bank.Blink)), sheet.Curve); } break;
                 case 5: d.Actions.Add(new(id, "새 동작", 1000, [])); break;
                 case 6: d.Attachments.Add(new(id, "새 부착물", "hat", [new("image", asset, d.Anchors.First().Id)])); break;
             }
@@ -327,7 +333,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
             {
                 case CharacterPart part: d.Parts.RemoveAll(x => x.Id == part.Id); break;
                 case AnchorDefinition a: d.Anchors.RemoveAll(x => x.Id == a.Id); break;
-                case ExpressionDefinition e: d.Expressions.RemoveAll(x => x.Id == e.Id); break;
+                case ExpressionDefinition e: d.Expressions.RemoveAll(x => x.Id == e.Id); if (d.SpriteSheet is { } sheet) d.SpriteSheet = new(sheet.Part, sheet.Expressions.Where(b => b.Id != e.Id), sheet.Curve); break;
                 case ActionDefinition a: d.Actions.RemoveAll(x => x.Id == a.Id); break;
                 case AttachmentDefinition a: d.Attachments.RemoveAll(x => x.Id == a.Id); break;
                 case int i when p == 3:
@@ -342,9 +348,15 @@ public sealed class CharacterEditorViewModel : ObservableObject
         if (Document == null) return; var doc = Document; string id = "pose-" + Guid.NewGuid().ToString("N")[..8];
         if (await TransactionAsync(() => doc.Edit(d => d.Poses.Add(new(id))), preserveForms: true)) SelectedDetail = Details.FirstOrDefault(r => r.Item is PoseDefinition p && p.Id == id);
     }
+    private bool CanChangeStructure()
+    {
+        if (pendingForms.Count == 0) return CanEdit;
+        Status = "추가·삭제 전에 미적용 입력을 적용하거나 취소하세요."; return false;
+    }
     public bool AddTriggerNext { get; set; }
     public async Task AddDetailAsync()
     {
+        if (!CanChangeStructure()) return;
         if (Document == null) return; var doc = Document; var item = Selected?.Item; bool trigger = AddTriggerNext;
         await TransactionAsync(() => doc.Edit(d =>
         {
@@ -359,6 +371,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     public async Task DeleteDetailAsync()
     {
+        if (!CanChangeStructure()) return;
         if (Document == null) return; var doc = Document; var owner = Selected?.Item; var item = SelectedDetail?.Item;
         await TransactionAsync(() => doc.Edit(d =>
         {

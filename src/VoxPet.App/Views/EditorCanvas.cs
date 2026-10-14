@@ -20,17 +20,25 @@ public sealed class EditorCanvas : FrameworkElement
     private void Attach() { Detach(); model = DataContext as CharacterEditorViewModel; if (model != null) model.PropertyChanged += Changed; InvalidateVisual(); }
     private void Detach() { if (model != null) model.PropertyChanged -= Changed; model = null; }
     private void Changed(object? sender, PropertyChangedEventArgs e) => InvalidateVisual();
-    private Rect Box => new((ActualWidth - Math.Min(ActualWidth, ActualHeight)) / 2, (ActualHeight - Math.Min(ActualWidth, ActualHeight)) / 2, Math.Min(ActualWidth, ActualHeight), Math.Min(ActualWidth, ActualHeight));
+    private Rect Box
+    {
+        get
+        {
+            double width = model?.Document?.Package.Character.CanvasWidth ?? 512, height = model?.Document?.Package.Character.CanvasHeight ?? 512;
+            double scale = Math.Min(ActualWidth / width, ActualHeight / height);
+            return new((ActualWidth - width * scale) / 2, (ActualHeight - height * scale) / 2, width * scale, height * scale);
+        }
+    }
     private Point Pixel(double x, double y) => new(Box.X + x / model!.Document!.Package.Character.CanvasWidth * Box.Width, Box.Y + y / model.Document.Package.Character.CanvasHeight * Box.Height);
     protected override void OnRender(DrawingContext drawing)
     {
         base.OnRender(drawing); var box = Box;
         drawing.DrawRectangle(Brushes.WhiteSmoke, null, box);
-        double step = box.Width / 16;
-        for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++) if ((x + y) % 2 == 0) drawing.DrawRectangle(Brushes.Gainsboro, null, new Rect(box.X + x * step, box.Y + y * step, step, step));
+        double stepX = box.Width / 16, stepY = box.Height / 16;
+        for (int y = 0; y < 16; y++) for (int x = 0; x < 16; x++) if ((x + y) % 2 == 0) drawing.DrawRectangle(Brushes.Gainsboro, null, new Rect(box.X + x * stepX, box.Y + y * stepY, stepX, stepY));
         if (model?.Scene == null) return;
-        drawing.PushTransform(new TranslateTransform(box.X, box.Y)); drawing.PushTransform(new ScaleTransform(box.Width / 512, box.Height / 512));
-        RenderFrameDrawing.Draw(drawing, model.Scene.Frame, model.Scene.Images); drawing.Pop(); drawing.Pop();
+        drawing.PushTransform(new TranslateTransform(box.X, box.Y));
+        RenderFrameDrawing.Draw(drawing, model.Scene.Frame, model.Scene.Images, width: box.Width, height: box.Height); drawing.Pop();
         if (model.Page != 2 || !model.Guides || model.Document == null) return;
         var rig = model.Scene.Runtime.CurrentRig.Static;
         foreach (var anchor in model.Document.Package.Character.Anchors)
