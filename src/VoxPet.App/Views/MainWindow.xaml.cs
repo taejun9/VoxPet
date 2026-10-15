@@ -191,7 +191,7 @@ public partial class MainWindow : Window
     {
         if (runtimeInputs == null) return;
         var runtime = Model.Runtime; runtimeInputs.Configure(runtime.Bindings, runtime.LeftClick, runtime.CanUse && !runtime.Recording && !Model.Packages.IsActive, runtime.SceneRevision);
-        nativeInputs?.Configure(Model.Packages.Scene?.Runtime.Definition.Actions.SelectMany(action => action.Triggers) ?? [], Model.Packages.IsActive && !Model.Packages.IsBusy, Model.Packages.MouseEnabled, Model.Packages.SceneRevision);
+        nativeInputs?.Configure(Model.Packages.Scene?.Runtime.Definition.Actions.SelectMany(action => action.Triggers) ?? [], Model.Packages.CanReceiveInput, Model.Packages.MouseEnabled, Model.Packages.SceneRevision);
         if (Model.Packages.IsActive && nativeInputs != null) Model.Packages.ReportInputStatus(nativeInputs.Status);
         ConfigureHandInputs();
         if (runtime.CanUse && !runtime.Recording) runtime.ReportInputStatus(

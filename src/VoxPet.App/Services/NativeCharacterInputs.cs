@@ -21,6 +21,7 @@ public sealed class NativeCharacterInputs : IDisposable
     private int nextId = 0x6500;
     private long revision = -1;
     private readonly HashSet<string> buttons = [];
+    private readonly HashSet<string> pendingMouse = [];
     private bool mouseSetting, active;
     public string Status { get; private set; } = "";
     public int RegisteredKeys => registered.Count;
@@ -76,16 +77,19 @@ public sealed class NativeCharacterInputs : IDisposable
     private IntPtr Mouse(int code, IntPtr message, IntPtr data)
     {
         string? button = message.ToInt64() switch { 0x0201 => "left", 0x0204 => "right", 0x0207 => "middle", _ => null };
-        if (!disposed && code >= 0 && button != null && buttons.Contains(button))
+        if (!disposed && code >= 0 && button != null && buttons.Contains(button) && pendingMouse.Add(button))
         {
             int token = generation;
-            _ = source.Dispatcher.BeginInvoke(DispatcherPriority.Input, () => { if (!disposed && token == generation) input(new(TriggerKind.Mouse, button: button, isPulse: true)); });
+            _ = source.Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+            {
+                if (!disposed && token == generation) { pendingMouse.Remove(button); input(new(TriggerKind.Mouse, button: button, isPulse: true)); }
+            });
         }
         return CallNextHookEx(mouse, code, message, data);
     }
     private void Clear()
     {
-        generation++; buttons.Clear(); foreach (int id in registered.Keys) UnregisterHotKey(source.Handle, id); registered.Clear();
+        generation++; buttons.Clear(); pendingMouse.Clear(); foreach (int id in registered.Keys) UnregisterHotKey(source.Handle, id); registered.Clear();
         if (mouse != IntPtr.Zero) { UnhookWindowsHookEx(mouse); mouse = IntPtr.Zero; }
     }
     public void Dispose() { if (disposed) return; disposed = true; Clear(); source.RemoveHook(Message); }

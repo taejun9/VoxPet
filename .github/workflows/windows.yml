@@ -57,6 +57,20 @@ jobs:
       - name: Verify real desktop screen coverage
         shell: pwsh
         run: python -X utf8 harness/scripts/verify_screens.py "$env:RUNNER_TEMP"
+      - name: Package and test the SDK-free Windows test ZIP
+        shell: pwsh
+        run: |
+          python -X utf8 harness/scripts/package_windows.py artifacts/win-x64 artifacts/VoxPet-Windows-test.zip | Set-Content artifacts/test-results/windows-package.json -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw 'Windows test package failed' }
+          Expand-Archive -LiteralPath artifacts/VoxPet-Windows-test.zip -DestinationPath artifacts/portable-test
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File artifacts/portable-test/TEST-SMOKE.ps1 | Tee-Object artifacts/test-results/portable-smoke.log
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged Windows test launcher failed' }
+      - name: Upload Windows test ZIP
+        uses: actions/upload-artifact@v7
+        with:
+          name: VoxPet-Windows-test-package
+          path: artifacts/VoxPet-Windows-test.zip
+          if-no-files-found: error
       - name: Upload test results and rendered smoke image
         if: always()
         uses: actions/upload-artifact@v7

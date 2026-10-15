@@ -13,6 +13,7 @@ public sealed class CharacterRuntimeViewModel
     public RenderFrame Frame => Runtime.Frame;
     public bool UseViewportTransform { get; set; }
     private readonly List<TriggerEvent> events = [];
+    internal int PendingInputCount => events.Count;
     private double last;
     public CharacterRuntimeViewModel(CharacterRuntime runtime, IReadOnlyDictionary<string, ImageSource> images, double startedAt = 0)
     {
@@ -24,7 +25,11 @@ public sealed class CharacterRuntimeViewModel
         if (images.Values.Any(image => !image.IsFrozen)) throw new ArgumentException("Runtime 이미지는 frozen이어야 합니다.");
         Images = new System.Collections.ObjectModel.ReadOnlyDictionary<string, ImageSource>(new Dictionary<string, ImageSource>(images, StringComparer.OrdinalIgnoreCase));
     }
-    public void Input(TriggerEvent input) => events.Add(input);
+    public void Input(TriggerEvent input)
+    {
+        // UI가 지연된 동안 고빈도 입력이 메모리와 다음 frame 작업량을 늘리지 않게 한다.
+        if (events.Count < 128) events.Add(input);
+    }
     public RenderFrame Update(double now, double voice, bool? blink = null)
     {
         // 캐릭터 전환/종료 과정의 같은 tick 재사용도 허용한다.

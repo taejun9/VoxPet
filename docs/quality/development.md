@@ -51,6 +51,8 @@ WPF 실행·WASAPI·OBS QA는 Windows에서 한다. Windows CI에는 실제 마�
 
 ## Windows 전체 QA와 배포
 
+설치 없이 직접 실행하는 ZIP과 마이크 없는 테스트 실행 도구는 [Windows 테스트 패키지](windows-test-package.md)를 따른다.
+
 Python 3.10+, Git, global.json의 .NET SDK가 필요하다. PowerShell에서:
 
 ```powershell

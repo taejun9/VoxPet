@@ -35,7 +35,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     public bool CanInteract => !busy && !closing;
     public bool CanEdit => HasDocument && !busy && !closing;
     public bool CanExport => CanEdit && pendingForms.Count == 0 && !pending && !detailPending;
-    private bool busy, closing, pending, detailPending, loadingFields, playing, guides = true;
+    private bool busy, closing, pending, detailPending, loadingFields, playing, previewFaulted, guides = true;
     private long revision;
     private readonly SemaphoreSlim worker = new(1, 1);
     private readonly Dictionary<string, Dictionary<string, string>> pendingForms = [];
@@ -114,7 +114,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
         ValidateCommand = new(ValidateAsync, () => CanExport);
         ExportCommand = new(async () => { if (ChooseExport?.Invoke() is { } path) await ExportAsync(path); }, () => CanExport);
         PlayCommand = new(() => { ResetPreview(); string? id = Selected?.Item is ActionDefinition a ? a.Id : Actions.FirstOrDefault(a => a.Id == PreviewAction)?.Id ?? Actions.FirstOrDefault()?.Id; if (id != null) Scene?.Runtime.RequestAction(id); playing = true; UpdateFrame(); }, () => CanExport);
-        StopCommand = new(() => { playing = false; Scene?.Stop(); UpdateFrame(); }, () => CanEdit);
+        StopCommand = new(() => { playing = false; previewFaulted = false; Scene?.Stop(); UpdateFrame(); }, () => CanEdit);
         ExpressionCommand = new(() => { if (PreviewExpression != null) Scene?.Runtime.SetExpression(PreviewExpression); UpdateFrame(); }, () => CanEdit);
         AttachmentCommand = new(() => { if (PreviewAttachment != null && Scene != null) { bool enabled = Scene.Runtime.Attachments.EnabledIds.Contains(PreviewAttachment); Scene.Runtime.Attachments.SetEnabled(PreviewAttachment, !enabled); UpdateFrame(); } }, () => CanEdit);
         timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(1000d / 60) }; timer.Tick += Tick;
@@ -133,14 +133,23 @@ public sealed class CharacterEditorViewModel : ObservableObject
         long request = ++revision; busy = true; Refresh(); await worker.WaitAsync();
         try
         {
-            var result = await Task.Run(() => { var next = edit(); var prepared = CharacterPackageLibrary.Decode(next.Package); return (Next: next, Images: prepared.Images, Runtime: next.Package.CreateRuntime(new Random(1))); });
+            string? expression = resetForms ? null : Scene?.Runtime.State.ExpressionId;
+            string[] enabled = resetForms ? [] : Scene?.Runtime.Attachments.EnabledIds.ToArray() ?? [];
+            double previewVoice = Voice;
+            var result = await Task.Run(() =>
+            {
+                var next = edit(); var prepared = CharacterPackageLibrary.Decode(next.Package);
+                var preview = new CharacterRuntimeViewModel(next.Package.CreateRuntime(new Random(1)), prepared.Images);
+                if (expression != null && next.Package.Character.Expressions.Any(e => e.Id == expression)) preview.Runtime.SetExpression(expression);
+                foreach (string id in enabled) if (next.Package.Character.Attachments.Any(a => a.Id == id)) preview.Runtime.Attachments.SetEnabled(id, true);
+                preview.Update(0, previewVoice);
+                return (Next: next, Scene: preview);
+            });
             if (closing || request != revision) return false;
-            var previousScene = resetForms ? null : Scene;
-            Scene?.Stop(); Document = result.Next; Scene = new(result.Runtime, result.Images); time = 0; playing = true;
-            string? expression = previousScene?.Runtime.State.ExpressionId;
-            if (expression != null && Expressions.Any(e => e.Id == expression)) Scene.Runtime.SetExpression(expression);
-            foreach (string id in previousScene?.Runtime.Attachments.EnabledIds ?? []) if (Attachments.Any(a => a.Id == id)) Scene.Runtime.Attachments.SetEnabled(id, true);
-            if (resetForms) { PreviewExpression = Expressions.FirstOrDefault()?.Id; PreviewAction = Actions.FirstOrDefault()?.Id; PreviewAttachment = Attachments.FirstOrDefault()?.Id; }
+            Scene?.Stop(); Document = result.Next; Scene = result.Scene; time = 0; playing = true; previewFaulted = false;
+            if (resetForms || !Expressions.Any(e => e.Id == PreviewExpression)) PreviewExpression = Expressions.FirstOrDefault()?.Id;
+            if (resetForms || !Actions.Any(a => a.Id == PreviewAction)) PreviewAction = Actions.FirstOrDefault()?.Id;
+            if (resetForms || !Attachments.Any(a => a.Id == PreviewAttachment)) PreviewAttachment = Attachments.FirstOrDefault()?.Id;
             Notify(nameof(PreviewExpression)); Notify(nameof(PreviewAction)); Notify(nameof(PreviewAttachment));
             if (resetForms) { pendingForms.Clear(); page = 0; selected = detail = null; Notify(nameof(Page)); bankId = Document.Package.Character.SpriteSheet?.Expressions.FirstOrDefault()?.Id; } else if (!preserveForms) pendingForms.Remove(formKey);
             if (bankId != null && !Document.Package.Character.SpriteSheet!.Expressions.Any(e => e.Id == bankId)) bankId = Document.Package.Character.SpriteSheet.Expressions.FirstOrDefault()?.Id;
@@ -347,15 +356,16 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 case 3:
                     if (d.Mouth is { } m) { if (m.Frames.Count >= 16) throw new ArgumentException("입은16프레임까지입니다."); d.Mouth = new(m.Frames.Append(m.Frames[^1]), m.Anchor, "smooth", m.FrameTransforms.Append(Transform2D.Identity), m.ZIndex); }
                     else if (d.SpriteSheet is { } bank) { if (bank.Selector.Frames.Count >= 16) throw new ArgumentException("입은16프레임까지입니다."); d.SpriteSheet = new(bank.Part, bank.Expressions.Select(e => new SpriteSheetExpression(e.Id, e.Open.Append(e.Open[^1]), e.Closed.Append(e.Closed[^1]), e.Blink)), "smooth"); }
-                    else d.Mouth = new([asset], d.Anchors.FirstOrDefault(a => a.Id == "mouth")?.Id ?? d.Anchors.First().Id); break;
+                    else d.Mouth = new([asset], d.Anchors.FirstOrDefault(a => a.Id == "mouth")?.Id ?? EnsureAnchor(d)); break;
                 case 4: d.Expressions.Add(new(id, asset, asset, name: "새 표정")); if (d.SpriteSheet is { } sheet) { var bank = sheet.Expressions[0]; d.SpriteSheet = new(sheet.Part, sheet.Expressions.Append(new SpriteSheetExpression(id, bank.Open, bank.Closed, bank.Blink)), sheet.Curve); } break;
                 case 5: d.Actions.Add(new(id, "새 동작", 1000, [])); break;
-                case 6: d.Attachments.Add(new(id, "새 부착물", "hat", [new("image", asset, d.Anchors.First().Id)])); break;
+                case 6: d.Attachments.Add(new(id, "새 부착물", "hat", [new("image", asset, EnsureAnchor(d))])); break;
             }
         }));
     }
     public async Task DeleteAsync()
     {
+        if (!CanChangeStructure()) return;
         if (Document == null || Selected == null) return; var doc = Document; var item = Selected.Item; int p = Page;
         await TransactionAsync(() => doc.Edit(d =>
         {
@@ -383,6 +393,11 @@ public sealed class CharacterEditorViewModel : ObservableObject
         if (pendingForms.Count == 0) return CanEdit;
         Status = "추가·삭제 전에 미적용 입력을 적용하거나 취소하세요."; return false;
     }
+    private static string EnsureAnchor(CharacterDraft draft)
+    {
+        if (draft.Anchors.Count == 0) draft.Anchors.Add(new("root"));
+        return draft.Anchors[0].Id;
+    }
     public bool AddTriggerNext { get; set; }
     public async Task AddDetailAsync()
     {
@@ -393,7 +408,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
             if (item is ActionDefinition a)
             {
                 var triggers = trigger ? a.Triggers.Append(new TriggerDefinition("trigger-" + Guid.NewGuid().ToString("N")[..8], a.Id, TriggerKind.Manual, a.Id)) : a.Triggers;
-                var events = trigger ? a.Timeline : a.Timeline.Append(new ActionTimelineEvent(0, ActionEventKind.Transform, d.Anchors.First().Id, transform: Transform2D.Identity));
+                var events = trigger ? a.Timeline : a.Timeline.Append(new ActionTimelineEvent(0, ActionEventKind.Transform, d.Anchors.FirstOrDefault()?.Id ?? d.Parts[0].Id, transform: Transform2D.Identity));
                 d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers);
             }
             if (item is AttachmentDefinition outfit) d.Attachments[d.Attachments.FindIndex(x => x.Id == outfit.Id)] = new(outfit.Id, outfit.Name, outfit.Category, outfit.Layers.Append(new("layer-" + Guid.NewGuid().ToString("N")[..8], doc.Package.AssetPaths.First(), d.Anchors.First().Id)), outfit.CompatibilityTag, outfit.ExclusiveGroup);
@@ -439,6 +454,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     public async Task MoveAnchorAsync(string id, double canvasX, double canvasY)
     {
+        if (!CanChangeStructure()) return;
         if (Document == null || busy) return; var doc = Document;
         await TransactionAsync(() => doc.Edit(d =>
         {
@@ -464,17 +480,27 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     private void ResetPreview()
     {
-        if (Document == null || Scene == null) return; var old = Scene; Scene = new(Document.Package.CreateRuntime(new Random(1)), old.Images); time = 0;
+        if (Document == null || Scene == null) return; var old = Scene; Scene = new(Document.Package.CreateRuntime(new Random(1)), old.Images); time = 0; previewFaulted = false;
         if (PreviewExpression != null && Expressions.Any(e => e.Id == PreviewExpression)) Scene.Runtime.SetExpression(PreviewExpression);
         foreach (string id in old.Runtime.Attachments.EnabledIds) Scene.Runtime.Attachments.SetEnabled(id, true);
     }
     public void Seek(double milliseconds)
     {
         if (!CanEdit || Scene == null || Document == null) return; playing = false; ResetPreview(); string? action = Selected?.Item is ActionDefinition a ? a.Id : PreviewAction;
-        if (action != null) { Scene!.Runtime.RequestAction(action); Scene.Update(0, Voice); }
+        if (action != null) { Scene!.Runtime.RequestAction(action); UpdateFrame(); if (previewFaulted) return; }
         time = Math.Max(0, milliseconds) / 1000; UpdateFrame();
     }
-    private void UpdateFrame() { if (Scene == null) return; Scene.Update(time, Voice); Notify(nameof(Scene)); Notify(nameof(PreviewState)); }
+    private void UpdateFrame()
+    {
+        if (Scene == null || previewFaulted) return;
+        try { Scene.Update(time, Voice); }
+        catch (Exception e) when (Expected(e))
+        {
+            playing = false; previewFaulted = true; Scene.Stop();
+            Status = "미리보기 재생 중단 · 마지막 화면을 유지합니다. 동작과 변환 수치를 확인하세요.";
+        }
+        Notify(nameof(Scene)); Notify(nameof(PreviewState));
+    }
     private void Tick(object? sender, EventArgs e)
     { double now = clock.Elapsed.TotalSeconds, dt = now - previous; previous = now; if (playing) { time += dt; Set(ref scrub, Math.Min(Duration, time * 1000), nameof(Scrub)); } UpdateFrame(); }
     public void StartPreview() { previous = clock.Elapsed.TotalSeconds; timer.Start(); }

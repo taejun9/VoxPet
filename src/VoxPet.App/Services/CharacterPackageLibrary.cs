@@ -46,6 +46,7 @@ public sealed class CharacterPackageLibrary(string folder)
         if (buffer.Length > new VoxPetPackageLimits().ArchiveBytes) throw new VoxPetPackageException("패키지 크기 제한입니다.");
         buffer.Position = 0; var package = new VoxPetPackageLoader().Load(buffer);
         string id = Guid.NewGuid().ToString("N"); var loaded = Decode(package, id);
+        package.CreateRuntime().Update(new(0, 0, 0));
         // decode 성공 뒤에만 관리 복사본을 쓴다. 사용자 원본은 수정하지 않는다.
         Directory.CreateDirectory(folder); Atomic(FilePath(id), buffer.ToArray()); return loaded;
     }

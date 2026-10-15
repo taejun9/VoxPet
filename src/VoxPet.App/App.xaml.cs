@@ -196,6 +196,7 @@ public partial class App : Application
             await CharacterSelectionQa.RunAsync(Check);
             await ImageRuntimeQa.RunAsync(Check);
             await RuntimeIntegrationQa.RunAsync(Check);
+            await RuntimeSafetyQa.RunAsync(Check);
             await CharacterEditorQa.RunAsync(Check);
             await SettingsPersistenceQa.RunAsync(Check);
             await ExpressionQa.RunAsync(main, Check);
