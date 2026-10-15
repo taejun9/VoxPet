@@ -304,7 +304,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 if (item is ActionTimelineEvent evt)
                 {
                     var kind = E<ActionEventKind>(v, "kind");
-                    events[events.IndexOf(evt)] = new(N(v, "time"), kind,
+                    events[events.FindIndex(e => ReferenceEquals(e, evt))] = new(N(v, "time"), kind,
                         kind is ActionEventKind.Transform or ActionEventKind.Visibility or ActionEventKind.Sprite or ActionEventKind.Effect ? Opt(v, "target") : null,
                         kind is ActionEventKind.Transform or ActionEventKind.Visibility ? null : Opt(v, "value"),
                         kind is ActionEventKind.Transform or ActionEventKind.Effect && B(v, "hasTransform") ? T(v) : null, B(v, "enabled"), kind == ActionEventKind.Effect ? N(v, "duration") : 0);

@@ -133,6 +133,7 @@ internal static class CharacterEditorQa
                 {
                     editor.Page = page; window.UpdateLayout(); await Task.Delay(20);
                     var view = Find<CharacterEditorView>(window)!; var editorCanvas = Find<EditorCanvas>(view)!;
+                    check(FindAll<System.Windows.Controls.TextBlock>(view).Where(t => editor.Pages.Contains(t.Text)).All(t => t.Foreground is SolidColorBrush b && b.Color.R < 128 && b.Color.G < 128 && b.Color.B < 128), $"editor_navigation_contrast_{size.Width}x{size.Height}_{page}");
                     check(double.IsFinite(editorCanvas.ActualHeight) && editorCanvas.ActualHeight is >= 180 and < 450, $"editor_bounded_canvas_{size.Width}x{size.Height}_{page}");
                     var field = FindAll<System.Windows.Controls.TextBox>(view).FirstOrDefault(t => t.IsVisible && t.DataContext is EditorField);
                     if (field != null)

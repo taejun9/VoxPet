@@ -83,6 +83,8 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 
 | 2026-10-15 | 검증 | Windows38616497317은 editor 타임라인 좌표1항목 외 모든 검사/10화면을 통과했다. 부모 idle X를 포함한 기대값으로 수정하며 action local X=30도 별도 확인한다. 실제 화면에서 light 화면의 inherited 흰 글씨와 무한 목록 측정으로 Canvas가 아래로 밀리는 문제를 확인해 local 스타일/유한 높이/목록·preview controls 스크롤/780DIP 배치를 수정했다. |
 
+| 2026-10-15 | 검증 | Windows38618365658의4크기×8페이지 Canvas/접근성/입력 대비와 preview/broadcast frame 비교가 통과했다.8종 이벤트 검사에서 값이 같은 Transform 이벤트의 IndexOf가 첫 행을 바꾸는 오류6건을 찾아 reference index로 수정한다. 화면의 navigation/checkbox/disabled button에는 ContentTemplate의 명시 색상을 적용한다. OBS38618365620 통과. |
+
 ## Completion Notes
 
 진행 중. 이 계획과 최종 migration audit가 모두 검증되기 전에는 전체 목표를 완료로 표시하지 않는다.
