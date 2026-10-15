@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -32,11 +32,11 @@ codex/plan-040-unified-test-studio / .worktree/plan-040-unified-test-studio에�
 
 ## Implementation Plan
 
-- [ ] 새 Studio와 기존 탭 화면 전환·설정·캐릭터 모드 관계를 확인한다.
-- [ ] 선택된 통합 화면 안에서 기존 설정에 접근하도록 navigation을 정리한다.
-- [ ] 의상·동작별 샘플과 즉시 시험 동선을 구현한다.
-- [ ] Core/format/analyzer/build/harness 및 Windows/OBS·화면 QA를 수행한다.
-- [ ] Windows ZIP·안내·자체 리뷰와 완료 계획/미러를 준비하고 Git 수명을 완료한다.
+- [x] 새 Studio와 기존 탭 화면 전환·설정·캐릭터 모드 관계를 확인한다.
+- [x] 선택된 통합 화면 안에서 기존 설정에 접근하도록 navigation을 정리한다.
+- [x] 의상·동작별 샘플과 즉시 시험 동선을 구현한다.
+- [x] Core/format/analyzer/build/harness 및 Windows/OBS·화면 QA를 수행한다.
+- [x] Windows ZIP·안내·자체 리뷰와 완료 계획/미러를 준비한다.
 
 ## QA Plan
 
@@ -70,6 +70,13 @@ QA 후 같은 에이전트가 요구사항·단일 navigation·기존 기능/설
 
 | 2026-10-15 | 심사 | 추가 코드 대조에서 기존4번 설정 패널은 눈 깜빡임/눈물인데 새 선택 상자명이 표정 시험으로 잘못 연결된 것을 발견했다. 이름·안내를 실제 내용으로 맞추고 label과 표시된 CheckBox의 의미 대응 검사를 추가했다. |
 
+| 2026-10-15 | 검증 | 최종 c8bcf46 Windows38733607211/OBS38733607371 통과. Core369/369·WPF1981/0·실데스크톱305·unsigned/signed 각9개·portable1694/0, 선택값/팝업30 및 이름 대응 통과.56개 변경 캡처를 직접 시각 검토했다. |
+| 2026-10-15 | 심사 | QA 후 자체 리뷰에서 발견한 카드/선택값 대비·사용자 지정 버튼 내용·눈물 패널 이름을 모두 보완하고 전체 재검증했다. 공개 원본/개인13PNG 보존·입력 수명·기존 설정 호환을 확인했으며 미해결 필수 수정 없음. |
+
 ## Completion Notes
 
-통합 화면·샘플·QA·Windows 배포 결과와 실기 제한을 완료 시 기록한다.
+일반 UI는 새 사이드바와 공통 미리보기 안으로 통합했다. 공개 테스트 캐릭터는 의상14분류·동작9종/모든 템플릿을 제공하며 첫 선택에 관리 복사본을 만들고 반복 선택은 재사용한다. 샘플 자동 키/마우스 트리거는 없다.
+
+Windows 테스트 파일은 `artifacts/VoxPet-Windows-test-plan040-final.zip`(52파일/95,605,036bytes), SHA256 `61b2183499cc2872d99156805844b7d85f7ec2840ed78d94396f98e44a0cbc3d`다. CI에서 실제 실행한 공용39파일과 이전 개인13PNG가 모두 byte-identical이며 이전 ZIP/원본은 보존했다. 증거는 `artifacts/test-results/plan040/last/`, 상세 결과와 미실기 제한은 [자체 리뷰](../../reviews/plan-040-unified-test-studio-review.md)에 기록했다.
+
+물리 마이크/권한/USB·사용자 GPU/OBS·혼합 DPI·장시간·개인 그림의 Windows 시각 검증은 대상PC에서 수행한다. 가장 큰 화면 요청은 CI 작업 영역으로 실제992×688로 제한됐다. Git 통합·push·브랜치/작업트리 정리는 하네스 순서로 수행한다.

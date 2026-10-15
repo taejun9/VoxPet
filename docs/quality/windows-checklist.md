@@ -1,5 +1,17 @@
 # Windows 실사용 검증 기록
 
+## plan040 통합 Studio와 전체 의상·동작 샘플
+
+2026-10-15 최종 c8bcf46의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38733607211), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38733607371) 통과. 단일 에이전트가 QA 후 자체 리뷰하고 발견한 화면 대비/설정 이름 문제를 보완 후 재검증했다.
+
+- Core369/369·locked restore/format/analyzer/Release 경고0·오류0·WPF1981/0·실제 desktop305장·unsigned/signed 각9개 일반 시작/정상 종료/설정 보존·공용 ZIP 재압축 해제/PowerShell5.1 동봉 도구1694/0 통과.
+- 일반 화면은 새 사이드바6페이지와 공통 미리보기로 통합했다. PNG 설정7항목도 같은 화면에서 제공한다. 의상14분류·동작9종/모든 템플릿의 실제 착용/해제·충돌·관절 연결·효과·idle·별도 방송창 공유·관리 복사본 재사용을 확인했다. 샘플은 공개 절차 도형/공개 제작 틀이며 입력을 자동 시작하지 않는다.
+- 변경56화면을 직접 시각 검토했다. 가장 큰1280×820 요청은 CI 작업 영역에 맞춘 실제992×688이며 나머지는960×540/640×480/480×320이다. 작은 창은 스크롤한다. 카드/선택값/팝업 글씨와 눈 깜빡임/눈물 이름 대응 검사를 추가했다.
+- OBS32.2.2 WGC/초록+크로마/native alpha/같은 HWND 배경 왕복·각7프레임 변화 통과. 기존 BitBlt layered 제한 유지.
+- 로컬 `artifacts/VoxPet-Windows-test-plan040-final.zip`:52파일/95,605,036bytes·PE x64/CRC 통과. CI 공용39파일은 줄바꿈까지 동일하며 개인13PNG만 이전 ZIP에서 그대로 추가했다. 개인 자료 외부 전송/원본 덮어쓰기 없음. SHA256과 상세는 [자체 리뷰](../reviews/plan-040-unified-test-studio-review.md), 증거는 `artifacts/test-results/plan040/last/`, 사용법은 [Studio 샘플](../guides/studio-samples.md)을 따른다.
+
+실제 물리 마이크/권한/USB·사용자 GPU/OBS·혼합 DPI·60분 실기와 개인 그림의 Windows 시각 검증은 미실행이다. 자동 도구는 이전 회귀용 화면과 합성 입력을 사용하며 직접 조작은 START.cmd의 통합 화면에서 수행한다.
+
 ## plan039 실제 앱 오류 복구와 Windows 시험 파일
 
 2026-10-15 코드bdde9ae의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38714843197)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38714843135) 통과. 단일 에이전트가 QA 후 자체 리뷰했으며 리뷰에서 발견한 Canvas 범위도 보완 후 전체 재검증했다.
