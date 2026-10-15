@@ -102,6 +102,7 @@ internal static class UnifiedStudioQa
                 window.ShowStudioSettings(tab); window.UpdateLayout();
                 await CheckSelectorAsync(window.StudioSurface.SettingsSection, "png_settings_" + tab, check);
                 check(!window.LayoutRoot.IsVisible && window.SettingsTabs.IsVisible, "studio_png_settings_navigation_" + tab);
+                if (tab == 4) check(window.StudioSurface.SettingsSection.SelectedItem is string label && label.Contains("눈물") && Find<CheckBox>(window.SettingsTabs).Any(c => c.IsVisible && c.Content is string text && text == "눈 깜빡임"), "studio_settings_label_matches_blink_tears_panel");
                 check(Find<Button>(window.SettingsTabs).Where(b => b.Content is UIElement).All(b => b.ContentTemplate == null), "studio_settings_preserve_custom_button_content_" + tab);
                 await ScreenEvidence.CaptureAsync(window, "studio-settings-" + tab, check);
             }

@@ -32,7 +32,7 @@ public sealed class StudioShellViewModel : ObservableObject
     public bool IsAttachments => page == 2;
     public bool IsActions => page == 3;
     public bool IsSettings => page == 4;
-    public string[] SettingsSections => Main.Packages.IsActive ? ["마이크", "음성 반응", "방송 / 캐릭터"] : ["마이크", "음성 반응", "방송 / 캐릭터", "표정 슬롯", "표정 시험", "의상 배치", "손동작 / 입력"];
+    public string[] SettingsSections => Main.Packages.IsActive ? ["마이크", "음성 반응", "방송 / 캐릭터"] : ["마이크", "음성 반응", "방송 / 캐릭터", "표정 슬롯", "눈 깜빡임 / 눈물", "의상 배치", "손동작 / 입력"];
     public string CurrentCharacter => Main.Character.Name;
     public string PackageStatus => Main.Packages.Status;
     public IReadOnlyList<VoxPet.Core.Attachments.AttachmentDefinition> LiveAttachments => Main.Packages.Scene?.Runtime.Definition.Attachments ?? [];

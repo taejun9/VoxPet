@@ -2,11 +2,13 @@
 
 Windows QA workflow의 `VoxPet-Windows-test-package` artifact에서 `VoxPet-Windows-test.zip`을 받는다. ZIP 전체를 새 폴더에 풀고 `START.cmd` 또는 `VoxPet.exe`를 실행한다. 자체 포함 win-x64 EXE이므로 별도 SDK/runtime 설치는 필요 없다. 공용 unsigned 빌드이며 게시자 신원을 인증서로 검증한 배포가 아니다. 자산과 Licenses도 함께 보관한다.
 
+일반 앱의 통합 사이드바와 의상14종·동작9종은 [Studio 샘플 안내](../guides/studio-samples.md)를 따른다.
+
 ## 마이크 없는 자동 검사
 
 다른 앱을 닫은 전용 Windows 테스트 환경 또는 가상머신에서 `TEST-SMOKE.cmd`를 실행한다. Windows PowerShell 5.1에서 동작하며 일부 검사는 실제 합성 키/좌클릭을 보내므로 작업 중인 일반 데스크톱에서는 아래 수동 검사만 수행한다. 180초 안에 완료하고 종료 코드0·JSON failures0·실행된 검사 목록을 함께 확인한다. 오류/시간 초과/JSON 누락은 실패다.
 
-결과는 `%TEMP%/VoxPet-tests/<새 ID>/`에 PNG/JSON으로 남고 콘솔에 위치를 표시한다. 마이크·개인 PNG·기존 사용자 설정을 사용하지 않으며 네트워크 전송이 없다. 일반 사용자 실행에서는 CI desktop 캡처를 활성화하지 않는다. 자동 검사 결과는 물리 마이크/사용자 GPU/OBS 실기 합격을 의미하지 않는다.
+결과는 `%TEMP%/VoxPet-tests/<새 ID>/`에 PNG/JSON으로 남고 콘솔에 위치를 표시한다. 마이크·개인 PNG·기존 사용자 설정을 사용하지 않으며 네트워크 전송이 없다. 일반 사용자 실행에서는 CI desktop 캡처를 활성화하지 않는다. 자동 검증은 이전 회귀용 화면도 잠시 표시하며, 직접 조작할 때는 `START.cmd`의 통합 Studio를 사용한다. 자동 검사 결과는 물리 마이크/사용자 GPU/OBS 실기 합격을 의미하지 않는다.
 
 `TEST-README.txt`의 수동 체크리스트에서 마이크 권한 거부·USB 분리/재연결·반복 Start/Stop·트레이·OBS WGC·혼합 DPI·60분 사용·편집/파일 실패 복구를 확인하고 OS/GPU/마이크/OBS 버전과 재현 순서를 기록한다. 개인정보를 공개 결과에 넣지 않는다. [실기 상태](windows-checklist.md)와 구분해 기록한다.
 
