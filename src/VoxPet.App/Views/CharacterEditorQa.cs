@@ -39,12 +39,12 @@ internal static class CharacterEditorQa
             Set(editor, "name", "QA Editor"); Set(editor, "author", "VoxPet QA"); await editor.ApplyAsync();
             check(editor.Document!.Package.Manifest.Name == "QA Editor" && editor.Document.Package.Manifest.Author == "VoxPet QA", "editor_metadata_apply");
             await ScreenEvidence.CaptureAsync(window, "editor-basic", check, new { wireframe = 3 });
-            editor.Page = 1; editor.Selected = editor.Rows.Single(r => r.Id == "head"); Set(editor, "z", "220"); Set(editor, "visible", "False"); await editor.ApplyAsync();
+            editor.Page = 1; editor.Selected = editor.Rows.Single(r => r.Id == "head"); Set(editor, "z", "202"); Set(editor, "visible", "False"); await editor.ApplyAsync();
             check(!editor.Document.Package.Character.Parts.Single(p => p.Id == "head").Visible && !editor.Scene!.Frame.Layers.Any(l => l.Id == "part-head"), "editor_part_visibility_runtime");
             Set(editor, "visible", "True"); await editor.ApplyAsync();
-            Set(editor, "z", "225"); editor.Selected = editor.Rows.First(); editor.Selected = editor.Rows.Single(r => r.Id == "head");
-            check(editor.Fields.Single(f => f.Key == "z").Value == "225" && !editor.CanExport, "editor_pending_selection_preserved_blocks_export");
-            var pendingDocument = editor.Document; await editor.AddAsync(); check(ReferenceEquals(pendingDocument, editor.Document) && editor.Fields.Single(f => f.Key == "z").Value == "225", "editor_pending_structural_edit_preserved"); await editor.ApplyAsync();
+            Set(editor, "z", "205"); editor.Selected = editor.Rows.First(); editor.Selected = editor.Rows.Single(r => r.Id == "head");
+            check(editor.Fields.Single(f => f.Key == "z").Value == "205" && !editor.CanExport, "editor_pending_selection_preserved_blocks_export");
+            var pendingDocument = editor.Document; await editor.AddAsync(); check(ReferenceEquals(pendingDocument, editor.Document) && editor.Fields.Single(f => f.Key == "z").Value == "205", "editor_pending_structural_edit_preserved"); await editor.ApplyAsync();
             await ScreenEvidence.CaptureAsync(window, "editor-parts", check, new { wireframe = 4 });
             editor.Page = 2; editor.Selected = editor.Rows.Single(r => r.Id == "head"); var old = editor.Document.Package.Character.Anchors.Single(a => a.Id == "head");
             var world = editor.Scene!.Runtime.CurrentRig.Static["head"].Map(0, 0); await editor.MoveAnchorAsync("head", world.X + 25, world.Y + 15);

@@ -42,13 +42,18 @@ public sealed class EditorCanvas : FrameworkElement
         RenderFrameDrawing.Draw(drawing, model.Scene.Frame, model.Scene.Images, width: box.Width, height: box.Height); drawing.Pop(); drawing.Pop();
         if (model.Page != 2 || !model.Guides || model.Document == null) return;
         var rig = model.Scene.Runtime.CurrentRig.Static;
+        var labels = new List<Rect>();
         foreach (var anchor in model.Document.Package.Character.Anchors)
         {
             var position = rig[anchor.Id]; var p = Pixel(position.OffsetX, position.OffsetY);
             if (anchor.Parent != null) { var parent = rig[anchor.Parent]; drawing.DrawLine(new Pen(Brushes.LightSlateGray, 1), Pixel(parent.OffsetX, parent.OffsetY), p); }
             bool selected = model.Selected?.Id == anchor.Id; drawing.DrawEllipse(selected ? Brushes.Orange : Brushes.DodgerBlue, new Pen(Brushes.White, 1), p, selected ? 6 : 4, selected ? 6 : 4);
             var text = new FormattedText(anchor.Id, System.Globalization.CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 11, Brushes.DarkBlue, VisualTreeHelper.GetDpi(this).PixelsPerDip);
-            drawing.DrawText(text, new Point(p.X + 7, p.Y - 15));
+            text.MaxTextWidth = Math.Max(40, Math.Min(120, ActualWidth - 12)); text.MaxTextHeight = 16; text.Trimming = TextTrimming.CharacterEllipsis;
+            double labelX = Math.Clamp(p.X + 7, 0, Math.Max(0, ActualWidth - text.Width)), labelY = Math.Max(0, p.Y - 15);
+            var label = new Rect(labelX, labelY, text.Width, 16);
+            while (labels.Any(other => other.IntersectsWith(label))) label.Offset(0, 17);
+            labels.Add(label); drawing.DrawText(text, label.TopLeft);
         }
         if (target is { } t) drawing.DrawEllipse(null, new Pen(Brushes.OrangeRed, 2), t, 8, 8);
     }

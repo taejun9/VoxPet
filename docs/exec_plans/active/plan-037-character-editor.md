@@ -85,6 +85,8 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 
 | 2026-10-15 | 검증 | Windows38618365658의4크기×8페이지 Canvas/접근성/입력 대비와 preview/broadcast frame 비교가 통과했다.8종 이벤트 검사에서 값이 같은 Transform 이벤트의 IndexOf가 첫 행을 바꾸는 오류6건을 찾아 reference index로 수정한다. 화면의 navigation/checkbox/disabled button에는 ContentTemplate의 명시 색상을 적용한다. OBS38618365620 통과. |
 
+| 2026-10-15 | 심사 | Home/library도 유한 viewport 크기로 측정하고 Home 오른쪽 입력/빠른 동작 영역을 스크롤한다. 동일 좌표 Anchor의 라벨은 겹치지 않게 배치하며 화면 QA의 head Z fixture를 얼굴보다 아래에 두어 표정이 가려지지 않게 한다. |
+
 ## Completion Notes
 
 진행 중. 이 계획과 최종 migration audit가 모두 검증되기 전에는 전체 목표를 완료로 표시하지 않는다.
