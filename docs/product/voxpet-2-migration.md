@@ -76,3 +76,6 @@ Phase 9는 [plan-036](../exec_plans/completed/plan-036-app-runtime.md)의 Runtim
 
 
 Phase 10은 [plan-037](../exec_plans/completed/plan-037-character-editor.md)과 [자체 리뷰](../reviews/plan-037-character-editor-review.md)에서10화면 Dashboard/library/editor를 연결했다. 최종 d9c55de의 Core355/355, Windows1744/0, 실제 desktop250화면과 OBS 회귀를 통과했다. 같은 Runtime의 시각 Anchor/타임라인·부착물 preview와 모든 지원 모델/PNG/export frame 왕복을 검증했다. 최종 전체 migration review는 이어서 수행한다.
+
+
+최종 [plan-038](../exec_plans/completed/plan-038-migration-review.md)과 [자체 리뷰](../reviews/plan-038-migration-review-review.md)에서 전체 계약의 [완료 근거](migration-completion-audit.md), [Legacy 참조·삭제 판단](../architecture/legacy-migration-review.md), Runtime/패키지 문서를 확정했다. Core355·Windows1744/0·desktop250 및 동일 구현의 OBS 회귀를 통과했다. 기존 파일/설정/호환성과 QA oracle에 필요한 Legacy는 보존한다.

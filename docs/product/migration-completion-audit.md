@@ -1,6 +1,6 @@
 # VoxPet 2.0 단계별 완료 근거
 
-첨부 텍스트의 Master Prompt·Phase 1~10·최종 migration review와10화면 와이어프레임을 기준으로 실제 코드, 완료 계획/리뷰, 전체 테스트, Windows/OBS 결과를 대조한다. [최종 계획](../exec_plans/active/plan-038-migration-review.md)에서 마지막 QA와 자체 리뷰를 확정한다. 문서 존재만으로 구현 완료를 추정하지 않는다.
+첨부 텍스트의 Master Prompt·Phase 1~10·최종 migration review와10화면 와이어프레임을 기준으로 실제 코드, 완료 계획/리뷰, 전체 테스트, Windows/OBS 결과를 대조한다. [최종 계획](../exec_plans/completed/plan-038-migration-review.md)의 전체 QA와 QA 이후 자체 리뷰로 완료 근거를 확정했다. 문서 존재만으로 구현 완료를 추정하지 않는다.
 
 ## 단계별 모델·기능과 검증
 
@@ -55,4 +55,4 @@
 
 [Runtime pipeline](../architecture/voxpet-2-runtime.md)은 Input→TriggerEngine→ActionEngine→MotionEngine→CharacterRuntime→RenderFrame→Renderer 및 실제 내부 조정/worker·UI 수명/preview·broadcast 관계를 설명한다. [.voxpet 규격](voxpet-package-format.md)은 필수/선택 JSON·PNG, metadata/version·모델·지원 event/trigger/attachment/full-sprite·자원/경로 제한·편집 왕복을 설명한다. [Legacy 검토](../architecture/legacy-migration-review.md)는 기존 타입마다 참조·대체·호환 목적·삭제 가능성을 기록한다.
 
-최종 검증의 정확한 실행 ID·수치·source identity는 plan038 완료 기록/리뷰에 확정한다. Windows CI의 public/synthetic·가짜 장치·합성 입력 검사는 실제 개인 PNG/물리 마이크·권한·USB·혼합 DPI/사용자 GPU·실제 입력 장시간의 합격을 주장하지 않는다. 기존 [실기 체크리스트](../quality/windows-checklist.md)의 제한은 유지한다. 편집 초안은 내보내기로 보존하며 미지원 JSON 확장 속성은 지원 데이터 보존 계약에 포함하지 않는다.
+최종 검토96bfbcc의 Windows38670581601은 Core355/355·WPF1744/0·desktop250·signed/unsigned9사례씩을 통과했다. 동일 src/harness tree의 OBS38668937607(d9c55de)에서 WGC/chroma/native alpha/같은 HWND 전환이 통과했다. 정확한 실행·source identity와 QA 이후 자체 리뷰는 [완료 리뷰](../reviews/plan-038-migration-review-review.md)에 기록한다. Windows CI의 public/synthetic·가짜 장치·합성 입력 검사는 실제 개인 PNG/물리 마이크·권한·USB·혼합 DPI/사용자 GPU·실제 입력 장시간의 합격을 주장하지 않는다. 기존 [실기 체크리스트](../quality/windows-checklist.md)의 제한은 유지한다. 편집 초안은 내보내기로 보존하며 미지원 JSON 확장 속성은 지원 데이터 보존 계약에 포함하지 않는다.

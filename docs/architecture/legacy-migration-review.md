@@ -1,6 +1,6 @@
 # VoxPet 2.0 Legacy 마이그레이션 검토
 
-Phase 1~10 완료 후 main b883426의 전체 `src`/Core tests 및 WPF QA 호출을 검토했다. 이 문서는 [최종 계획](../exec_plans/active/plan-038-migration-review.md)의 참조 감사이며 삭제를 실행하지 않는다. [Runtime](voxpet-2-runtime.md)과 [패키지 규격](../product/voxpet-package-format.md)을 함께 따른다.
+Phase 1~10 완료 후 main b883426의 전체 `src`/Core tests 및 WPF QA 호출을 검토했다. 이 문서는 [최종 계획](../exec_plans/completed/plan-038-migration-review.md)의 참조 감사이며 삭제를 실행하지 않는다. [Runtime](voxpet-2-runtime.md)과 [패키지 규격](../product/voxpet-package-format.md)을 함께 따른다.
 
 ## 판단 기준
 

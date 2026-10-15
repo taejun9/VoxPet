@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -37,8 +37,8 @@ codex/plan-038-migration-review / .worktree/plan-038-migration-review. 단일 �
 - [x] 첨부 명세의 전체 요구·10단계·최종 산출물과 완료 계획/테스트/코드를 대조한다.
 - [x] Legacy 모델·서비스·App 경계의 실제 참조와 대체/호환 목적/삭제 가능성을 기록한다.
 - [x] Runtime pipeline·thread/IO/lifetime·editor/broadcast 관계와 .voxpet format 문서를 확정한다.
-- [ ] 전체 local locked restore/format/build/Core/harness/diff 및 Windows 전체 QA를 수행한다. source가 동일한 마지막 OBS 결과의 commit/JSON도 확인한다.
-- [ ] QA 후 자체 리뷰, 완료 계획 이동/리뷰 미러와 main 병합/push·branch -d·worktree 정리를 수행한다.
+- [x] 전체 local locked restore/format/build/Core/harness/diff 및 Windows 전체 QA를 수행한다. source가 동일한 마지막 OBS 결과의 commit/JSON도 확인한다.
+- [x] QA 후 자체 리뷰, 완료 계획 이동/리뷰 미러와 main 병합/push·branch -d·worktree 정리를 수행한다.
 
 ## QA Plan
 
@@ -66,4 +66,12 @@ QA 후 자체 리뷰로 첨부 명세의 named type/기능/보존 항목과 각�
 
 ## Completion Notes
 
-진행 중. 전체 요구사항의 완료 근거와 Git 수명이 확정되기 전에는 전체 목표를 완료로 표시하지 않는다.
+최종 repository migration review 완료. Phase 1~10과 Master/10화면/최종 산출물을 migration-completion-audit.md의 코드·테스트·완료 계획에 대응시켰고, 기존67개 public 타입과 QA 전용 LegacyMotionReference 및 새 compatibility bridge의 현재 참조/대체/호환 목적/삭제 가능성을 검토했다. production에서 대체된 ImageSetPlayer/old renderer도 테스트 oracle/API/파일·설정 호환 때문에 보존하며 검증 없는 삭제를 하지 않는다.
+
+최종 검토 기준96bfbcc의 Windows38670581601 성공: Core355/355·WPF1744고유검사/실패0·실제 desktop250장, unsigned/signed 각9개 일반 시작·정상 종료·저장 파일 보존. 로컬 locked restore/format/analyzer/Release 경고0·오류0/Core355 및 verify_base/verify_app/diff check 통과. artifacts/test-results/plan038/final의 TRX/smoke/coverage를 직접 확인했다.
+
+src tree b248ea27bbf1f17de28dfcec458af46dc03c2f84, harness tree faf692bbe4e8b1b233c7a536fbf193cdc5ba8fed는 마지막 실행 코드d9c55de/main b883426과 동일하다. OBS38668937607의 source commit 및 green/transparent JSON: WGC/chroma/native alpha·같은 HWND 전환·각7개 프레임 변화가 통과했다. BitBlt는 기존 제한이다.
+
+QA 이후 단일 에이전트 자체 리뷰로 요구사항별 근거·문서의 pose ID/name 의미·renderer/worker/IO/audio 경계와 Legacy 보존 이유를 확인했다. 이 계획은 docs만 변경하고 source/harness/사용자 원본·설정을 삭제하거나 수정하지 않는다. 실제 마이크/권한/혼합 DPI/사용자 GPU·장시간 실기 제한은 기존 체크리스트를 유지한다.
+
+완료 기록 커밋 이후 main 병합/push·branch -d·worktree 제거를 수행한다. 해당 Git 수명까지 성공하면 첨부 자료의 전체 migration 목표를 완료로 보고한다.
