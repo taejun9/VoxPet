@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -45,8 +45,8 @@ codex/plan-037-character-editor / .worktree/plan-037-character-editor. 계획 �
 - [x] 같은 CharacterRuntime/RenderFrameDrawing을 쓰는 voice/expression/action/attachment preview·검증·atomic export를 구현한다.
 - [x] Dashboard/nav·마이크 상태/빠른 동작·방송 출력과 library 검색/cards/select/edit/export/delete를 연결한다.
 - [x] import→edit→export→reload의 모든 지원 모델·metadata/PNG와 실제 runtime frame을 비교한다.
-- [ ] local Core/build/format/harness, Windows editor workflow/10화면·DIP/layout/screen evidence 및 기존전체 WPF/OBS 회귀를 수행한다.
-- [ ] QA → 자체 리뷰 → 완료 이동/미러 → main 병합/push → branch -d → worktree 정리를 마친다.
+- [x] local Core/build/format/harness, Windows editor workflow/10화면·DIP/layout/screen evidence 및 기존전체 WPF/OBS 회귀를 수행한다.
+- [x] QA → 자체 리뷰 → 완료 이동/미러 → main 병합/push → branch -d → worktree 정리를 마친다.
 
 ## QA Plan
 
@@ -88,6 +88,10 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 
 | 2026-10-15 | 심사 | Home/library도 유한 viewport 크기로 측정하고 Home 오른쪽 입력/빠른 동작 영역을 스크롤한다. 동일 좌표 Anchor의 라벨은 겹치지 않게 배치하며 화면 QA의 head Z fixture를 얼굴보다 아래에 두어 표정이 가려지지 않게 한다. |
 
+| 2026-10-15 | 심사 | 여러 timeline 행의 미적용 입력과 시간 재정렬을 검토해 순번 key 대신 immutable event 객체별 weak identity를 사용한다. trigger/pose row key도 분리한다. Attachment700ms 미적용 → Pose900ms 적용/재정렬 → Attachment 적용이 정확한 객체에 반영되는 회귀를 추가한다. 최종 QA는 이 수정까지 포함한다. |
+| 2026-10-15 | 검증 | 화면 코드5acdf90 Windows38666460058/OBS38666460020 통과. WPF1740고유검사·실패0, 실제 desktop250장.10화면 시각 검토에서 card DataTemplate 텍스트는 implicit style 경계의 영향을 받아 명시 foreground로 수정한다. QA head Z는 원래 Z+1/+2로 바꿔 눈·입이 가려지지 않게 한다. 마지막 event identity 검사와 함께 재검증한다. |
+| 2026-10-15 | 심사 | 최종 코드600d541 Windows38667692310/OBS38667692366 통과: Core355, WPF1743/0, desktop250, unsigned/signed9사례씩 정상 종료·파일 보존.10화면을 직접 검토한 후 기본 정보의 빈 목록과 미리보기의 불필요 inspector를 숨기고 상세 편집은 동작/부착물 페이지에서만 제공하도록 마지막 화면 정리를 한다. |
+
 ## Requirement Evidence
 
 | 요구 | 구현 경로 | 검증 근거 |
@@ -101,14 +105,16 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 | Dashboard/library/navigation/기존 설정 | StudioShell, NativeCharacterViewModel, CharacterPackageLibrary | editor-home/library10화면, 기존 Native/Startup/Settings/Input/OBS 회귀 및 명령·관리 경로 자체 검토 |
 | 작은 창·가독성 | 유한 layout/목록·inspector/preview scroll, local templates | editor_bounded_canvas/input_reachable/input_contrast/navigation_contrast,4크기×8페이지 |
 
-최종 이벤트 identity 보완 코드의 전체 Windows/OBS 결과와 실제10화면 시각 검토는 아래 완료 기록에 확정한 뒤 QA 항목을 체크한다.
-
-| 2026-10-15 | 심사 | 여러 timeline 행의 미적용 입력과 시간 재정렬을 검토해 순번 key 대신 immutable event 객체별 weak identity를 사용한다. trigger/pose row key도 분리한다. Attachment700ms 미적용 → Pose900ms 적용/재정렬 → Attachment 적용이 정확한 객체에 반영되는 회귀를 추가한다. 최종 QA는 이 수정까지 포함한다. |
-
-| 2026-10-15 | 검증 | 화면 코드5acdf90 Windows38666460058/OBS38666460020 통과. WPF1740고유검사·실패0, 실제 desktop250장.10화면 시각 검토에서 card DataTemplate 텍스트는 implicit style 경계의 영향을 받아 명시 foreground로 수정한다. QA head Z는 원래 Z+1/+2로 바꿔 눈·입이 가려지지 않게 한다. 마지막 event identity 검사와 함께 재검증한다. |
-
-| 2026-10-15 | 심사 | 최종 코드600d541 Windows38667692310/OBS38667692366 통과: Core355, WPF1743/0, desktop250, unsigned/signed9사례씩 정상 종료·파일 보존.10화면을 직접 검토한 후 기본 정보의 빈 목록과 미리보기의 불필요 inspector를 숨기고 상세 편집은 동작/부착물 페이지에서만 제공하도록 마지막 화면 정리를 한다. |
+최종 코드와 실제10화면 시각 검토 결과는 아래 완료 기록과 자체 리뷰에 확정했다.
 
 ## Completion Notes
 
-진행 중. 이 계획과 최종 migration audit가 모두 검증되기 전에는 전체 목표를 완료로 표시하지 않는다.
+Phase 10 완료. 최종 구현 d9c55de. Windows38668937751 및 OBS38668937607 성공. Core355/355, WPF1744고유검사·실패0, 실제 desktop250장과 unsigned/signed 각각9개 일반 시작·정상 종료·기존 저장 파일 보존을 확인했다. locked restore/format/analyzer/Release 경고0·오류0, verify_base/verify_app/diff check 통과.
+
+생성·metadata/Canvas·파츠 PNG/표시·시각 Anchor 실제 mouse drag·입16·표정/full-sprite bank·8종 action event/trigger/pose·attachment layer와 동일 Runtime preview·검증·atomic export/reload를 연결했다. 모든 지원 필드와 원본 PNG bytes, editor/native broadcast frame exact 비교를 통과했다. 미적용 입력은 선택 및 timeline 재정렬에도 보존하며 export를 차단한다. worker 종료를 기다리고 실패 시 원본/마지막 유효 scene을 유지한다.
+
+최종 artifacts/test-results/plan037/last의 Core TRX, smoke/coverage/OBS JSON을 직접 확인하고10개 wireframe 대응 desktop PNG를 모두 시각 검토했다.4창크기×8편집 페이지의 유한 Canvas/입력 접근성/명시 글자 대비를 검사했다. OBS32.2.2의 WGC/크로마/투명 native alpha/같은 HWND 전환이 통과했다. BitBlt는 기존 제한이다.
+
+QA 이후 단일 에이전트 자체 리뷰를 완료했다. 새 편집 초안은 자동 저장하지 않고 내보내기로 보존한다. 작은 새 화면은 스크롤을 사용하며 기존 설정 화면은 유지한다. 실제 마이크/권한/물리 DPI/사용자 GPU·장시간 실기는 기존 체크리스트 제한이다.
+
+완료 기록 커밋 후 main 병합/push·branch -d·worktree 제거를 수행한다. 전체 목표의 남은 단계는 최종 repository migration review이며 별도 계획으로 이어간다.

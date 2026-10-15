@@ -308,3 +308,12 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 - 첫 실패는 새 fixture의 가상 작업 영역, 두 번째32실패는 신규 문자열 ComboBox 글자색이었다. 실제 화면 범위와 명시적 검정 템플릿으로 수정하고 전체 재실행했다.
 
 실제 마이크/OBS/게임 입력 권한·차단/장시간/실제 DPI는 기존 미확인 항목을 유지한다. 새 분리 파츠는 [제작 규격](../product/image-set-format.md)에 따라 준비해 로컬에서 시각 검증한다.
+
+
+## plan037 VoxPet 2.0 편집기 자동 검증
+
+2026-10-15 최종 d9c55de의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38668937751), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38668937607) 통과. Core355/355·Release 경고0/오류0·WPF1744/0·실제 desktop250화면·unsigned/signed 각각9개 일반 시작과 정상 종료·저장 파일 보존을 확인했다.
+
+공개 제작 틀로 생성/편집/실제 Anchor drag/16입/full-sprite banks/8종 timeline/trigger/pose/부착 preview·export/reimport를 검사했다. 지원 필드·원본 PNG bytes·preview/native broadcast frame exact 비교와4크기×8페이지의 입력 접근성/글자 대비가 통과했다.10개 새 화면을 시각 검토했다. OBS32.2.2 WGC/크로마/투명 native alpha/같은 HWND 배경 왕복이 통과했다. BitBlt는 기존 제한이다.
+
+증거는 artifacts/test-results/plan037/last에 보존한다. 이번 시험은 public/synthetic 자료만 쓰며 물리 마이크/권한/USB·혼합 DPI/사용자 GPU·실제 입력 장시간을 대체하지 않는다.
