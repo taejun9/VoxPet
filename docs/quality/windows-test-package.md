@@ -25,3 +25,5 @@ python -X utf8 harness/scripts/package_windows.py artifacts/win-x64 artifacts/Vo
 `RuntimeSafetyQa`는 유효한 합성 패키지의 첫 화면/지연 동작에 극단적 변환을 넣어 실패를 재현한다. 첫 화면 준비 실패는 마지막 scene/document/저장 선택을 유지하고, 재생 중 실패는 마지막 화면과 앱을 유지하며 native 입력을 해제한다. 다시 선택하면 복구한다.
 
 동작/표정/부착물 삭제 후 미리보기 참조, 앵커 없는 캐릭터 편집, 미적용 입력 중 삭제/드래그, 입력10000회 주입의 대기128개 상한도 실제 ViewModel에서 검사한다. 사용자 PNG·물리 음성은 사용하지 않는다.
+
+패키지 Canvas 너비/높이는 각각1~16384로 검증한다. 극소/과대 값과 양쪽 경계·사용자 지정 상한은 Core에서, 편집 실패의 문서 보존은 WPF에서 검사한다.

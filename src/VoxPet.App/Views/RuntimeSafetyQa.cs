@@ -62,6 +62,10 @@ internal static class RuntimeSafetyQa
             check(await native.SelectAsync(loaded!.LibraryId) && native.CanReceiveInput, "safety_native_reselect_recovers_fault");
 
             check(await editor.OpenPackageAsync(valid), "safety_editor_valid_scene");
+            var beforeCanvasEdit = editor.Document;
+            editor.Fields.Single(f => f.Key == "width").Value = "1e-300"; await editor.ApplyAsync();
+            check(ReferenceEquals(beforeCanvasEdit, editor.Document) && editor.Status.StartsWith("적용 실패") && !editor.CanExport, "safety_editor_extreme_canvas_preserves_document");
+            editor.DiscardCommand.Execute(null);
             var document = editor.Document; var preview = editor.Scene;
             check(!await editor.OpenPackageAsync(invalid) && ReferenceEquals(document, editor.Document) && ReferenceEquals(preview, editor.Scene), "safety_editor_failed_first_frame_preserves_document_scene");
             editor.Page = 5; editor.PreviewAction = "overflow"; editor.Seek(0); editor.Seek(200);

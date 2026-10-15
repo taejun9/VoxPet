@@ -132,6 +132,40 @@ public sealed class VoxPetPackageTests
         files = MinimalFiles(); files["body.png"] = Png()[..40]; Assert.Throws<VoxPetPackageException>(() => Load(Zip(files)));
         files = MinimalFiles(); files["manifest.json"] = Encoding.UTF8.GetBytes("{\"format\":\"voxpet\",\"formatVersion\":3}"); Assert.Throws<VoxPetPackageException>(() => Load(Zip(files)));
     }
+    [Theory]
+    [InlineData(.5, 512)]
+    [InlineData(512, .5)]
+    [InlineData(1e-300, 512)]
+    [InlineData(512, 1e-300)]
+    [InlineData(16385, 512)]
+    [InlineData(512, 16385)]
+    [InlineData(1e300, 512)]
+    [InlineData(512, 1e300)]
+    public void UnrenderableCanvasDimensionsAreRejectedAtThePackageBoundary(double width, double height)
+    {
+        var files = MinimalFiles();
+        files["character.json"] = JsonSerializer.SerializeToUtf8Bytes(new
+        { schemaVersion = 2, canvas = new { width, height }, parts = new[] { new { id = "body", type = "body", file = "body.png" } } });
+        Assert.Throws<VoxPetPackageException>(() => Load(Zip(files)));
+    }
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(16384, 16384)]
+    public void CanvasLimitsIncludeTheirBoundariesAndRoundTrip(double width, double height)
+    {
+        var definition = new CharacterDefinition([new("body", "body", "body.png")], canvasWidth: width, canvasHeight: height);
+        var package = new VoxPetPackageValidator().Validate(new("test", "Canvas", "1"), definition, new Dictionary<string, byte[]> { ["body.png"] = Png() });
+        var loaded = Load(new VoxPetPackageExporter().Export(package));
+        Assert.Equal(width, loaded.Character.CanvasWidth); Assert.Equal(height, loaded.Character.CanvasHeight);
+        Assert.Single(loaded.CreateRuntime().Update(new(0, 0, 0)).Layers);
+    }
+    [Fact]
+    public void ConfiguredCanvasLimitIsEnforcedAndMustBePositive()
+    {
+        var definition = new CharacterDefinition([new("body", "body", "body.png")], canvasWidth: 1200);
+        Assert.Throws<VoxPetPackageException>(() => new VoxPetPackageValidator(new(CanvasDimension: 1024)).Validate(new("test", "Canvas", "1"), definition, new Dictionary<string, byte[]> { ["body.png"] = Png() }));
+        Assert.Throws<ArgumentException>(() => new VoxPetPackageValidator(new(CanvasDimension: 0)));
+    }
     [Fact]
     public void PngInflationCannotExceedItsDeclaredScanlines()
     {

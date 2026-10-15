@@ -24,7 +24,7 @@ attachment는 schemaVersion2/id/name/category/layers와 선택 compatibilityTag/
 
 ## 안전성과 자원 상한
 
-기본 상한은 archive64MiB, 실제 해제 합계64MiB, PNG16MiB/JSON512KiB, directory 포함 entry512개, PNG4096px/8M pixels, 전체 decoded RGBA128MiB다. ZIP64/multi-volume/encrypted/지원하지 않는 압축 방식은 거부한다. central directory 개수/구조를 ZipArchive 객체 확장 전에 검사하며 실제 payload 길이·CRC도 확인한다.
+기본 상한은 archive64MiB, 실제 해제 합계64MiB, PNG16MiB/JSON512KiB, directory 포함 entry512개, PNG4096px/8M pixels, 전체 decoded RGBA128MiB다. logical Canvas의 너비/높이는 각각1~16384다. 극소 값의 표시 배율 overflow와 과대 WPF geometry를 막기 위해 로드·편집·내보내기에서 같은 범위를 검사한다. ZIP64/multi-volume/encrypted/지원하지 않는 압축 방식은 거부한다. central directory 개수/구조를 ZipArchive 객체 확장 전에 검사하며 실제 payload 길이·CRC도 확인한다.
 
 경로는 package 안의 PNG/JSON 상대 경로만 허용한다. 절대/drive/UNC/상위 이동·빈 segment·역슬래시·제어/예약 문자를 거부한다. Unicode NFC와 case-insensitive 중복, symlink, Windows device 이름 및 끝 공백/점을 검사한다. 이 규칙은 [Microsoft 파일명 자료](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file)와 [ZIP entry 경로 자료](https://learn.microsoft.com/en-us/dotnet/api/system.io.compression.ziparchiveentry.fullname?view=net-10.0)를 참고했다(확인2026-10-14).
 

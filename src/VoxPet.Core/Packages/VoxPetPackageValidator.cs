@@ -14,6 +14,9 @@ public sealed class VoxPetPackageValidator
         try
         {
             ArgumentNullException.ThrowIfNull(manifest); ArgumentNullException.ThrowIfNull(character); ArgumentNullException.ThrowIfNull(assets);
+            // 극소 Canvas의 표시 배율 overflow와 과대 WPF geometry를 파일/편집 경계에서 차단한다.
+            if (character.CanvasWidth < 1 || character.CanvasHeight < 1 || character.CanvasWidth > Limits.CanvasDimension || character.CanvasHeight > Limits.CanvasDimension)
+                throw new VoxPetPackageException("Canvas 크기는1~" + Limits.CanvasDimension + "이어야 합니다.");
             new RigMotionSolver(character.Rig); new AttachmentSystem(character.Attachments);
             var owned = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase); var sizes = new Dictionary<string, AssetDimensions>(StringComparer.OrdinalIgnoreCase);
             long total = 0, decoded = 0;
