@@ -123,6 +123,11 @@ internal static class CharacterEditorQa
                 Set(editor, "duration", "100", true); await editor.ApplyDetailAsync();
                 check(editor.Document.Package.Character.Actions[0].Timeline.Last().Kind == kind, "editor_timeline_payload_" + kind);
             }
+            editor.SelectedDetail = editor.Details.Single(r => r.Item is ActionTimelineEvent { Kind: ActionEventKind.Attachment }); Set(editor, "time", "700", true);
+            editor.SelectedDetail = editor.Details.Single(r => r.Item is ActionTimelineEvent { Kind: ActionEventKind.Pose }); Set(editor, "time", "900", true); await editor.ApplyDetailAsync();
+            editor.SelectedDetail = editor.Details.Single(r => r.Item is ActionTimelineEvent { Kind: ActionEventKind.Attachment });
+            check(editor.DetailFields.Single(f => f.Key == "time").Value == "700" && !editor.CanExport, "editor_pending_event_survives_timeline_reorder"); await editor.ApplyDetailAsync();
+            check(editor.Document.Package.Character.Actions[0].Timeline.Single(e => e.Kind == ActionEventKind.Pose).TimeMs == 900 && editor.Document.Package.Character.Actions[0].Timeline.Single(e => e.Kind == ActionEventKind.Attachment).TimeMs == 700 && editor.CanExport, "editor_reordered_events_apply_to_correct_objects");
             editor.Page = 7; await editor.ValidateAsync(); check(editor.Status.StartsWith("검증 통과"), "editor_all_event_types_valid_package");
             var finalExport = Path.Combine(folder, "all-events.voxpet"); check(await editor.ExportAsync(finalExport), "editor_all_event_types_export");
             check(new VoxPetPackageLoader().Load(finalExport).Character.Actions[0].Timeline.Count == 8, "editor_all_event_types_reload");

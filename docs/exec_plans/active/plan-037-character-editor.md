@@ -35,16 +35,16 @@ codex/plan-037-character-editor / .worktree/plan-037-character-editor. 계획 �
 
 ## Implementation Plan
 
-- [ ] 불변 지원 모델을 보존하는 Editor document/draft, 변경 section만 교체하는 apply/validation과 asset 작업 수명을 구현한다.
-- [ ] 기본 정보/버전/제작자/설명/thumbnail·Canvas 편집과 새 캐릭터 생성/패키지 import를 제공한다.
-- [ ] 파츠 추가/표시/ID/type/Anchor/Z-index/transform/PNG 교체·삭제를 제공한다.
-- [ ] 시각 Anchor point/라벨/부모·local 좌표/drag 배치와 계층 오류 안내를 제공한다.
-- [ ] mouth1~16·curve/frame offsets, eyes/brows/표정·blink 및 full-sprite bank 편집/보존을 제공한다.
-- [ ] action ID/name/priority/duration/playback·trigger와8종 timeline event 편집·scrub/play preview를 제공한다. Sound는 예약으로 표시하며 재생하지 않는다.
-- [ ] attachment14분류/충돌/layers/anchor/placement·inherit/Follows·pose/dependencies와 실제 착용 preview를 제공한다.
-- [ ] 같은 CharacterRuntime/RenderFrameDrawing을 쓰는 voice/expression/action/attachment preview·검증·atomic export를 구현한다.
-- [ ] Dashboard/nav·마이크 상태/빠른 동작·방송 출력과 library 검색/cards/select/edit/export/delete를 연결한다.
-- [ ] import→edit→export→reload의 모든 지원 모델·metadata/PNG와 실제 runtime frame을 비교한다.
+- [x] 불변 지원 모델을 보존하는 Editor document/draft, 변경 section만 교체하는 apply/validation과 asset 작업 수명을 구현한다.
+- [x] 기본 정보/버전/제작자/설명/thumbnail·Canvas 편집과 새 캐릭터 생성/패키지 import를 제공한다.
+- [x] 파츠 추가/표시/ID/type/Anchor/Z-index/transform/PNG 교체·삭제를 제공한다.
+- [x] 시각 Anchor point/라벨/부모·local 좌표/drag 배치와 계층 오류 안내를 제공한다.
+- [x] mouth1~16·curve/frame offsets, eyes/brows/표정·blink 및 full-sprite bank 편집/보존을 제공한다.
+- [x] action ID/name/priority/duration/playback·trigger와8종 timeline event 편집·scrub/play preview를 제공한다. Sound는 예약으로 표시하며 재생하지 않는다.
+- [x] attachment14분류/충돌/layers/anchor/placement·inherit/Follows·pose/dependencies와 실제 착용 preview를 제공한다.
+- [x] 같은 CharacterRuntime/RenderFrameDrawing을 쓰는 voice/expression/action/attachment preview·검증·atomic export를 구현한다.
+- [x] Dashboard/nav·마이크 상태/빠른 동작·방송 출력과 library 검색/cards/select/edit/export/delete를 연결한다.
+- [x] import→edit→export→reload의 모든 지원 모델·metadata/PNG와 실제 runtime frame을 비교한다.
 - [ ] local Core/build/format/harness, Windows editor workflow/10화면·DIP/layout/screen evidence 및 기존전체 WPF/OBS 회귀를 수행한다.
 - [ ] QA → 자체 리뷰 → 완료 이동/미러 → main 병합/push → branch -d → worktree 정리를 마친다.
 
@@ -62,6 +62,7 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 |---|---|---|
 | 2026-10-15 | Phase 9의 검증된 Runtime/worker library/Frame renderer를 재사용한다. | preview와 방송을 같은 engine으로 만들고 IO/렌더 선택의 중복을 피한다. |
 | 2026-10-15 | 기존 v1 설정 화면은 navigation으로 보존하면서 실제 기본 화면은 새 Dashboard로 제공한다. | wireframe의 최종 UI를 구현하며 기존 saved settings와 QA를 유지한다. |
+| 2026-10-15 | 편집은 section transaction과 명시 Apply를 사용하고 미적용 입력은 선택별로 보존한다. 작은 창은 유한 viewport와 스크롤을 사용한다. | 지원 모델/원본 PNG를 잃지 않고 모든 조작에 접근하도록 한다. |
 
 ## Progress Log
 
@@ -86,6 +87,23 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 | 2026-10-15 | 검증 | Windows38618365658의4크기×8페이지 Canvas/접근성/입력 대비와 preview/broadcast frame 비교가 통과했다.8종 이벤트 검사에서 값이 같은 Transform 이벤트의 IndexOf가 첫 행을 바꾸는 오류6건을 찾아 reference index로 수정한다. 화면의 navigation/checkbox/disabled button에는 ContentTemplate의 명시 색상을 적용한다. OBS38618365620 통과. |
 
 | 2026-10-15 | 심사 | Home/library도 유한 viewport 크기로 측정하고 Home 오른쪽 입력/빠른 동작 영역을 스크롤한다. 동일 좌표 Anchor의 라벨은 겹치지 않게 배치하며 화면 QA의 head Z fixture를 얼굴보다 아래에 두어 표정이 가려지지 않게 한다. |
+
+## Requirement Evidence
+
+| 요구 | 구현 경로 | 검증 근거 |
+|---|---|---|
+| metadata/Canvas/thumbnail/parts/visible | CharacterDocument, Editor Page0/1, PNG worker transaction | CharacterDocumentTests4, editor_metadata_apply/part_visibility_runtime/png_prepare_keeps_pending_form/bad_png_preserves_document |
+| 부모 Anchor/시각 drag | EditorCanvas, MoveAnchorAsync, RigMotionSolver inverse | editor_anchor_parent_local_transaction/real_mouse_anchor_drag/parent_cycle_preserves_valid_preview |
+| mouth/face/expression/full-sprite | Editor Page3/4, SpriteBank, MotionFields | editor_mouth_16_frames/mouth_slider_same_runtime/full_sprite_* |
+| action/playback/trigger/pose/8종 event | Editor Page5/details/Seek, Core Actions/Triggers | editor_action_timeline_scrub_frame/pose_override_edit/timeline_payload_*/all_event_types_reload |
+|14분류 attachment/레이어/상속/pose map/착용 | Editor Page6/details, AttachmentSystem | editor_attachment_same_runtime_preview + 기존 AttachmentSystem/Legacy adapter Core 회귀 |
+| 동일 Runtime/export 왕복 | CharacterRuntimeViewModel, common RenderFrameDrawing, exporter | editor_export_reload_all_supported_fields_exact/original_png_bytes/runtime_frame_exact/preview_broadcast_frame_exact |
+| Dashboard/library/navigation/기존 설정 | StudioShell, NativeCharacterViewModel, CharacterPackageLibrary | editor-home/library10화면, 기존 Native/Startup/Settings/Input/OBS 회귀 및 명령·관리 경로 자체 검토 |
+| 작은 창·가독성 | 유한 layout/목록·inspector/preview scroll, local templates | editor_bounded_canvas/input_reachable/input_contrast/navigation_contrast,4크기×8페이지 |
+
+최종 이벤트 identity 보완 코드의 전체 Windows/OBS 결과와 실제10화면 시각 검토는 아래 완료 기록에 확정한 뒤 QA 항목을 체크한다.
+
+| 2026-10-15 | 심사 | 여러 timeline 행의 미적용 입력과 시간 재정렬을 검토해 순번 key 대신 immutable event 객체별 weak identity를 사용한다. trigger/pose row key도 분리한다. Attachment700ms 미적용 → Pose900ms 적용/재정렬 → Attachment 적용이 정확한 객체에 반영되는 회귀를 추가한다. 최종 QA는 이 수정까지 포함한다. |
 
 ## Completion Notes
 

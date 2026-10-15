@@ -35,6 +35,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     private long revision;
     private readonly SemaphoreSlim worker = new(1, 1);
     private readonly Dictionary<string, Dictionary<string, string>> pendingForms = [];
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<ActionTimelineEvent, string> eventIds = new();
     private string? bankId;
     private string FormKey(bool detailForm) => $"{Page}/{Selected?.Id ?? "metadata"}/{bankId ?? ""}/" + (detailForm ? SelectedDetail?.Id ?? "detail" : "main");
     public string[] SpriteBanks => Document?.Package.Character.SpriteSheet?.Expressions.Select(e => e.Id).ToArray() ?? [];
@@ -222,9 +223,9 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 Field(Fields, "eyesAnchor", "눈 앵커", c.Face.EyesAnchor, anchorIds); Field(Fields, "browsAnchor", "눈썹 앵커", c.Face.BrowsAnchor, anchorIds); Field(Fields, "eyesZ", "눈 Z-index", c.Face.EyesZIndex); Field(Fields, "browsZ", "눈썹 Z-index", c.Face.BrowsZIndex); Field(Fields, "required", "얼굴 표시 파츠", c.Face.RequiredVisiblePart, ["", .. c.Parts.Select(p => p.Id)]); break;
             case 5 when Selected?.Item is ActionDefinition action:
                 Field(Fields, "id", "ID", action.Id); Field(Fields, "name", "이름", action.Name); Field(Fields, "priority", "우선순위 (0~100)", action.Priority); Field(Fields, "duration", "길이 (ms)", action.DurationMs); Field(Fields, "mode", "재생", action.Playback.Mode, Enum.GetNames<ActionPlaybackMode>()); Field(Fields, "interrupt", "중단 가능", action.Playback.Interruptible, Booleans); Field(Fields, "idle", "idle 복귀", action.Playback.ReturnToIdle, Booleans); Field(Fields, "tag", "호환 태그", action.CompatibilityTag);
-                foreach (var (evt, n) in action.Timeline.Select((x, n) => (x, n))) Details.Add(new("event-" + n, $"{evt.TimeMs:0.##}ms · {evt.Kind}", evt));
-                foreach (var trigger in action.Triggers) Details.Add(new(trigger.Id, "트리거 · " + trigger.Kind, trigger));
-                foreach (var pose in c.Poses) Details.Add(new("pose-" + pose.Id, "포즈 · " + pose.Name, pose)); break;
+                foreach (var evt in action.Timeline) Details.Add(new("event/" + eventIds.GetValue(evt, _ => Guid.NewGuid().ToString("N")), $"{evt.TimeMs:0.##}ms · {evt.Kind}", evt));
+                foreach (var trigger in action.Triggers) Details.Add(new("trigger/" + trigger.Id, "트리거 · " + trigger.Kind, trigger));
+                foreach (var pose in c.Poses) Details.Add(new("pose/" + pose.Id, "포즈 · " + pose.Name, pose)); break;
             case 6 when Selected?.Item is AttachmentDefinition attachment:
                 Field(Fields, "id", "ID", attachment.Id); Field(Fields, "name", "이름", attachment.Name); Field(Fields, "category", "분류", attachment.Category, AttachmentSystem.Categories); Field(Fields, "tag", "호환 태그", attachment.CompatibilityTag); Field(Fields, "group", "배타 그룹", attachment.ExclusiveGroup);
                 foreach (var layer in attachment.Layers) Details.Add(new(layer.Id, layer.Id, layer)); break;
