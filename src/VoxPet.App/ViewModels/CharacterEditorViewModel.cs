@@ -27,6 +27,10 @@ public sealed class CharacterEditorViewModel : ObservableObject
     public ObservableCollection<EditorField> DetailFields { get; } = [];
     public CharacterDocument? Document { get; private set; }
     public CharacterRuntimeViewModel? Scene { get; private set; }
+    public bool IsListPage => Page is > 0 and < 7;
+    public bool IsDetailsPage => Page is 5 or 6;
+    public bool IsInspectorPage => Page != 7;
+    public bool IsActionPage => Page == 5;
     public bool HasDocument => Document != null;
     public bool CanInteract => !busy && !closing;
     public bool CanEdit => HasDocument && !busy && !closing;
@@ -117,7 +121,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     private void Refresh()
     {
-        foreach (string name in new[] { nameof(HasDocument), nameof(CanInteract), nameof(CanEdit), nameof(CanExport), nameof(IsBusy), nameof(Document), nameof(Scene), nameof(Expressions), nameof(Actions), nameof(Attachments), nameof(Duration), nameof(PreviewState), nameof(SpriteBanks), nameof(SpriteBank) }) Notify(name);
+        foreach (string name in new[] { nameof(IsListPage), nameof(IsDetailsPage), nameof(IsInspectorPage), nameof(IsActionPage), nameof(HasDocument), nameof(CanInteract), nameof(CanEdit), nameof(CanExport), nameof(IsBusy), nameof(Document), nameof(Scene), nameof(Expressions), nameof(Actions), nameof(Attachments), nameof(Duration), nameof(PreviewState), nameof(SpriteBanks), nameof(SpriteBank) }) Notify(name);
         foreach (var c in new[] { NewCommand, ImportCommand, ApplyCommand, ApplyDetailCommand, AddCommand, DeleteCommand, AddDetailCommand, DeleteDetailCommand, AddPoseCommand, ReplaceImageCommand, ValidateCommand, ExportCommand }) c.Refresh();
         foreach (var c in new[] { PlayCommand, StopCommand, ExpressionCommand, AttachmentCommand, DiscardCommand }) c.Refresh();
         Changed?.Invoke();
@@ -138,7 +142,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
             foreach (string id in previousScene?.Runtime.Attachments.EnabledIds ?? []) if (Attachments.Any(a => a.Id == id)) Scene.Runtime.Attachments.SetEnabled(id, true);
             if (resetForms) { PreviewExpression = Expressions.FirstOrDefault()?.Id; PreviewAction = Actions.FirstOrDefault()?.Id; PreviewAttachment = Attachments.FirstOrDefault()?.Id; }
             Notify(nameof(PreviewExpression)); Notify(nameof(PreviewAction)); Notify(nameof(PreviewAttachment));
-            if (resetForms) { pendingForms.Clear(); bankId = Document.Package.Character.SpriteSheet?.Expressions.FirstOrDefault()?.Id; } else if (!preserveForms) pendingForms.Remove(formKey);
+            if (resetForms) { pendingForms.Clear(); page = 0; selected = detail = null; Notify(nameof(Page)); bankId = Document.Package.Character.SpriteSheet?.Expressions.FirstOrDefault()?.Id; } else if (!preserveForms) pendingForms.Remove(formKey);
             if (bankId != null && !Document.Package.Character.SpriteSheet!.Expressions.Any(e => e.Id == bankId)) bankId = Document.Package.Character.SpriteSheet.Expressions.FirstOrDefault()?.Id;
             pending = detailPending = false; ReloadRows(); UpdateFrame(); Status = "편집 내용을 적용했습니다. 검증 후 내보낼 수 있습니다."; return true;
         }
@@ -167,7 +171,8 @@ public sealed class CharacterEditorViewModel : ObservableObject
     private void ReloadRows()
     {
         string? id = selected?.Id, detailId = detail?.Id; Rows.Clear(); Details.Clear(); Fields.Clear(); DetailFields.Clear(); selected = detail = null;
-        if (Document == null) return; var c = Document.Package.Character;
+        if (Document == null) { Refresh(); return; }
+        var c = Document.Package.Character;
         ImageSource? Image(string? asset) => asset != null && Scene!.Images.TryGetValue(asset, out var image) ? image : null;
         IEnumerable<EditorRow> rows = Page switch
         {
@@ -381,7 +386,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     public bool AddTriggerNext { get; set; }
     public async Task AddDetailAsync()
     {
-        if (!CanChangeStructure()) return;
+        if (!IsDetailsPage || !CanChangeStructure()) return;
         if (Document == null) return; var doc = Document; var item = Selected?.Item; bool trigger = AddTriggerNext;
         await TransactionAsync(() => doc.Edit(d =>
         {

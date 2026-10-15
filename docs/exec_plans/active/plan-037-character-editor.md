@@ -107,6 +107,8 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 
 | 2026-10-15 | 검증 | 화면 코드5acdf90 Windows38666460058/OBS38666460020 통과. WPF1740고유검사·실패0, 실제 desktop250장.10화면 시각 검토에서 card DataTemplate 텍스트는 implicit style 경계의 영향을 받아 명시 foreground로 수정한다. QA head Z는 원래 Z+1/+2로 바꿔 눈·입이 가려지지 않게 한다. 마지막 event identity 검사와 함께 재검증한다. |
 
+| 2026-10-15 | 심사 | 최종 코드600d541 Windows38667692310/OBS38667692366 통과: Core355, WPF1743/0, desktop250, unsigned/signed9사례씩 정상 종료·파일 보존.10화면을 직접 검토한 후 기본 정보의 빈 목록과 미리보기의 불필요 inspector를 숨기고 상세 편집은 동작/부착물 페이지에서만 제공하도록 마지막 화면 정리를 한다. |
+
 ## Completion Notes
 
 진행 중. 이 계획과 최종 migration audit가 모두 검증되기 전에는 전체 목표를 완료로 표시하지 않는다.

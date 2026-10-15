@@ -98,7 +98,7 @@ internal static class CharacterEditorQa
             await ScreenEvidence.CaptureAsync(window, "editor-library", check, new { wireframe = 2 });
             var preview = decoded.CreateRuntime(new Random(1)); preview.Update(new(0, 0, 0)); mainModel.Packages.Update(mainModel.Packages.Scene!.Runtime.Actions.LastTime, 0);
             check(mainModel.Packages.Scene.Runtime.Definition.Mouth!.Frames.Count == editor.Scene!.Runtime.Definition.Mouth!.Frames.Count, "editor_broadcast_uses_exported_definition");
-            window.ShowStudio(5); check(await editor.OpenAsync(export), "editor_import_exported_package"); check(editor.Document.Package.Manifest.Name == "QA Editor", "editor_reimport_metadata_preserved");
+            window.ShowStudio(5); check(await editor.OpenAsync(export), "editor_import_exported_package"); check(editor.Page == 0, "editor_import_opens_basic_information"); check(editor.Document.Package.Manifest.Name == "QA Editor", "editor_reimport_metadata_preserved");
             var capture = editor.Document; string bad = Path.Combine(folder, "bad.voxpet"); File.WriteAllText(bad, "bad"); check(!await editor.OpenAsync(bad) && ReferenceEquals(capture, editor.Document), "editor_failed_import_keeps_document");
             // Full-canvas imports expose every expression bank and preserve all untouched PNG frames.
             string asset = original.AssetPaths.First(); string alternate = original.AssetPaths.Last();
