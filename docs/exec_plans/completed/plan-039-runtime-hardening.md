@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -34,9 +34,9 @@ codex/plan-039-runtime-hardening / .worktree/plan-039-runtime-hardening에서 �
 
 - [x] 현재 검사와 production 경로를 확인하고 결함 재현 근거를 수집한다.
 - [x] 위험도 높은 결함을 수정하고 의미 있는 회귀 검사를 추가한다.
-- [ ] 전체 local QA 및 Windows 자동 QA를 실행한다.
-- [ ] Windows 실행 ZIP/테스트 안내를 준비하고 CRC/파일 구성을 확인한다.
-- [ ] QA 후 자체 리뷰, 완료 이동/리뷰 미러, main 병합/push와 브랜치/worktree 정리를 수행한다.
+- [x] 전체 local QA 및 Windows 자동 QA를 실행한다.
+- [x] Windows 실행 ZIP/테스트 안내를 준비하고 CRC/파일 구성을 확인한다.
+- [x] QA 후 자체 리뷰와 완료 이동/리뷰 미러를 준비했다. 완료 커밋 뒤 main 병합/push와 브랜치/worktree 정리를 수행한다.
 
 ## QA Plan
 
@@ -68,7 +68,17 @@ QA 이후 같은 에이전트가 production 수명/동시성/패키지·문서 �
 | 2026-10-15 | 검증 | OBS38712924709의 결과 JSON을 확인했다. OBS32.2.2 WGC/크로마/native alpha/동일 HWND 배경 왕복·각7프레임 변화 통과. 기존 BitBlt 제한 유지. 개인13PNG 원본 해시/PNG CRC를 로컬에서 확인했다. Windows38712924747은 전체 QA/ZIP 시험 진행 중이다. |
 | 2026-10-15 | 검증 | 초기 f97a0c5 Windows38712924747 전체 성공: Core355/355·WPF1767/0·신규23검사·desktop250, unsigned/signed 각각9시작·정상 종료/파일 보존, ZIP 내부 PowerShell5.1 도구1535/0. 결과 JSON/TRX/CRC/EXE 해시 대조 완료. |
 | 2026-10-15 | 심사 | 초기 QA 후 자체 리뷰에서 Canvas 범위 누락을 찾아 보완했다. Core11회귀와 WPF1회귀를 추가하고 최신 코드의 전체 QA와 새 ZIP을 다시 준비한다. 초기 증거·ZIP은 보존한다. |
+| 2026-10-15 | 검증 | 최종 bdde9ae Windows38714843197와 OBS38714843135 성공. Core366/366·WPF1768/0·safety24·desktop250·unsigned/signed 각9개 시작/정상 종료/파일 보존, ZIP 내부 PowerShell5.1 도구1536/0. TRX/JSON·실행 버전·공용/개인 EXE 해시·개인13PNG byte equality·CRC를 직접 대조했다. |
+| 2026-10-15 | 심사 | 최종 QA 후 자체 리뷰에서 worker/scene 교체·지연 예외·입력 상한/해제·Canvas 범위·편집 미적용 값·privacy·문서/패키지를 재검토했다. 필수 미해결 사항 없음. 합성 키/좌클릭 시험은 전용 Windows/VM에서 수행하도록 안내를 명확히 했다. |
 
 ## Completion Notes
 
-조사·QA 결과와 Windows 패키지 경로를 완료 시 기록한다.
+캐릭터 첫 frame 실패의 기존 scene/document/선택 보존, 지연 변환 오류의 앱 종료 방지와 입력 해제/재선택 복구, 보관함 실패 격리, 삭제된 preview 참조 복구, 미적용 입력 보호, 앵커 없는 문서 편집, 입력 대기 상한을 구현했다. 리뷰에서 발견한 극소/과대 Canvas도 package1~16384 범위로 보완했다. 음성 캡처/저장/전송 경계는 변경하지 않았다.
+
+최종 코드bdde9ae 기준 local locked restore/format verify/analyzer/Release 경고0·오류0/Core366/harness/Python compile/diff 통과. Windows38714843197의 Core366/366·실제 WPF1768/0·새 safety24검사·실제 desktop250화면·unsigned/signed 각9개 일반 시작/정상 종료/저장 파일 보존을 TRX/JSON으로 확인했다. 실제 ZIP에서 PowerShell5.1 실행 도구1536/0을 통과했다. 일반 사용자 도구는 CI desktop232검사를 켜지 않는다. OBS38714843135는 WGC/chroma/native alpha·같은 HWND 배경 왕복·각7프레임 변화 통과, 기존 BitBlt 제한 유지다.
+
+최종 개인 파일은 `artifacts/VoxPet-Windows-test-plan039-final.zip`이다. 자체 포함 unsigned win-x64 EXE·자산·라이선스·START.cmd·TEST-SMOKE.cmd/ps1·TEST-README.txt와 기존 개인13PNG를 담았다.50파일/95,456,545bytes·CRC 통과·SHA256 `d782eeb7540f4f12039c3506904ecf4096840542791d8b322b1b03e2e2a387c6`. EXE SHA256 `89190e0bf2a6889e99c9f8aea9ae3a5ab80797667fc2733b6df1aea424394509`는 최종 공용 CI publish와 같다. 개인13PNG 원본 bytes/해시/CRC와 기존 원본·ZIP 보존을 확인했고 외부 전송하지 않았다. 증거는 `artifacts/test-results/plan039/final/`에 있다.
+
+물리 마이크/권한/USB·사용자 GPU/OBS·혼합 DPI·60분 실기와 개인 PNG의 Windows 모습은 대상PC의 수동 확인 사항이다. 실행 도구의 실제 합성 키/좌클릭은 전용 Windows/VM에서 사용한다. unsigned 배포를 사용자 PC에서 신뢰 검증된 서명으로 표현하지 않는다. QA 후 자체 리뷰와 완료 미러를 작성했으며 앱/실행 도구 코드는 최종 CI와 동일하다. 이후 변경은 완료 기록·체크리스트·안내 텍스트뿐이다.
+
+완료 기록 커밋 후 main ff-only 병합/push·branch -d·worktree 제거를 순서대로 수행하고 실제 성공 상태를 사용자에게 보고한다.

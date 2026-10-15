@@ -1,5 +1,17 @@
 # Windows 실사용 검증 기록
 
+## plan039 실제 앱 오류 복구와 Windows 시험 파일
+
+2026-10-15 코드bdde9ae의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38714843197)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38714843135) 통과. 단일 에이전트가 QA 후 자체 리뷰했으며 리뷰에서 발견한 Canvas 범위도 보완 후 전체 재검증했다.
+
+- locked restore/format/analyzer/Release 경고0·오류0/Core366/366. 실제 WPF1768고유검사·실패0, 신규 safety24종 전부 실행, desktop250화면·unsigned/signed 각9개 일반 시작/정상 종료/파일 보존 통과.
+- 첫 frame 실패의 scene/document/저장 선택 보존, 보관함 import/thumbnail 실패 격리, 지연 변환 overflow의 마지막 frame/입력 해제/재선택 복구, 삭제된 preview 참조, 미적용 입력의 삭제/드래그 보호, 앵커 없는 캐릭터 편집,10000입력의128상한을 검사했다. Canvas1~16384 경계·범위 밖11개 Core 회귀와 WPF 문서 보존도 확인했다.
+- 실제 공용 ZIP을 다시 풀고 동봉 PowerShell5.1 시험 도구1536/0 통과. 일반 사용자용 도구는 CI 전용 desktop232검사를 활성화하지 않는다. 합성 키·좌클릭이 있으므로 전용 테스트 Windows/VM에서 실행하고 작업 중인 데스크톱에서는 수동 체크리스트를 따른다.
+- OBS32.2.2 WGC/초록+크로마/native alpha/같은 HWND 배경 전환과 각7프레임 변화 통과. BitBlt의 기존 layered 제한은 유지한다.
+- 로컬 `artifacts/VoxPet-Windows-test-plan039-final.zip`은50파일/95,456,545bytes·CRC/SHA256 통과. 최종 CI unsigned EXE와 동일하며 이전 늘보군·펠리13PNG byte-identical. 개인 PNG 외부 전송/기존 원본 덮어쓰기 없음. 증거는 `artifacts/test-results/plan039/final/`, 상세는 [리뷰](../reviews/plan-039-runtime-hardening-review.md)와 [직접 시험 안내](windows-test-package.md)를 따른다.
+
+사용자 Windows11 물리 마이크/권한/USB·GPU/OBS·혼합 DPI·60분 실기는 별도다. 개인 PNG의 Windows 시각 검증은 이번 합성 CI에 포함하지 않았다. unsigned 배포의 실행 경고 제거를 주장하지 않는다.
+
 ## plan013 사용자 기능 개선과 전체 회귀
 
 2026-10-08, 코드7297d02의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/37743242592)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/37743242633) 통과. macOS/Windows Core110/110, locked restore/format/analyzer/Release build(경고0/오류0)/자체 포함 publish를 통과했다. 실제 WPF smoke 실패0/명명 검사239개, 4창크기×49컨트롤/3startup bounds/작은 창 스크롤과 첫 화면 Start/Stop을 확인했다. CI annotation0이며 새 전역 키/측정 버튼과480×320 화면 PNG를 직접 확인했다.
