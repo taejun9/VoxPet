@@ -58,7 +58,10 @@ internal static class UnifiedStudioQa
                 model.Packages.Update(now += 1.2, 0); check(scene.Runtime.State.ActionId == null, "studio_action_idle_" + action.Id);
             }
             window.Studio.Page = 3; await window.Studio.UseSamplesAsync(); check(window.Studio.Page == 3, "studio_action_sample_keeps_page");
-            var broadcast = window.ShowCharacter(); check(ReferenceEquals(model.Character.RuntimeScene, model.Packages.Scene) && ReferenceEquals(broadcast.DataContext, model), "studio_preview_broadcast_shared"); broadcast.Close();
+            window.Studio.AttachmentCards.Single(c => c.Id == "top").ToggleCommand.Execute(null);
+            var broadcastScene = model.Packages.Scene!; double broadcastTime = broadcastScene.Runtime.Actions.LastTime;
+            model.Packages.Play("heart"); model.Packages.Update(broadcastTime, 0); model.Packages.Update(broadcastTime + .2, 0);
+            var broadcast = window.ShowCharacter(); check(ReferenceEquals(model.Character.RuntimeScene, model.Packages.Scene) && ReferenceEquals(broadcast.DataContext, model), "studio_preview_broadcast_shared"); await ScreenEvidence.CaptureAsync(broadcast, "studio-sample-broadcast", check); broadcast.Close();
             foreach (var size in new[] { new Size(1280, 820), new Size(960, 540), new Size(640, 480), new Size(480, 320) })
             {
                 window.Width = Math.Min(size.Width, SystemParameters.WorkArea.Width - 32); window.Height = Math.Min(size.Height, SystemParameters.WorkArea.Height - 32);
