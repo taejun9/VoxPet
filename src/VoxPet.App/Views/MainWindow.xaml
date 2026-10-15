@@ -277,8 +277,8 @@
                       </ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                          <Button Command="{Binding SwitchCommand}" Padding="8,6" FontSize="11" MaxWidth="140" ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}">
-                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis"/>
+                          <Button ContentTemplate="{x:Null}" Command="{Binding SwitchCommand}" Padding="8,6" FontSize="11" MaxWidth="140" ToolTip="{Binding Label}" AutomationProperties.Name="{Binding Label}">
+                            <TextBlock Text="{Binding Label}" Foreground="{Binding Foreground,RelativeSource={RelativeSource AncestorType=Button}}" TextTrimming="CharacterEllipsis"/>
                           </Button>
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
@@ -400,7 +400,7 @@
                     <TextBlock Text="투명 PNG를 권장합니다. 클릭해 착용한 뒤 조정 탭에서 배치하세요." TextWrapping="Wrap" FontSize="11" Margin="0,8,0,8"/>
                     <ComboBox ItemsSource="{Binding Filters}" SelectedIndex="{Binding FilterIndex}" Margin="0,0,0,8"><ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate></ComboBox>
                     <ListBox ItemsSource="{Binding Filtered}" SelectedItem="{Binding Selected}" Height="160" Background="#EAF1F8" BorderThickness="1" BorderBrush="{StaticResource SurfaceBorder}">
-                      <ListBox.ItemTemplate><DataTemplate><DockPanel><CheckBox IsChecked="{Binding Enabled}" ToolTip="착용/해제" Margin="0,0,6,0"/><Button Command="{Binding WearCommand}" FontSize="11" Padding="6,5" HorizontalAlignment="Stretch" ToolTip="{Binding Label}"><TextBlock Text="{Binding Label}" FontSize="11" MaxWidth="260" TextTrimming="CharacterEllipsis"/></Button></DockPanel></DataTemplate></ListBox.ItemTemplate>
+                      <ListBox.ItemTemplate><DataTemplate><DockPanel><CheckBox IsChecked="{Binding Enabled}" ToolTip="착용/해제" Margin="0,0,6,0"/><Button ContentTemplate="{x:Null}" Command="{Binding WearCommand}" FontSize="11" Padding="6,5" HorizontalAlignment="Stretch" ToolTip="{Binding Label}"><TextBlock Text="{Binding Label}" Foreground="{Binding Foreground,RelativeSource={RelativeSource AncestorType=Button}}" FontSize="11" MaxWidth="260" TextTrimming="CharacterEllipsis"/></Button></DockPanel></DataTemplate></ListBox.ItemTemplate>
                     </ListBox>
                     <TextBlock Text="{Binding Status}" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,8,0,0"/>
                   </StackPanel>

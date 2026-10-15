@@ -84,6 +84,14 @@ internal static class UnifiedStudioQa
             check(model.Sensitivity == 1.35 && window.Studio.Page == 4 && !window.LayoutRoot.IsVisible, "studio_settings_retained_across_navigation");
             await model.Packages.DeactivateAsync(); window.ShowStudioSettings(5);
             check(window.Studio.SettingsSections.Length == 7 && model.SettingsTab == 5 && !window.LayoutRoot.IsVisible, "studio_png_settings_same_shell");
+            window.Width = Math.Min(1000, SystemParameters.WorkArea.Width - 32); window.Height = Math.Min(730, SystemParameters.WorkArea.Height - 32);
+            for (int tab = 0; tab < 7; tab++)
+            {
+                window.ShowStudioSettings(tab); window.UpdateLayout();
+                check(!window.LayoutRoot.IsVisible && window.SettingsTabs.IsVisible, "studio_png_settings_navigation_" + tab);
+                check(Find<Button>(window.SettingsTabs).Where(b => b.Content is UIElement).All(b => b.ContentTemplate == null), "studio_settings_preserve_custom_button_content_" + tab);
+                await ScreenEvidence.CaptureAsync(window, "studio-settings-" + tab, check);
+            }
             check(inputCalls == 0, "studio_qa_never_starts_microphone");
         }
         finally { resume?.Invoke(); await window.ShutdownAsync(); window.Close(); Directory.Delete(folder, true); }
