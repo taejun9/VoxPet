@@ -39,12 +39,13 @@ internal static class CharacterEditorQa
             Set(editor, "name", "QA Editor"); Set(editor, "author", "VoxPet QA"); await editor.ApplyAsync();
             check(editor.Document!.Package.Manifest.Name == "QA Editor" && editor.Document.Package.Manifest.Author == "VoxPet QA", "editor_metadata_apply");
             await ScreenEvidence.CaptureAsync(window, "editor-basic", check, new { wireframe = 3 });
-            editor.Page = 1; editor.Selected = editor.Rows.Single(r => r.Id == "head"); Set(editor, "z", "202"); Set(editor, "visible", "False"); await editor.ApplyAsync();
+            int originalHeadZ = editor.Document.Package.Character.Parts.Single(p => p.Id == "head").ZIndex;
+            editor.Page = 1; editor.Selected = editor.Rows.Single(r => r.Id == "head"); Set(editor, "z", (originalHeadZ + 1).ToString()); Set(editor, "visible", "False"); await editor.ApplyAsync();
             check(!editor.Document.Package.Character.Parts.Single(p => p.Id == "head").Visible && !editor.Scene!.Frame.Layers.Any(l => l.Id == "part-head"), "editor_part_visibility_runtime");
             Set(editor, "visible", "True"); await editor.ApplyAsync();
-            Set(editor, "z", "205"); editor.Selected = editor.Rows.First(); editor.Selected = editor.Rows.Single(r => r.Id == "head");
-            check(editor.Fields.Single(f => f.Key == "z").Value == "205" && !editor.CanExport, "editor_pending_selection_preserved_blocks_export");
-            var pendingDocument = editor.Document; await editor.AddAsync(); check(ReferenceEquals(pendingDocument, editor.Document) && editor.Fields.Single(f => f.Key == "z").Value == "205", "editor_pending_structural_edit_preserved"); await editor.ApplyAsync();
+            Set(editor, "z", (originalHeadZ + 2).ToString()); editor.Selected = editor.Rows.First(); editor.Selected = editor.Rows.Single(r => r.Id == "head");
+            check(editor.Fields.Single(f => f.Key == "z").Value == (originalHeadZ + 2).ToString() && !editor.CanExport, "editor_pending_selection_preserved_blocks_export");
+            var pendingDocument = editor.Document; await editor.AddAsync(); check(ReferenceEquals(pendingDocument, editor.Document) && editor.Fields.Single(f => f.Key == "z").Value == (originalHeadZ + 2).ToString(), "editor_pending_structural_edit_preserved"); await editor.ApplyAsync();
             await ScreenEvidence.CaptureAsync(window, "editor-parts", check, new { wireframe = 4 });
             editor.Page = 2; editor.Selected = editor.Rows.Single(r => r.Id == "head"); var old = editor.Document.Package.Character.Anchors.Single(a => a.Id == "head");
             var world = editor.Scene!.Runtime.CurrentRig.Static["head"].Map(0, 0); await editor.MoveAnchorAsync("head", world.X + 25, world.Y + 15);
@@ -93,6 +94,7 @@ internal static class CharacterEditorQa
             check(JsonSerializer.Serialize(broadcastModel.Scene!.Frame) == JsonSerializer.Serialize(editor.Scene.Frame), "editor_preview_broadcast_frame_exact"); await broadcastModel.CloseAsync();
             mainModel.PauseVisualForQa();
             check(await mainModel.Packages.ImportAsync(export), "editor_export_select_broadcast_package"); await window.Studio.RefreshAsync(); window.ShowStudio(1); window.Studio.Selected = window.Studio.Cards.Single(c => c.Legacy == null);
+            window.UpdateLayout(); check(FindAll<System.Windows.Controls.TextBlock>(window.StudioSurface).Where(t => window.Studio.Cards.Any(c => c.Name == t.Text)).All(t => t.Foreground is SolidColorBrush brush && brush.Color.R < 128 && brush.Color.G < 128 && brush.Color.B < 128), "editor_library_card_text_contrast");
             await ScreenEvidence.CaptureAsync(window, "editor-library", check, new { wireframe = 2 });
             var preview = decoded.CreateRuntime(new Random(1)); preview.Update(new(0, 0, 0)); mainModel.Packages.Update(mainModel.Packages.Scene!.Runtime.Actions.LastTime, 0);
             check(mainModel.Packages.Scene.Runtime.Definition.Mouth!.Frames.Count == editor.Scene!.Runtime.Definition.Mouth!.Frames.Count, "editor_broadcast_uses_exported_definition");

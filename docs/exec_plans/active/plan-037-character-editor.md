@@ -105,6 +105,8 @@ SDK10.0.401 locked restore/format verify/Release solution build/Core tests, veri
 
 | 2026-10-15 | 심사 | 여러 timeline 행의 미적용 입력과 시간 재정렬을 검토해 순번 key 대신 immutable event 객체별 weak identity를 사용한다. trigger/pose row key도 분리한다. Attachment700ms 미적용 → Pose900ms 적용/재정렬 → Attachment 적용이 정확한 객체에 반영되는 회귀를 추가한다. 최종 QA는 이 수정까지 포함한다. |
 
+| 2026-10-15 | 검증 | 화면 코드5acdf90 Windows38666460058/OBS38666460020 통과. WPF1740고유검사·실패0, 실제 desktop250장.10화면 시각 검토에서 card DataTemplate 텍스트는 implicit style 경계의 영향을 받아 명시 foreground로 수정한다. QA head Z는 원래 Z+1/+2로 바꿔 눈·입이 가려지지 않게 한다. 마지막 event identity 검사와 함께 재검증한다. |
+
 ## Completion Notes
 
 진행 중. 이 계획과 최종 migration audit가 모두 검증되기 전에는 전체 목표를 완료로 표시하지 않는다.
