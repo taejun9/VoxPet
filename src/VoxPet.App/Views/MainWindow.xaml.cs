@@ -17,8 +17,17 @@ public partial class MainWindow : Window
 {
     public MainViewModel Model { get; }
     public StudioShellViewModel Studio { get; private set; } = null!;
-    public void ShowStudio(int page = 0) { LayoutRoot.Visibility = Visibility.Collapsed; StudioSurface.Visibility = Visibility.Visible; Studio.Page = page; if (page == 5) Studio.Editor.StartPreview(); }
-    public void ShowLegacySettings(int tab) { Studio.Editor.PausePreview(); StudioSurface.Visibility = Visibility.Collapsed; LayoutRoot.Visibility = Visibility.Visible; Model.SettingsTab = tab; UpdateResponsiveLayout(); }
+    public void ShowStudio(int page = 0) { MountSettings(); LayoutRoot.Visibility = Visibility.Collapsed; StudioSurface.Visibility = Visibility.Visible; Studio.Page = page; if (page == 5) Studio.Editor.StartPreview(); }
+    public void ShowStudioSettings(int tab) { Model.SettingsTab = tab; ShowStudio(4); }
+    private void MountSettings()
+    {
+        if (ReferenceEquals(SettingsTabs.Parent, StudioSurface.SettingsHost)) return;
+        PanelsGrid.Children.Remove(SettingsTabs); SettingsTabs.DataContext = Model;
+        StudioSurface.SettingsHost.Children.Add(SettingsTabs); System.Windows.Controls.Grid.SetColumn(SettingsTabs, 0);
+        SettingsTabs.Template = (System.Windows.Controls.ControlTemplate)FindResource("ContentOnlyTabs");
+    }
+    // 기존 자동 회귀 fixture의 기준 화면. 일반 navigation은 ShowStudioSettings만 사용한다.
+    public void ShowLegacySettings(int tab) { StudioSurface.SettingsHost.Children.Remove(SettingsTabs); if (!PanelsGrid.Children.Contains(SettingsTabs)) PanelsGrid.Children.Add(SettingsTabs); Studio.Editor.PausePreview(); StudioSurface.Visibility = Visibility.Collapsed; LayoutRoot.Visibility = Visibility.Visible; Model.SettingsTab = tab; UpdateResponsiveLayout(); }
     private void ReturnStudio(object sender, RoutedEventArgs e) => ShowStudio();
     private CharacterWindow? character;
     private ExpressionHotkeys? hotkeys;
@@ -40,7 +49,7 @@ public partial class MainWindow : Window
     {
         Model = model ?? new(persistSettings: !smoke);
         InitializeComponent(); DataContext = Model;
-        Studio = new(Model, !smoke); StudioSurface.DataContext = Studio; Studio.SettingsRequested += ShowLegacySettings;
+        Studio = new(Model, !smoke); StudioSurface.DataContext = Studio; Studio.SettingsRequested += ShowStudioSettings;
         Studio.ChoosePackage += () => { var dialog = new Microsoft.Win32.OpenFileDialog { Title = "VoxPet 캐릭터 등록", Filter = "VoxPet (*.voxpet)|*.voxpet", CheckFileExists = true }; return dialog.ShowDialog(this) == true ? dialog.FileName : null; };
         Studio.ChooseExport += () => { var dialog = new Microsoft.Win32.SaveFileDialog { Title = "캐릭터 내보내기", Filter = "VoxPet (*.voxpet)|*.voxpet", DefaultExt = ".voxpet", AddExtension = true, FileName = Studio.Selected?.Name ?? "character" }; return dialog.ShowDialog(this) == true ? dialog.FileName : null; };
         if (smoke) ShowLegacySettings(Model.SettingsTab); else ShowStudio();
@@ -264,6 +273,11 @@ public partial class MainWindow : Window
     /// <summary>작은 창은 공통 미리보기를 숨기고 탭을 넓힌다. 캐릭터 탭에서는 항상 미리보기를 볼 수 있다.</summary>
     private void UpdateResponsiveLayout()
     {
+        if (ReferenceEquals(SettingsTabs.Parent, StudioSurface.SettingsHost))
+        {
+            SettingsTabs.Template = (System.Windows.Controls.ControlTemplate)FindResource("ContentOnlyTabs");
+            return;
+        }
         bool compact = ActualWidth < 870 || ActualHeight < 600;
         LayoutRoot.Margin = new Thickness(compact ? 10 : 18);
         NavigationRail.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;

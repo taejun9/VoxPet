@@ -93,7 +93,7 @@ internal static class CharacterEditorQa
             broadcastModel.Update(0, editor.Voice);
             check(JsonSerializer.Serialize(broadcastModel.Scene!.Frame) == JsonSerializer.Serialize(editor.Scene.Frame), "editor_preview_broadcast_frame_exact"); await broadcastModel.CloseAsync();
             mainModel.PauseVisualForQa();
-            check(await mainModel.Packages.ImportAsync(export), "editor_export_select_broadcast_package"); await window.Studio.RefreshAsync(); window.ShowStudio(1); window.Studio.Selected = window.Studio.Cards.Single(c => c.Legacy == null);
+            check(await mainModel.Packages.ImportAsync(export), "editor_export_select_broadcast_package"); await window.Studio.RefreshAsync(); window.ShowStudio(1); window.Studio.Selected = window.Studio.Cards.Single(c => c.Legacy == null && !c.Sample);
             window.UpdateLayout(); check(FindAll<System.Windows.Controls.TextBlock>(window.StudioSurface).Where(t => window.Studio.Cards.Any(c => c.Name == t.Text)).All(t => t.Foreground is SolidColorBrush brush && brush.Color.R < 128 && brush.Color.G < 128 && brush.Color.B < 128), "editor_library_card_text_contrast");
             await ScreenEvidence.CaptureAsync(window, "editor-library", check, new { wireframe = 2 });
             var preview = decoded.CreateRuntime(new Random(1)); preview.Update(new(0, 0, 0)); mainModel.Packages.Update(mainModel.Packages.Scene!.Runtime.Actions.LastTime, 0);

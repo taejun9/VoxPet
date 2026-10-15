@@ -9,7 +9,7 @@ using CharacterCatalogEntry = VoxPet.Core.Models.CharacterDefinition;
 
 namespace VoxPet.App.ViewModels;
 
-public sealed record CharacterCard(string LibraryId, string Name, string Id, string Version, string Author, string Description, ImageSource? Image, CharacterCatalogEntry? Legacy = null);
+public sealed record CharacterCard(string LibraryId, string Name, string Id, string Version, string Author, string Description, ImageSource? Image, CharacterCatalogEntry? Legacy = null, bool Sample = false);
 /// <summary>Dashboard/library/편집 navigation. 기존 settings 화면은 Main의 고수준 navigation으로 연결한다.</summary>
 public sealed class StudioShellViewModel : ObservableObject
 {
@@ -24,11 +24,17 @@ public sealed class StudioShellViewModel : ObservableObject
     public ObservableCollection<CharacterCard> Cards { get; } = [];
     public IEnumerable<CharacterCard> Filtered => Cards.Where(c => c.Name.Contains(Search, StringComparison.CurrentCultureIgnoreCase) || c.Id.Contains(Search, StringComparison.OrdinalIgnoreCase));
     public string Search { get => search; set { if (Set(ref search, value)) Notify(nameof(Filtered)); } }
-    public int Page { get => page; set { if (Set(ref page, value)) { Notify(nameof(IsHome)); Notify(nameof(IsLibrary)); Notify(nameof(IsEditor)); Notify(nameof(IsAttachments)); Notify(nameof(IsActions)); if (IsEditor) Editor.StartPreview(); else Editor.PausePreview(); if (value == 4) SettingsRequested?.Invoke(0); } } }
+    public int Page { get => page; set { if (Set(ref page, value)) { Notify(nameof(IsHome)); Notify(nameof(IsLibrary)); Notify(nameof(IsEditor)); Notify(nameof(IsAttachments)); Notify(nameof(IsActions)); Notify(nameof(IsSettings)); if (IsEditor) Editor.StartPreview(); else Editor.PausePreview(); if (value == 4) SettingsRequested?.Invoke(Main.SettingsTab); } } }
     public bool IsHome => page == 0;
     public bool IsLegacy => !Main.Packages.IsActive;
+    public bool IsSheet => !Main.Packages.IsActive && !Main.Runtime.IsActive;
+    public bool IsImageSet => !Main.Packages.IsActive && Main.Runtime.IsActive;
     public bool IsAttachments => page == 2;
     public bool IsActions => page == 3;
+    public bool IsSettings => page == 4;
+    public string[] SettingsSections => Main.Packages.IsActive ? ["마이크", "음성 반응", "방송 / 캐릭터"] : ["마이크", "음성 반응", "방송 / 캐릭터", "표정 슬롯", "표정 시험", "의상 배치", "손동작 / 입력"];
+    public string CurrentCharacter => Main.Character.Name;
+    public string PackageStatus => Main.Packages.Status;
     public IReadOnlyList<VoxPet.Core.Attachments.AttachmentDefinition> LiveAttachments => Main.Packages.Scene?.Runtime.Definition.Attachments ?? [];
     public IReadOnlyList<VoxPet.Core.Actions.ActionDefinition> LiveActions => Main.Packages.Scene?.Runtime.Definition.Actions ?? [];
     public IReadOnlyList<VoxPet.Core.Character.ExpressionDefinition> LiveExpressions => Main.Packages.Scene?.Runtime.Definition.Expressions ?? [];
@@ -45,33 +51,70 @@ public sealed class StudioShellViewModel : ObservableObject
     public AsyncCommand ExportCommand { get; }
     public AsyncCommand DeleteCommand { get; }
     public RelayCommand QuickPlayCommand { get; }
+    public AsyncCommand SampleCommand { get; }
+    public RelayCommand StopActionsCommand { get; }
+    public RelayCommand RemoveAttachmentsCommand { get; }
+    public ObservableCollection<StudioAttachment> AttachmentCards { get; } = [];
+    public static string SamplePath => Path.Combine(AppContext.BaseDirectory, "Assets", "Samples", "studio-samples.voxpet");
+    public const string SampleId = "voxpet.samples.studio";
+    private async Task<LoadedCharacterPackage?> ReadCardAsync(CharacterCard card)
+    {
+        try { return card.Sample ? await Task.Run(() => CharacterPackageLibrary.Decode(new VoxPetPackageLoader().Load(SamplePath))) : await Main.Packages.LoadForEditorAsync(card.LibraryId); }
+        catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "샘플 파일을 읽지 못했습니다. Assets/Samples 폴더를 확인하세요."; return null; }
+    }
+    public async Task UseSamplesAsync()
+    {
+        if (closing) return;
+        int destination = Page == 3 ? 3 : 2;
+        await Main.Packages.RefreshAsync(); if (closing) return;
+        var existing = Main.Packages.Entries.FirstOrDefault(e => e.CharacterId == SampleId);
+        bool ok = existing != null && await Main.Packages.SelectAsync(existing.LibraryId);
+        if (!ok && !closing) ok = await Main.Packages.ImportAsync(SamplePath);
+        Status = Main.Packages.Status;
+        if (ok && !closing) { Page = destination; UpdateAttachmentCards(); await RefreshAsync(); if (!closing) Selected = Cards.FirstOrDefault(c => c.Sample); }
+    }
+    private void UpdateAttachmentCards()
+    {
+        AttachmentCards.Clear();
+        if (Main.Packages.Loaded is not { } loaded || Main.Packages.Scene is not { } scene) return;
+        foreach (var item in scene.Runtime.Definition.Attachments)
+        {
+            var layer = item.Layers.FirstOrDefault();
+            AttachmentCards.Add(new StudioAttachment(item.Id, item.Name, item.Category, layer != null ? loaded.Images[layer.Asset] : null,
+                () => scene.Runtime.Attachments.EnabledIds.Contains(item.Id), () => { if (!Main.Packages.CanReceiveInput) return; scene.Runtime.Attachments.SetEnabled(item.Id, !scene.Runtime.Attachments.EnabledIds.Contains(item.Id)); foreach (var card in AttachmentCards) card.Refresh(); }));
+        }
+    }
     public event Func<string?>? ChoosePackage;
     public event Func<string?>? ChooseExport;
     public event Action<int>? SettingsRequested;
     public StudioShellViewModel(MainViewModel main, bool persistent)
     {
         Main = main; this.persistent = persistent;
+        SampleCommand = new(UseSamplesAsync, () => !busy && !closing && !Main.Packages.IsBusy);
+        StopActionsCommand = new(() => { Main.Packages.Scene?.Stop(); Main.Hands.StopCommand.Execute(null); }, () => !closing);
+        RemoveAttachmentsCommand = new(() => { if (Main.Packages.Scene is { } scene) foreach (string id in scene.Runtime.Attachments.EnabledIds.ToArray()) scene.Runtime.Attachments.SetEnabled(id, false); foreach (var card in AttachmentCards) card.Refresh(); if (!Main.Packages.IsActive) Main.Wardrobe.RemoveAllCommand.Execute(null); }, () => !closing);
         RefreshCommand = new(RefreshAsync, () => !busy && !closing);
         ImportCommand = new(async () => { if (ChoosePackage?.Invoke() is { } path) { await Main.Packages.ImportAsync(path); Status = Main.Packages.Status; await RefreshAsync(); } }, () => !busy && !closing);
         NewCommand = new(async () => { await Editor.NewAsync(); Page = 5; }, () => !busy && !closing);
-        SelectCommand = new(async () => { if (Selected == null) return; if (Selected.Legacy is { } legacy) await Main.SelectCharacterAsync(legacy.Id); else await Main.Packages.SelectAsync(Selected.LibraryId); Status = Main.Packages.IsActive ? Main.Packages.Status : Main.CharacterStatus; }, () => Selected != null && !busy && !closing);
+        SelectCommand = new(async () => { if (Selected == null) return; if (Selected.Sample) { await UseSamplesAsync(); return; } if (Selected.Legacy is { } legacy) await Main.SelectCharacterAsync(legacy.Id); else await Main.Packages.SelectAsync(Selected.LibraryId); Status = Main.Packages.IsActive ? Main.Packages.Status : Main.CharacterStatus; }, () => Selected != null && !busy && !closing);
         EditCommand = new(async () =>
         {
             if (Selected == null) return;
             if (Selected.Legacy != null) { Status = "기존 PNG 시트와 설정은 방송 / 설정에서 관리하세요. 새 분리 캐릭터는 새 캐릭터로 시작할 수 있습니다."; return; }
-            var loaded = await Main.Packages.LoadForEditorAsync(Selected.LibraryId); if (loaded != null && await Editor.OpenPackageAsync(loaded.Package)) Page = 5;
+            var loaded = await ReadCardAsync(Selected); if (loaded != null && await Editor.OpenPackageAsync(loaded.Package)) Page = 5;
         }, () => Selected?.Legacy == null && Selected != null && !busy && !closing);
-        ExportCommand = new(async () => { if (Selected == null || ChooseExport?.Invoke() is not { } path) return; var loaded = await Main.Packages.LoadForEditorAsync(Selected.LibraryId); if (loaded != null) try { await Task.Run(() => new VoxPetPackageExporter().Export(loaded.Package, path)); Status = "캐릭터 내보내기 완료"; } catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "내보내기 실패 · " + e.Message; } }, () => Selected?.Legacy == null && Selected != null && !busy && !closing);
-        DeleteCommand = new(async () => { if (Selected != null) { await Main.Packages.DeleteAsync(Selected.LibraryId); Status = Main.Packages.Status; await RefreshAsync(); } }, () => Selected?.Legacy == null && Selected != null && !busy && !closing);
+        ExportCommand = new(async () => { if (Selected == null || ChooseExport?.Invoke() is not { } path) return; var loaded = await ReadCardAsync(Selected); if (loaded != null) try { await Task.Run(() => new VoxPetPackageExporter().Export(loaded.Package, path)); Status = "캐릭터 내보내기 완료"; } catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "내보내기 실패 · " + e.Message; } }, () => Selected?.Legacy == null && Selected != null && !busy && !closing);
+        DeleteCommand = new(async () => { if (Selected != null) { await Main.Packages.DeleteAsync(Selected.LibraryId); Status = Main.Packages.Status; await RefreshAsync(); } }, () => Selected?.Legacy == null && Selected != null && !Selected.Sample && !busy && !closing);
         QuickPlayCommand = new(() => { if (Main.Packages.Scene is { } scene && scene.Runtime.Definition.Actions.FirstOrDefault() is { } action) Main.Packages.Play(action.Id); else Main.Hands.PreviewCommand.Execute(null); }, () => !closing);
-        Main.Packages.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Packages.Scene)) { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(LiveExpressions)); Notify(nameof(RuntimeState)); Notify(nameof(IsLegacy)); } };
-        Main.Character.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Character.RuntimeScene)) Notify(nameof(RuntimeState)); };
+        Main.Packages.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Packages.Scene)) { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(LiveExpressions)); Notify(nameof(RuntimeState)); Notify(nameof(IsLegacy)); Notify(nameof(IsSheet)); Notify(nameof(IsImageSet)); Notify(nameof(SettingsSections)); UpdateAttachmentCards(); if (Main.Packages.IsActive && Main.SettingsTab > 2) Main.SettingsTab = 0; } if (e.PropertyName == nameof(Main.Packages.Status)) Notify(nameof(PackageStatus)); SampleCommand.Refresh(); };
+        Main.Character.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Character.RuntimeScene)) Notify(nameof(RuntimeState)); if (e.PropertyName == nameof(Main.Character.Name)) Notify(nameof(CurrentCharacter)); };
+        Main.Runtime.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Runtime.IsActive)) { Notify(nameof(IsSheet)); Notify(nameof(IsImageSet)); } };
         Main.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.VoiceLevel)) Notify(nameof(RuntimeState)); };
     }
-    private void RefreshCommands() { foreach (var c in new[] { RefreshCommand, ImportCommand, NewCommand, SelectCommand, EditCommand, ExportCommand, DeleteCommand }) c.Refresh(); }
+    private void RefreshCommands() { foreach (var c in new[] { RefreshCommand, ImportCommand, NewCommand, SelectCommand, EditCommand, ExportCommand, DeleteCommand, SampleCommand }) c.Refresh(); }
     public async Task RefreshAsync()
     {
-        if (closing || busy) return; busy = true; RefreshCommands(); string? id = Selected?.LibraryId;
+        if (closing || busy) return; busy = true; RefreshCommands(); string? id = Selected?.LibraryId ?? (Main.Packages.Loaded?.Package.Manifest.Id == SampleId ? "builtin-sample" : Main.Packages.Loaded?.LibraryId ?? "legacy-" + Main.SelectedCharacter.Id);
         try
         {
             await Main.Packages.RefreshAsync(); var cards = new List<CharacterCard>();
@@ -83,7 +126,16 @@ public sealed class StudioShellViewModel : ObservableObject
                 catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { /* Original remains available to the legacy recovery flow. */ }
                 cards.Add(new("legacy-" + legacy.Id, legacy.Name, legacy.Id, "v1", "", "기존 PNG 시트 · 기존 설정 유지", image, legacy));
             }
-            foreach (var entry in Main.Packages.Entries)
+            if (File.Exists(SamplePath))
+            {
+                try
+                {
+                    var sample = await Task.Run(() => CharacterPackageLibrary.Decode(new VoxPetPackageLoader().Load(SamplePath)));
+                    cards.Add(new("builtin-sample", sample.Package.Manifest.Name, SampleId, "1.0.0", "VoxPet · CC0", "의상 14분류와 동작 9종이 모두 준비된 테스트 캐릭터", sample.Images[sample.Package.Manifest.Thumbnail!], Sample: true));
+                }
+                catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "샘플을 읽지 못했습니다. Assets/Samples 폴더를 확인하세요. 기존 캐릭터는 유지합니다."; }
+            }
+            foreach (var entry in Main.Packages.Entries.Where(e => e.CharacterId != SampleId))
             {
                 try
                 {
@@ -104,4 +156,16 @@ public sealed class StudioShellViewModel : ObservableObject
         finally { busy = false; RefreshCommands(); }
     }
     public async Task CloseAsync() { closing = true; await Editor.CloseAsync(); RefreshCommands(); }
+}
+
+public sealed class StudioAttachment(string id, string name, string category, ImageSource? image, Func<bool> worn, Action toggle) : ObservableObject
+{
+    public string Id => id;
+    public string Name => name;
+    public string Category => category;
+    public ImageSource? Image => image;
+    public bool IsWorn => worn();
+    public string WearLabel => IsWorn ? "해제" : "착용";
+    public RelayCommand ToggleCommand { get; } = new(toggle);
+    public void Refresh() { Notify(nameof(IsWorn)); Notify(nameof(WearLabel)); }
 }

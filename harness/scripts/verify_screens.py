@@ -43,6 +43,11 @@ for character in ['neulbo', 'pelly']: expected.add('selection-' + character)
 for run in ['unsigned', 'signed']:
     for case in ['fresh12', 'restart-reversed12', 'legacy3-slot', 'corrupt-state', 'restart-pelly', 'missing-character', 'corrupt-character', 'restart-settings', 'public6']: expected.add(f'startup-{run}-{case}')
 expected.update(['imageset-preview', 'imageset-broadcast'])
+for width in [1280, 960, 640, 480]:
+    for page in range(6): expected.add(f'studio-page-{width}-{page}')
+for category in ['hat','glasses','facedecoration','earrings','top','bottom','onepiece','shoes','outerwear','cape','headaccessory','backaccessory','handaccessory','effect']: expected.add('studio-costume-'+category)
+for action in ['claw','toy-gun','heart','toy-sword','magic-wand','firearm','bow','one-hand','two-hand']: expected.add('studio-action-'+action)
+
 records = []
 for name in sorted(expected):
     metadata = json.loads((args.folder / f'voxpet-screen-{name}.json').read_text())

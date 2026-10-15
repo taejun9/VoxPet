@@ -48,7 +48,7 @@ internal static class RuntimeSafetyQa
             try
             {
                 await shell.RefreshAsync();
-                check(shell.Cards.Count(c => c.Legacy == null) == 1 && shell.Status.StartsWith("일부 캐릭터"), "safety_library_bad_thumbnail_isolated");
+                check(shell.Cards.Count(c => c.Legacy == null && !c.Sample) == 1 && shell.Status.StartsWith("일부 캐릭터"), "safety_library_bad_thumbnail_isolated");
             }
             finally { await shell.CloseAsync(); await main.DisposeAsync(); }
             for (int i = 0; i < 10000; i++) native.Input(new(TriggerKind.Manual, "unbound"));

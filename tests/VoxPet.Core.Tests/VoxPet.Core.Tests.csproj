@@ -3,6 +3,7 @@
   <ItemGroup>
     <Content Include="../../src/VoxPet.App/Assets/ImageSetTemplate/imageset.json" Link="ImageSetTemplate/imageset.json" CopyToOutputDirectory="PreserveNewest"/>
     <Content Include="../../src/VoxPet.App/Assets/ImageSetTemplate/*.png" Link="ImageSetTemplate/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
+    <Content Include="../../src/VoxPet.App/Assets/Samples/*.voxpet" Link="Samples/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest"/>
     <ProjectReference Include="../../src/VoxPet.Core/VoxPet.Core.csproj"/>
     <Compile Include="../../src/VoxPet.App/Services/SettingsStore.cs" Link="SettingsStore.cs"/>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
