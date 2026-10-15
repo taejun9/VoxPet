@@ -18,6 +18,16 @@ internal static class UnifiedStudioQa
         var image = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); image.Render(surface);
         var pixels = new byte[512 * 512 * 4]; image.CopyPixels(pixels, 2048, 0); return Convert.ToHexString(SHA256.HashData(pixels));
     }
+    private static async Task CheckSelectorAsync(ComboBox combo, string id, Action<bool, string> check)
+    {
+        combo.UpdateLayout();
+        var selected = Find<TextBlock>(combo).Where(t => t.IsVisible && !string.IsNullOrWhiteSpace(t.Text)).ToArray();
+        check(selected.Length > 0 && selected.All(t => t.Foreground is SolidColorBrush b && b.Color == Colors.Black), "studio_selector_black_" + id);
+        combo.IsDropDownOpen = true; await Task.Delay(30); combo.UpdateLayout();
+        var item = combo.ItemContainerGenerator.ContainerFromIndex(0) as ComboBoxItem;
+        check(item != null && Find<TextBlock>(item).Any(t => t.IsVisible && t.Foreground is SolidColorBrush b && b.Color == Colors.Black), "studio_selector_popup_black_" + id);
+        combo.IsDropDownOpen = false;
+    }
     public static async Task RunAsync(Action<bool, string> check)
     {
         string folder = Path.Combine(Path.GetTempPath(), "VoxPet-studio-qa-" + Guid.NewGuid()); Directory.CreateDirectory(folder);
@@ -26,7 +36,7 @@ internal static class UnifiedStudioQa
         var window = new MainWindow(true, SystemParameters.WorkArea, model); Action? resume = null;
         try
         {
-            window.Show(); await window.Ready; resume = model.PauseVisualForQa(); window.ShowStudio();
+            window.Show(); await window.Ready; model.Devices.Add(new VoxPet.App.Services.AudioDevice("qa-studio", "QA 마이크 표시 시험")); model.SelectedDevice = model.Devices[0]; resume = model.PauseVisualForQa(); window.ShowStudio();
             check(window.StudioSurface.IsVisible && !window.LayoutRoot.IsVisible && ReferenceEquals(window.SettingsTabs.Parent, window.StudioSurface.SettingsHost), "studio_single_shell_mounts_settings");
             await window.Studio.RefreshAsync(); check(window.Studio.Cards.Count(c => c.Sample) == 1, "studio_sample_card_bundled");
             await window.Studio.UseSamplesAsync();
@@ -72,8 +82,10 @@ internal static class UnifiedStudioQa
                     window.Studio.Page = page; window.UpdateLayout(); await Task.Delay(15);
                     check(window.StudioSurface.IsVisible && !window.LayoutRoot.IsVisible, $"studio_single_navigation_{size.Width}_{page}");
                     check(Find<ListBox>(window.StudioSurface).Any(l => ReferenceEquals(l.ItemsSource, window.Studio.Navigation) && l.IsVisible), $"studio_sidebar_retained_{size.Width}_{page}");
+                    if (page == 0) await CheckSelectorAsync(Find<ComboBox>(window.StudioSurface).Single(c => c.IsVisible && ReferenceEquals(c.ItemsSource, model.Devices)), $"microphone_{size.Width}", check);
                     if (page == 4)
                     {
+                        await CheckSelectorAsync(window.StudioSurface.SettingsSection, $"settings_{size.Width}", check);
                         check(window.SettingsTabs.IsVisible && window.StudioSurface.SettingsSection.IsVisible && window.SettingsTabs.DataContext == model, $"studio_settings_embedded_{size.Width}");
                         check(Find<TextBlock>(window.SettingsTabs).Where(t => t.IsVisible && t.Text == "마이크").All(t => t.Foreground is SolidColorBrush b && b.Color.R < 128), $"studio_settings_light_text_{size.Width}");
                     }
@@ -88,6 +100,7 @@ internal static class UnifiedStudioQa
             for (int tab = 0; tab < 7; tab++)
             {
                 window.ShowStudioSettings(tab); window.UpdateLayout();
+                await CheckSelectorAsync(window.StudioSurface.SettingsSection, "png_settings_" + tab, check);
                 check(!window.LayoutRoot.IsVisible && window.SettingsTabs.IsVisible, "studio_png_settings_navigation_" + tab);
                 check(Find<Button>(window.SettingsTabs).Where(b => b.Content is UIElement).All(b => b.ContentTemplate == null), "studio_settings_preserve_custom_button_content_" + tab);
                 await ScreenEvidence.CaptureAsync(window, "studio-settings-" + tab, check);
