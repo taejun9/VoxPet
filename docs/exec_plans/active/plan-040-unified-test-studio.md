@@ -60,7 +60,9 @@ QA 후 같은 에이전트가 요구사항·단일 navigation·기존 기능/설
 |---|---|---|
 | 2026-10-15 | 설계 | main/origin 동기화·깨끗한 상태 확인, 전용 worktree와 계획 작성. 서브에이전트 없음. |
 | 2026-10-15 | 제작 | 단일 Studio navigation/공통 미리보기·설정 host·light 리소스와 의상 착용 상태/충돌 표시·동작 중지·샘플 카드/관리 복사본 재사용을 구현했다. 이전 전체 화면은 기존 합성 QA 기준에만 남기며 일반 버튼은 Studio 안으로 연결했다. |
-| 2026-10-15 | 검증 | locked restore와 Release 컴파일 경고0·오류0, Core369/369 통과. 샘플57파일(32PNG/14의상/9동작/2문서)과 Core 회귀3개, 새 Studio WPF QA/47desktop 장면을 추가했다. 최종 formatter/build/Windows QA와 시각 검토를 이어서 수행한다. |
+| 2026-10-15 | 검증 | locked restore와 Release 컴파일 경고0·오류0, Core369/369 통과. 샘플57파일(32PNG/14의상/9동작/2문서)과 Core 회귀3개, 새 Studio WPF QA/48desktop 장면을 추가했다. 최종 formatter/build/Windows QA와 시각 검토를 이어서 수행한다. |
+
+| 2026-10-15 | 검증 | 첫 Windows QA에서 editor_library_card_text_contrast 1실패를 확인했고, 실제 PNG에서 캐릭터·의상·동작 카드 이름의 밝은 글씨를 재현했다. DataTemplate의 TextBlock에 명시적 어두운 색을 적용하고 샘플 이름 대비 검사/작은 sidebar 줄바꿈을 보완했다. OBS bc9cebb WGC 회귀는 통과했다. |
 
 ## Completion Notes
 

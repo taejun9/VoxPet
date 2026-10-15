@@ -47,7 +47,9 @@ internal static class UnifiedStudioQa
             var suit = window.Studio.AttachmentCards.Single(c => c.Id == "onePiece"); suit.ToggleCommand.Execute(null);
             check(suit.IsWorn && !top.IsWorn && top.WearLabel == "착용", "studio_costume_conflicts_refresh_all_cards");
             window.Studio.RemoveAttachmentsCommand.Execute(null); top.ToggleCommand.Execute(null);
-            window.Studio.Page = 3;
+            window.Studio.Page = 3; window.UpdateLayout();
+            var sampleNames = window.Studio.LiveAttachments.Select(a => a.Name).Concat(window.Studio.LiveActions.Select(a => a.Name)).ToHashSet();
+            check(Find<TextBlock>(window.StudioSurface).Where(t => sampleNames.Contains(t.Text)).All(t => t.Foreground is SolidColorBrush b && b.Color.R < 128 && b.Color.G < 128 && b.Color.B < 128), "studio_sample_card_text_contrast");
             foreach (var action in window.Studio.LiveActions)
             {
                 model.Packages.Update(now += 2, 0); string rest = Render(model.Character);
