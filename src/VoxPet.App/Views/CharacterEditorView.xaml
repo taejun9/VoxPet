@@ -9,7 +9,9 @@
 
   <Style TargetType="Button"><Setter Property="ContentTemplate"><Setter.Value><DataTemplate><TextBlock Text="{Binding}" Foreground="{Binding Foreground,RelativeSource={RelativeSource AncestorType=Button}}"/></DataTemplate></Setter.Value></Setter><Setter Property="Padding" Value="10,7"/><Setter Property="Margin" Value="3"/><Setter Property="Background" Value="#347FFF"/><Setter Property="Foreground" Value="White"/><Setter Property="BorderThickness" Value="0"/><Style.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="#526778"/><Setter Property="Background" Value="#E3E9F2"/></Trigger></Style.Triggers></Style>
   <Style TargetType="TextBox"><Setter Property="Background" Value="White"/><Setter Property="Foreground" Value="#172A3A"/><Setter Property="BorderBrush" Value="#CAD5E1"/><Setter Property="Padding" Value="5"/></Style>
-  <Style TargetType="ComboBox"><Setter Property="Background" Value="White"/><Setter Property="Foreground" Value="#172A3A"/><Setter Property="MinHeight" Value="29"/></Style>
+  <DataTemplate x:Key="EditorTextItem"><TextBlock Text="{Binding}" Foreground="Black"/></DataTemplate>
+  <DataTemplate x:Key="EditorNamedItem"><TextBlock Text="{Binding Name}" Foreground="Black"/></DataTemplate>
+  <Style TargetType="ComboBox"><Setter Property="ItemTemplate" Value="{StaticResource EditorTextItem}"/><Setter Property="Background" Value="White"/><Setter Property="Foreground" Value="#172A3A"/><Setter Property="MinHeight" Value="29"/></Style>
   <DataTemplate x:Key="FieldTemplate">
    <Grid Margin="0,3"><Grid.ColumnDefinitions><ColumnDefinition Width="95"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBlock Text="{Binding Label}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="#172A3A" Margin="0,0,8,0"/>
@@ -40,12 +42,12 @@
       <CheckBox Content="앵커 시각화" IsChecked="{Binding Guides}" Foreground="#172A3A" Margin="8"/>
       <TextBlock Text="음량 시뮬레이션" Margin="8,3" Foreground="#172A3A"/><Slider Minimum="0" Maximum="1" Value="{Binding Voice}" Margin="8"/>
       <TextBlock Text="{Binding PreviewState}" Margin="8,3" TextWrapping="Wrap" Foreground="#172A3A"/>
-      <ComboBox ItemsSource="{Binding Expressions}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewExpression}" Margin="8,3"/>
+      <ComboBox ItemsSource="{Binding Expressions}" ItemTemplate="{StaticResource EditorNamedItem}" SelectedValuePath="Id" SelectedValue="{Binding PreviewExpression}" Margin="8,3"/>
       <Button Content="표정 적용" Command="{Binding ExpressionCommand}"/>
-      <ComboBox ItemsSource="{Binding Actions}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewAction}" Margin="8,3"/>
+      <ComboBox ItemsSource="{Binding Actions}" ItemTemplate="{StaticResource EditorNamedItem}" SelectedValuePath="Id" SelectedValue="{Binding PreviewAction}" Margin="8,3"/>
       <WrapPanel><Button Content="미리보기 / 동작 재생" Command="{Binding PlayCommand}"/><Button Content="중지" Command="{Binding StopCommand}"/></WrapPanel>
       <TextBlock Text="동작 타임라인 (ms)" Foreground="#172A3A" Margin="8,3"/><Slider Minimum="0" Maximum="{Binding Duration}" Value="{Binding Scrub}" Margin="8"/>
-      <ComboBox ItemsSource="{Binding Attachments}" DisplayMemberPath="Name" SelectedValuePath="Id" SelectedValue="{Binding PreviewAttachment}" Margin="8,3"/><Button Content="부착물 착용 / 해제" Command="{Binding AttachmentCommand}"/>
+      <ComboBox ItemsSource="{Binding Attachments}" ItemTemplate="{StaticResource EditorNamedItem}" SelectedValuePath="Id" SelectedValue="{Binding PreviewAttachment}" Margin="8,3"/><Button Content="부착물 착용 / 해제" Command="{Binding AttachmentCommand}"/>
      </StackPanel></ScrollViewer>
     </Grid>
     <ScrollViewer Grid.Column="2" Visibility="{Binding IsInspectorPage,Converter={StaticResource VisibleBool}}" VerticalScrollBarVisibility="Auto" Background="White" Padding="10">

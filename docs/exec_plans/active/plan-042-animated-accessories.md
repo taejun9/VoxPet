@@ -54,6 +54,8 @@ codex/plan-042-animated-accessories / .worktree/plan-042-animated-accessories에
 | 2026-10-16 | 기존14분류/9동작은 유지하고 헤어3종을 머리 장식으로 추가해 모자와 동시에 착용한다. | 헬리콥터 모자와 헤어를 함께 시험하고 기존 hat 분류의 배타 규칙을 보존한다. |
 | 2026-10-16 | attachment layer에 선택적 반복 PNG frame 정의를 추가하고 editor에서도 프레임/속도를 수정할 수 있게 한다. | 손동작 재생과 별개로 idle에서도 모자/날개가 움직여야 하며 패키지 재등록 때도 동작해야 한다. |
 
+| 2026-10-16 | Windows 첫 실행에서 발견한 편집기 선택값의 흰 글씨를 명시적 검정 item template으로 수정하고 선택/팝업 검사를 추가한다. | 새 애니메이션 편집 진입으로 기존 편집기 선택값 대비 문제를 재현했다. 정지→반복 신규 생성의 기본 간격100ms는 fixture에서160ms를 다시 지정하도록 바로잡는다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -62,6 +64,8 @@ codex/plan-042-animated-accessories / .worktree/plan-042-animated-accessories에
 
 | 2026-10-16 | 제작 | PNG 반복 재생/codec/편집 필드·8프레임 모자·6프레임 날개·헤어3종/총17종·샘플1.1.0 업그레이드를 구현했다. 이전 복사본을 보존한다. |
 | 2026-10-16 | 검증 | locked restore, Core380/380, Release 경고0/오류0, base/app/compileall/diff 통과. Windows 화면·편집 왕복 회귀 검사를 확장했다. |
+
+| 2026-10-16 | 검증 | 첫 Windows38878311478: Core380/경고0·오류0, WPF2027통과/2실패. 편집기 선택 글자색 문제와 fixture 간격 기대를 수정한다. OBS38878311487은 source1dd8fab 일치/WGC·크로마·alpha·동일 HWND·각7프레임 통과했다. |
 
 ## Completion Notes
 

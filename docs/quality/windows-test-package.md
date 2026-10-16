@@ -2,7 +2,7 @@
 
 Windows QA workflow의 `VoxPet-Windows-test-package` artifact에서 `VoxPet-Windows-test.zip`을 받는다. ZIP 전체를 새 폴더에 풀고 `START.cmd` 또는 `VoxPet.exe`를 실행한다. 자체 포함 win-x64 EXE이므로 별도 SDK/runtime 설치는 필요 없다. 공용 unsigned 빌드이며 게시자 신원을 인증서로 검증한 배포가 아니다. 자산과 Licenses도 함께 보관한다.
 
-일반 앱의 통합 사이드바와 의상14종·동작9종은 [Studio 샘플 안내](../guides/studio-samples.md)를 따른다.
+일반 앱의 통합 사이드바와 의상17종·동작9종은 [Studio 샘플 안내](../guides/studio-samples.md)를 따른다.
 
 ## 마이크 없는 자동 검사
 

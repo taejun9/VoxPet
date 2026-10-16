@@ -21,7 +21,7 @@ internal static class UnifiedStudioQa
         var image = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); image.Render(surface);
         var pixels = new byte[512 * 512 * 4]; image.CopyPixels(pixels, 2048, 0); return Convert.ToHexString(SHA256.HashData(pixels));
     }
-    private static async Task CheckSelectorAsync(ComboBox combo, string id, Action<bool, string> check)
+    internal static async Task CheckSelectorAsync(ComboBox combo, string id, Action<bool, string> check)
     {
         combo.UpdateLayout();
         var selected = Find<TextBlock>(combo).Where(t => t.IsVisible && !string.IsNullOrWhiteSpace(t.Text)).ToArray();

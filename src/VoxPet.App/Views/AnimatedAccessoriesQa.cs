@@ -48,6 +48,12 @@ internal static class AnimatedAccessoriesQa
         var original = new VoxPetPackageLoader().Load(StudioShellViewModel.SamplePath);
         var editor = window.Studio.Editor; check(await editor.OpenPackageAsync(original), "studio_animation_editor_open");
         window.ShowStudio(5); editor.PausePreview(); editor.Page = 6; editor.Selected = editor.Rows.Single(r => r.Id == "hat");
+        foreach (var pair in new[] { ("expression", (object)editor.Expressions), ("action", editor.Actions), ("attachment", editor.Attachments) })
+        {
+            window.UpdateLayout(); var combo = Find<ComboBox>(window.StudioSurface).Single(c => ReferenceEquals(c.ItemsSource, pair.Item2));
+            combo.BringIntoView(); await UnifiedStudioQa.CheckSelectorAsync(combo, "editor_" + pair.Item1, check);
+        }
+        for (DependencyObject? ancestor = Find<CharacterEditorView>(window.StudioSurface).Single(); ancestor != null; ancestor = VisualTreeHelper.GetParent(ancestor)) if (ancestor is ScrollViewer scroll) scroll.ScrollToTop();
         void Set(string key, string value) => editor.DetailFields.Single(f => f.Key == key).Value = value;
         Set("animationMs", "160"); Set("animation:0", "samples/hat-1.png"); await editor.ApplyDetailAsync();
         var hat = editor.Document!.Package.Character.Attachments.Single(a => a.Id == "hat").Layers[0];
@@ -60,7 +66,7 @@ internal static class AnimatedAccessoriesQa
         check(editor.Document.Package.Character.Attachments.Single(a => a.Id == "hat").Layers[0].Animation == null, "studio_animation_editor_static_option");
         Set("animationCount", "2"); await editor.ApplyDetailAsync();
         check(editor.DetailFields.Count(f => f.Key.StartsWith("animation:")) == 2, "studio_animation_editor_grows_frame_fields");
-        Set("animation:0", "samples/hat.png"); Set("animation:1", "samples/hat-2.png"); await editor.ApplyDetailAsync();
+        Set("animationMs", "160"); Set("animation:0", "samples/hat.png"); Set("animation:1", "samples/hat-2.png"); await editor.ApplyDetailAsync();
         editor.PreviewAttachment = "hat"; editor.AttachmentCommand.Execute(null); editor.Seek(160);
         check(editor.Scene!.Frame.Layers.Any(l => l.Asset == "samples/hat-2.png"), "studio_animation_editor_preview_frame");
         await CaptureFieldsAsync(window, editor, "hat", check);
@@ -78,7 +84,10 @@ internal static class AnimatedAccessoriesQa
     {
         window.UpdateLayout();
         var field = editor.DetailFields.Single(f => f.Key == "animationCount");
-        Find<TextBox>(window.StudioSurface).FirstOrDefault(t => ReferenceEquals(t.DataContext, field))?.BringIntoView();
+        var box = Find<TextBox>(window.StudioSurface).Single(t => ReferenceEquals(t.DataContext, field));
+        for (DependencyObject? ancestor = box; ancestor != null; ancestor = VisualTreeHelper.GetParent(ancestor))
+            if (ancestor is ScrollViewer { Content: UIElement content } scroll && content is not TextBox)
+            { scroll.ScrollToVerticalOffset(box.TranslatePoint(new Point(), content).Y - 10); break; }
         await ScreenEvidence.CaptureAsync(window, "studio-editor-animation-" + id, check);
     }
 }
