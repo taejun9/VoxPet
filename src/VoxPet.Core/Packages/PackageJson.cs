@@ -180,6 +180,12 @@ public static class PackageJson
             t.Enabled
         })
     }, options);
+    private static AttachmentAnimation? ReadAnimation(JsonElement e)
+    {
+        if (e.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null) return null;
+        if (e.ValueKind != JsonValueKind.Object) throw new VoxPetPackageException("부착물 animation은 object여야 합니다.");
+        return new(A(e, "frames").Select(v => Path(v.GetString())), N(e, "frameDurationMs", 100));
+    }
     public static AttachmentDefinition ReadAttachment(byte[] bytes)
     {
         using var doc = Parse(bytes); var e = doc.RootElement; Schema(e);
@@ -189,7 +195,7 @@ public static class PackageJson
             requiredVisibleParts: A(l, "requiredVisibleParts").Select(v => v.GetString()!), onlyDuringAction: B(l, "onlyDuringAction"), hideOnMissingPose: B(l, "hideOnMissingPose"),
             placement: new(T(P(l, "transform")), S(l, "space", "canvas") switch { "canvas" => AttachmentSpace.Canvas, "anchor" => AttachmentSpace.Anchor, _ => throw new VoxPetPackageException("배치 space를 확인하세요.") },
                 N(l, "follow", 1), Has(l, "width") && P(l, "width").ValueKind != JsonValueKind.Null ? N(l, "width") : null,
-                Has(l, "height") && P(l, "height").ValueKind != JsonValueKind.Null ? N(l, "height") : null, B(l, "deformWithRig")))).ToArray();
+                Has(l, "height") && P(l, "height").ValueKind != JsonValueKind.Null ? N(l, "height") : null, B(l, "deformWithRig")), animation: ReadAnimation(P(l, "animation")))).ToArray();
         return new(S(e, "id")!, S(e, "name")!, S(e, "category")!, layers, S(e, "compatibilityTag"), S(e, "exclusiveGroup"));
     }
     public static byte[] WriteAttachment(AttachmentDefinition a) => JsonSerializer.SerializeToUtf8Bytes(new
@@ -212,6 +218,7 @@ public static class PackageJson
             l.RequiredVisibleParts,
             l.OnlyDuringAction,
             l.HideOnMissingPose,
+            animation = l.Animation is { } a ? new { a.Frames, a.FrameDurationMs } : null,
             space = l.Placement.Space.ToString().ToLowerInvariant(),
             l.Placement.Follow,
             l.Placement.Width,

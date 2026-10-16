@@ -261,7 +261,11 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 case TriggerDefinition t:
                     Field(DetailFields, "id", "트리거 ID", t.Id); Field(DetailFields, "kind", "종류", t.Kind, Enum.GetNames<TriggerKind>()); Field(DetailFields, "key", "키 / 수동 ID", t.Key); Field(DetailFields, "button", "마우스 버튼", t.Button, ["left", "right", "middle"]); Field(DetailFields, "modifiers", "조합 키", t.Modifiers.ToString()); Field(DetailFields, "threshold", "음량 경계 (0~1)", t.Threshold); Field(DetailFields, "interval", "간격 (초)", t.IntervalSeconds); Field(DetailFields, "immediate", "바로 시작", t.StartImmediately, Booleans); Field(DetailFields, "enabled", "사용", t.Enabled, Booleans); break;
                 case AttachmentLayer l:
-                    Field(DetailFields, "id", "레이어 ID", l.Id); Field(DetailFields, "asset", "PNG", l.Asset, asset: true); Field(DetailFields, "anchor", "앵커", l.Anchor, c.Anchors.Select(a => a.Id)); Field(DetailFields, "z", "Z-index", l.ZIndex); TransformFields(DetailFields, l.Transform);
+                    Field(DetailFields, "id", "레이어 ID", l.Id); Field(DetailFields, "asset", "PNG", l.Asset, asset: true); Field(DetailFields, "anchor", "앵커", l.Anchor, c.Anchors.Select(a => a.Id)); Field(DetailFields, "z", "Z-index", l.ZIndex);
+                    Field(DetailFields, "animationCount", "반복 프레임 수 (0=정지, 2~64)", l.Animation?.Frames.Count ?? 0);
+                    Field(DetailFields, "animationMs", "프레임 간격 (16~10000ms)", l.Animation?.FrameDurationMs ?? 100);
+                    for (int i = 0; i < (l.Animation?.Frames.Count ?? 0); i++) Field(DetailFields, "animation:" + i, "반복 PNG · " + (i + 1), l.Animation!.Frames[i], asset: true);
+                    TransformFields(DetailFields, l.Transform);
                     Field(DetailFields, "space", "위치 기준", l.Placement.Space, Enum.GetNames<AttachmentSpace>()); Field(DetailFields, "follow", "영향도 (0~1)", l.Placement.Follow); Field(DetailFields, "width", "너비 (빈 값=Canvas)", l.Placement.Width); Field(DetailFields, "height", "높이 (빈 값=Canvas)", l.Placement.Height); Field(DetailFields, "deform", "소매 격자 변형", l.Placement.DeformWithRig, Booleans);
                     Field(DetailFields, "position", "위치 상속", l.Inherit.Position, Booleans); Field(DetailFields, "rotationInherit", "회전 상속", l.Inherit.Rotation, Booleans); Field(DetailFields, "scaleInherit", "배율 상속", l.Inherit.Scale, Booleans); Field(DetailFields, "mouthMotion", "입 움직임 상속", l.Inherit.MouthMotion, Booleans); Field(DetailFields, "during", "동작 중에만", l.OnlyDuringAction, Booleans); Field(DetailFields, "missing", "포즈 없으면 숨김", l.HideOnMissingPose, Booleans);
                     Field(DetailFields, "required", "필요 파츠 (쉼표)", string.Join(",", l.RequiredVisibleParts));
@@ -329,8 +333,11 @@ public sealed class CharacterEditorViewModel : ObservableObject
             }
             if (owner is AttachmentDefinition attachment && item is AttachmentLayer l)
             {
+                int count = I(v, "animationCount");
+                if (count is < 0 or 1 or > AttachmentAnimation.MaxFrames) throw new ArgumentException("반복 프레임 수는0또는2~64입니다.");
+                var animation = count == 0 ? null : new AttachmentAnimation(Enumerable.Range(0, count).Select(i => v.GetValueOrDefault("animation:" + i, l.Animation?.Frames.LastOrDefault() ?? l.Asset)), N(v, "animationMs"));
                 var layers = attachment.Layers.ToArray(); layers[Array.IndexOf(layers, l)] = new(S(v, "id"), S(v, "asset"), S(v, "anchor"), I(v, "z"), inherit: new(B(v, "position"), B(v, "rotationInherit"), B(v, "scaleInherit"), B(v, "mouthMotion")), poses: v.Where(p => p.Key.StartsWith("pose:") && !string.IsNullOrWhiteSpace(p.Value)).ToDictionary(p => p.Key[5..], p => p.Value), requiredVisibleParts: S(v, "required").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries), onlyDuringAction: B(v, "during"), hideOnMissingPose: B(v, "missing"),
-                    placement: new(T(v), E<AttachmentSpace>(v, "space"), N(v, "follow"), Opt(v, "width") == null ? null : N(v, "width"), Opt(v, "height") == null ? null : N(v, "height"), B(v, "deform")));
+                    placement: new(T(v), E<AttachmentSpace>(v, "space"), N(v, "follow"), Opt(v, "width") == null ? null : N(v, "width"), Opt(v, "height") == null ? null : N(v, "height"), B(v, "deform")), animation: animation);
                 d.Attachments[d.Attachments.FindIndex(x => x.Id == attachment.Id)] = new(attachment.Id, attachment.Name, attachment.Category, layers, attachment.CompatibilityTag, attachment.ExclusiveGroup);
             }
             if (item is PoseDefinition pose)

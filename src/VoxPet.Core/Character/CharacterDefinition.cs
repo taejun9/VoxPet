@@ -26,7 +26,7 @@ public sealed record CharacterDefinition
     public IEnumerable<string> Assets => Parts.Select(p => p.Asset).Concat(Mouth?.Frames ?? []).Concat(SpriteSheet?.Assets ?? [])
         .Concat(Expressions.SelectMany(e => new[] { e.EyesOpen, e.EyesClosed, e.Brows }.OfType<string>()))
         .Concat(Poses.SelectMany(p => p.Sprites.Values.OfType<string>()))
-        .Concat(Attachments.SelectMany(a => a.Layers).SelectMany(l => new[] { l.Asset }.Concat(l.Poses.Values)))
+        .Concat(Attachments.SelectMany(a => a.Layers).SelectMany(l => new[] { l.Asset }.Concat(l.Poses.Values).Concat(l.Animation?.Frames ?? [])))
         .Concat(Actions.SelectMany(a => a.Timeline).Where(e => e.Kind is ActionEventKind.Sprite or ActionEventKind.Effect).Select(e => e.Value!))
         .Distinct(StringComparer.OrdinalIgnoreCase);
 

@@ -52,7 +52,7 @@ public sealed class AttachmentSystem
         }
         return Array.AsReadOnly(result.ToArray());
     }
-    public IReadOnlyList<ResolvedAttachmentLayer> Resolve(RigPose rig, ActionState? action = null, IReadOnlySet<string>? visibleParts = null, IEnumerable<string>? ids = null, string? compatibilityTag = null)
+    public IReadOnlyList<ResolvedAttachmentLayer> Resolve(RigPose rig, ActionState? action = null, IReadOnlySet<string>? visibleParts = null, IEnumerable<string>? ids = null, string? compatibilityTag = null, double time = 0)
     {
         ArgumentNullException.ThrowIfNull(rig); action ??= ActionState.Idle;
         var choices = ids is null ? EnabledIds : DefinitionValidation.Copy(ids, nameof(ids)); var layers = new List<ResolvedAttachmentLayer>();
@@ -63,9 +63,12 @@ public sealed class AttachmentSystem
             foreach (var layer in item.Layers)
             {
                 if (layer.OnlyDuringAction && !action.IsPlaying || visibleParts is not null && layer.RequiredVisibleParts.Any(part => !visibleParts.Contains(part))) continue;
-                string asset = layer.Asset;
-                if (layer.Poses.Count != 0 && !layer.Poses.TryGetValue(action.PoseName ?? "idle", out asset!))
-                { if (layer.HideOnMissingPose) continue; asset = layer.Asset; }
+                string asset = layer.Animation?.FrameAt(time) ?? layer.Asset;
+                if (layer.Poses.Count != 0)
+                {
+                    if (layer.Poses.TryGetValue(action.PoseName ?? "idle", out var posed)) asset = posed;
+                    else if (layer.HideOnMissingPose) continue;
+                }
                 if (!rig.Static.TryGetValue(layer.Anchor, out var baseline)) throw new ArgumentException("부착물 Anchor가 없습니다.");
                 var bone = AnchorDelta(rig, layer.Anchor, layer.Placement.Follow, layer.Inherit);
                 var origin = layer.Placement.Space == AttachmentSpace.Canvas ? bone : bone.Compose(baseline);
@@ -76,8 +79,8 @@ public sealed class AttachmentSystem
         }
         return Array.AsReadOnly(layers.OrderBy(l => l.ZIndex).ToArray());
     }
-    public IReadOnlyList<ResolvedAttachmentLayer> Compose(RigPose rig, ActionState action, string? compatibilityTag, IReadOnlySet<string>? visibleParts = null, IEnumerable<string>? ids = null)
-        => Resolve(rig, action, visibleParts, ids, compatibilityTag);
+    public IReadOnlyList<ResolvedAttachmentLayer> Compose(RigPose rig, ActionState action, string? compatibilityTag, IReadOnlySet<string>? visibleParts = null, IEnumerable<string>? ids = null, double time = 0)
+        => Resolve(rig, action, visibleParts, ids, compatibilityTag, time);
     internal static AffineTransform2D AnchorDelta(RigPose rig, string anchor, double follow, AttachmentInheritance inherit)
     {
         var baseline = rig.Static[anchor]; var animated = rig.Bone(follow)[anchor];

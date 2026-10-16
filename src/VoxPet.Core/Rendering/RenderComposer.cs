@@ -86,7 +86,7 @@ public sealed class RenderComposer
             string? asset = Sprite("mouth", mouth.Frames[mouthFrame]);
             if (asset is not null) Layer("face-mouth", asset, mouth.ZIndex, Anchor(mouth.Anchor, true));
         }
-        foreach (var attachment in attachments.Compose(rig, action, context.Action.ActionId is null ? null : definition.Actions.FirstOrDefault(a => a.Id == context.Action.ActionId)?.CompatibilityTag, visible, selectedIds))
+        foreach (var attachment in attachments.Compose(rig, action, context.Action.ActionId is null ? null : definition.Actions.FirstOrDefault(a => a.Id == context.Action.ActionId)?.CompatibilityTag, visible, selectedIds, context.Input.Time))
         {
             RenderMesh? mesh = attachment.Placement.DeformWithRig ? geometry is IPlacedRenderGeometryProvider placed ? placed.Compose(attachment, context) : geometry?.Compose(attachment.Id, true, attachment.Placement.Follow, context) : null;
             if (attachment.Placement.DeformWithRig && geometry is null && action.IsPlaying) throw new InvalidOperationException("garment 연결 격자 provider가 필요합니다.");

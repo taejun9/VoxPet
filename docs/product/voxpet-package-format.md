@@ -22,6 +22,8 @@ trigger는 id(생략 시 자동ID), type(hotkey/mouse/voiceThreshold/interval/ma
 
 attachment는 schemaVersion2/id/name/category/layers와 선택 compatibilityTag/exclusiveGroup이다. 분류는 [14종](voxpet-2-migration.md)을 사용하며 v1 다중 의상에는 legacyOutfit 호환 분류를 보존한다. layer는 id/file/anchor/zIndex/transform/inherit(position/rotation/scale/mouthMotion), 선택 poses/requiredVisibleParts/onlyDuringAction/hideOnMissingPose, space(canvas/anchor)/follow/width+height/deformWithRig다. width/height는 함께 지정하는 logical 크기다. garment 연결 격자가 필요한 레이어는 준비된 pure geometry provider가 있어야 동작 중 표시할 수 있다.
 
+레이어의 선택 `animation`은 `{ "frames": ["hat-0.png", "hat-1.png"], "frameDurationMs": 80 }` 형식이다. 상대 PNG2~64개, 유한한 간격16~10000ms를 검증하고 일반 asset과 같은 크기·누락·decode 상한을 적용한다. 생략/null이면 기존 정적 `file`을 사용한다. 지정하면 Runtime의 초 단위 시간으로 반복하고 액션이나 음성과 독립적으로 진행한다. 매칭하는 `poses` PNG가 있으면 그 그림이 우선하며 미지정 포즈는 기존 hide/fallback 규칙을 따른다. 각 프레임과 간격은 native attachment index·편집·내보내기에도 보존된다.
+
 ## 안전성과 자원 상한
 
 기본 상한은 archive64MiB, 실제 해제 합계64MiB, PNG16MiB/JSON512KiB, directory 포함 entry512개, PNG4096px/8M pixels, 전체 decoded RGBA128MiB다. logical Canvas의 너비/높이는 각각1~16384다. 극소 값의 표시 배율 overflow와 과대 WPF geometry를 막기 위해 로드·편집·내보내기에서 같은 범위를 검사한다. ZIP64/multi-volume/encrypted/지원하지 않는 압축 방식은 거부한다. central directory 개수/구조를 ZipArchive 객체 확장 전에 검사하며 실제 payload 길이·CRC도 확인한다.

@@ -5,6 +5,9 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using VoxPet.App.ViewModels;
+using VoxPet.Core.Attachments;
+using VoxPet.Core.Editing;
+using VoxPet.Core.Packages;
 
 namespace VoxPet.App.Views;
 
@@ -12,7 +15,7 @@ internal static class UnifiedStudioQa
 {
     private static IEnumerable<T> Find<T>(DependencyObject node) where T : DependencyObject
     { if (node is T item) yield return item; for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) foreach (var child in Find<T>(VisualTreeHelper.GetChild(node, i))) yield return child; }
-    private static string Render(CharacterViewModel character)
+    internal static string Render(CharacterViewModel character)
     {
         var surface = new MotionSurface { DataContext = character }; surface.Measure(new Size(512, 512)); surface.Arrange(new Rect(0, 0, 512, 512)); surface.UpdateLayout();
         var image = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); image.Render(surface);
@@ -39,20 +42,30 @@ internal static class UnifiedStudioQa
             window.Show(); await window.Ready; model.Devices.Add(new VoxPet.App.Services.AudioDevice("qa-studio", "QA 마이크 표시 시험")); model.SelectedDevice = model.Devices[0]; resume = model.PauseVisualForQa(); window.ShowStudio();
             check(window.StudioSurface.IsVisible && !window.LayoutRoot.IsVisible && ReferenceEquals(window.SettingsTabs.Parent, window.StudioSurface.SettingsHost), "studio_single_shell_mounts_settings");
             await window.Studio.RefreshAsync(); check(window.Studio.Cards.Count(c => c.Sample) == 1, "studio_sample_card_bundled");
+            var bundled = new VoxPetPackageLoader().Load(StudioShellViewModel.SamplePath);
+            var m = bundled.Manifest;
+            string previous = Path.Combine(folder, "previous.voxpet");
+            File.WriteAllBytes(previous, new CharacterDocument(bundled).Metadata(m.Id, m.Name, "1.0.0", m.Author, m.Description, m.Thumbnail, 512, 512).Export());
+            check(await model.Packages.ImportAsync(previous), "studio_previous_sample_fixture");
+            string previousId = model.Packages.Loaded!.LibraryId;
+            string managedPrevious = Path.Combine(folder, "CharactersV2", previousId + ".voxpet");
+            byte[] previousBytes = File.ReadAllBytes(managedPrevious);
             await window.Studio.UseSamplesAsync();
-            check(model.Packages.IsActive && window.Studio.AttachmentCards.Count == 14 && window.Studio.LiveActions.Count == 9, "studio_sample_ready_without_user_files");
+            check(model.Packages.Loaded?.Package.Manifest.Version == StudioShellViewModel.SampleVersion && model.Packages.IsActive && window.Studio.AttachmentCards.Count == 17 && window.Studio.LiveAttachments.Select(a => a.Category).Distinct().Order().SequenceEqual(AttachmentSystem.Categories.Order()) && window.Studio.LiveActions.Count == 9, "studio_sample_ready_without_user_files");
             var scene = model.Packages.Scene!; double now = scene.Runtime.Actions.LastTime;
-            await window.Studio.UseSamplesAsync(); check(model.Packages.Entries.Count(e => e.CharacterId == StudioShellViewModel.SampleId) == 1, "studio_sample_reselect_reuses_managed_copy");
+            await window.Studio.UseSamplesAsync(); check(model.Packages.Entries.Count(e => e.CharacterId == StudioShellViewModel.SampleId && e.Version == StudioShellViewModel.SampleVersion) == 1, "studio_sample_reselect_reuses_managed_copy");
+            check(model.Packages.Entries.Any(e => e.LibraryId == previousId) && window.Studio.Cards.Any(c => c.LibraryId == previousId) && previousBytes.SequenceEqual(File.ReadAllBytes(managedPrevious)), "studio_sample_upgrade_preserves_previous_copy");
             scene = model.Packages.Scene!; now = scene.Runtime.Actions.LastTime;
             window.Width = Math.Min(1280, SystemParameters.WorkArea.Width - 40); window.Height = Math.Min(820, SystemParameters.WorkArea.Height - 40); window.Left = 20; window.Top = 20;
             foreach (var card in window.Studio.AttachmentCards)
             {
                 card.ToggleCommand.Execute(null); model.Packages.Update(now += .1, 0);
-                check(card.IsWorn && card.WearLabel == "해제" && scene.Frame.Layers.Any(l => l.Asset == "samples/" + card.Id + ".png"), "studio_wear_" + card.Id);
+                check(card.IsWorn && card.WearLabel == "해제" && scene.Runtime.Definition.Attachments.Single(a => a.Id == card.Id).Layers.All(l => scene.Frame.Layers.Any(rendered => rendered.Asset == (l.Animation?.FrameAt(now) ?? l.Asset))), "studio_wear_" + card.Id);
                 Render(model.Character);
                 await ScreenEvidence.CaptureAsync(window, "studio-costume-" + card.Id.ToLowerInvariant(), check);
                 card.ToggleCommand.Execute(null); check(!card.IsWorn, "studio_remove_" + card.Id);
             }
+            now = await AnimatedAccessoriesQa.RunAsync(window, model, folder, now, check);
             var top = window.Studio.AttachmentCards.Single(c => c.Id == "top"); top.ToggleCommand.Execute(null);
             var suit = window.Studio.AttachmentCards.Single(c => c.Id == "onePiece"); suit.ToggleCommand.Execute(null);
             check(suit.IsWorn && !top.IsWorn && top.WearLabel == "착용", "studio_costume_conflicts_refresh_all_cards");

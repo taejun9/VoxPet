@@ -16,9 +16,10 @@ public sealed record AttachmentLayer
     public IReadOnlyList<string> RequiredVisibleParts { get; }
     public bool OnlyDuringAction { get; }
     public bool HideOnMissingPose { get; }
+    public AttachmentAnimation? Animation { get; }
     public AttachmentLayer(string id, string asset, string anchor = "root", int zIndex = 0, Transform2D? transform = null,
         AttachmentInheritance? inherit = null, IReadOnlyDictionary<string, string>? poses = null,
-        IEnumerable<string>? requiredVisibleParts = null, bool onlyDuringAction = false, bool hideOnMissingPose = false, AttachmentTransform? placement = null)
+        IEnumerable<string>? requiredVisibleParts = null, bool onlyDuringAction = false, bool hideOnMissingPose = false, AttachmentTransform? placement = null, AttachmentAnimation? animation = null)
     {
         Id = DefinitionValidation.Id(id, nameof(id)); Asset = DefinitionValidation.Asset(asset, ".png", nameof(asset));
         Anchor = DefinitionValidation.Id(anchor, nameof(anchor)); ZIndex = zIndex;
@@ -32,6 +33,6 @@ public sealed record AttachmentLayer
         Poses = new ReadOnlyDictionary<string, string>(copy);
         RequiredVisibleParts = DefinitionValidation.Copy(requiredVisibleParts ?? [], nameof(requiredVisibleParts));
         foreach (string target in RequiredVisibleParts) DefinitionValidation.Id(target, nameof(requiredVisibleParts));
-        OnlyDuringAction = onlyDuringAction; HideOnMissingPose = hideOnMissingPose;
+        OnlyDuringAction = onlyDuringAction; HideOnMissingPose = hideOnMissingPose; Animation = animation;
     }
 }

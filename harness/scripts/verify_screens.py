@@ -46,8 +46,14 @@ expected.update(['imageset-preview', 'imageset-broadcast', 'studio-sample-broadc
 for tab in range(7): expected.add(f'studio-settings-{tab}')
 for width in [1280, 960, 640, 480]:
     for page in range(6): expected.add(f'studio-page-{width}-{page}')
-for category in ['hat','glasses','facedecoration','earrings','top','bottom','onepiece','shoes','outerwear','cape','headaccessory','backaccessory','handaccessory','effect']: expected.add('studio-costume-'+category)
+for category in ['hat','glasses','facedecoration','earrings','top','bottom','onepiece','shoes','outerwear','cape','headaccessory','backaccessory','handaccessory','effect','hair-short','hair-long','hair-afro']: expected.add('studio-costume-'+category)
 for action in ['claw','toy-gun','heart','toy-sword','magic-wand','firearm','bow','one-hand','two-hand']: expected.add('studio-action-'+action)
+
+for hair in ['hair-short', 'hair-long', 'hair-afro']: expected.add('studio-hair-' + hair)
+for frame in range(4):
+    expected.add(f'studio-accessory-animation-{frame}')
+    expected.add(f'studio-accessory-broadcast-{frame}')
+for item in ['hat', 'cape']: expected.add('studio-editor-animation-' + item)
 
 records = []
 for name in sorted(expected):

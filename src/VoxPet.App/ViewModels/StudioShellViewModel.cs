@@ -57,6 +57,7 @@ public sealed class StudioShellViewModel : ObservableObject
     public ObservableCollection<StudioAttachment> AttachmentCards { get; } = [];
     public static string SamplePath => Path.Combine(AppContext.BaseDirectory, "Assets", "Samples", "studio-samples.voxpet");
     public const string SampleId = "voxpet.samples.studio";
+    public const string SampleVersion = "1.1.0";
     private async Task<LoadedCharacterPackage?> ReadCardAsync(CharacterCard card)
     {
         try { return card.Sample ? await Task.Run(() => CharacterPackageLibrary.Decode(new VoxPetPackageLoader().Load(SamplePath))) : await Main.Packages.LoadForEditorAsync(card.LibraryId); }
@@ -67,7 +68,7 @@ public sealed class StudioShellViewModel : ObservableObject
         if (closing) return;
         int destination = Page == 3 ? 3 : 2;
         await Main.Packages.RefreshAsync(); if (closing) return;
-        var existing = Main.Packages.Entries.FirstOrDefault(e => e.CharacterId == SampleId);
+        var existing = Main.Packages.Entries.FirstOrDefault(e => e.CharacterId == SampleId && e.Version == SampleVersion);
         bool ok = existing != null && await Main.Packages.SelectAsync(existing.LibraryId);
         if (!ok && !closing) ok = await Main.Packages.ImportAsync(SamplePath);
         Status = Main.Packages.Status;
@@ -114,7 +115,7 @@ public sealed class StudioShellViewModel : ObservableObject
     private void RefreshCommands() { foreach (var c in new[] { RefreshCommand, ImportCommand, NewCommand, SelectCommand, EditCommand, ExportCommand, DeleteCommand, SampleCommand }) c.Refresh(); }
     public async Task RefreshAsync()
     {
-        if (closing || busy) return; busy = true; RefreshCommands(); string? id = Selected?.LibraryId ?? (Main.Packages.Loaded?.Package.Manifest.Id == SampleId ? "builtin-sample" : Main.Packages.Loaded?.LibraryId ?? "legacy-" + Main.SelectedCharacter.Id);
+        if (closing || busy) return; busy = true; RefreshCommands(); string? id = Selected?.LibraryId ?? (Main.Packages.Loaded?.Package.Manifest is { Id: SampleId, Version: SampleVersion } ? "builtin-sample" : Main.Packages.Loaded?.LibraryId ?? "legacy-" + Main.SelectedCharacter.Id);
         try
         {
             await Main.Packages.RefreshAsync(); var cards = new List<CharacterCard>();
@@ -131,11 +132,11 @@ public sealed class StudioShellViewModel : ObservableObject
                 try
                 {
                     var sample = await Task.Run(() => CharacterPackageLibrary.Decode(new VoxPetPackageLoader().Load(SamplePath)));
-                    cards.Add(new("builtin-sample", sample.Package.Manifest.Name, SampleId, "1.0.0", "VoxPet · CC0", "의상 14분류와 동작 9종이 모두 준비된 테스트 캐릭터", sample.Images[sample.Package.Manifest.Thumbnail!], Sample: true));
+                    cards.Add(new("builtin-sample", sample.Package.Manifest.Name, SampleId, sample.Package.Manifest.Version, "VoxPet · CC0", "14분류·의상17종(헤어3종)/동작9종 · 움직이는 모자와 날개", sample.Images[sample.Package.Manifest.Thumbnail!], Sample: true));
                 }
                 catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "샘플을 읽지 못했습니다. Assets/Samples 폴더를 확인하세요. 기존 캐릭터는 유지합니다."; }
             }
-            foreach (var entry in Main.Packages.Entries.Where(e => e.CharacterId != SampleId))
+            foreach (var entry in Main.Packages.Entries.Where(e => e.CharacterId != SampleId || e.Version != SampleVersion))
             {
                 try
                 {
