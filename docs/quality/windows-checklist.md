@@ -1,5 +1,15 @@
 # Windows 실사용 검증 기록
 
+## plan042 움직이는 모자·날개와 헤어 샘플
+
+2026-10-16 최종 dad72a1의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38881016955)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38881016833) 통과. 전체 QA 후 단일 에이전트 자체 리뷰와72화면 시각 검토를 수행했다.
+
+- Core380/380·format/analyzer·Release 경고0/오류0·WPF2037/0(기존1981개 유지/56개 추가)·desktop321장·unsigned/signed 각9개 시작/종료·portable1734/0 통과.
+- 의상14분류/17종·동작9종을 모두 포함한다. 헬리콥터 모자8프레임/80ms·날개6프레임/140ms는 idle/동작 중 반복하고 단발/장발/폭탄머리는 모자와 공존한다. 착용/충돌/해제·preview/방송 공유·편집/불량 입력 복구/전체 PNG bytes·내보내기/재읽기·이전 샘플 보존/1.1.0 재사용을 검사했다.
+- 실제 Windows에서 발견한 편집기 선택값 흰 글씨와 시각 QA에서 발견한 편집 후 메뉴 전환 스크롤 잔류를 수정하고 전체를 재시험했다. 최종 화면에서 검정 선택/팝업·프레임 편집 필드·제목/미리보기 상단 복원을 확인했다. 작은 창은 스크롤한다.
+- OBS32.2.2 WGC/크로마/native alpha·같은 HWND 배경 왕복·각7프레임 변화 통과. BitBlt는 기존 layered 제한이다.
+- 최종 `artifacts/VoxPet-Windows-test-plan042-final.zip`:52파일/95,863,839bytes·PE/CRC/SHA256 통과. CI 공용39파일과 개인13PNG byte-identical, 이전 파일 보존·개인 자료 전송 없음. 해시와 상세는 [자체 리뷰](../reviews/plan-042-animated-accessories-review.md), 증거는 `artifacts/test-results/plan042/final/`를 따른다. 실제 마이크/사용자 GPU/DPI/개인 그림 Windows 화면·새60분 실기는 별도다.
+
 ## plan041 처음부터 전체 재시험
 
 2026-10-16 새 기준 b44685e의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38874585603)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38874637732) 통과. bin/obj 없는 새 작업트리에서 locked restore/format/analyzer/Release/Core를 다시 실행했고 Windows/OBS도 새 runner를 사용했다. 앱 소스는 이전 완료본과 동일하다.

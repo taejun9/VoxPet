@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -36,8 +36,8 @@ codex/plan-042-animated-accessories / .worktree/plan-042-animated-accessories에
 - [x] 기존 샘플14분류/9동작과 애니메이션·편집·업그레이드 경로를 확인한다.
 - [x] 선택적 PNG 프레임 반복 애니메이션과 파일 로드/검증/왕복·편집 보존을 구현한다.
 - [x] 헬리콥터 모자/날개 망토와 헤어3종을 생성하고 앱의 기존 샘플 복사본에서도 새 버전을 선택하게 한다.
-- [ ] Core/format/analyzer/Release/하네스 및 Windows/OBS/화면/ZIP 전체 QA를 수행한다.
-- [ ] 시각 검토·개인 자산 보존 ZIP·자체 리뷰·완료 기록을 준비한다.
+- [x] Core/format/analyzer/Release/하네스 및 Windows/OBS/화면/ZIP 전체 QA를 수행한다.
+- [x] 시각 검토·개인 자산 보존 ZIP·자체 리뷰·완료 기록을 준비한다.
 
 ## QA Plan
 
@@ -71,6 +71,13 @@ codex/plan-042-animated-accessories / .worktree/plan-042-animated-accessories에
 
 | 2026-10-16 | 검증 | 두 번째 Windows38879448822: Core380/WPF2035·portable1732/실화면321/unsigned·signed 각9개 모두 통과. OBS38879448821도 최종source3cc710c에서 통과. 시각 QA에서 편집→동작 이동의 스크롤 잔류를 추가로 발견해 수정·전체 재검증한다. 중간 ZIP042는 보존하고 최종 ZIP은 별도 이름을 쓴다. |
 
+| 2026-10-16 | 검증 | 최종 dad72a1의 Windows38881016955/OBS38881016833 전체 통과. Core380/380·WPF2037/0(기존1981개 모두 유지·56개 추가)·실제 desktop321·unsigned/signed 각9개·portable1734/0. format/analyzer/Release 경고0·오류0 및 샘플78파일/50PNG CRC 통과. |
+| 2026-10-16 | 심사 | 전체 QA 후 단일 에이전트 자체 리뷰와 최종72화면 시각 검토. 모자/날개·헤어/편집·상단 복원 정상, 추가 필수 수정 사항 없음. CI 공용39파일+개인13PNG byte equality/PE x64/CRC/SHA256 통과. |
+
 ## Completion Notes
 
-구현·검증·시각 검토·패키지 및 실기 제한은 완료 시 기록한다.
+의상14분류/17종·동작9종을 모두 포함한다. 헬리콥터 모자8프레임/80ms와 날개6프레임/140ms를 착용 중 독립 반복하고 단발·장발·폭탄머리를 추가했다. 헤어는 머리 장식으로 서로 교체하며 모자와 공존한다. 반복 PNG/속도 편집·검증·export/load 및 이전 샘플 보존/새1.1.0 선택을 지원한다. 편집기 선택 글씨와 편집 후 메뉴 전환 스크롤 잔류도 수정했다.
+
+최종 시험 코드 dad72a1, [자체 리뷰](../../reviews/plan-042-animated-accessories-review.md)에 QA·수정·실기 제한을 기록했다. 이후 변경은 기록 문서뿐이다. 새 파일 `artifacts/VoxPet-Windows-test-plan042-final.zip`은52파일/95,863,839bytes, SHA256 `c45f653663f2d0438320d2a2fb5930965b0c7c6f92255abcab11a073680d571f`다. Windows에서 동봉 도구로 시험한 공용39파일을 byte-identical로 유지하고 개인13PNG만 로컬에서 그대로 추가했다. 기존 ZIP/원본을 보존하고 개인 자산을 외부로 보내지 않았다.
+
+최종 증거는 `artifacts/test-results/plan042/final/`, 로컬 Core/샘플 증거는 `plan042/local/`, 이전 실행 증거는 `attempt1/`·`attempt2/`에 보존한다. 물리 마이크/권한/USB·개인 그림의 Windows 시각 확인·혼합 DPI/사용자 GPU·새60분 실기는 대상PC 항목이다. 최종 문서 검증 후 하네스 순서로 main ff/push·branch -d·worktree 제거를 진행한다.
