@@ -58,9 +58,15 @@ async function placed(buffer,rect) {
 }
 async function frame(kind,index,columns,rows) {
   const p=path.join(source,(kind==='cape'?'cape-v2':kind)+'.png');const m=await sharp(p).metadata();const col=index%columns,row=Math.floor(index/columns);
-  // Actual empty gutters in the generated wing atlas; neighboring tips must not leak.
-  const xs=kind==='cape'?[0,480/1536,1030/1536,1]:Array.from({length:columns+1},(_,i)=>i/columns);
-  const ys=kind==='cape'?[0,480/1024,1]:Array.from({length:rows+1},(_,i)=>i/rows);
+  // Each painted pose has its own bounds: the lower row's tips cross the
+  // upper row's column gutters. A single grid leaks neighboring fragments.
+  if(kind==='cape') {
+    const [x,y,right,bottom]=[[0,130,477,460],[480,120,1030,375],[1030,40,1536,425],[55,490,440,950],[510,510,1020,885],[1035,620,1536,880]][index];
+    const left=Math.round(x*m.width/1536),top=Math.round(y*m.height/1024);
+    return sharp(p).extract({left,top,width:Math.round(right*m.width/1536)-left,height:Math.round(bottom*m.height/1024)-top}).png().toBuffer();
+  }
+  const xs=Array.from({length:columns+1},(_,i)=>i/columns);
+  const ys=Array.from({length:rows+1},(_,i)=>i/rows);
   const left=Math.round(xs[col]*m.width),top=Math.round(ys[row]*m.height),right=Math.round(xs[col+1]*m.width),bottom=Math.round(ys[row+1]*m.height);
   return sharp(p).extract({left,top,width:right-left,height:bottom-top}).png().toBuffer();
 }
