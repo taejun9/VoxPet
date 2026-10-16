@@ -11,7 +11,10 @@ using VoxPet.Core.Character;
 
 namespace VoxPet.App.ViewModels;
 
-public sealed record RuntimeLayer(ImageSource Image, AnchorOffset Offset);
+public sealed record RuntimeLayer(ImageSource Image, AnchorOffset Offset)
+{
+    public override string ToString() => nameof(RuntimeLayer);
+}
 public sealed record BindingRow(RuntimeOperation Operation, string Name, string Key);
 
 /// <summary>로컬 이미지 세트를 읽고 공유 캐릭터에 조합 결과를 제공한다. 입력 이벤트에는 파일 작업이 없다.</summary>

@@ -55,6 +55,8 @@ for frame in range(4):
     expected.add(f'studio-accessory-broadcast-{frame}')
 for item in ['hat', 'cape']: expected.add('studio-editor-animation-' + item)
 
+for case in ['keyboard', 'editor', 'restarted']: expected.add('card-library-' + case)
+
 records = []
 for name in sorted(expected):
     metadata = json.loads((args.folder / f'voxpet-screen-{name}.json').read_text())

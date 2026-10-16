@@ -33,8 +33,8 @@ main720c1c8/origin과0·0 및 깨끗함 확인 후 전용 codex/plan-043-card-di
 
 ## Implementation Plan
 
-- [ ] 오류의 문자열 변환/이미지 접근 원인과 같은 유형의 UI 모델을 조사한다.
-- [ ] 최소 재현과 실제 사용자 조작 회귀를 추가하고 원인을 수정한다.
+- [x] 오류의 문자열 변환/이미지 접근 원인과 같은 유형의 UI 모델을 조사한다.
+- [x] 최소 재현과 실제 사용자 조작 회귀를 추가하고 원인을 수정한다.
 - [ ] 새 작업트리 locked restore/format/analyzer/Release/Core/Python/diff 및 Windows/OBS/portable 전체 QA를 수행한다.
 - [ ] 실제 화면 시각 QA·개인 PNG 보존 ZIP·자체 리뷰·완료 문서와 Git 수명 절차를 마친다.
 
@@ -56,11 +56,18 @@ QA 이후 같은 에이전트가 자체 리뷰한다. 보고된 오류와 수정
 
 | 2026-10-16 | 수정 전 실제 CharacterCard와 worker에서 디코딩한 frozen PNG로 UI ToString을 호출하는 회귀를 먼저 CI에 올린다. | 자동 PrintMembers가 frozen BitmapFrame의 원래 worker decoder.ToString/VerifyAccess에 진입하는 원인 후보를 원본과 같은 메서드/HResult로 확인한다. |
 
+| 2026-10-16 | CharacterCard는 Name, RuntimeLayer는 안전한 레이블만 문자열로 반환하고 목록/편집기 검색 경로는 Name으로 명시한다. 앱 버전은1.0.1로 구분한다. | 자동 record 출력의 ImageSource 접근과 decoder 스레드 경계를 제거하고 같은 이미지 보유 모델/검색 누락을 함께 막는다. 기존 전역 예외 처리로 오류를 숨기지 않는다. |
+
 ## Progress Log
 
 | date | role | note |
 |---|---|---|
 | 2026-10-16 | 설계 | 오류 원본을 읽고 main720c1c8 깨끗함/origin0·0/plan024 작업트리 보존 확인. 전용 작업트리와 계획 작성. |
+
+| 2026-10-16 | 제작 | 수정 전 d2ba151 재현 검사를 Windows38891560054에서 실행 중이다. 수정안은 Name 전용 문자열·RuntimeLayer 안전 레이블·명시적 텍스트 검색/접근성 이름·앱1.0.1과 실제 카드 동선 회귀를 추가했다. |
+| 2026-10-16 | 검증 | 새 작업트리 locked restore/Release 경고0·오류0/Core380·format verify/analyzer·base/app/diff 통과. 사용자 오류 원본은 수정 없이 로컬 증거로 보존하며 CI에 보내지 않는다. |
+
+| 2026-10-16 | 검증 | Windows38891560054/d2ba151에서 원본과 같은 InvalidOperationException/HResult80131509/CharacterCard.PrintMembers→ToString을 직접 재현했다. 기존2037검사는 모두 통과하고 새 문자열 계약1개만 실패했다. 최소 JSON/원본 대조는 artifacts/test-results/plan043/repro에 보존했다. 수정안 Release 경고0·오류0와 lint 검증 완료. |
 
 ## Completion Notes
 

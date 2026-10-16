@@ -9,7 +9,11 @@ using CharacterCatalogEntry = VoxPet.Core.Models.CharacterDefinition;
 
 namespace VoxPet.App.ViewModels;
 
-public sealed record CharacterCard(string LibraryId, string Name, string Id, string Version, string Author, string Description, ImageSource? Image, CharacterCatalogEntry? Legacy = null, bool Sample = false);
+public sealed record CharacterCard(string LibraryId, string Name, string Id, string Version, string Author, string Description, ImageSource? Image, CharacterCatalogEntry? Legacy = null, bool Sample = false)
+{
+    // UI text search/automation must never stringify a worker-owned image decoder.
+    public override string ToString() => Name;
+}
 /// <summary>Dashboard/library/편집 navigation. 기존 settings 화면은 Main의 고수준 navigation으로 연결한다.</summary>
 public sealed class StudioShellViewModel : ObservableObject
 {

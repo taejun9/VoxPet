@@ -160,3 +160,11 @@ plan023은 기존 WPF RenderTargetBitmap 검사와 별도로 표시된 HWND 영�
 ## 이미지 조합 세트 회귀
 
 plan025부터 현재 캐릭터 선택은 늘보군/펠리 두 종이다. 이전 plan021 다섯 종 회귀 기록은 과거 결과다. ImageSetTests는 파츠 대체/숨김·소매/무기 포즈·Anchor·표정/입 우선순위·연타 재시작·레이어 순서·경로·설정 복구를 검사한다. ImageRuntimeQa는 제공 합성 틀의 로컬 등록/두 창 공유/frozen 이미지/손상 등록 보존/키 기록·해제와 배경 창 키 입력 전달을 Windows에서 시험한다. 개인 파츠는 CI에 보내지 않는다. `python3 harness/scripts/generate_imageset_template.py`는 표준 라이브러리만 사용해 배포 가능한 합성 제작 틀을 재생성한다.
+
+## 카드 이름·문자열 변환·접근성 회귀
+
+plan043 `CardDisplayQa`는 실제 worker에서 만든 frozen PNG를 UI 카드에 넣고 `ToString`·WPF의 암시적 텍스트 바인딩·worker/병렬 이름 읽기를 검사한다. 그림을 동결해 렌더링할 수 있어도 이미지의 문자열 변환이 원래 decoder에 접근할 수 있으므로, 이미지 보유 UI 모델은 이름/레이블만 반환한다. `CharacterCard`/`EditorRow`/`RuntimeLayer`와 목록·편집기의 명시적 `TextSearch.TextPath=Name`을 확인한다.
+
+공개 합성 캐릭터로 실제 Home/End 키, 영문/한글 text composition 검색, UI Automation 이름 읽기, 이름/ID 필터, 빈 결과, 반복 선택/새로고침, 손상 등록 후 기존 출력, 편집/내보내기/재읽기, 복사본 삭제의 원본 보존, 재시작 선택 복원을 실행한다. 실제 마이크/사용자 설정/개인 PNG는 쓰지 않는다. 수정 전 재현의 최소 진단은 `voxpet-runtime-card-display-repro.json`으로 보존하고 실패를 통과로 처리하지 않는다.
+
+근거는 Microsoft WPF의 [BitmapFrameDecode 문자열 변환](https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/BitmapFrameDecode.cs), [BitmapDecoder 스레드 확인](https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/BitmapDecoder.cs), [TextSearch의 이름 경로와 ToString fallback](https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Controls/TextSearch.cs)이다(확인2026-10-16).
