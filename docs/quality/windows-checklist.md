@@ -1,5 +1,13 @@
 # Windows 실사용 검증 기록
 
+## plan044 최신 main 전체 재시험
+
+2026-10-16 main22215a6/앱1.0.1을 새 작업트리와 새 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38913337799), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38913348630)로 다시 시험했다. Core380/380·lint/analyzer·Release 경고0/오류0·WPF2090/0(이전2090개 정확히 유지)·desktop324·일반/서명 각9사례·ZIP PowerShell5.1 portable1784/0 통과.
+
+- 카드 오류 재현 회귀·단일 사이드바·17의상/14분류/9동작·모자/날개/헤어·편집/내보내기/재시작을 확인했다. 실제 화면75장/원본 샘플20장/OBS4장을 QA 이후 자체 시각 검토했고 추가 필수 수정 없음. 앱/하네스/시험/자산 변경 없음.
+- OBS32.2.2 WGC/chroma/native alpha·같은 HWND 배경 왕복·각7프레임 변화 통과. 기존 BitBlt layered 제한 유지.
+- 새 `artifacts/VoxPet-Windows-test-plan044.zip`:52파일/95,870,506bytes·PE/CRC/SHA256 확인. 공용39파일은 새 CI 시험본, 개인13PNG는 이전 해시와 byte-identical. 오류 원본/기존 ZIP/개인 자료 보존·외부 전송 없음. [자체 리뷰](../reviews/plan-044-full-retest-review.md)와 `artifacts/test-results/plan044/`에 상세를 보존했다. 물리 마이크/GPU/DPI·개인 그림 Windows 화면·새60분은 별도 실기다.
+
 ## plan043 실제 카드 문자열 오류 재현·수정
 
 2026-10-16 앱1.0.1/최종772e757의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38892871936), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38892872151) 통과. QA 이후 단일 에이전트 자체 리뷰/75화면 시각 검토를 수행했다.
