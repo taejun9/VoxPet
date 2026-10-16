@@ -1,5 +1,15 @@
 # Windows 실사용 검증 기록
 
+## plan045 늘보군·펠리 직접 샘플과 그림 개선
+
+2026-10-17 앱1.1.0/최종 앱 a8cdcba의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38938790352), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38938790502) 통과. QA 후 단일 에이전트 자체 리뷰/실제 Windows76화면·개인 로컬64정적합성/OBS4캡처를 검토했다.
+
+- 별도 인형을 자동 추가하지 않고 늘보군/펠리의 원래 선택·그림·표정/입3·8단계 위에17의상/14분류/9고유 동작을 적용한다. 새 수채화 그림·8프레임 헬리콥터 모자/6프레임 날개·3헤어·편집/왕복·방송 공유·전환/재시작·원본/저장 의상 보존 검사 통과.
+- Core405/405·lint/analyzer/Release 경고0·오류0·WPF2370/실패0·desktop396·일반/서명 각9개·ZIP portable1992/실패0. 이전2090개 중2087개 유지, 새 UX에 따른 별도 인형2검사 대응/카드 검사1개 이름 변경과 새283개를 [자체 리뷰](../reviews/plan-045-character-samples-review.md)에 기록했다. 이전 카드 decoder thread 오류 회귀 유지.
+- OBS32.2.2 WGC/chroma/native alpha·동일 HWND 배경 왕복·각7프레임 통과, 기존 BitBlt layered 제한 유지.
+- 새 `artifacts/VoxPet-Windows-test-plan045.zip`:54파일/103,671,141bytes·PE x64/CRC/SHA256 확인. 공용41파일은 시험한 CI ZIP, 개인13PNG는 이전 해시와 byte-identical. 이전 ZIP/원본/설정·다른 작업트리 보존, 개인 그림 외부 전송 없음. 상세 증거 `artifacts/test-results/plan045/`.
+- 착용 선택은 현재 실행 중 캐릭터별 유지/재실행 시 해제. 개인 그림 Windows 실행·물리 마이크/GPU/DPI·새60분 실기는 별도이며 개인 시각 증거는 로컬 정적 합성이다.
+
 ## plan044 최신 main 전체 재시험
 
 2026-10-16 main22215a6/앱1.0.1을 새 작업트리와 새 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38913337799), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38913348630)로 다시 시험했다. Core380/380·lint/analyzer·Release 경고0/오류0·WPF2090/0(이전2090개 정확히 유지)·desktop324·일반/서명 각9사례·ZIP PowerShell5.1 portable1784/0 통과.

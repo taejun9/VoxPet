@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -36,8 +36,8 @@ main20c5006과origin0·0/깨끗함 확인 후 전용 codex/plan-045-character-sa
 - [x] 두 캐릭터 그림/앵커/기존 런타임 조사, 샘플 적용 설계 기록.
 - [x] 자연스러운 새 의상·부착물·동작 그림 제작 및 투명도/체형 정렬 검토.
 - [x] 두 캐릭터에 샘플 직접 연결, 선택/표정·입/저장·방송 공유와 기존 오류 수정 유지.
-- [ ] Core/로컬 lint/build/Windows/OBS/ZIP 전체 QA 및 실제 화면 시각 검토.
-- [ ] 자체 리뷰/문서/새 개인 ZIP/main ff push/정상 정리.
+- [x] Core/로컬 lint/build/Windows/OBS/ZIP 전체 QA 및 실제 화면 시각 검토.
+- [x] 자체 리뷰/문서/새 개인 ZIP/main ff push/정상 정리.
 
 ## QA Plan
 
@@ -68,6 +68,19 @@ QA 후 동일 에이전트 자체 리뷰. 두 캐릭터에 직접 제공한다�
 
 | 2026-10-17 | 제작 | 통합 경로를 점검해 기존 추가 의상이 새 샘플 위를 덮는 분류 충돌을 처리했다. 샘플 착용 중 같은 분류만 잠시 숨기며 저장된 착용 플래그/원본은 그대로 유지하고 해제하면 복원한다. 두 캐릭터의 Core 회귀를 추가했다. |
 
+| 2026-10-17 | 검증 | 최종 그림 확대에서 날개 아래 행 두 프레임의 이웃 깃털 조각을 발견해 프레임별 자르기 영역으로 보완했다. a8cdcba를 최종 앱 기준으로 고정했다. 로컬 locked restore/format·analyzer/Release 경고0·오류0/Core405·문서/자산/compileall/diff 통과. sandbox의 formatter IPC 제한은 승인된 환경에서 재실행해 통과했다. |
+
+| 2026-10-17 | 검증 | 개인 원본13PNG는 이전 전달 해시와 일치한다. 로컬64개 합성과11개 contact page에서 얼굴/부리 가림·앞날개·6날개 자세/소품을 검토하고 ignored 증거만 보존했다. 최종 OBS38938790502는 WGC/크로마/투명·동일 HWND 왕복·각7프레임 통과, 기존 BitBlt 제한 유지. Windows38938790352의 전체 완료/직접 화면 검토/최종 ZIP 판정을 기다린다. |
+
 ## Completion Notes
 
-QA/리뷰 후 기록한다.
+앱1.1.0·최종 앱/하네스/자산 기준 a8cdcbade67ea7dd3e3568508d4d2548698f7203.
+
+- 로컬/Windows Core405/405·skip0, locked restore/format/analyzer/Release 경고0·오류0·문서/자산/compileall/diff 통과.
+- [Windows38938790352](https://github.com/taejun9/VoxPet/actions/runs/38938790352): WPF2370/실패0·desktop396장·일반/서명 각9사례·portable1992/실패0. 이전2090개 중2087개 유지, 자동 별도 인형에 관한2개 제거/새 UX 대응과 카드 레이블 검사1개 이름 변경을 명시했다. 새283개 검사 추가.
+- [OBS38938790502](https://github.com/taejun9/VoxPet/actions/runs/38938790502): WGC/크로마/native alpha·동일 HWND 배경 왕복·각7프레임 통과. 실제 마이크/녹화/송출 없음. BitBlt layered 제한 유지.
+- QA 후 단일 에이전트 자체 리뷰. 실제 공개 Windows76화면과 개인 로컬64합성/OBS4캡처를 직접 검토했다. 첫 펠리 모자 화면은 선택100ms 후240ms 전환 중이며 이후 화면은 정상 정착한다. 개인 합성을 Windows 실기로 주장하지 않는다.
+- 새 artifacts/VoxPet-Windows-test-plan045.zip:54파일/103,671,141bytes. SHA256 a225fc1de3365a4e798bb81d57bf47f715b349f5ede58d72afc4ccba874490db, EXE SHA256 2fbf5a80e5f1f985443ff441461fd69b9cde821f87bb2d158362c8f77b3a91a2. 공용41파일은 시험한 CI ZIP과 byte-identical, 개인13PNG는 이전 해시와 byte-identical. 두 새 샘플 패키지의 소스 일치·PE x64/CRC 통과.
+- 증거 artifacts/test-results/plan045/와 [자체 리뷰](../../reviews/plan-045-character-samples-review.md), [그림/프롬프트](../../art/companion-samples.md)에 보존했다. README/AGENTS·오디오 엔진·개인 원본/이전 ZIP·다른 plan024 작업트리2개를 변경하지 않았다.
+- 현재 실행 중 캐릭터별 착용을 기억하며 재실행 시 해제한다. 편집 내보내기는 현재 개인 그림을 포함한다. 물리 마이크/GPU/DPI·개인 PNG Windows 실행·새60분 실기는 별도다.
+- main ff push 및 정상 branch/worktree 정리 순서를 수행한다. Git 실패 시 중단/정확한 상태 보고 규칙을 따른다.
