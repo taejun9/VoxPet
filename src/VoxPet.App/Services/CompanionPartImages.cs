@@ -14,8 +14,7 @@ internal static class CompanionPartImages
         if (masks.TryGetValue(side, out var ready)) return ready;
         var head = Geometry.Parse(CompanionParts.HeadContour(side));
         var parts = CompanionParts.Ids.Where(id => id is not ("head" or "body")).ToDictionary(id => id, id => Geometry.Combine(Geometry.Parse(CompanionParts.Contour(id, side)), head, GeometryCombineMode.Exclude, null));
-        var upperBody = Geometry.Combine(Geometry.Parse(CompanionParts.BodyContour(side)), new RectangleGeometry(new Rect(0, 0, 512, 315)), GeometryCombineMode.Union, null);
-        Geometry body = Geometry.Combine(upperBody, head, GeometryCombineMode.Exclude, null);
+        Geometry body = Geometry.Combine(new RectangleGeometry(new Rect(0, 0, 512, 512)), head, GeometryCombineMode.Exclude, null);
         foreach (var shape in parts.Values) body = Geometry.Combine(body, shape, GeometryCombineMode.Exclude, null);
         body = Geometry.Combine(body, head, GeometryCombineMode.Exclude, null);
         foreach (string leg in new[] { "leg-left", "leg-right" }) body = Geometry.Combine(body, parts[leg], GeometryCombineMode.Exclude, null);

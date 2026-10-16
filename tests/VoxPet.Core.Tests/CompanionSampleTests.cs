@@ -24,6 +24,9 @@ public sealed class CompanionSampleTests
         Assert.DoesNotContain(package.AssetPaths, p => p.StartsWith("legacy/", StringComparison.Ordinal));
         Assert.Equal(17, definition.Attachments.Count); Assert.Equal(9, definition.Actions.Count);
         Assert.Equal(14, definition.Attachments.Select(a => a.Category).Distinct().Count());
+        int bodyOrder = definition.Parts.Single(p => p.Id == "body").ZIndex, armOrder = definition.Parts.Single(p => p.Id == "arm-left").ZIndex;
+        var shirt = definition.Attachments.Single(a => a.Id == "top");
+        Assert.True(bodyOrder < armOrder && armOrder < shirt.Layers.Single(l => l.Id == "left").ZIndex && shirt.Layers.Single(l => l.Id == "left").ZIndex < shirt.Layers.Single(l => l.Id == "body").ZIndex);
         Assert.Equal(17, package.AssetPaths.Count(p => p.StartsWith("thumbnails/", StringComparison.Ordinal)));
         Assert.Equal(8, definition.Attachments.Single(a => a.Id == "hat").Layers[0].Animation!.Frames.Count);
         Assert.Equal(6, definition.Attachments.Single(a => a.Id == "cape").Layers[0].Animation!.Frames.Count);
@@ -36,6 +39,13 @@ public sealed class CompanionSampleTests
         using var buffer = new MemoryStream(new VoxPetPackageExporter().Export(package), false);
         var reloaded = new VoxPetPackageLoader().Load(buffer);
         Assert.All(package.AssetPaths, p => Assert.Equal(package.ReadAsset(p), reloaded.ReadAsset(p)));
+        foreach (string arm in new[] { "arm-left", "arm-right" })
+        {
+            var skin = reloaded.Character.Parts.Single(p => p.Id == arm).Skinning;
+            Assert.NotNull(skin); Assert.Equal(package.Character.Parts.Single(p => p.Id == arm).Skinning, skin);
+            foreach (string garment in new[] { "top", "outerwear" })
+                Assert.Equal(skin, reloaded.Character.Attachments.Single(a => a.Id == garment).Layers.Single(l => l.Id == arm[4..]).Placement.Skinning);
+        }
     }
 
     public static IEnumerable<object[]> Actions() =>

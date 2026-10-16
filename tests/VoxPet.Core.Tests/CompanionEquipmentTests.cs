@@ -85,6 +85,7 @@ public sealed class CompanionEquipmentTests
         var p = Load(id); var rig = CharacterRig.Default(id) with { HeadMotion = true };
         var processor = new LegacySpriteSheetRuntime { Samples = p.Character, Rig = rig, Parameters = new(0, 0, 3, 0, 1, MouthState.Closed), WeaponId = "toy-gun", HoldWeapon = false };
         var runtime = new CharacterRuntime(LegacySpriteSheetAdapter.Convert(3, samples: p.Character), processor: processor);
+        processor.Apply(ExpressionProfile.Default(0) with { Tears = true }, 3, 0);
         runtime.Attachments.SetEnabled("hat", true); runtime.Attachments.SetEnabled("top", true);
         var idle = runtime.Update(new(0, 0, 0));
         Assert.NotEqual(AffineTransform2D.Identity, idle.Layers.Single(l => l.Id == "part-head").Matrix);
@@ -92,6 +93,8 @@ public sealed class CompanionEquipmentTests
         processor.Playback = new(HandGesture.ToyGun, .5); processor.HandProfile = HandMotionProfile.Default(HandGesture.ToyGun);
         var hands = new HandMotionScheduler(runtime.Actions); hands.Configure(HandMotionSettings.Default(), 0); Assert.True(hands.Trigger(HandGesture.ToyGun, 0, true));
         var frame = runtime.Update(new(.5, .5, 0));
+        Assert.All(frame.Layers.Where(l => l.Id.StartsWith("legacy-tear-", StringComparison.Ordinal)), l => Assert.True(l.ZIndex > frame.Layers.Single(p => p.Id == "part-head").ZIndex));
+        Assert.Contains(frame.Layers, l => l.Id.StartsWith("legacy-tear-", StringComparison.Ordinal));
         Assert.NotNull(frame.Layers.Single(l => l.Id == "part-arm-right").Mesh);
         Assert.NotEqual(AffineTransform2D.Identity, frame.Layers.Single(l => l.Id == "companion-equipped-weapon").Matrix);
         Assert.Equal(frame.Layers.Single(l => l.Id == "part-arm-right").Matrix, frame.Layers.Single(l => l.Asset == "samples/top-right.png").Matrix);

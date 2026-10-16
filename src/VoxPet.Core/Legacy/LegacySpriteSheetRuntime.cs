@@ -111,7 +111,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
             }
         else layers.Add(new("legacy-sprite", Sprite, opacity: Blend, zIndex: 1, mesh: mesh));
         foreach (var (x, y, opacity, id) in new[] { (TearLeftX, TearLeftY, TearLeftOpacity, "left"), (TearRightX, TearRightY, TearRightOpacity, "right") })
-            if (opacity > 0) layers.Add(new("legacy-tear-" + id, "legacy/tear.png", opacity: opacity, zIndex: 2,
+            if (opacity > 0) layers.Add(new("legacy-tear-" + id, "legacy/tear.png", opacity: opacity, zIndex: separated ? 180 : 2,
                 matrix: LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.Head, 1).Compose(new(offsetX: x, offsetY: y)), width: 10, height: 20));
         int order = 0;
         var activeCategories = frame.Layers.Where(l => sampleCategories.ContainsKey(l.Id)).Select(l => sampleCategories[l.Id]).ToHashSet(StringComparer.Ordinal);

@@ -24,6 +24,12 @@ attachment는 schemaVersion2/id/name/category/layers와 선택 compatibilityTag/
 
 레이어의 선택 `animation`은 `{ "frames": ["hat-0.png", "hat-1.png"], "frameDurationMs": 80 }` 형식이다. 상대 PNG2~64개, 유한한 간격16~10000ms를 검증하고 일반 asset과 같은 크기·누락·decode 상한을 적용한다. 생략/null이면 기존 정적 `file`을 사용한다. 지정하면 Runtime의 초 단위 시간으로 반복하고 액션이나 음성과 독립적으로 진행한다. 매칭하는 `poses` PNG가 있으면 그 그림이 우선하며 미지정 포즈는 기존 hide/fallback 규칙을 따른다. 각 프레임과 간격은 native attachment index·편집·내보내기에도 보존된다.
 
+## 분리 파츠의 어깨 연결
+
+part와 attachment layer의 선택 `skinning`은 `{ "rootY": 315, "fullY": 415 }` 형식이다. 두 값은 유한한 Canvas Y좌표이며 `0 ≤ rootY`, `fullY - rootY ≥ 1`, `fullY ≤ canvas.height`를 검사한다. part는 anchor가 필요하고 attachment는 space=canvas 및 deformWithRig=false여야 한다. 생략하면 기존 변환을 유지한다.
+
+rootY까지 원래 위치를 고정하고 fullY부터 해당 앵커의 변환을 완전히 적용한다. 중간은 smoothstep 비율의 삼각 격자로 연결한다. 같은 앵커·경계를 사용하는 팔과 소매는 한 frame에서 같은 격자를 공유한다. 위치/배율/회전의 local 배치는 격자 전에 적용한다. .voxpet/부착물 index와 편집기 적용·내보내기에서 보존하며 외부 geometry provider가 필요하지 않다.
+
 ## 안전성과 자원 상한
 
 기본 상한은 archive64MiB, 실제 해제 합계64MiB, PNG16MiB/JSON512KiB, directory 포함 entry512개, PNG4096px/8M pixels, 전체 decoded RGBA128MiB다. logical Canvas의 너비/높이는 각각1~16384다. 극소 값의 표시 배율 overflow와 과대 WPF geometry를 막기 위해 로드·편집·내보내기에서 같은 범위를 검사한다. ZIP64/multi-volume/encrypted/지원하지 않는 압축 방식은 거부한다. central directory 개수/구조를 ZipArchive 객체 확장 전에 검사하며 실제 payload 길이·CRC도 확인한다.

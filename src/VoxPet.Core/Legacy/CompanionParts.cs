@@ -18,7 +18,7 @@ public static class CompanionParts
         _ => "body"
     };
     public static int Order(string id) => id switch
-    { "arm-left" => 10, "leg-left" => 20, "leg-right" => 30, "body" => 40, "head" => 80, _ => 100 };
+    { "arm-left" => 50, "leg-left" => 20, "leg-right" => 30, "body" => 40, "head" => 80, _ => 100 };
     public static IReadOnlyList<CharacterPart> Define(CharacterDefinition samples) => Ids.Select(id => new CharacterPart(id,
         id.StartsWith("arm-", StringComparison.Ordinal) ? "arm" : id.StartsWith("leg-", StringComparison.Ordinal) ? "leg" : id,
         id == "head" ? Head(0, 1) : Asset(id), Anchor(id), Order(id), skinning: samples.Parts.FirstOrDefault(p => p.Id == id)?.Skinning)).ToArray();

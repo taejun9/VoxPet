@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Legacy;
@@ -34,6 +35,15 @@ internal static class PartWardrobeQa
                 { now = Math.Max(now, model.Character.CompanionScene.Runtime.Actions.LastTime) + step; model.Hands.Update(now); model.Character.Update(new(0, 0, 0, 0, 1, MouthState.Closed), now); }
                 Tick(.4);
                 check(scene.Runtime.Definition.Parts.Count == 6 && scene.Frame.Layers.Count(l => l.Id.StartsWith("part-", StringComparison.Ordinal)) == 6 && scene.Frame.Layers.All(l => l.Id != "legacy-sprite"), "parts_six_independent_layers_" + entry.Id);
+                var solid = BitmapSource.Create(512, 512, 96, 96, PixelFormats.Pbgra32, null, Enumerable.Repeat((byte)255, 512 * 512 * 4).ToArray(), 512 * 4); solid.Freeze();
+                var torso = CompanionPartImages.Cut(solid, "body", entry.SideView);
+                byte[] body = await Task.Run(() => CompanionPartImages.Encode(torso));
+                using (var stream = new MemoryStream(body, false))
+                {
+                    var bitmap = new PngBitmapDecoder(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0]; var pixel = new byte[4];
+                    bitmap.CopyPixels(new Int32Rect(256, 470, 1, 1), pixel, 4, 0);
+                    check(pixel[3] == 255, "parts_body_keeps_pixels_between_feet_" + entry.Id);
+                }
                 foreach (var part in CompanionParts.Ids)
                 {
                     string asset = part == "head" ? CompanionParts.Head(0, 1) : CompanionParts.Asset(part);

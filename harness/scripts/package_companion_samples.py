@@ -17,7 +17,7 @@ def build(character_id):
         files = {n: json.loads(reference.read(n)) for n in reference.namelist() if n.endswith('.json')}
     definition = files['character.json']
     part_anchors = {'arm-left': 'leftShoulder', 'leg-left': 'leftFoot', 'leg-right': 'rightFoot', 'body': 'body', 'head': 'head', 'arm-right': 'rightShoulder'}
-    part_orders = {'arm-left': 10, 'leg-left': 20, 'leg-right': 30, 'body': 40, 'head': 80, 'arm-right': 100}
+    part_orders = {'arm-left': 50, 'leg-left': 20, 'leg-right': 30, 'body': 40, 'head': 80, 'arm-right': 100}
     definition['parts'] = [dict(id=part, type='arm' if part.startswith('arm-') else 'leg' if part.startswith('leg-') else part, file='samples/empty.png', anchor=anchor, zIndex=part_orders[part]) for part, anchor in part_anchors.items()]
     skinning = dict(rootY=315 if character_id=='neulbo' else 285, fullY=415 if character_id=='neulbo' else 360)
     for part in definition['parts']:
@@ -66,7 +66,7 @@ def build(character_id):
         attachment = files[reference]
         kind = attachment['id']
         if kind in ['top', 'outerwear']:
-            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftShoulder', 45, 'arm-left'), ('body', 'body', 65 if kind=='outerwear' else 60, 'body'), ('right', 'rightShoulder', 101, 'arm-right')]]
+            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftShoulder', 51, 'arm-left'), ('body', 'body', 65 if kind=='outerwear' else 60, 'body'), ('right', 'rightShoulder', 101, 'arm-right')]]
             for layer in attachment['layers']:
                 if layer['id'] in ['left', 'right']: layer['skinning'] = skinning
         if kind == 'onePiece':

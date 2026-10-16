@@ -48,6 +48,15 @@ for character in ('neulbo', 'pelly'):
                     or len(definition['parts']) != 6 or any(p['file'] != 'samples/empty.png' for p in definition['parts'])
                     or any(p.startswith('legacy/') or p.startswith('images/') for p in pack.namelist())):
                 errors.append(f'Incomplete or non-accessory companion pack: {character}')
+            parts = {p['id']: p for p in definition['parts']}
+            for garment in (a for a in attachments if a['id'] in ('top', 'outerwear')):
+                for side in ('left', 'right'):
+                    sleeve = next(l for l in garment['layers'] if l['id'] == side)
+                    if sleeve.get('skinning') != parts['arm-' + side].get('skinning') or not sleeve.get('skinning'):
+                        errors.append(f'Sleeve and arm joint mismatch: {character}/{garment["id"]}/{side}')
+            actions = [json.loads(pack.read(p)) for p in m['actions']]
+            if not any(a['id'] == 'claw' and a['name'] == '법규' for a in actions):
+                errors.append(f'Law hand action name missing: {character}')
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
         errors.append(f'Cannot validate companion samples {character}: {type(error).__name__}')
 for name in ('src/VoxPet.App/packages.lock.json', 'tests/VoxPet.Core.Tests/packages.lock.json', 'VoxPet.sln', 'global.json'):
