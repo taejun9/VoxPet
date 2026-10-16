@@ -37,7 +37,10 @@ function small(kind,id) {
   }
   if(kind==='effect')return svg([[74,155,1.6],[437,120,1.9],[98,403,1.2],[447,440,1.2]].map(([x,y,s])=>star(x,y,s)).join(''));
   if(kind==='heart')return svg(`<path d="M256,360C212,331 185,307 198,284C211,259 244,265 256,287C270,260 304,262 315,285C328,312 296,339 256,360Z" fill="url(#pink)" stroke="#a56b71" stroke-width="2"/><path d="M212,289q10,-13 23,-4" fill="none" stroke="#fff3e7" stroke-width="5" stroke-linecap="round"/>${star(319,267,.8)}${star(189,327,.6)}`);
-  if(kind==='claw')return svg([0,1,2].map(i=>`<path d="M${352+i*20},285Q${323+i*18},323 ${342+i*18},349Q${331+i*18},319 ${364+i*20},278Z" fill="#f8d8af" stroke="#c79770" stroke-width="1" opacity=".85"/>`).join(''));
+  if(kind==='claw') {
+    const x=side?377:365,y=side?290:327;
+    return svg(`<g transform="translate(${x} ${y})"><path d="M18,91L14,67Q4,63 5,51Q6,42 15,44L23,48V13Q23,3 31,3Q40,3 40,13V43Q44,37 51,40Q57,34 64,40Q73,38 77,46L79,68Q78,83 64,93L62,104H24Z" fill="#f5dfbd" stroke="#70503d" stroke-width="3.5" stroke-linejoin="round"/><path d="M24,48v15m16,-20v15m14,-14v15m12,-14v13M20,74q15,8 30,5" fill="none" stroke="#b18d69" stroke-width="2" stroke-linecap="round"/><path d="M28,15v22M29,69q13,6 27,1" stroke="#fff7e4" stroke-width="3" stroke-linecap="round"/><path d="M19,95q22,7 48,-1l-2,14q-24,7 -44,0Z" fill="url(#mint)" stroke="#70503d" stroke-width="2.5"/></g>`);
+  }
   if(kind==='bow') {
     const [x,y,w,h]=profiles[id].bow;
     return svg(`<g transform="translate(${x} ${y}) scale(${w/120} ${h/170})"><path d="M42,3Q115,85 42,167" fill="none" stroke="${ink}" stroke-width="8"/><path d="M42,3Q112,85 42,167" fill="none" stroke="url(#gold)" stroke-width="5"/><path d="M42,3L25,85 42,167" stroke="#eee0c3" stroke-width="2" fill="none"/><path d="M12,85h102" stroke="#916848" stroke-width="4"/><path d="M114,85l-15,-8v16Z" fill="#d5e7dd" stroke="${ink}" stroke-width="1"/><path d="M15,85l-12,-10m12,10l-12,10" stroke="#aaa3b8" stroke-width="5"/></g>`);
@@ -77,6 +80,22 @@ async function frame(kind,index,columns,rows) {
     for(const kind of ['top','outerwear','onePiece','bottom','shoes','hair-short','hair-long','hair-afro']) images[kind]=await placed(await fs.readFile(path.join(source,(kind==='hair-long'?'hair-long-v2':kind)+'.png')),profiles[id][kind]);
     for(const [kind,count,columns,rows] of [['hat',8,4,2],['cape',6,3,2]])for(let i=0;i<count;i++)images[kind+(i?'-'+i:'')]=await placed(await frame(kind,i,columns,rows),profiles[id][kind]);
     for(const kind of ['glasses','faceDecoration','earrings','headAccessory','handAccessory','effect','heart','claw','bow'])images[kind]=await sharp(small(kind,id)).resize(512,512).png().toBuffer();
+    // Split clothing inside the fabric, with matching shoulder anchors. Back
+    // sleeves sit behind the torso; the front sleeve sits over the front arm.
+    const split=async(name,part,mask)=>{
+      images[name+'-'+part]=await sharp(images[name]).composite([{input:Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">${mask}</svg>`),blend:'dest-in'}]).png().toBuffer();
+    };
+    for(const name of ['top','outerwear','onePiece']) {
+      const left=id==='pelly'?0:153,right=id==='pelly'?334:361;
+      await split(name,'body',`<rect x="${left-22}" y="0" width="${right-left+44}" height="512" fill="white"/>`);
+      await split(name,'left',`<rect width="${left}" height="512" fill="white"/>`);
+      await split(name,'right',`<rect x="${right}" width="${512-right}" height="512" fill="white"/>`);
+    }
+    for(const name of ['shoes','bottom']) {
+      const middle=id==='pelly'?310:256;
+      await split(name,'left',`<rect width="${middle}" height="512" fill="white"/>`);
+      await split(name,'right',`<rect x="${middle}" width="${512-middle}" height="512" fill="white"/>`);
+    }
     images['backAccessory']=await placed(await frame('cape',1,3,2),profiles[id].backAccessory);
     for(const [kind,box]of[['toy-gun','gun'],['toy-sword','sword'],['magic-wand','wand']])images[kind]=await placed(await fs.readFile(path.join(source,(kind==='hair-long'?'hair-long-v2':kind)+'.png')),profiles[id][box]);
     for(const kind of ['hair-short','hair-long','hair-afro']) {

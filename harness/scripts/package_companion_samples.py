@@ -16,7 +16,9 @@ def build(character_id):
     with zipfile.ZipFile(OUT / 'studio-samples.voxpet') as reference:
         files = {n: json.loads(reference.read(n)) for n in reference.namelist() if n.endswith('.json')}
     definition = files['character.json']
-    definition['parts'] = [{'id': 'sprite', 'type': 'sprite', 'file': 'samples/empty.png', 'anchor': 'root'}]
+    part_anchors = {'arm-left': 'leftShoulder', 'leg-left': 'leftFoot', 'leg-right': 'rightFoot', 'body': 'body', 'head': 'head', 'arm-right': 'rightShoulder'}
+    part_orders = {'arm-left': 10, 'leg-left': 20, 'leg-right': 30, 'body': 40, 'head': 80, 'arm-right': 100}
+    definition['parts'] = [dict(id=part, type='arm' if part.startswith('arm-') else 'leg' if part.startswith('leg-') else part, file='samples/empty.png', anchor=anchor, zIndex=part_orders[part]) for part, anchor in part_anchors.items()]
     for key in ['mouth', 'expressions', 'face']:
         definition.pop(key, None)
     # Public pack has no stand-in character. The app supplies the selected real sheet.
@@ -28,15 +30,38 @@ def build(character_id):
         anchors.update({'head': {'x': 300, 'y': 200}, 'mouth': {'x': 220, 'y': 180},
                         'leftShoulder': {'x': 125, 'y': 264}, 'rightShoulder': {'x': 386, 'y': 264},
                         'leftHand': {'x': 125, 'y': 390}, 'rightHand': {'x': 415, 'y': 385}})
+    anchors['leftShoulder'] = dict(x=145 if character_id=='neulbo' else 125, y=315 if character_id=='neulbo' else 285)
+    anchors['rightShoulder'] = dict(x=367 if character_id=='neulbo' else 330, y=315 if character_id=='neulbo' else 285)
+    shoulder_left, shoulder_right = anchors['leftShoulder'], anchors['rightShoulder']
+    hand_left, hand_right = anchors['leftHand'], anchors['rightHand']
+    anchors['body'] = {'parent': 'root'}
+    for name in ['head', 'leftShoulder', 'rightShoulder']:
+        anchors[name]['parent'] = 'body'
+    for hand, shoulder, parent in [(hand_left, shoulder_left, 'leftShoulder'), (hand_right, shoulder_right, 'rightShoulder')]:
+        hand.update(x=hand['x'] - shoulder['x'], y=hand['y'] - shoulder['y'], parent=parent)
+    anchors.update(hips=dict(parent='body', x=256, y=400), leftFoot=dict(parent='body', x=190 if character_id=='neulbo' else 260, y=465 if character_id=='neulbo' else 435), rightFoot=dict(parent='body', x=322 if character_id=='neulbo' else 340, y=465 if character_id=='neulbo' else 445))
     definition['anchors'] = anchors
     definition['motion'] = {'idle': {'breathing': 0, 'sway': 0}, 'voice': {'bodyBounce': 0, 'headBounce': 0, 'headRotation': 0}}
     manifest = files['manifest.json']
     manifest.update(id='voxpet.samples.' + character_id, name=('늘보군' if character_id == 'neulbo' else '펠리') + ' 의상 · 동작',
-                    version='2.0.0', description='선택한 캐릭터에 직접 착용하는17의상/9동작. 새 수채화 의상과 소품. 개인 그림은 포함하지 않습니다.', thumbnail='thumbnails/hat.png')
+                    version='3.0.0', description='여섯 신체 파츠에 연결하는17의상/9동작·헤어3종. 개인 그림은 포함하지 않습니다.', thumbnail='thumbnails/hat.png')
     for reference in manifest['actions']:
         files[reference]['name'] = files[reference]['name'].split(' · ')[0]
+        action = files[reference]
+        if action['id'] == 'claw':
+            action['name'] = '법규'
+            action['timeline'] = []
+            for time, angle in [(0, 0), (160, 52), (700, 52), (1000, 0)]:
+                action['timeline'].extend([dict(time=time, transform=dict(target='rightShoulder', rotation=angle)), dict(time=time, transform=dict(target='rightHand', rotation=-angle))])
+            grip = (402, 422) if character_id == 'neulbo' else (415, 385)
+            action['timeline'].append(dict(time=160, effect=dict(anchor='rightHand', file='samples/claw.png', duration=620, transform=dict(x=-grip[0], y=-grip[1]))))
     for reference in manifest['attachments']:
         attachment = files[reference]
+        kind = attachment['id']
+        if kind in ['top', 'outerwear', 'onePiece']:
+            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftShoulder', 11, 'arm-left'), ('body', 'body', 65 if kind=='outerwear' else 60, 'body'), ('right', 'rightShoulder', 101, 'arm-right')]]
+        if kind in ['bottom', 'shoes']:
+            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftFoot' if kind=='shoes' else 'hips', 25 if kind=='shoes' else 50, 'leg-left' if kind=='shoes' else 'body'), ('right', 'rightFoot' if kind=='shoes' else 'hips', 35 if kind=='shoes' else 50, 'leg-right' if kind=='shoes' else 'body')]]
         if attachment['id'] == 'faceDecoration':
             attachment['layers'][0]['anchor'] = 'head'
             attachment['layers'][0]['inherit']['mouthMotion'] = False

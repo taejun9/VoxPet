@@ -52,6 +52,11 @@ public sealed class CharacterViewModel : ObservableObject
     private CharacterRuntimeViewModel legacyScene = null!;
     private LoadedCharacterPackage? companionSamples;
     private readonly Dictionary<string, string[]> companionSelections = [];
+    private IReadOnlyDictionary<string, ImageSource> partImages = new Dictionary<string, ImageSource>();
+    private ImageSource[,]? partSheet;
+    private string partCharacter = "";
+    public void SetCompanionEquipment(string? weapon, bool hold)
+    { legacy.WeaponId = weapon; legacy.HoldWeapon = hold; RefreshMotion(); }
     public string CompanionCharacterId { get; private set; } = "";
     public CharacterRuntimeViewModel CompanionScene => legacyScene;
     public bool HasCompanionSamples => companionSamples != null;
@@ -81,11 +86,13 @@ public sealed class CharacterViewModel : ObservableObject
     {
         if (companionSamples == null) return null;
         var loaded = companionSamples; var sheet = (ImageSource[,])sprites.Clone(); var expression = profile;
+        SetLegacyImages(); var separated = partImages;
         string id = CompanionCharacterId; string displayName = defaultName;
         return await Task.Run(() =>
         {
             var definition = LegacySpriteSheetAdapter.Convert(sheet.GetLength(0), expression, loaded.Package.Character);
             var assets = loaded.Package.AssetPaths.ToDictionary(p => p, loaded.Package.ReadAsset);
+            foreach (var part in separated) assets[part.Key] = CompanionPartImages.Encode(part.Value);
             for (int mouth = 0; mouth < sheet.GetLength(0); mouth++) for (int eye = 0; eye < 2; eye++)
             {
                 var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create((BitmapSource)sheet[mouth, eye]));
@@ -134,6 +141,12 @@ public sealed class CharacterViewModel : ObservableObject
         cachedSprites = sprites; cachedPrevious = PreviousSprite; cachedGuides = ShowMotionGuides; cachedGuideRig = Rig; cachedCostumes = costumes;
         var images = new Dictionary<string, ImageSource>(LegacyDrawingAssets.All);
         if (companionSamples != null) foreach (var pair in companionSamples.Images) images.Add(pair.Key, pair.Value);
+        if (companionSamples != null)
+        {
+            if (!ReferenceEquals(partSheet, sprites) || partCharacter != CompanionCharacterId)
+            { partSheet = sprites; partCharacter = CompanionCharacterId; partImages = CompanionPartImages.Create(sprites, CompanionCharacterId == "pelly"); }
+            foreach (var pair in partImages) images[pair.Key] = pair.Value;
+        }
         for (int m = 0; m < sprites.GetLength(0); m++) for (int e = 0; e < 2; e++) images.Add(LegacySpriteSheetAdapter.Asset(m, e), sprites[m, e]);
         if (PreviousSprite != null) images.Add("legacy/previous.png", PreviousSprite);
         foreach (var item in CostumeLayers.Where(item => item.Enabled && item.Image != null)) images.Add("legacy/costume-" + item.Id.ToString("N") + ".png", item.Image!);

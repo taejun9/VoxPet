@@ -200,6 +200,7 @@ public partial class App : Application
             await CardDisplayQa.RunAsync(Check);
             await UnifiedStudioQa.RunAsync(Check);
             await CompanionSamplesQa.RunAsync(Check);
+            await PartWardrobeQa.RunAsync(Check);
             await CharacterEditorQa.RunAsync(Check);
             await SettingsPersistenceQa.RunAsync(Check);
             await ExpressionQa.RunAsync(main, Check);

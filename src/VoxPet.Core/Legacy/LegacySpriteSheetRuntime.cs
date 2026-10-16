@@ -33,6 +33,8 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
     public IReadOnlyList<LegacyCostumeLayer> Costumes { get; set; } = [];
     public bool ShowGuides { get; set; }
     public bool PreserveForegroundWing { get; set; }
+    public string? WeaponId { get; set; }
+    public bool HoldWeapon { get; set; } = true;
     public int MouthFrames { get; private set; } = 3;
     public string Sprite { get; private set; } = LegacySpriteSheetAdapter.Asset(0, 1);
     public double Blend { get; private set; } = 1;
@@ -70,7 +72,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
         }
     }
     public RenderMesh? Compose(string layerId, bool garment, double follow, RuntimeRenderContext context)
-    { UpdatePose(context); return geometry.Compose(layerId, garment, follow, context); }
+    { UpdatePose(context); return Samples == null ? geometry.Compose(layerId, garment, follow, context) : null; }
     public void Apply(ExpressionProfile profile, int mouthFrames, double now)
     {
         profile.Validate(); _ = LegacySpriteSheetAdapter.Convert(mouthFrames);
@@ -88,9 +90,22 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
         TearLeftY = Profile.TearTop * 512 + left.Offset; TearRightY = Profile.TearTop * 512 + right.Offset;
         TearLeftOpacity = Profile.Tears ? left.Opacity * Blend : 0; TearRightOpacity = Profile.Tears ? right.Opacity * Blend : 0;
         var layers = new List<RenderLayer>();
+        bool separated = Samples != null && frame.Layers.Any(l => l.Id == "part-head");
         var mesh = geometry.Compose("sprite", false, 1, context);
         if (HasPrevious) layers.Add(new("legacy-previous", "legacy/previous.png", opacity: 1 - Blend, mesh: mesh));
-        layers.Add(new("legacy-sprite", Sprite, opacity: Blend, zIndex: 1, mesh: mesh));
+        if (separated)
+            foreach (var part in frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal)))
+            {
+                var matrix = part.Matrix;
+                if (context.Action.Transforms.Count == 0 && Motion.Gesture != null)
+                {
+                    var target = part.Id switch { "part-arm-left" => MotionAttachment.LeftHand, "part-arm-right" => MotionAttachment.RightHand, "part-head" => MotionAttachment.Head, _ => MotionAttachment.Body };
+                    matrix = LegacyRenderGeometryProvider.Attachment(Rig, Motion, target, 1).Compose(matrix);
+                }
+                string asset = part.Id == "part-head" ? CompanionParts.Head(mouth, Profile.Blink && Parameters.EyeOpen < .5 ? 0 : 1) : part.Asset;
+                layers.Add(new(part.Id, asset, opacity: part.Opacity * Blend, zIndex: part.ZIndex, matrix: matrix, width: part.Width, height: part.Height));
+            }
+        else layers.Add(new("legacy-sprite", Sprite, opacity: Blend, zIndex: 1, mesh: mesh));
         foreach (var (x, y, opacity, id) in new[] { (TearLeftX, TearLeftY, TearLeftOpacity, "left"), (TearRightX, TearRightY, TearRightOpacity, "right") })
             if (opacity > 0) layers.Add(new("legacy-tear-" + id, "legacy/tear.png", opacity: opacity, zIndex: 2,
                 matrix: LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.Head, 1).Compose(new(offsetX: x, offsetY: y)), width: 10, height: 20));
@@ -124,6 +139,18 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
             {
                 MotionAttachment target = MotionAttachment.RightHand;
                 var matrix = AffineTransform2D.Identity; RenderMesh? deformation = null;
+                if (separated)
+                {
+                    if (context.Action.Effects.Any(e => e.Id == rendered.Id) && CompanionWeapon.All.Any(w => w.Asset == rendered.Asset)) continue;
+                    matrix = rendered.Matrix;
+                    if (context.Action.Transforms.Count == 0 && Motion.Gesture != null && placements.TryGetValue(rendered.Id, out var binding))
+                    {
+                        var attachment = binding.Anchor switch { "leftShoulder" or "leftHand" => MotionAttachment.LeftHand, "rightShoulder" or "rightHand" => MotionAttachment.RightHand, "head" => MotionAttachment.Head, _ => MotionAttachment.Body };
+                        matrix = LegacyRenderGeometryProvider.Attachment(Rig, Motion, attachment, 1).Compose(matrix);
+                    }
+                    layers.Add(new(rendered.Id, rendered.Asset, opacity: rendered.Opacity, zIndex: rendered.ZIndex, matrix: matrix, width: rendered.Width, height: rendered.Height));
+                    continue;
+                }
                 if (placements.TryGetValue(rendered.Id, out var layer))
                 {
                     target = layer.Anchor switch { "head" => MotionAttachment.Head, "mouth" => MotionAttachment.Mouth, "leftHand" => MotionAttachment.LeftHand, "rightHand" => MotionAttachment.RightHand, _ => MotionAttachment.Body };
@@ -133,7 +160,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 else if (context.Action.ActionId != "heart") matrix = LegacyRenderGeometryProvider.Attachment(Rig, Motion, target, 1);
                 layers.Add(new(rendered.Id, rendered.Asset, opacity: rendered.Opacity, zIndex: rendered.ZIndex, matrix: matrix, width: rendered.Width, height: rendered.Height, mesh: deformation));
             }
-            if (PreserveForegroundWing && frame.Layers.Any(l => placements.TryGetValue(l.Id, out var p) && p.Placement.DeformWithRig))
+            if (!separated && PreserveForegroundWing && frame.Layers.Any(l => placements.TryGetValue(l.Id, out var p) && p.Placement.DeformWithRig))
             {
                 // A pelican's visible wing belongs in front of its vest, not under a sleeve.
                 var limb = Rig.Right;
@@ -143,6 +170,13 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 var transform = LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.RightHand, 1);
                 layers.Add(new("legacy-sample-foreground-wing", Sprite, opacity: Blend, zIndex: 120,
                     mesh: new RenderMesh(outline.Select((p, i) => new RenderTriangle(center, p, outline[(i + 1) % outline.Length], transform)))));
+            }
+            if (separated && CompanionWeapon.Find(WeaponId) is { } weapon &&
+                (context.Action.IsPlaying ? CompanionWeapon.Find(context.Action.ActionId) != null : HoldWeapon))
+            {
+                var rest = context.Rig.Static["rightHand"];
+                var weaponMatrix = context.Rig.Animated["rightHand"].Compose(rest.Inverse());
+                layers.Add(new("companion-equipped-weapon", weapon.Asset, zIndex: 150, matrix: weaponMatrix));
             }
         }
         if (ShowGuides) layers.Add(new("legacy-guides", "legacy/guides.png", zIndex: 3000));

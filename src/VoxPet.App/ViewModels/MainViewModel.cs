@@ -87,6 +87,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     public ExpressionViewModel Expressions { get; }
     public CostumeViewModel Wardrobe { get; }
     public HandMotionViewModel Hands { get; }
+    public CompanionEquipmentViewModel Equipment { get; }
     public ImageRuntimeViewModel Runtime { get; }
     public NativeCharacterViewModel Packages { get; }
     private string MotionCharacterId => Character.UsesCustomSheet ? "custom" : Character.IsBuiltInDefault ? "builtin" : appliedCharacter.Id;
@@ -145,6 +146,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Expressions = new(Character, persistSettings, Path.Combine(folder, "Expressions"));
         Wardrobe = new(persistSettings, Path.Combine(folder, "Wardrobe")); Character.CostumeLayers = Wardrobe.Items;
         Hands = new(Character, persistSettings, folder, () => clock.Elapsed.TotalSeconds);
+        Equipment = new(Character, persistSettings, folder);
         var saved = persistSettings ? initialSettings?.Normalize() ?? store.Load() : new UserSettings(new()); settings = saved.Audio; topmost = saved.Topmost; green = saved.GreenBackground;
         selectedCharacter = appliedCharacter = Characters.Single(item => item.Id == saved.CharacterId);
         Runtime = new(Character, persistSettings, folder, () => appliedCharacter.Id, () => clock.Elapsed.TotalSeconds, kind => Expressions.PreviewBuiltinAsync((int)kind));
@@ -302,6 +304,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Runtime.Activate(startupPack);
         characterInitialized = true;
         await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await Hands.InitializeAsync(); Hands.SetCharacter(MotionCharacterId); await RefreshDevicesAsync();
+        await Equipment.InitializeAsync();
         Character.SetCompanionSamples(await CompanionSampleLibrary.LoadAsync(appliedCharacter.Id), appliedCharacter.Id);
         await Packages.InitializeAsync();
         // Upgrade the old automatic stand-in selection without deleting its managed file.
@@ -562,7 +565,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         closing = true; timer.Stop(); timer.Tick -= Tick; saveTimer.Stop(); saveTimer.Tick -= SaveTimerTick; RefreshCommands();
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
         var expressionClose = Expressions.CloseAsync(); var handsClose = Hands.CloseAsync(); var runtimeClose = Runtime.CloseAsync();
-        await session.DisposeAsync(); await expressionClose; await handsClose; await runtimeClose; await Packages.CloseAsync(); await Wardrobe.CloseAsync(); ResetLevels();
+        await session.DisposeAsync(); await expressionClose; await handsClose; await runtimeClose; await Equipment.CloseAsync(); await Packages.CloseAsync(); await Wardrobe.CloseAsync(); ResetLevels();
         await FlushSettingsAsync();
     }
 }

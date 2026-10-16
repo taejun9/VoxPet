@@ -50,7 +50,8 @@ internal static class LegacyDrawingAssets
                     c.DrawRoundedRectangle(Brushes.MediumPurple, outline, new Rect(-4, -68, 8, 80), 3, 3);
                     c.PushTransform(new TranslateTransform(0, -76)); c.DrawGeometry(Brushes.Gold, outline, Shape("M0,-18 L5,-6 L18,-5 L8,4 L11,17 L0,10 L-11,17 L-8,4 L-18,-5 L-5,-6 Z")); c.Pop(); break;
                 case HandGesture.Claw:
-                    for (int i = 0; i < 3; i++) c.DrawLine(new Pen(Brushes.LightSalmon, 4), new Point(i * 12 - 12, -40), new Point(i * 12 - 25, -8)); break;
+                    c.DrawGeometry(Brushes.Wheat, outline, Shape("M-20,10 L-24,-15 Q-40,-24 -32,-33 Q-26,-39 -16,-29 L-12,-25 V-65 Q-12,-78 -3,-78 Q6,-78 6,-65 V-30 Q15,-37 23,-29 Q33,-34 39,-25 L42,-5 Q39,14 21,20 L19,30 H-17 Z"));
+                    c.DrawRoundedRectangle(Brushes.LightSeaGreen, outline, new Rect(-22, 19, 45, 14), 4, 4); break;
             }
         });
         return images;

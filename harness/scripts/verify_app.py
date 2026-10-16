@@ -45,7 +45,7 @@ for character in ('neulbo', 'pelly'):
             definition = json.loads(pack.read('character.json'))
             if (pack.testzip() is not None or m['id'] != f'voxpet.samples.{character}' or len(attachments) != 17
                     or len({a['category'] for a in attachments}) != 14 or len(m['actions']) != 9
-                    or len(definition['parts']) != 1 or definition['parts'][0]['file'] != 'samples/empty.png'
+                    or len(definition['parts']) != 6 or any(p['file'] != 'samples/empty.png' for p in definition['parts'])
                     or any(p.startswith('legacy/') or p.startswith('images/') for p in pack.namelist())):
                 errors.append(f'Incomplete or non-accessory companion pack: {character}')
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:

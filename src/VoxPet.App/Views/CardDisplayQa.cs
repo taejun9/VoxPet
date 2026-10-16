@@ -66,7 +66,7 @@ internal static class CardDisplayQa
         var layer = new RuntimeLayer(image, new(0, 0));
         check(layer.ToString() == nameof(RuntimeLayer) && await Task.Run(() => layer.ToString() == nameof(RuntimeLayer)), "card_display_runtime_layer_never_formats_image");
         check(await Task.Run(() => Enumerable.Range(0, 1000).AsParallel().All(i => cards[i % cards.Length].ToString() == cards[i % cards.Length].Name)), "card_display_parallel_label_reads");
-        check(typeof(App).Assembly.GetName().Version?.ToString() == "1.1.0.0", "card_display_fixed_build_version");
+        check(typeof(App).Assembly.GetName().Version?.ToString() == "1.2.0.0", "card_display_fixed_build_version");
         await CheckLibraryAsync(loaded.Package, check);
     }
     private static async Task CheckLibraryAsync(VoxPetPackage sample, Action<bool, string> check)

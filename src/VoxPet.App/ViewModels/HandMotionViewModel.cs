@@ -20,9 +20,9 @@ public sealed class HandMotionViewModel : ObservableObject
     private string characterId = CharacterCatalog.DefaultId;
     private int selected, side;
     private bool ready, closing, guides;
-    private string status = "기본: 좌클릭 할퀴기 · 설정은 자동 저장됩니다.";
+    private string status = "기본: 좌클릭 법규 · 설정은 자동 저장됩니다.";
     public CharacterViewModel Character => character;
-    public string[] Gestures { get; } = ["할퀴기", "장난감 총", "손하트", "장난감 칼", "요술봉"];
+    public string[] Gestures { get; } = ["법규", "장난감 총", "손하트", "장난감 칼", "요술봉"];
     public string[] Modes { get; } = ["항상", "초 간격", "입력할 때"];
     public string[] Inputs { get; } = ["좌클릭", "전역 키"];
     public string[] ModifierNames { get; } = ["Ctrl+Alt", "Ctrl", "Alt", "Ctrl+Shift", "Alt+Shift", "Ctrl+Alt+Shift"];

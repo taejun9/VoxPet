@@ -18,7 +18,7 @@ public sealed class CompanionSampleTests
     {
         var package = Load(id); var definition = LegacySpriteSheetAdapter.Convert(mouths, samples: package.Character);
         Assert.Equal("voxpet.samples." + id, package.Manifest.Id);
-        Assert.Single(definition.Parts); Assert.Equal("sprite", definition.Parts[0].Id);
+        Assert.Equal(6, definition.Parts.Count); Assert.Equal("head", definition.SpriteSheet!.Part);
         Assert.Equal(mouths, definition.SpriteSheet!.Selector.Frames.Count);
         Assert.DoesNotContain(package.AssetPaths, p => p.StartsWith("images/", StringComparison.Ordinal));
         Assert.DoesNotContain(package.AssetPaths, p => p.StartsWith("legacy/", StringComparison.Ordinal));
@@ -57,16 +57,17 @@ public sealed class CompanionSampleTests
         Assert.Null(hands.Update(.2)); // A sample ID is not a HandGesture enum string.
         var frame = runtime.Update(new(.2, .2, 0, false));
         Assert.Equal(action, runtime.State.ActionId); Assert.NotNull(processor.Motion.Gesture);
-        Assert.Contains(frame.Layers, l => l.Id == "legacy-sprite" && l.Asset == LegacySpriteSheetAdapter.Asset(0, 1) && l.Mesh != null);
-        Assert.DoesNotContain(frame.Layers, l => l.Id.StartsWith("part-", StringComparison.Ordinal) || l.Id.StartsWith("face-", StringComparison.Ordinal));
-        Assert.Contains(frame.Layers, l => l.Asset == "samples/top.png" && l.Mesh != null);
+        Assert.Contains(frame.Layers, l => l.Id == "part-head" && l.Asset == CompanionParts.Head(0, 1) && l.Mesh == null);
+        Assert.DoesNotContain(frame.Layers, l => l.Id == "legacy-sprite" || l.Id.StartsWith("face-", StringComparison.Ordinal));
+        Assert.Contains(frame.Layers, l => l.Asset == "samples/top-right.png" && l.Mesh == null);
         Assert.Contains(frame.Layers, l => l.Asset.StartsWith("samples/hat", StringComparison.Ordinal));
         Assert.Contains(frame.Layers, l => l.Asset.StartsWith("samples/cape", StringComparison.Ordinal));
-        Assert.Equal(id == "pelly", frame.Layers.Any(l => l.Id == "legacy-sample-foreground-wing"));
+        Assert.Equal(6, frame.Layers.Count(l => l.Id.StartsWith("part-", StringComparison.Ordinal)));
+        Assert.Equal(frame.Layers.Single(l => l.Id == "part-arm-right").Matrix, frame.Layers.Single(l => l.Asset == "samples/top-right.png").Matrix);
         processor.Parameters = new(1, 0, 0, 0, 0, MouthState.Open);
         processor.Apply(ExpressionProfile.Default(0) with { Blink = true }, id == "neulbo" ? 8 : 3, .2);
         var talking = runtime.Update(new(.4, .2, 1, true));
-        Assert.Contains(talking.Layers, l => l.Id == "legacy-sprite" && l.Asset == LegacySpriteSheetAdapter.Asset(id == "neulbo" ? 7 : 2, 0));
+        Assert.Contains(talking.Layers, l => l.Id == "part-head" && l.Asset == CompanionParts.Head(id == "neulbo" ? 7 : 2, 0));
         runtime.Update(new(1.3, .9, 0, false)); Assert.Null(runtime.State.ActionId);
         Assert.Null(processor.Motion.Gesture);
         Assert.Equal(new[] { "top", "hat", "cape" }, runtime.Attachments.EnabledIds);

@@ -65,6 +65,12 @@ for character in ['neulbo', 'pelly']:
     for frame in range(4): expected.add(f'companion-{character}-animation-{frame}')
     for case in ['broadcast','editor']: expected.add(f'companion-{character}-{case}')
 expected.update(['companion-library','companion-restarted'])
+for character in ['neulbo', 'pelly']:
+    for case in ['separated', 'hair-short', 'hair-long', 'hair-afro', 'weapon-off', 'law']:
+        expected.add(f'parts-{character}-{case}')
+    for weapon in ['toy-gun', 'toy-sword', 'magic-wand', 'firearm', 'bow', 'one-hand', 'two-hand']:
+        for state in ['idle', 'action']: expected.add(f'parts-{character}-weapon-{weapon}-{state}')
+expected.add('parts-equipment-restart')
 
 records = []
 for name in sorted(expected):

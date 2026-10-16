@@ -28,7 +28,7 @@ internal static class CompanionSamplesQa
         }
         return true;
     }
-    private static void SaveCalibration(string path, bool side)
+    internal static void SaveCalibration(string path, bool side)
     {
         int columns = side ? 3 : 8; var sheet = new DrawingVisual();
         using (var drawing = sheet.RenderOpen())
@@ -86,7 +86,7 @@ internal static class CompanionSamplesQa
                 foreach (var card in window.Studio.AttachmentCards.ToArray())
                 {
                     card.ToggleCommand.Execute(null); Tick();
-                    check(card.IsWorn && card.WearLabel == "해제" && ReferenceEquals(scene, model.Character.RuntimeScene) && scene.Frame.Layers.Any(l => l.Id == "legacy-sprite"), "companion_wear_preserves_original_" + item.Id + "_" + card.Id);
+                    check(card.IsWorn && card.WearLabel == "해제" && ReferenceEquals(scene, model.Character.RuntimeScene) && scene.Frame.Layers.Any(l => l.Id == "part-head"), "companion_wear_preserves_original_" + item.Id + "_" + card.Id);
                     check(card.Image is BitmapSource { IsFrozen: true, PixelWidth: 160 }, "companion_readable_thumbnail_" + item.Id + "_" + card.Id);
                     await ScreenEvidence.CaptureAsync(window, "companion-" + item.Id + "-costume-" + card.Id.ToLowerInvariant(), check);
                     card.ToggleCommand.Execute(null); check(!card.IsWorn, "companion_remove_" + item.Id + "_" + card.Id);
@@ -99,8 +99,8 @@ internal static class CompanionSamplesQa
                     Tick(1.4); string rest = UnifiedStudioQa.Render(model.Character);
                     Find<Button>(window.StudioSurface).Single(b => b.Tag is string tag && tag == action.Id).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     Tick(0); Tick(.2);
-                    check(scene.Runtime.State.ActionId == action.Id && UnifiedStudioQa.Render(model.Character) != rest && scene.Frame.Layers.Any(l => l.Id == "legacy-sprite" && l.Mesh != null), "companion_action_moves_original_" + item.Id + "_" + action.Id);
-                    check(item.SideView == scene.Frame.Layers.Any(l => l.Id == "legacy-sample-foreground-wing"), "companion_front_wing_layer_" + item.Id + "_" + action.Id);
+                    check(scene.Runtime.State.ActionId == action.Id && UnifiedStudioQa.Render(model.Character) != rest && scene.Frame.Layers.Any(l => l.Id == "part-arm-right" && l.Matrix != VoxPet.Core.Character.AffineTransform2D.Identity), "companion_action_moves_original_" + item.Id + "_" + action.Id);
+                    check(scene.Frame.Layers.Single(l => l.Id == "part-arm-right").ZIndex > scene.Frame.Layers.Single(l => l.Id == "part-body").ZIndex, "companion_front_wing_layer_" + item.Id + "_" + action.Id);
                     actionPoses.Add((model.Character.Motion.LeftAngle, model.Character.Motion.RightAngle));
                     await ScreenEvidence.CaptureAsync(window, "companion-" + item.Id + "-action-" + action.Id, check);
                     Tick(1.3); check(scene.Runtime.State.ActionId == null && top.IsWorn, "companion_action_idle_keeps_clothes_" + item.Id + "_" + action.Id);
@@ -127,7 +127,7 @@ internal static class CompanionSamplesQa
                 check(ReferenceEquals(broadcast.DataContext, model) && ReferenceEquals(model.Character.RuntimeScene, scene), "companion_broadcast_shares_original_scene_" + item.Id);
                 await ScreenEvidence.CaptureAsync(broadcast, "companion-" + item.Id + "-broadcast", check); broadcast.Close();
                 Tick(.1, 1, true);
-                check(model.Character.MouthFrameCount == (item.SideView ? 3 : 8) && model.Character.IsBlinking && scene.Frame.Layers.Any(l => l.Asset == VoxPet.Core.Legacy.LegacySpriteSheetAdapter.Asset(item.SideView ? 2 : 7, 0)), "companion_original_mouth_and_blink_" + item.Id);
+                check(model.Character.MouthFrameCount == (item.SideView ? 3 : 8) && model.Character.IsBlinking && scene.Frame.Layers.Any(l => l.Asset == VoxPet.Core.Legacy.CompanionParts.Head(item.SideView ? 2 : 7, 0)), "companion_original_mouth_and_blink_" + item.Id);
                 var selected = scene.Runtime.Attachments.EnabledIds.ToArray();
                 model.Character.RestoreDefault(); Tick(); scene = model.Character.CompanionScene;
                 check(selected.SequenceEqual(scene.Runtime.Attachments.EnabledIds) && window.Studio.AttachmentCards.Count == 17 && ReferenceEquals(scene, window.Studio.DisplayScene), "companion_expression_rebuild_keeps_clothes_and_buttons_" + item.Id);

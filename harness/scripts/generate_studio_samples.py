@@ -127,7 +127,7 @@ def build():
  for id,label in HAIRSTYLES:
   path='attachments/'+id+'.json';attachments.append(path)
   files[path]={'schemaVersion':2,'id':id,'name':label,'category':'headAccessory','exclusiveGroup':'hairstyle','layers':[{'id':'back','file':'samples/'+id+'.png','anchor':'head','zIndex':-5},{'id':'fringe','file':'samples/'+id+'-fringe.png','anchor':'head','zIndex':295}]}
- specs=[('claw','할퀴기','Gesture',-28,35),('toy-gun','장난감 총','Firearm',-10,-35),('heart','손하트','Gesture',-42,42),('toy-sword','장난감 칼','OneHand',10,-65),('magic-wand','마법봉','OneHand',-10,-45),('firearm','권총 발사','Firearm',0,-22),('bow','활쏘기','Bow',-35,25),('one-hand','한손 휘두르기','OneHand',0,-60),('two-hand','양손 휘두르기','TwoHand',-40,40)]
+ specs=[('claw','법규','Gesture',-28,35),('toy-gun','장난감 총','Firearm',-10,-35),('heart','손하트','Gesture',-42,42),('toy-sword','장난감 칼','OneHand',10,-65),('magic-wand','마법봉','OneHand',-10,-45),('firearm','권총 발사','Firearm',0,-22),('bow','활쏘기','Bow',-35,25),('one-hand','한손 휘두르기','OneHand',0,-60),('two-hand','양손 휘두르기','TwoHand',-40,40)]
  actions=[]
  for id,label,template,left,right in specs:
   timeline=[]

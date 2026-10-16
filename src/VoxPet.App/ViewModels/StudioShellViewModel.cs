@@ -62,6 +62,8 @@ public sealed class StudioShellViewModel : ObservableObject
     public RelayCommand StopActionsCommand { get; }
     public RelayCommand RemoveAttachmentsCommand { get; }
     public ObservableCollection<StudioAttachment> AttachmentCards { get; } = [];
+    public IEnumerable<StudioAttachment> HairCards => AttachmentCards.Where(c => c.Id.StartsWith("hair-", StringComparison.Ordinal));
+    public IEnumerable<StudioAttachment> ClothingCards => AttachmentCards.Where(c => !c.Id.StartsWith("hair-", StringComparison.Ordinal));
     public static string SamplePath => Path.Combine(AppContext.BaseDirectory, "Assets", "Samples", "studio-samples.voxpet");
     public const string SampleId = "voxpet.samples.studio";
     public const string SampleVersion = "1.1.0";
@@ -89,10 +91,11 @@ public sealed class StudioShellViewModel : ObservableObject
         Page = destination; UpdateAttachmentCards();
     }
     public void PlayAction(string id)
-    { if (Main.Packages.IsActive) Main.Packages.Play(id); else if (IsSheet) Main.Character.PlayCompanionAction(id); }
+    { if (Main.Packages.IsActive) Main.Packages.Play(id); else if (IsSheet) { Main.Equipment.SelectForAction(id); Main.Character.PlayCompanionAction(id); } }
     private void UpdateAttachmentCards()
     {
         AttachmentCards.Clear();
+        Notify(nameof(HairCards)); Notify(nameof(ClothingCards));
         if (DisplayScene is not { } scene) return;
         foreach (var item in scene.Runtime.Definition.Attachments)
         {
@@ -107,6 +110,7 @@ public sealed class StudioShellViewModel : ObservableObject
                     foreach (var card in AttachmentCards) card.Refresh();
                 }));
         }
+        Notify(nameof(HairCards)); Notify(nameof(ClothingCards));
     }
     private void RefreshSamples()
     { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(DisplayScene)); UpdateAttachmentCards(); EditCompanionCommand.Refresh(); }

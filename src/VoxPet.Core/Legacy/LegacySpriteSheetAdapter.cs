@@ -12,10 +12,11 @@ public static class LegacySpriteSheetAdapter
     {
         if (mouthFrames is not (3 or 8)) throw new ArgumentOutOfRangeException(nameof(mouthFrames));
         profile ??= ExpressionProfile.Default(0); profile.Validate(); string id = profile.Kind.ToString().ToLowerInvariant();
-        var bank = new SpriteSheetExpression(id, Enumerable.Range(0, mouthFrames).Select(m => Asset(m, 1)), Enumerable.Range(0, mouthFrames).Select(m => Asset(m, 0)), profile.Blink);
-        return new([new CharacterPart("sprite", "sprite", Asset(0, 1), "root")], samples?.Anchors ?? [new AnchorDefinition("root")],
+        string Frame(int m, int e) => samples == null ? Asset(m, e) : CompanionParts.Head(m, e);
+        var bank = new SpriteSheetExpression(id, Enumerable.Range(0, mouthFrames).Select(m => Frame(m, 1)), Enumerable.Range(0, mouthFrames).Select(m => Frame(m, 0)), profile.Blink);
+        return new(samples == null ? [new CharacterPart("sprite", "sprite", Asset(0, 1), "root")] : CompanionParts.Define(), samples?.Anchors ?? [new AnchorDefinition("root")],
             expressions: [new ExpressionDefinition(id, Asset(0, 1), Asset(0, 0), name: profile.Name)],
-            spriteSheet: new("sprite", [bank], mouthFrames == 3 ? "legacy3" : "legacy8"),
+            spriteSheet: new(samples == null ? "sprite" : "head", [bank], mouthFrames == 3 ? "legacy3" : "legacy8"),
             actions: samples?.Actions, attachments: samples?.Attachments,
             motion: new MotionProfile(blinkEnabled: profile.Blink, breathing: 1, sway: 0, headBounce: 0, headRotation: 0, bodyAnchor: "root", headAnchor: "root", viewportMotion: true));
     }
