@@ -151,7 +151,8 @@ internal sealed class LegacyMotionReference : FrameworkElement
                     drawing.DrawRoundedRectangle(Brushes.MediumPurple, Outline, new Rect(-4, -68, 8, 80), 3, 3);
                     drawing.PushTransform(new TranslateTransform(0, -76)); drawing.DrawGeometry(Brushes.Gold, Outline, Star); drawing.Pop(); break;
                 case HandGesture.Claw:
-                    for (int i = 0; i < 3; i++) drawing.DrawLine(FrozenPen(Brushes.LightSalmon, 4), new Point(i * 12 - 12, -40), new Point(i * 12 - 25, -8)); break;
+                    drawing.DrawGeometry(Brushes.Wheat, Outline, Geometry.Parse("M-20,10 L-24,-15 Q-40,-24 -32,-33 Q-26,-39 -16,-29 L-12,-25 V-65 Q-12,-78 -3,-78 Q6,-78 6,-65 V-30 Q15,-37 23,-29 Q33,-34 39,-25 L42,-5 Q39,14 21,20 L19,30 H-17 Z"));
+                    drawing.DrawRoundedRectangle(Brushes.LightSeaGreen, Outline, new Rect(-22, 19, 45, 14), 4, 4); break;
             }
             drawing.Pop(); drawing.Pop();
         }

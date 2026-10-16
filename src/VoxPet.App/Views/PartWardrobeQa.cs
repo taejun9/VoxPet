@@ -80,6 +80,15 @@ internal static class PartWardrobeQa
                 model.Equipment.WeaponIndex = entry.Id == "neulbo" ? 1 : 5; model.Equipment.HoldWeapon = entry.Id != "neulbo"; Tick();
                 var package = await model.Character.EditableCompanionAsync();
                 check(package?.Character.Parts.Count == 6 && package.Character.Parts.All(p => p.Asset.StartsWith("parts/", StringComparison.Ordinal)), "parts_editor_exports_actual_separated_png_" + entry.Id);
+                var editor = window.Studio.Editor; check(await editor.OpenPackageAsync(package!), "parts_editor_opens_separated_" + entry.Id); editor.PausePreview(); editor.Page = 1;
+                editor.Selected = editor.Rows.Single(r => r.Id == "arm-right"); await editor.ApplyAsync();
+                check(editor.Document!.Package.Character.Parts.Single(p => p.Id == "arm-right").Skinning == package!.Character.Parts.Single(p => p.Id == "arm-right").Skinning, "parts_editor_part_edit_keeps_joint_" + entry.Id);
+                editor.Page = 6; editor.Selected = editor.Rows.Single(r => r.Id == "top");
+                editor.SelectedDetail = editor.Details.Single(r => r.Id == "right"); await editor.ApplyDetailAsync();
+                string exported = Path.Combine(folder, entry.Id + "-parts.voxpet"); check(await editor.ExportAsync(exported), "parts_editor_joint_export_" + entry.Id);
+                var reloaded = new VoxPetPackageLoader().Load(exported); var playback = reloaded.CreateRuntime(); playback.Attachments.SetEnabled("top", true); playback.RequestAction("toy-gun"); playback.Update(new(0, 0, 0));
+                var frame = playback.Update(new(.2, .2, 0));
+                check(frame.Layers.Single(l => l.Id == "part-arm-right").Mesh != null && ReferenceEquals(frame.Layers.Single(l => l.Id == "part-arm-right").Mesh, frame.Layers.Single(l => l.Asset == "samples/top-right.png").Mesh), "parts_editor_reload_shares_actual_joint_" + entry.Id);
             }
             await window.ShutdownAsync(); window.Close();
             var saved = new VoxPet.Core.Services.CompanionEquipmentStore(Path.Combine(folder, "companion-equipment.json")).Load();

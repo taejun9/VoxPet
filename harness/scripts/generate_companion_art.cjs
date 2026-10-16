@@ -11,9 +11,9 @@ const destination = process.argv[2];
 if (!destination) throw new Error('Provide a new development output directory');
 const profiles = {
   neulbo: {hat:[110,0,292,145],top:[88,282,342,170],outerwear:[87,280,344,175],onePiece:[143,284,230,192],bottom:[150,388,218,95],shoes:[158,450,208,53],cape:[12,209,488,260],backAccessory:[48,244,416,198],
-    'hair-short':[66,29,388,300],'hair-long':[16,15,480,410],'hair-afro':[38,8,440,345],gun:[285,326,160,112],sword:[278,257,151,184],wand:[287,244,140,192],bow:[317,270,127,169]},
+    'hair-short':[66,29,388,300],'hair-long':[16,15,480,410],'hair-afro':[38,8,440,345],gun:[285,326,160,112],sword:[278,257,151,184],wand:[287,244,140,192],bow:[376,338,127,169]},
   pelly: {hat:[223,2,180,109],top:[183,241,220,176],outerwear:[182,241,224,178],onePiece:[203,241,185,199],bottom:[206,373,177,82],shoes:[224,423,157,59],cape:[58,170,442,269],backAccessory:[97,219,387,193],
-    'hair-short':[168,30,247,246],'hair-long':[155,28,270,365],'hair-afro':[152,17,281,260],gun:[277,278,158,116],sword:[269,204,165,199],wand:[276,197,155,206],bow:[321,222,120,181]}
+    'hair-short':[168,30,247,246],'hair-long':[155,28,270,365],'hair-afro':[152,17,281,260],gun:[277,278,158,116],sword:[269,204,165,199],wand:[276,197,155,206],bow:[389,295,120,181]}
 };
 const ink='#70503d';
 const defs=`<defs><linearGradient id="gold" x2=".7" y2="1"><stop stop-color="#fff1b8"/><stop offset=".45" stop-color="#edc36e"/><stop offset="1" stop-color="#ba8644"/></linearGradient><linearGradient id="pink" x2=".4" y2="1"><stop stop-color="#ffe4df"/><stop offset=".4" stop-color="#eaa4ad"/><stop offset="1" stop-color="#be728b"/></linearGradient><linearGradient id="mint" x2=".6" y2="1"><stop stop-color="#e8f0db"/><stop offset="1" stop-color="#90b3a2"/></linearGradient><radialGradient id="blush"><stop stop-color="#ed9b9f" stop-opacity=".65"/><stop offset="1" stop-color="#ed9b9f" stop-opacity="0"/></radialGradient></defs>`;
@@ -85,12 +85,23 @@ async function frame(kind,index,columns,rows) {
     const split=async(name,part,mask)=>{
       images[name+'-'+part]=await sharp(images[name]).composite([{input:Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">${mask}</svg>`),blend:'dest-in'}]).png().toBuffer();
     };
-    for(const name of ['top','outerwear','onePiece']) {
-      const left=id==='pelly'?0:153,right=id==='pelly'?334:361;
-      await split(name,'body',`<rect x="${left-22}" y="0" width="${right-left+44}" height="512" fill="white"/>`);
+    for(const name of ['top','outerwear']) {
+      const left=id==='pelly'?0:153,right=id==='pelly'?300:361;
+      const sourceLeft=id==='pelly'?225:153,sourceRight=id==='pelly'?334:361,targetLeft=id==='pelly'?193:130,targetWidth=id==='pelly'?164:252;
+      const torso=await sharp(images[name]).extract({left:sourceLeft,top:0,width:sourceRight-sourceLeft,height:512}).resize(targetWidth,512,{fit:'fill'}).png().toBuffer();
+      images[name+'-body']=await sharp({create:{width:512,height:512,channels:4,background:'#00000000'}}).composite([{input:torso,left:targetLeft,top:0}]).png().toBuffer();
+      const silhouette=id==='pelly'?'M202,241 H334 C344,271 352,310 352,365 Q357,411 333,421 H218 Q184,417 193,385 L193,305 Q194,267 202,241 Z':'M160,282 H352 Q378,310 379,352 L377,414 Q384,452 350,458 H162 Q128,452 135,410 L133,352 Q133,310 160,282 Z';
+      images[name+'-body']=await sharp(images[name+'-body']).composite([{input:Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><path d="${silhouette}" fill="white"/></svg>`),blend:'dest-in'}]).png().toBuffer();
+      const caps=id==='pelly'?'<ellipse cx="355" cy="310" rx="70" ry="60" fill="white"/>':'<ellipse cx="118" cy="315" rx="45" ry="35" fill="white"/><ellipse cx="394" cy="315" rx="45" ry="35" fill="white"/>';
+      const cap=await sharp(images[name]).composite([{input:Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">${caps}</svg>`),blend:'dest-in'}]).png().toBuffer();
+      images[name+'-body']=await sharp(images[name+'-body']).composite([{input:cap}]).png().toBuffer();
       await split(name,'left',`<rect width="${left}" height="512" fill="white"/>`);
-      await split(name,'right',`<rect x="${right}" width="${512-right}" height="512" fill="white"/>`);
+      await split(name,'right',`<rect x="${right}" y="${id==='pelly'?285:0}" width="${512-right}" height="${id==='pelly'?227:430}" fill="white"/>`);
     }
+    await split('onePiece','body','<rect width="512" height="400" fill="white"/>');
+    const hips=id==='pelly'?310:256;
+    await split('onePiece','left',`<rect y="400" width="${hips}" height="112" fill="white"/>`);
+    await split('onePiece','right',`<rect x="${hips}" y="400" width="${512-hips}" height="112" fill="white"/>`);
     for(const name of ['shoes','bottom']) {
       const middle=id==='pelly'?310:256;
       await split(name,'left',`<rect width="${middle}" height="512" fill="white"/>`);

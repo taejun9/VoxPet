@@ -11,9 +11,10 @@ public sealed record CharacterPart
     public int ZIndex { get; }
     public bool Visible { get; }
     public Transform2D Transform { get; }
+    public PartSkinning? Skinning { get; }
 
     public CharacterPart(string id, string type, string asset, string? anchor = null, int zIndex = 0,
-        Transform2D? transform = null, string? side = null, bool visible = true)
+        Transform2D? transform = null, string? side = null, bool visible = true, PartSkinning? skinning = null)
     {
         Id = DefinitionValidation.Id(id, nameof(id));
         Type = DefinitionValidation.Id(type, nameof(type));
@@ -22,5 +23,7 @@ public sealed record CharacterPart
         Side = side is null ? null : DefinitionValidation.Id(side, nameof(side));
         ZIndex = zIndex; Visible = visible;
         Transform = transform ?? Transform2D.Identity;
+        if (skinning != null && anchor == null) throw new ArgumentException("관절 연결에는 Anchor가 필요합니다.");
+        Skinning = skinning;
     }
 }

@@ -47,6 +47,12 @@ public sealed class RenderComposer
     public RenderFrame Compose(RuntimeRenderContext context, string expressionId, int mouthFrame, AttachmentSystem attachments, IEnumerable<string> selectedIds, Transform2D viewport)
     {
         var action = context.Action; var rig = context.Rig; var layers = new List<RenderLayer>(); var visible = new HashSet<string>(StringComparer.Ordinal);
+        var jointMeshes = new Dictionary<(AffineTransform2D Matrix, PartSkinning Skin), RenderMesh?>();
+        RenderMesh? Joint(AffineTransform2D matrix, PartSkinning skin)
+        {
+            if (!jointMeshes.TryGetValue((matrix, skin), out var mesh)) { mesh = JointSkinning.Compose(matrix, skin, definition.CanvasWidth, definition.CanvasHeight); jointMeshes.Add((matrix, skin), mesh); }
+            return mesh;
+        }
         AffineTransform2D Anchor(string? id, bool mouth = false)
         {
             var world = mouth ? rig.WithMouth : rig.Animated;
@@ -67,9 +73,11 @@ public sealed class RenderComposer
             if (part.Id == definition.SpriteSheet?.Part && fullSprite != null)
                 baseline = fullSprite.Blink && (context.Input.Blink ?? context.Motion.EyeOpen < .5) ? fullSprite.Closed[mouthFrame] : fullSprite.Open[mouthFrame];
             string? asset = Sprite(part.Id, baseline); if (asset is null) continue; visible.Add(part.Id);
-            var matrix = Anchor(part.Anchor).Compose(AffineTransform2D.FromTransform(part.Transform));
-            if (!rig.Static.ContainsKey(part.Id) && action.Transforms.TryGetValue(part.Id, out var transform)) matrix = matrix.Compose(AffineTransform2D.FromTransform(transform));
-            Layer("part-" + part.Id, asset, part.ZIndex, matrix, mesh: geometry?.Compose(part.Id, false, 1, context));
+            var local = AffineTransform2D.FromTransform(part.Transform);
+            if (!rig.Static.ContainsKey(part.Id) && action.Transforms.TryGetValue(part.Id, out var transform)) local = local.Compose(AffineTransform2D.FromTransform(transform));
+            var matrix = Anchor(part.Anchor);
+            Layer("part-" + part.Id, asset, part.ZIndex, part.Skinning == null ? matrix.Compose(local) : local,
+                mesh: part.Skinning is { } skin ? Joint(matrix, skin) : geometry?.Compose(part.Id, false, 1, context));
         }
         string? required = definition.Face.RequiredVisiblePart ?? definition.Parts.FirstOrDefault(p => p.Type == "head")?.Id;
         bool faceVisible = required is null || visible.Contains(required);
@@ -88,9 +96,13 @@ public sealed class RenderComposer
         }
         foreach (var attachment in attachments.Compose(rig, action, context.Action.ActionId is null ? null : definition.Actions.FirstOrDefault(a => a.Id == context.Action.ActionId)?.CompatibilityTag, visible, selectedIds, context.Input.Time))
         {
-            RenderMesh? mesh = attachment.Placement.DeformWithRig ? geometry is IPlacedRenderGeometryProvider placed ? placed.Compose(attachment, context) : geometry?.Compose(attachment.Id, true, attachment.Placement.Follow, context) : null;
+            var matrix = attachment.Matrix;
+            RenderMesh? mesh;
+            if (attachment.Placement.Skinning is { } skin)
+            { var local = AffineTransform2D.FromTransform(attachment.Placement.Local); mesh = Joint(matrix.Compose(local.Inverse()), skin); matrix = local; }
+            else mesh = attachment.Placement.DeformWithRig ? geometry is IPlacedRenderGeometryProvider placed ? placed.Compose(attachment, context) : geometry?.Compose(attachment.Id, true, attachment.Placement.Follow, context) : null;
             if (attachment.Placement.DeformWithRig && geometry is null && action.IsPlaying) throw new InvalidOperationException("garment 연결 격자 provider가 필요합니다.");
-            Layer(attachment.Id, attachment.Asset, attachment.ZIndex, attachment.Matrix, attachment.Placement.Width, attachment.Placement.Height, mesh);
+            Layer(attachment.Id, attachment.Asset, attachment.ZIndex, matrix, attachment.Placement.Width, attachment.Placement.Height, mesh);
         }
         foreach (var effect in action.Effects)
         {

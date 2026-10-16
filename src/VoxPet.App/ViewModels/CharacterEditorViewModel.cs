@@ -222,7 +222,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 Field(Fields, "id", "ID", m.Id); Field(Fields, "name", "이름", m.Name); Field(Fields, "version", "버전", m.Version); Field(Fields, "author", "제작자", m.Author); Field(Fields, "description", "설명", m.Description);
                 Field(Fields, "thumbnail", "썸네일 PNG", m.Thumbnail, asset: true); Field(Fields, "width", "Canvas 너비", c.CanvasWidth); Field(Fields, "height", "Canvas 높이", c.CanvasHeight); break;
             case 1 when Selected?.Item is CharacterPart p:
-                Field(Fields, "id", "ID", p.Id); Field(Fields, "type", "유형", p.Type, ["body", "head", "arm", "leg", "custom"]); Field(Fields, "asset", "PNG", p.Asset, asset: true); Field(Fields, "anchor", "앵커", p.Anchor, anchorIds); Field(Fields, "side", "좌우", p.Side, ["", "left", "right"]); Field(Fields, "z", "Z-index", p.ZIndex); Field(Fields, "visible", "표시", p.Visible, Booleans); TransformFields(Fields, p.Transform); break;
+                Field(Fields, "id", "ID", p.Id); Field(Fields, "type", "유형", p.Type, ["body", "head", "arm", "leg", "custom"]); Field(Fields, "asset", "PNG", p.Asset, asset: true); Field(Fields, "anchor", "앵커", p.Anchor, anchorIds); Field(Fields, "side", "좌우", p.Side, ["", "left", "right"]); Field(Fields, "z", "Z-index", p.ZIndex); Field(Fields, "visible", "표시", p.Visible, Booleans); TransformFields(Fields, p.Transform); SkinFields(Fields, p.Skinning); break;
             case 2 when Selected?.Item is AnchorDefinition a:
                 Field(Fields, "id", "ID", a.Id); Field(Fields, "parent", "부모 (빈 값=Canvas)", a.Parent, anchorIds.Where(id => id != a.Id)); TransformFields(Fields, a.Transform); break;
             case 3:
@@ -267,6 +267,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                     for (int i = 0; i < (l.Animation?.Frames.Count ?? 0); i++) Field(DetailFields, "animation:" + i, "반복 PNG · " + (i + 1), l.Animation!.Frames[i], asset: true);
                     TransformFields(DetailFields, l.Transform);
                     Field(DetailFields, "space", "위치 기준", l.Placement.Space, Enum.GetNames<AttachmentSpace>()); Field(DetailFields, "follow", "영향도 (0~1)", l.Placement.Follow); Field(DetailFields, "width", "너비 (빈 값=Canvas)", l.Placement.Width); Field(DetailFields, "height", "높이 (빈 값=Canvas)", l.Placement.Height); Field(DetailFields, "deform", "소매 격자 변형", l.Placement.DeformWithRig, Booleans);
+                    SkinFields(DetailFields, l.Placement.Skinning);
                     Field(DetailFields, "position", "위치 상속", l.Inherit.Position, Booleans); Field(DetailFields, "rotationInherit", "회전 상속", l.Inherit.Rotation, Booleans); Field(DetailFields, "scaleInherit", "배율 상속", l.Inherit.Scale, Booleans); Field(DetailFields, "mouthMotion", "입 움직임 상속", l.Inherit.MouthMotion, Booleans); Field(DetailFields, "during", "동작 중에만", l.OnlyDuringAction, Booleans); Field(DetailFields, "missing", "포즈 없으면 숨김", l.HideOnMissingPose, Booleans);
                     Field(DetailFields, "required", "필요 파츠 (쉼표)", string.Join(",", l.RequiredVisibleParts));
                     foreach (string pose in l.Poses.Keys.Concat(c.Poses.Select(p => p.Name)).Append("idle").Distinct()) Field(DetailFields, "pose:" + pose, "포즈 PNG · " + pose, l.Poses.GetValueOrDefault(pose), asset: true); break;
@@ -282,6 +283,14 @@ public sealed class CharacterEditorViewModel : ObservableObject
         if (pendingForms.TryGetValue(FormKey(detailForm), out var values)) foreach (var f in fields) if (values.TryGetValue(f.Key, out var value)) f.Value = value;
     }
     private static Dictionary<string, string> Values(IEnumerable<EditorField> fields) => fields.ToDictionary(f => f.Key, f => f.Value);
+    private void SkinFields(ObservableCollection<EditorField> fields, PartSkinning? skin)
+    { Field(fields, "skinRoot", "어깨 고정 경계 Y (빈 값=해제)", skin?.RootY); Field(fields, "skinFull", "손목 연결 경계 Y (빈 값=해제)", skin?.FullY); }
+    private static PartSkinning? Skin(Dictionary<string, string> v)
+    {
+        if (Opt(v, "skinRoot") == null && Opt(v, "skinFull") == null) return null;
+        if (Opt(v, "skinRoot") == null || Opt(v, "skinFull") == null) throw new ArgumentException("어깨와 손목 경계를 함께 지정하세요.");
+        return new(N(v, "skinRoot"), N(v, "skinFull"));
+    }
     private static string S(Dictionary<string, string> v, string key) => v.GetValueOrDefault(key) ?? "";
     private static string? Opt(Dictionary<string, string> v, string key) => string.IsNullOrWhiteSpace(S(v, key)) ? null : S(v, key);
     private static double N(Dictionary<string, string> v, string key) => double.Parse(S(v, key), CultureInfo.InvariantCulture);
@@ -298,7 +307,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
         {
             switch (selectedPage)
             {
-                case 1 when item is CharacterPart p: d.Parts[d.Parts.FindIndex(x => x.Id == p.Id)] = new(S(v, "id"), S(v, "type"), S(v, "asset"), Opt(v, "anchor"), I(v, "z"), T(v), Opt(v, "side"), B(v, "visible")); break;
+                case 1 when item is CharacterPart p: d.Parts[d.Parts.FindIndex(x => x.Id == p.Id)] = new(S(v, "id"), S(v, "type"), S(v, "asset"), Opt(v, "anchor"), I(v, "z"), T(v), Opt(v, "side"), B(v, "visible"), Skin(v)); break;
                 case 2 when item is AnchorDefinition a: d.Anchors[d.Anchors.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), parent: Opt(v, "parent"), transform: T(v)); break;
                 case 3:
                     int index = item is int i ? i : 0;
@@ -337,7 +346,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 if (count is < 0 or 1 or > AttachmentAnimation.MaxFrames) throw new ArgumentException("반복 프레임 수는0또는2~64입니다.");
                 var animation = count == 0 ? null : new AttachmentAnimation(Enumerable.Range(0, count).Select(i => v.GetValueOrDefault("animation:" + i, l.Animation?.Frames.LastOrDefault() ?? l.Asset)), N(v, "animationMs"));
                 var layers = attachment.Layers.ToArray(); layers[Array.IndexOf(layers, l)] = new(S(v, "id"), S(v, "asset"), S(v, "anchor"), I(v, "z"), inherit: new(B(v, "position"), B(v, "rotationInherit"), B(v, "scaleInherit"), B(v, "mouthMotion")), poses: v.Where(p => p.Key.StartsWith("pose:") && !string.IsNullOrWhiteSpace(p.Value)).ToDictionary(p => p.Key[5..], p => p.Value), requiredVisibleParts: S(v, "required").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries), onlyDuringAction: B(v, "during"), hideOnMissingPose: B(v, "missing"),
-                    placement: new(T(v), E<AttachmentSpace>(v, "space"), N(v, "follow"), Opt(v, "width") == null ? null : N(v, "width"), Opt(v, "height") == null ? null : N(v, "height"), B(v, "deform")), animation: animation);
+                    placement: new(T(v), E<AttachmentSpace>(v, "space"), N(v, "follow"), Opt(v, "width") == null ? null : N(v, "width"), Opt(v, "height") == null ? null : N(v, "height"), B(v, "deform"), Skin(v)), animation: animation);
                 d.Attachments[d.Attachments.FindIndex(x => x.Id == attachment.Id)] = new(attachment.Id, attachment.Name, attachment.Category, layers, attachment.CompatibilityTag, attachment.ExclusiveGroup);
             }
             if (item is PoseDefinition pose)

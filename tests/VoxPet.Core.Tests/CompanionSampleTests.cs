@@ -59,11 +59,11 @@ public sealed class CompanionSampleTests
         Assert.Equal(action, runtime.State.ActionId); Assert.NotNull(processor.Motion.Gesture);
         Assert.Contains(frame.Layers, l => l.Id == "part-head" && l.Asset == CompanionParts.Head(0, 1) && l.Mesh == null);
         Assert.DoesNotContain(frame.Layers, l => l.Id == "legacy-sprite" || l.Id.StartsWith("face-", StringComparison.Ordinal));
-        Assert.Contains(frame.Layers, l => l.Asset == "samples/top-right.png" && l.Mesh == null);
+        Assert.Contains(frame.Layers, l => l.Asset == "samples/top-right.png" && l.Mesh != null);
         Assert.Contains(frame.Layers, l => l.Asset.StartsWith("samples/hat", StringComparison.Ordinal));
         Assert.Contains(frame.Layers, l => l.Asset.StartsWith("samples/cape", StringComparison.Ordinal));
         Assert.Equal(6, frame.Layers.Count(l => l.Id.StartsWith("part-", StringComparison.Ordinal)));
-        Assert.Equal(frame.Layers.Single(l => l.Id == "part-arm-right").Matrix, frame.Layers.Single(l => l.Asset == "samples/top-right.png").Matrix);
+        Assert.Same(frame.Layers.Single(l => l.Id == "part-arm-right").Mesh, frame.Layers.Single(l => l.Asset == "samples/top-right.png").Mesh);
         processor.Parameters = new(1, 0, 0, 0, 0, MouthState.Open);
         processor.Apply(ExpressionProfile.Default(0) with { Blink = true }, id == "neulbo" ? 8 : 3, .2);
         var talking = runtime.Update(new(.4, .2, 1, true));

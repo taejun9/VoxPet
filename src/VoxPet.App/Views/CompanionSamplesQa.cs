@@ -99,7 +99,7 @@ internal static class CompanionSamplesQa
                     Tick(1.4); string rest = UnifiedStudioQa.Render(model.Character);
                     Find<Button>(window.StudioSurface).Single(b => b.Tag is string tag && tag == action.Id).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                     Tick(0); Tick(.2);
-                    check(scene.Runtime.State.ActionId == action.Id && UnifiedStudioQa.Render(model.Character) != rest && scene.Frame.Layers.Any(l => l.Id == "part-arm-right" && l.Matrix != VoxPet.Core.Character.AffineTransform2D.Identity), "companion_action_moves_original_" + item.Id + "_" + action.Id);
+                    check(scene.Runtime.State.ActionId == action.Id && UnifiedStudioQa.Render(model.Character) != rest && scene.Frame.Layers.Any(l => l.Id == "part-arm-right" && l.Mesh != null), "companion_action_moves_original_" + item.Id + "_" + action.Id);
                     check(scene.Frame.Layers.Single(l => l.Id == "part-arm-right").ZIndex > scene.Frame.Layers.Single(l => l.Id == "part-body").ZIndex, "companion_front_wing_layer_" + item.Id + "_" + action.Id);
                     actionPoses.Add((model.Character.Motion.LeftAngle, model.Character.Motion.RightAngle));
                     await ScreenEvidence.CaptureAsync(window, "companion-" + item.Id + "-action-" + action.Id, check);

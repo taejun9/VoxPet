@@ -19,6 +19,9 @@ def build(character_id):
     part_anchors = {'arm-left': 'leftShoulder', 'leg-left': 'leftFoot', 'leg-right': 'rightFoot', 'body': 'body', 'head': 'head', 'arm-right': 'rightShoulder'}
     part_orders = {'arm-left': 10, 'leg-left': 20, 'leg-right': 30, 'body': 40, 'head': 80, 'arm-right': 100}
     definition['parts'] = [dict(id=part, type='arm' if part.startswith('arm-') else 'leg' if part.startswith('leg-') else part, file='samples/empty.png', anchor=anchor, zIndex=part_orders[part]) for part, anchor in part_anchors.items()]
+    skinning = dict(rootY=315 if character_id=='neulbo' else 285, fullY=415 if character_id=='neulbo' else 360)
+    for part in definition['parts']:
+        if part['type'] == 'arm': part['skinning'] = skinning
     for key in ['mouth', 'expressions', 'face']:
         definition.pop(key, None)
     # Public pack has no stand-in character. The app supplies the selected real sheet.
@@ -48,18 +51,26 @@ def build(character_id):
     for reference in manifest['actions']:
         files[reference]['name'] = files[reference]['name'].split(' · ')[0]
         action = files[reference]
+        grip = (402, 422) if character_id == 'neulbo' else (415, 385)
+        if action['id'] in ['toy-gun', 'toy-sword', 'magic-wand', 'firearm', 'bow', 'one-hand', 'two-hand']:
+            for entry in action['timeline']:
+                if 'effect' in entry:
+                    entry['effect'].update(anchor='rightHand', transform=dict(x=-grip[0], y=-grip[1]))
         if action['id'] == 'claw':
             action['name'] = '법규'
             action['timeline'] = []
             for time, angle in [(0, 0), (160, 52), (700, 52), (1000, 0)]:
                 action['timeline'].extend([dict(time=time, transform=dict(target='rightShoulder', rotation=angle)), dict(time=time, transform=dict(target='rightHand', rotation=-angle))])
-            grip = (402, 422) if character_id == 'neulbo' else (415, 385)
             action['timeline'].append(dict(time=160, effect=dict(anchor='rightHand', file='samples/claw.png', duration=620, transform=dict(x=-grip[0], y=-grip[1]))))
     for reference in manifest['attachments']:
         attachment = files[reference]
         kind = attachment['id']
-        if kind in ['top', 'outerwear', 'onePiece']:
-            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftShoulder', 11, 'arm-left'), ('body', 'body', 65 if kind=='outerwear' else 60, 'body'), ('right', 'rightShoulder', 101, 'arm-right')]]
+        if kind in ['top', 'outerwear']:
+            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftShoulder', 45, 'arm-left'), ('body', 'body', 65 if kind=='outerwear' else 60, 'body'), ('right', 'rightShoulder', 101, 'arm-right')]]
+            for layer in attachment['layers']:
+                if layer['id'] in ['left', 'right']: layer['skinning'] = skinning
+        if kind == 'onePiece':
+            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('body', 'body', 60, 'body'), ('left', 'leftFoot', 55, 'leg-left'), ('right', 'rightFoot', 55, 'leg-right')]]
         if kind in ['bottom', 'shoes']:
             attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftFoot' if kind=='shoes' else 'hips', 25 if kind=='shoes' else 50, 'leg-left' if kind=='shoes' else 'body'), ('right', 'rightFoot' if kind=='shoes' else 'hips', 35 if kind=='shoes' else 50, 'leg-right' if kind=='shoes' else 'body')]]
         if attachment['id'] == 'faceDecoration':

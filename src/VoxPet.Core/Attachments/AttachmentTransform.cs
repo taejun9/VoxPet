@@ -13,8 +13,9 @@ public sealed record AttachmentTransform
     public double? Width { get; }
     public double? Height { get; }
     public bool DeformWithRig { get; }
+    public PartSkinning? Skinning { get; }
     public AttachmentTransform(Transform2D? local = null, AttachmentSpace space = AttachmentSpace.Canvas, double follow = 1,
-        double? width = null, double? height = null, bool deformWithRig = false)
+        double? width = null, double? height = null, bool deformWithRig = false, PartSkinning? skinning = null)
     {
         Local = local ?? Transform2D.Identity;
         if (!Enum.IsDefined(space)) throw new ArgumentOutOfRangeException(nameof(space));
@@ -23,5 +24,7 @@ public sealed record AttachmentTransform
         Width = width is null ? null : DefinitionValidation.Positive(width.Value, nameof(width));
         Height = height is null ? null : DefinitionValidation.Positive(height.Value, nameof(height));
         DeformWithRig = deformWithRig;
+        if (skinning != null && (deformWithRig || space != AttachmentSpace.Canvas)) throw new ArgumentException("파츠 연결은 Canvas 좌표의 단일 연결 방식으로 지정하세요.");
+        Skinning = skinning;
     }
 }

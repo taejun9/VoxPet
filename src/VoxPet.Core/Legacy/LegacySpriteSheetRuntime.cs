@@ -97,13 +97,17 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
             foreach (var part in frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal)))
             {
                 var matrix = part.Matrix;
-                if (context.Action.Transforms.Count == 0 && Motion.Gesture != null)
+                var partMesh = part.Mesh;
+                if (context.Action.Transforms.Count == 0 && Motion.Gesture != null || part.Id == "part-head" && Motion.HeadAngle != 0)
                 {
                     var target = part.Id switch { "part-arm-left" => MotionAttachment.LeftHand, "part-arm-right" => MotionAttachment.RightHand, "part-head" => MotionAttachment.Head, _ => MotionAttachment.Body };
-                    matrix = LegacyRenderGeometryProvider.Attachment(Rig, Motion, target, 1).Compose(matrix);
+                    var extra = LegacyRenderGeometryProvider.Attachment(Rig, Motion, target, 1);
+                    var skin = Samples?.Parts.FirstOrDefault(p => "part-" + p.Id == part.Id)?.Skinning;
+                    if (skin != null) partMesh = JointSkinning.Compose(extra, skin);
+                    else matrix = extra.Compose(matrix);
                 }
                 string asset = part.Id == "part-head" ? CompanionParts.Head(mouth, Profile.Blink && Parameters.EyeOpen < .5 ? 0 : 1) : part.Asset;
-                layers.Add(new(part.Id, asset, opacity: part.Opacity * Blend, zIndex: part.ZIndex, matrix: matrix, width: part.Width, height: part.Height));
+                layers.Add(new(part.Id, asset, opacity: part.Opacity * Blend, zIndex: part.ZIndex, matrix: matrix, width: part.Width, height: part.Height, mesh: partMesh));
             }
         else layers.Add(new("legacy-sprite", Sprite, opacity: Blend, zIndex: 1, mesh: mesh));
         foreach (var (x, y, opacity, id) in new[] { (TearLeftX, TearLeftY, TearLeftOpacity, "left"), (TearRightX, TearRightY, TearRightOpacity, "right") })
@@ -123,7 +127,8 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 matrix: LegacyRenderGeometryProvider.Attachment(Rig, Motion, attachment, profile.Follow).Compose(placement),
                 width: profile.BaseWidth * profile.Scale, height: profile.BaseHeight * profile.Scale, mesh: deformation));
         }
-        if (SampleGesture(context.Action.ActionId) == null && Motion.Gesture is { } gesture && Motion.Effect > 0 && (Rig.Left.Enabled || Rig.Right.Enabled))
+        bool legacyWeaponAction = Motion.Gesture is HandGesture.ToyGun or HandGesture.ToySword or HandGesture.MagicWand;
+        if (SampleGesture(context.Action.ActionId) == null && Motion.Gesture is { } gesture && Motion.Effect > 0 && (Rig.Left.Enabled || Rig.Right.Enabled) && !(separated && legacyWeaponAction && CompanionWeapon.Find(WeaponId) != null))
         {
             var limb = Rig.Right.Enabled ? Rig.Right : Rig.Left;
             var transform = gesture == HandGesture.Heart ? new AffineTransform2D(offsetX: 256 + Motion.HandX, offsetY: Rig.HeadCutY + 60 + Motion.HandY) :
@@ -143,12 +148,16 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 {
                     if (context.Action.Effects.Any(e => e.Id == rendered.Id) && CompanionWeapon.All.Any(w => w.Asset == rendered.Asset)) continue;
                     matrix = rendered.Matrix;
-                    if (context.Action.Transforms.Count == 0 && Motion.Gesture != null && placements.TryGetValue(rendered.Id, out var binding))
+                    deformation = rendered.Mesh;
+                    if (placements.TryGetValue(rendered.Id, out var binding) &&
+                        (context.Action.Transforms.Count == 0 && Motion.Gesture != null || binding.Anchor is "head" or "mouth" && Motion.HeadAngle != 0))
                     {
                         var attachment = binding.Anchor switch { "leftShoulder" or "leftHand" => MotionAttachment.LeftHand, "rightShoulder" or "rightHand" => MotionAttachment.RightHand, "head" => MotionAttachment.Head, _ => MotionAttachment.Body };
-                        matrix = LegacyRenderGeometryProvider.Attachment(Rig, Motion, attachment, 1).Compose(matrix);
+                        var extra = LegacyRenderGeometryProvider.Attachment(Rig, Motion, attachment, 1);
+                        if (binding.Placement.Skinning is { } skin) deformation = JointSkinning.Compose(extra, skin);
+                        else matrix = extra.Compose(matrix);
                     }
-                    layers.Add(new(rendered.Id, rendered.Asset, opacity: rendered.Opacity, zIndex: rendered.ZIndex, matrix: matrix, width: rendered.Width, height: rendered.Height));
+                    layers.Add(new(rendered.Id, rendered.Asset, opacity: rendered.Opacity, zIndex: rendered.ZIndex, matrix: matrix, width: rendered.Width, height: rendered.Height, mesh: deformation));
                     continue;
                 }
                 if (placements.TryGetValue(rendered.Id, out var layer))
@@ -172,10 +181,11 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                     mesh: new RenderMesh(outline.Select((p, i) => new RenderTriangle(center, p, outline[(i + 1) % outline.Length], transform)))));
             }
             if (separated && CompanionWeapon.Find(WeaponId) is { } weapon &&
-                (context.Action.IsPlaying ? CompanionWeapon.Find(context.Action.ActionId) != null : HoldWeapon))
+                (context.Action.IsPlaying ? CompanionWeapon.Find(context.Action.ActionId) != null || legacyWeaponAction : HoldWeapon))
             {
                 var rest = context.Rig.Static["rightHand"];
                 var weaponMatrix = context.Rig.Animated["rightHand"].Compose(rest.Inverse());
+                if (context.Action.Transforms.Count == 0 && legacyWeaponAction) weaponMatrix = LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.RightHand, 1).Compose(weaponMatrix);
                 layers.Add(new("companion-equipped-weapon", weapon.Asset, zIndex: 150, matrix: weaponMatrix));
             }
         }

@@ -39,6 +39,7 @@ public static class PackageJson
     private static string Path(string? path) => PackagePath.Normalize(path ?? throw new VoxPetPackageException("문서/자산 경로가 없습니다."));
     private static Transform2D T(JsonElement e) => new(N(e, "x"), N(e, "y"), N(e, "scaleX", N(e, "scale", 1)), N(e, "scaleY", N(e, "scale", 1)), N(e, "rotation"));
     private static object Transform(Transform2D t) => new { t.X, t.Y, t.ScaleX, t.ScaleY, t.Rotation };
+    private static PartSkinning? Skin(JsonElement e) => e.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null ? null : new(N(e, "rootY"), N(e, "fullY"));
     private static void Schema(JsonElement e) { if (I(e, "schemaVersion", 2) != 2) throw new VoxPetPackageException("schemaVersion2만 지원합니다."); }
     public static VoxPetManifest ReadManifest(byte[] bytes)
     {
@@ -53,7 +54,7 @@ public static class PackageJson
     public static CharacterDefinition ReadCharacter(byte[] bytes, IEnumerable<ActionDefinition>? actions = null, IEnumerable<AttachmentDefinition>? attachments = null)
     {
         using var doc = Parse(bytes); var e = doc.RootElement; Schema(e); var canvas = P(e, "canvas");
-        var parts = A(e, "parts").Select(p => new CharacterPart(S(p, "id")!, S(p, "type", "custom")!, Path(S(p, "file")), S(p, "anchor"), I(p, "zIndex"), T(P(p, "transform")), S(p, "side"), B(p, "visible", true))).ToArray();
+        var parts = A(e, "parts").Select(p => new CharacterPart(S(p, "id")!, S(p, "type", "custom")!, Path(S(p, "file")), S(p, "anchor"), I(p, "zIndex"), T(P(p, "transform")), S(p, "side"), B(p, "visible", true), Skin(P(p, "skinning")))).ToArray();
         var anchors = new List<AnchorDefinition>(); var anchorData = P(e, "anchors");
         if (anchorData.ValueKind == JsonValueKind.Object)
             foreach (var p in anchorData.EnumerateObject()) anchors.Add(new(p.Name, parent: S(p.Value, "parent"), transform: T(p.Value)));
@@ -89,7 +90,7 @@ public static class PackageJson
     {
         c.SchemaVersion,
         canvas = new { width = c.CanvasWidth, height = c.CanvasHeight },
-        parts = c.Parts.Select(p => new { p.Id, p.Type, file = p.Asset, p.Anchor, p.Side, p.ZIndex, p.Visible, transform = Transform(p.Transform) }),
+        parts = c.Parts.Select(p => new { p.Id, p.Type, file = p.Asset, p.Anchor, p.Side, p.ZIndex, p.Visible, transform = Transform(p.Transform), p.Skinning }),
         anchors = c.Anchors.ToDictionary(a => a.Id, a => new { a.X, a.Y, a.Parent, a.Transform.ScaleX, a.Transform.ScaleY, a.Transform.Rotation }),
         mouth = c.Mouth is null ? null : new { c.Mouth.Anchor, mode = "frames", c.Mouth.Frames, c.Mouth.Curve, c.Mouth.ZIndex, frameTransforms = c.Mouth.FrameTransforms.Select(Transform) },
         spriteSheet = c.SpriteSheet is null ? null : new { c.SpriteSheet.Part, c.SpriteSheet.Curve, expressions = c.SpriteSheet.Expressions.Select(e => new { e.Id, e.Open, e.Closed, e.Blink }) },
@@ -195,7 +196,7 @@ public static class PackageJson
             requiredVisibleParts: A(l, "requiredVisibleParts").Select(v => v.GetString()!), onlyDuringAction: B(l, "onlyDuringAction"), hideOnMissingPose: B(l, "hideOnMissingPose"),
             placement: new(T(P(l, "transform")), S(l, "space", "canvas") switch { "canvas" => AttachmentSpace.Canvas, "anchor" => AttachmentSpace.Anchor, _ => throw new VoxPetPackageException("배치 space를 확인하세요.") },
                 N(l, "follow", 1), Has(l, "width") && P(l, "width").ValueKind != JsonValueKind.Null ? N(l, "width") : null,
-                Has(l, "height") && P(l, "height").ValueKind != JsonValueKind.Null ? N(l, "height") : null, B(l, "deformWithRig")), animation: ReadAnimation(P(l, "animation")))).ToArray();
+                Has(l, "height") && P(l, "height").ValueKind != JsonValueKind.Null ? N(l, "height") : null, B(l, "deformWithRig"), Skin(P(l, "skinning"))), animation: ReadAnimation(P(l, "animation")))).ToArray();
         return new(S(e, "id")!, S(e, "name")!, S(e, "category")!, layers, S(e, "compatibilityTag"), S(e, "exclusiveGroup"));
     }
     public static byte[] WriteAttachment(AttachmentDefinition a) => JsonSerializer.SerializeToUtf8Bytes(new
@@ -223,6 +224,7 @@ public static class PackageJson
             l.Placement.Follow,
             l.Placement.Width,
             l.Placement.Height,
+            l.Placement.Skinning,
             l.Placement.DeformWithRig
         })
     }, options);

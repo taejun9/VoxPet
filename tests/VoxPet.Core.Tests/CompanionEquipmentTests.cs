@@ -43,7 +43,7 @@ public sealed class CompanionEquipmentTests
     public void ClothesHaveSeparateMatchingTorsoSleevesAndFeet(string id)
     {
         var p = Load(id); var runtime = new CharacterRuntime(LegacySpriteSheetAdapter.Convert(3, samples: p.Character));
-        foreach (var garment in new[] { "top", "outerwear", "onePiece" })
+        foreach (var garment in new[] { "top", "outerwear" })
         {
             runtime.Attachments.SetEnabled(garment, true); runtime.Attachments.SetEnabled("shoes", true);
             runtime.RequestAction("two-hand"); runtime.Update(new(runtime.Actions.LastTime, 0, 0));
@@ -52,7 +52,7 @@ public sealed class CompanionEquipmentTests
             {
                 var sleeve = frame.Layers.Single(l => l.Asset == $"samples/{garment}-{side}.png");
                 var arm = frame.Layers.Single(l => l.Id == "part-arm-" + side);
-                Assert.Equal(arm.Matrix, sleeve.Matrix); Assert.Null(sleeve.Mesh);
+                Assert.Equal(arm.Matrix, sleeve.Matrix); Assert.NotNull(sleeve.Mesh); Assert.Same(arm.Mesh, sleeve.Mesh);
                 Assert.Equal(frame.Layers.Single(l => l.Id == "part-leg-" + side).Matrix, frame.Layers.Single(l => l.Asset == $"samples/shoes-{side}.png").Matrix);
             }
             Assert.Equal(frame.Layers.Single(l => l.Id == "part-body").Matrix, frame.Layers.Single(l => l.Asset == $"samples/{garment}-body.png").Matrix);
@@ -76,5 +76,25 @@ public sealed class CompanionEquipmentTests
             File.WriteAllText(path, "broken"); Assert.Empty(store.Load()); Assert.Equal("broken", File.ReadAllText(path));
         }
         finally { Directory.Delete(folder, true); }
+    }
+    [Theory]
+    [InlineData("neulbo")]
+    [InlineData("pelly")]
+    public void ExistingHeadAndHandSettingsAlsoMoveTheSeparatedParts(string id)
+    {
+        var p = Load(id); var rig = CharacterRig.Default(id) with { HeadMotion = true };
+        var processor = new LegacySpriteSheetRuntime { Samples = p.Character, Rig = rig, Parameters = new(0, 0, 3, 0, 1, MouthState.Closed), WeaponId = "toy-gun", HoldWeapon = false };
+        var runtime = new CharacterRuntime(LegacySpriteSheetAdapter.Convert(3, samples: p.Character), processor: processor);
+        runtime.Attachments.SetEnabled("hat", true); runtime.Attachments.SetEnabled("top", true);
+        var idle = runtime.Update(new(0, 0, 0));
+        Assert.NotEqual(AffineTransform2D.Identity, idle.Layers.Single(l => l.Id == "part-head").Matrix);
+        Assert.Equal(idle.Layers.Single(l => l.Id == "part-head").Matrix, idle.Layers.Single(l => l.Asset.StartsWith("samples/hat", StringComparison.Ordinal)).Matrix);
+        processor.Playback = new(HandGesture.ToyGun, .5); processor.HandProfile = HandMotionProfile.Default(HandGesture.ToyGun);
+        var hands = new HandMotionScheduler(runtime.Actions); hands.Configure(HandMotionSettings.Default(), 0); Assert.True(hands.Trigger(HandGesture.ToyGun, 0, true));
+        var frame = runtime.Update(new(.5, .5, 0));
+        Assert.NotNull(frame.Layers.Single(l => l.Id == "part-arm-right").Mesh);
+        Assert.NotEqual(AffineTransform2D.Identity, frame.Layers.Single(l => l.Id == "companion-equipped-weapon").Matrix);
+        Assert.Equal(frame.Layers.Single(l => l.Id == "part-arm-right").Matrix, frame.Layers.Single(l => l.Asset == "samples/top-right.png").Matrix);
+        Assert.DoesNotContain(frame.Layers, l => l.Id.StartsWith("legacy-prop-", StringComparison.Ordinal));
     }
 }

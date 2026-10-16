@@ -40,6 +40,7 @@ public sealed record CharacterDefinition
         CanvasWidth = DefinitionValidation.Positive(canvasWidth, nameof(canvasWidth));
         CanvasHeight = DefinitionValidation.Positive(canvasHeight, nameof(canvasHeight));
         Parts = DefinitionValidation.Copy(parts, nameof(parts));
+        if (Parts.Any(p => p.Skinning?.FullY > canvasHeight)) throw new ArgumentException("파츠 연결 범위가 Canvas 밖입니다.");
         Anchors = DefinitionValidation.Copy(anchors ?? [], nameof(anchors));
         Rig = new(Anchors);
         Motion = motion ?? MotionProfile.Default; Face = face ?? new();
@@ -48,6 +49,7 @@ public sealed record CharacterDefinition
         Poses = DefinitionValidation.Copy(poses ?? [], nameof(poses));
         Actions = DefinitionValidation.Copy(actions ?? [], nameof(actions));
         Attachments = DefinitionValidation.Copy(attachments ?? [], nameof(attachments));
+        if (Attachments.SelectMany(a => a.Layers).Any(l => l.Placement.Skinning?.FullY > canvasHeight)) throw new ArgumentException("의상 연결 범위가 Canvas 밖입니다.");
         Unique(Expressions.Select(e => e.Id)); Unique(Poses.Select(p => p.Id));
         Unique(Actions.Select(a => a.Id)); Unique(Attachments.Select(a => a.Id));
         Unique(Actions.SelectMany(a => a.Triggers).Select(t => t.Id));
