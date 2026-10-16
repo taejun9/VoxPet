@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -35,8 +35,8 @@ main720c1c8/origin과0·0 및 깨끗함 확인 후 전용 codex/plan-043-card-di
 
 - [x] 오류의 문자열 변환/이미지 접근 원인과 같은 유형의 UI 모델을 조사한다.
 - [x] 최소 재현과 실제 사용자 조작 회귀를 추가하고 원인을 수정한다.
-- [ ] 새 작업트리 locked restore/format/analyzer/Release/Core/Python/diff 및 Windows/OBS/portable 전체 QA를 수행한다.
-- [ ] 실제 화면 시각 QA·개인 PNG 보존 ZIP·자체 리뷰·완료 문서와 Git 수명 절차를 마친다.
+- [x] 새 작업트리 locked restore/format/analyzer/Release/Core/Python/diff 및 Windows/OBS/portable 전체 QA를 수행한다.
+- [x] 실제 화면 시각 QA·개인 PNG 보존 ZIP·자체 리뷰·완료 문서와 Git 수명 절차를 마친다.
 
 ## QA Plan
 
@@ -71,6 +71,13 @@ QA 이후 같은 에이전트가 자체 리뷰한다. 보고된 오류와 수정
 
 | 2026-10-16 | 검증 | Windows38891560054/d2ba151에서 원본과 같은 InvalidOperationException/HResult80131509/CharacterCard.PrintMembers→ToString을 직접 재현했다. 기존2037검사는 모두 통과하고 새 문자열 계약1개만 실패했다. 최소 JSON/원본 대조는 artifacts/test-results/plan043/repro에 보존했다. 수정안 Release 경고0·오류0와 lint 검증 완료. |
 
+| 2026-10-16 | 검증 | 최종772e757의 Windows38892871936/OBS38892872151 전체 통과. Core380·WPF2090/0(기존2037개 유지/53개 추가)·desktop324·unsigned/signed 각9개·portable1784/0. 수정 전 동일 메서드/HResult 재현과 수정 후 계약 통과를 대조했다. |
+| 2026-10-16 | 심사 | 모든 QA 후 같은 에이전트가 코드/개인정보 경계와 최종75화면을 자체 검토했다. 추가 필수 수정 사항 없음. CI 공용39파일+개인13PNG bytes·PE/CRC/SHA256 통과. 원본 오류/남아 있는 이전 ZIP/다른 작업트리를 보존했다. |
+
 ## Completion Notes
 
-재현·수정·검증·실기 제한·새 ZIP과 해시는 완료 시 기록한다.
+보고된 InvalidOperationException/HResult80131509/CharacterCard.PrintMembers→ToString을 수정 전 d2ba151에서 직접 재현했다. 기존2037검사는 통과했지만 새 문자열 계약이 실패했으며, QA가 해당 경로를 놓친 것을 확인했다. CharacterCard는 Name만 읽고 같은 이미지 보유 RuntimeLayer도 안전한 레이블만 반환한다. 목록/편집기 검색 경로와 접근성 이름을 명시하고 앱1.0.1로 구분한다.
+
+최종 시험 코드772e757, [자체 리뷰](../../reviews/plan-043-card-display-hardening-review.md)에 재현·명령·결과·한계를 기록했다. 이후 변경은 완료 기록 문서뿐이다. 새 `artifacts/VoxPet-Windows-test-plan043.zip`은52파일/95,870,529bytes, SHA256 `35f9cb87924b178ffc365a4f052fd9cbc786f6cb73e5ef490273f6b500d46eb5`다. Windows에서 동봉 도구까지 시험한 공용39파일을 그대로 유지하고 개인13PNG를 이전 전달 해시 목록과 대조해 로컬에서 추가했다.
+
+증거는 `artifacts/test-results/plan043/`의 local(원본 최소 오류와 Core), repro(수정 전 실제 재현과 대조), final(Windows/OBS/전체 결과·화면·ZIP)로 보존한다. 사용자 오류 원본/개인 자료는 CI에 보내지 않았다. 기존 샘플17/9·편집/음성/창 회귀를 유지했다. 물리 마이크/권한/USB·사용자 GPU/DPI·개인 그림 Windows 화면·새60분 실기는 별도이며 모든 환경의 결함0을 보장하지 않는다. 최종 문서 검증 후 main ff/push·브랜치/작업트리 정상 정리를 진행한다.

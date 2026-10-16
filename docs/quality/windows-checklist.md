@@ -1,5 +1,15 @@
 # Windows 실사용 검증 기록
 
+## plan043 실제 카드 문자열 오류 재현·수정
+
+2026-10-16 앱1.0.1/최종772e757의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38892871936), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38892872151) 통과. QA 이후 단일 에이전트 자체 리뷰/75화면 시각 검토를 수행했다.
+
+- 수정 전 d2ba151에서 사용자 기록과 동일한 InvalidOperationException/80131509/CharacterCard.PrintMembers→ToString을 재현했다. 기존2037개는 통과했지만 새 문자열 계약이 실패해 이전 QA의 누락을 확인했다. Name 전용 출력·유사 이미지 모델·명시적 텍스트 검색/접근성 이름을 수정했다.
+- Core380/380·locked restore/format/analyzer/Release 경고0·오류0·WPF2090/0(기존2037개 유지/53개 추가)·desktop324·unsigned/signed 각9개 시작/종료/저장 보존·portable1784/0 통과.
+- UI/worker/frozen·가변·null 이미지의 문자열/암시적 바인딩/병렬 이름 읽기, 실제 Home/End·영문/한글 검색·UI Automation·필터/빈 결과·반복 선택/새로고침·손상/삭제 원본 보존·편집/재등록·재시작과 기존17/9 샘플/모자·날개·헤어 회귀 확인. 실제 마이크 factory0. 최종75화면에서 추가 문제 없음.
+- OBS32.2.2 WGC/크로마/native alpha·동일 HWND/소스 배경 왕복·각7프레임 변화 통과. BitBlt는 기존 제한이다.
+- 새 `artifacts/VoxPet-Windows-test-plan043.zip`:52파일/95,870,529bytes·PE/CRC/SHA256 확인. CI 공용39파일+이전 전달 해시와 일치하는 개인13PNG를 그대로 유지했다. 사용자 오류 원본/개인 자료는 CI로 보내지 않았다. [자체 리뷰](../reviews/plan-043-card-display-hardening-review.md)와 `artifacts/test-results/plan043/`에 재현·전체 판정·화면·해시를 보존했다. 물리 마이크/GPU/DPI·개인 그림 화면·새60분 실기와 구분한다.
+
 ## plan042 움직이는 모자·날개와 헤어 샘플
 
 2026-10-16 최종 dad72a1의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38881016955)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38881016833) 통과. 전체 QA 후 단일 에이전트 자체 리뷰와72화면 시각 검토를 수행했다.
