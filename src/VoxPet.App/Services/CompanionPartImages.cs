@@ -5,7 +5,7 @@ using VoxPet.Core.Legacy;
 
 namespace VoxPet.App.Services;
 
-/// <summary>원본을 변경하지 않고 frozen 파츠를 만든다. 분리 그림은 원본 픽셀을 공유한다.</summary>
+/// <summary>원본을 변경하지 않고 선택/표정 변경 때만 512px frozen 파츠를 만든다.</summary>
 internal static class CompanionPartImages
 {
     private static readonly Dictionary<bool, IReadOnlyDictionary<string, Geometry>> masks = [];
@@ -48,7 +48,11 @@ internal static class CompanionPartImages
             underlay.Children.Add(new GeometryDrawing(skin, outline, Geometry.Parse(CompanionParts.BodyContour(side))));
             canvas.Children.Add(underlay);
         }
-        canvas.Children.Add(cut); canvas.Freeze(); var image = new DrawingImage(canvas); image.Freeze(); return image;
+        canvas.Children.Add(cut); canvas.Freeze();
+        // Rasterize absolute Canvas coordinates once. DrawingImage ink bounds can
+        // otherwise normalize clipped regions differently in desktop/bitmap draws.
+        var visual = new DrawingVisual(); using (var drawing = visual.RenderOpen()) drawing.DrawDrawing(canvas);
+        var image = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); image.Render(visual); image.Freeze(); return image;
     }
     internal static IReadOnlyDictionary<string, ImageSource> Create(ImageSource[,] sheet, bool side)
     {
