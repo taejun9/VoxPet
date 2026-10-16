@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Packages;
@@ -55,6 +56,16 @@ internal static class AnimatedAccessoriesQa
         {
             window.UpdateLayout(); var combo = Find<ComboBox>(window.StudioSurface).Single(c => ReferenceEquals(c.ItemsSource, pair.Item2));
             combo.BringIntoView(); await UnifiedStudioQa.CheckSelectorAsync(combo, "editor_" + pair.Item1, check);
+            string name = combo.Items[0] switch
+            {
+                VoxPet.Core.Character.ExpressionDefinition expression => expression.Name,
+                VoxPet.Core.Actions.ActionDefinition action => action.Name,
+                VoxPet.Core.Attachments.AttachmentDefinition attachment => attachment.Name,
+                _ => throw new InvalidOperationException("Unexpected editor selector item")
+            };
+            combo.SelectedIndex = combo.Items.Count - 1;
+            combo.RaiseEvent(new TextCompositionEventArgs(Keyboard.PrimaryDevice, new TextComposition(InputManager.Current, combo, name[..2])) { RoutedEvent = TextCompositionManager.TextInputEvent });
+            await Task.Delay(20); check(combo.SelectedIndex == 0, "studio_editor_name_type_search_" + pair.Item1);
         }
         for (DependencyObject? ancestor = Find<CharacterEditorView>(window.StudioSurface).Single(); ancestor != null; ancestor = VisualTreeHelper.GetParent(ancestor)) if (ancestor is ScrollViewer scroll) scroll.ScrollToTop();
         void Set(string key, string value) => editor.DetailFields.Single(f => f.Key == key).Value = value;

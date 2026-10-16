@@ -58,6 +58,8 @@ QA 이후 같은 에이전트가 자체 리뷰한다. 보고된 오류와 수정
 
 | 2026-10-16 | CharacterCard는 Name, RuntimeLayer는 안전한 레이블만 문자열로 반환하고 목록/편집기 검색 경로는 Name으로 명시한다. 앱 버전은1.0.1로 구분한다. | 자동 record 출력의 ImageSource 접근과 decoder 스레드 경계를 제거하고 같은 이미지 보유 모델/검색 누락을 함께 막는다. 기존 전역 예외 처리로 오류를 숨기지 않는다. |
 
+| 2026-10-16 | 한글 검색 앞의 영문 prefix 초기화 대기는 WPF와 같은 Windows double-click 설정의2배를 사용한다. | 사용자 PC의 더블클릭 속도를 고정1000ms로 가정해 자동 도구가 오판하지 않게 한다. |
+
 ## Progress Log
 
 | date | role | note |

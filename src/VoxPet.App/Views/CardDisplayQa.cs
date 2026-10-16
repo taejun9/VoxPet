@@ -18,6 +18,7 @@ namespace VoxPet.App.Views;
 /// <summary>worker 이미지의 문자열 변환·실제 검색/키보드/automation·보관함 재시작을 검사한다.</summary>
 internal static class CardDisplayQa
 {
+    [DllImport("user32.dll")] private static extern uint GetDoubleClickTime();
     [DllImport("user32.dll")] private static extern void keybd_event(byte key, byte scan, uint flags, UIntPtr extra);
     private sealed class NonTextItem { public override string ToString() => throw new InvalidOperationException("Item must not be formatted"); }
     private static async Task WaitAsync(Func<bool> done)
@@ -104,7 +105,7 @@ internal static class CardDisplayQa
             void Type(string text) => list.RaiseEvent(new TextCompositionEventArgs(Keyboard.PrimaryDevice, new TextComposition(InputManager.Current, list, text)) { RoutedEvent = TextCompositionManager.TextInputEvent });
             list.SelectedItem = studio.Cards.Single(c => c.Id == "qa.alpha");
             Type("B"); await Task.Delay(30); check(studio.Selected?.Id == "qa.beta", "card_library_text_composition_search");
-            await Task.Delay(1100); Type("테"); await Task.Delay(30); check(studio.Selected?.Sample == true, "card_library_korean_text_search");
+            await Task.Delay(checked((int)GetDoubleClickTime() * 2 + 100)); Type("테"); await Task.Delay(30); check(studio.Selected?.Sample == true, "card_library_korean_text_search");
             await ScreenEvidence.CaptureAsync(window, "card-library-keyboard", check);
             studio.Search = "Alpha"; window.UpdateLayout(); check(list.Items.Count == 1 && ((CharacterCard)list.Items[0]).Id == "qa.alpha", "card_library_filter_name");
             studio.Search = "qa.beta"; window.UpdateLayout(); check(list.Items.Count == 1 && ((CharacterCard)list.Items[0]).Id == "qa.beta", "card_library_filter_id");
