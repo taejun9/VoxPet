@@ -18,6 +18,16 @@ internal static class CompanionSamplesQa
     { if (node is T item) yield return item; for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) foreach (var child in Find<T>(VisualTreeHelper.GetChild(node, i))) yield return child; }
     private static async Task WaitAsync(Func<bool> done)
     { for (int i = 0; i < 250 && !done(); i++) await Task.Delay(20); if (!done()) throw new InvalidOperationException("Companion QA operation did not finish"); }
+    private static bool ClearFace(ImageSource source, bool side)
+    {
+        var bitmap = new FormatConvertedBitmap((BitmapSource)source, PixelFormats.Bgra32, null, 0);
+        foreach (var point in side ? new[] { new Point(252, 153), new Point(178, 203) } : new[] { new Point(194, 197), new Point(322, 197), new Point(256, 239) })
+        {
+            var pixels = new byte[12 * 12 * 4]; bitmap.CopyPixels(new Int32Rect((int)point.X - 6, (int)point.Y - 6, 12, 12), pixels, 48, 0);
+            if (pixels.Where((_, index) => index % 4 == 3).Any(alpha => alpha > 32)) return false;
+        }
+        return true;
+    }
     private static void SaveCalibration(string path, bool side)
     {
         int columns = side ? 3 : 8; var sheet = new DrawingVisual();
@@ -83,6 +93,7 @@ internal static class CompanionSamplesQa
                 }
                 var top = window.Studio.AttachmentCards.Single(c => c.Id == "top"); top.ToggleCommand.Execute(null);
                 window.Studio.Page = 3;
+                var actionPoses = new HashSet<(double Left, double Right)>();
                 foreach (var action in window.Studio.LiveActions)
                 {
                     Tick(1.4); string rest = UnifiedStudioQa.Render(model.Character);
@@ -90,15 +101,18 @@ internal static class CompanionSamplesQa
                     Tick(0); Tick(.2);
                     check(scene.Runtime.State.ActionId == action.Id && UnifiedStudioQa.Render(model.Character) != rest && scene.Frame.Layers.Any(l => l.Id == "legacy-sprite" && l.Mesh != null), "companion_action_moves_original_" + item.Id + "_" + action.Id);
                     check(item.SideView == scene.Frame.Layers.Any(l => l.Id == "legacy-sample-foreground-wing"), "companion_front_wing_layer_" + item.Id + "_" + action.Id);
+                    actionPoses.Add((model.Character.Motion.LeftAngle, model.Character.Motion.RightAngle));
                     await ScreenEvidence.CaptureAsync(window, "companion-" + item.Id + "-action-" + action.Id, check);
                     Tick(1.3); check(scene.Runtime.State.ActionId == null && top.IsWorn, "companion_action_idle_keeps_clothes_" + item.Id + "_" + action.Id);
                 }
+                check(actionPoses.Count == 9, "companion_nine_distinct_action_poses_" + item.Id);
                 window.Studio.RemoveAttachmentsCommand.Execute(null); window.Studio.Page = 2;
                 foreach (string id in new[] { "hat", "cape" }) window.Studio.AttachmentCards.Single(c => c.Id == id).ToggleCommand.Execute(null);
                 foreach (string hair in new[] { "hair-short", "hair-long", "hair-afro" })
                 {
                     window.Studio.AttachmentCards.Single(c => c.Id == hair).ToggleCommand.Execute(null); Tick();
                     check(scene.Runtime.Attachments.EnabledIds.Count == 3 && scene.Runtime.Attachments.EnabledIds.Contains(hair), "companion_hair_hat_wings_" + item.Id + "_" + hair);
+                    check(ClearFace(scene.Images["samples/" + hair + "-fringe.png"], item.SideView), "companion_hair_keeps_eyes_and_mouth_clear_" + item.Id + "_" + hair);
                     await ScreenEvidence.CaptureAsync(window, "companion-" + item.Id + "-" + hair, check);
                 }
                 var animated = new HashSet<string>();

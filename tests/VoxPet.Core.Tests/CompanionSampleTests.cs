@@ -27,7 +27,12 @@ public sealed class CompanionSampleTests
         Assert.Equal(17, package.AssetPaths.Count(p => p.StartsWith("thumbnails/", StringComparison.Ordinal)));
         Assert.Equal(8, definition.Attachments.Single(a => a.Id == "hat").Layers[0].Animation!.Frames.Count);
         Assert.Equal(6, definition.Attachments.Single(a => a.Id == "cape").Layers[0].Animation!.Frames.Count);
-        Assert.All(new[] { "hair-short", "hair-long", "hair-afro" }, hair => Assert.Contains(definition.Attachments, a => a.Id == hair));
+        Assert.All(new[] { "hair-short", "hair-long", "hair-afro" }, hair =>
+        {
+            var layers = definition.Attachments.Single(a => a.Id == hair).Layers;
+            Assert.Equal(2, layers.Count); Assert.True(layers[0].ZIndex < 1 && layers[1].ZIndex > 1);
+            Assert.EndsWith("-fringe.png", layers[1].Asset);
+        });
         using var buffer = new MemoryStream(new VoxPetPackageExporter().Export(package), false);
         var reloaded = new VoxPetPackageLoader().Load(buffer);
         Assert.All(package.AssetPaths, p => Assert.Equal(package.ReadAsset(p), reloaded.ReadAsset(p)));
@@ -86,5 +91,25 @@ public sealed class CompanionSampleTests
             attachments.SetEnabled("headAccessory", true);
             Assert.DoesNotContain(attachments.EnabledIds, id => id.StartsWith("hair-", StringComparison.Ordinal));
         }
+    }
+
+    [Theory]
+    [InlineData("neulbo")]
+    [InlineData("pelly")]
+    public void NineTimelinesHaveNineDistinctArmPoses(string id)
+    {
+        var package = Load(id); var definition = LegacySpriteSheetAdapter.Convert(id == "neulbo" ? 8 : 3, samples: package.Character);
+        var poses = new HashSet<(double Left, double Right)>();
+        foreach (var action in package.Character.Actions)
+        {
+            var processor = new LegacySpriteSheetRuntime { Samples = package.Character, Rig = CharacterRig.Default(id) };
+            var runtime = new CharacterRuntime(definition, processor: processor, geometry: processor);
+            runtime.RequestAction(action.Id); runtime.Update(new(0, 0, 0)); runtime.Update(new(.2, .2, 0));
+            poses.Add((processor.Motion.LeftAngle, processor.Motion.RightAngle));
+            if (action.Id == "one-hand") Assert.Equal(0, processor.Motion.LeftAngle);
+            if (action.Id == "two-hand" && id == "neulbo") Assert.True(processor.Motion.LeftAngle < 0 && processor.Motion.RightAngle > 0);
+            if (id == "pelly") Assert.Equal(0, processor.Motion.LeftAngle);
+        }
+        Assert.Equal(9, poses.Count);
     }
 }

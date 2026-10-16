@@ -85,7 +85,14 @@
       "file": "cape-v2.png",
       "sha256": "501030d11333d1953253423776c6b656c1b85be41917b41736f7316b41e96b6a",
       "prompt": "Use case: stylized-concept. One production animation atlas for ONE matched pair of miniature ivory angel wings, six frames, EXACT 3 columns x 2 rows equal cells. True transparent alpha. Each pair must fit entirely WITHIN the CENTRAL 65% of its own cell; reserve at least 15% empty transparent padding on ALL FOUR sides of EVERY cell. Absolutely NO feather fragments or neighboring wings in the padding. No object may touch or cross a cell edge. Wings have watercolor-gouache cream layered feathers, warm thin brown contour, pale lavender shadows and golden highlights, charming storybook mascot dress-up style. TWO mirrored wings in EACH cell, with a very wide clear central gap where an animal body will be placed. Six flap phases: lowered, horizontal, raised, vertical, raised, horizontal. Wings connect at SAME root positions in every frame; animate outer feather fan only. No body, back, torso, character, text, lines, borders, labels, haze, glow, backdrop, watermark or ground shadows. Deliver clean transparent-background sprite atlas with fully separated complete wing pairs. Natural softly curved feather tips, no crude polygon feathers."
+    },
+    {
+      "id": "hair-long-v2",
+      "file": "hair-long-v2.png",
+      "sha256": "8d3b66d5998366ace35faca4151b29f4fd3b0e817ca6819ee91bb2ec5e1afbbd",
+      "prompt": "Use case: stylized-concept. ONE production 2D game wig accessory: beautiful long softly wavy chestnut brown hair with warm honey highlights, for a VERY WIDE ROUND-HEADED CHIBI ANIMAL. Genuine transparent alpha. It is a very broad upside-down U shape, NOT human portrait proportions. The EMPTY TRANSPARENT FACE WINDOW occupies the CENTRAL 75% OF WIDTH, extending from 20% down to 70% of image height. The hair at the very top is a shallow cap occupying only top 15% of image height. Below that, hair exists ONLY in the outer 12% on each side, flowing down in two slim long locks with wavy curled ends. Absolutely no strands may cross the central face window: round animal eyes are very far apart and must remain completely visible. Keep the face window at least 75% as wide as the whole wig even at eye height. No deep forehead fringe, no inward sweeping curls across eyes, no hair hanging in front of the face. The long side locks flow OUTWARD along the outer silhouette, never inward over cheeks. Cute storybook watercolor-gouache, delicate natural strand shading, thin warm brown outlines, cohesive with sloth/pelican mascots. No face, head, skin, eyes, neck, mannequin, text, halo, ground shadow, background or checkerboard. Entire wig visible with transparent padding. Actual transparency in the central window and outside the silhouette."
     }
   ],
-  "selectedCape": "cape-v2.png"
+  "selectedCape": "cape-v2.png",
+  "selectedLongHair": "hair-long-v2.png"
 }

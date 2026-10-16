@@ -47,7 +47,8 @@ public sealed class StudioShellViewModel : ObservableObject
     public bool IsEditor => page == 5;
     public CharacterCard? Selected { get => selected; set { if (Set(ref selected, value)) RefreshCommands(); } }
     public string Status { get => status; private set => Set(ref status, value); }
-    public string RuntimeState => Main.Packages.Scene is { } s ? $"표정 {s.Runtime.State.ExpressionId} · 입 {s.Runtime.MouthFrame + 1} · 동작 {s.Runtime.State.ActionId ?? "idle"} · 우선순위 {s.Runtime.Actions.Current.Priority}" : $"표정 {Main.Character.ExpressionKind} · 입 {Main.Character.MouthFrameCount}단계 · 동작 {Main.Character.Motion.Gesture?.ToString() ?? "idle"}";
+    private string LegacyActionName => Main.Character.CompanionScene.Runtime.State.ActionId is { } id && LiveActions.FirstOrDefault(a => a.Id == id) is { } action ? action.Name : Main.Character.Motion.Gesture is { } gesture ? Main.Hands.Gestures[(int)gesture] : "대기";
+    public string RuntimeState => Main.Packages.Scene is { } s ? $"표정 {s.Runtime.State.ExpressionId} · 입 {s.Runtime.MouthFrame + 1} · 동작 {s.Runtime.State.ActionId ?? "idle"} · 우선순위 {s.Runtime.Actions.Current.Priority}" : $"표정 {Main.Character.ExpressionKind} · 입 {Main.Character.MouthFrameCount}단계 · 동작 {LegacyActionName}";
     public AsyncCommand RefreshCommand { get; }
     public AsyncCommand ImportCommand { get; }
     public AsyncCommand NewCommand { get; }

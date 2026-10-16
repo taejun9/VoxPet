@@ -90,7 +90,7 @@ internal static class CardDisplayQa
             check(await model.Packages.ImportAsync(alpha) && await model.Packages.ImportAsync(beta), "card_library_import_native_thumbnails");
             await window.Studio.RefreshAsync(); window.UpdateLayout();
             var studio = window.Studio; var list = window.StudioSurface.LibraryList;
-            check(list.Items.Count == 4 && studio.Cards.All(c => c.Image is { IsFrozen: true } && c.ToString() == c.Name), "card_library_legacy_sample_native_labels_and_images");
+            check(list.Items.Count == 4 && studio.Cards.All(c => c.Image is { IsFrozen: true } && c.ToString() == c.Name), "card_library_legacy_and_native_labels_and_images");
             check(TextSearch.GetTextPath(list) == "Name" && list.IsTextSearchEnabled, "card_library_explicit_text_search_contract");
             foreach (var item in studio.Cards)
             {

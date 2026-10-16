@@ -41,8 +41,9 @@ def build(character_id):
             attachment['layers'][0]['anchor'] = 'head'
             attachment['layers'][0]['inherit']['mouthMotion'] = False
         if attachment['id'].startswith('hair-'):
-            # Generated wigs have a genuine transparent face opening, one registered layer.
-            attachment['layers'] = [dict(id='image', file='samples/' + attachment['id'] + '.png', anchor='head', zIndex=295)]
+            # Back locks stay behind the original face/beak; the shallow fringe is in front.
+            attachment['layers'] = [dict(id='back', file='samples/' + attachment['id'] + '.png', anchor='head', zIndex=-5),
+                                    dict(id='fringe', file='samples/' + attachment['id'] + '-fringe.png', anchor='head', zIndex=295)]
     for p in (ART / character_id).glob('*.png'):
         name = 'thumbnails/' + p.name.removeprefix('thumb-') if p.name.startswith('thumb-') else 'samples/' + p.name
         files[name] = p.read_bytes()

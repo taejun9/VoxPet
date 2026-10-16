@@ -68,11 +68,17 @@ async function frame(kind,index,columns,rows) {
   await fs.mkdir(destination,{recursive:true});
   for(const id of Object.keys(profiles)){
     const out=path.join(destination,id);await fs.mkdir(out,{recursive:true});const images={};
-    for(const kind of ['top','outerwear','onePiece','bottom','shoes','hair-short','hair-long','hair-afro']) images[kind]=await placed(await fs.readFile(path.join(source,kind+'.png')),profiles[id][kind]);
+    for(const kind of ['top','outerwear','onePiece','bottom','shoes','hair-short','hair-long','hair-afro']) images[kind]=await placed(await fs.readFile(path.join(source,(kind==='hair-long'?'hair-long-v2':kind)+'.png')),profiles[id][kind]);
     for(const [kind,count,columns,rows] of [['hat',8,4,2],['cape',6,3,2]])for(let i=0;i<count;i++)images[kind+(i?'-'+i:'')]=await placed(await frame(kind,i,columns,rows),profiles[id][kind]);
     for(const kind of ['glasses','faceDecoration','earrings','headAccessory','handAccessory','effect','heart','claw','bow'])images[kind]=await sharp(small(kind,id)).resize(512,512).png().toBuffer();
     images['backAccessory']=await placed(await frame('cape',1,3,2),profiles[id].backAccessory);
-    for(const [kind,box]of[['toy-gun','gun'],['toy-sword','sword'],['magic-wand','wand']])images[kind]=await placed(await fs.readFile(path.join(source,kind+'.png')),profiles[id][box]);
+    for(const [kind,box]of[['toy-gun','gun'],['toy-sword','sword'],['magic-wand','wand']])images[kind]=await placed(await fs.readFile(path.join(source,(kind==='hair-long'?'hair-long-v2':kind)+'.png')),profiles[id][box]);
+    for(const kind of ['hair-short','hair-long','hair-afro']) {
+      // Preserve each painted curl's outline. The side-view face and bill stay in front
+      // of the back locks; never crop hair with a visible horizontal cutoff.
+      const faceWindow=Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><ellipse cx="300" cy="187" rx="100" ry="88" fill="white"/><ellipse cx="181" cy="206" rx="110" ry="88" fill="white"/></svg>');
+      images[kind+'-fringe']=id==='pelly'?await sharp(images[kind]).composite([{input:faceWindow,blend:'dest-out'}]).png().toBuffer():images[kind];
+    }
     for(const[name,bytes]of Object.entries(images))await fs.writeFile(path.join(out,name+'.png'),bytes);
     await sharp({create:{width:1,height:1,channels:4,background:'#00000000'}}).png().toFile(path.join(out,'empty.png'));
     for(const kind of ['hat','glasses','faceDecoration','earrings','top','bottom','onePiece','shoes','outerwear','cape','headAccessory','backAccessory','handAccessory','effect','hair-short','hair-long','hair-afro']){

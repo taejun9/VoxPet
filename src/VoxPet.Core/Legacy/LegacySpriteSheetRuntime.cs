@@ -57,6 +57,14 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
         geometry.Pose = gesture is { } g ? CharacterMotion.Evaluate(Rig, Parameters, context.Input.Time,
             new HandPlayback(g, context.Action.Progress), HandMotionProfile.Default(g)) :
             CharacterMotion.Evaluate(Rig, Parameters, context.Input.Time, Playback, HandProfile);
+        if (gesture != null)
+        {
+            // Preserve the nine timelines' distinct left/right poses, within the original
+            // full-sheet rig's safe connected deformation range.
+            double left = context.Action.Transforms.GetValueOrDefault("leftShoulder")?.Rotation ?? 0;
+            double right = context.Action.Transforms.GetValueOrDefault("rightShoulder")?.Rotation ?? 0;
+            geometry.Pose = geometry.Pose with { LeftAngle = Rig.Left.Enabled ? CharacterMotion.SafeAngle(left, Rig.Left) : 0, RightAngle = Rig.Right.Enabled ? CharacterMotion.SafeAngle(right, Rig.Right) : 0 };
+        }
     }
     public RenderMesh? Compose(string layerId, bool garment, double follow, RuntimeRenderContext context)
     { UpdatePose(context); return geometry.Compose(layerId, garment, follow, context); }
@@ -123,7 +131,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
             {
                 // A pelican's visible wing belongs in front of its vest, not under a sleeve.
                 var limb = Rig.Right;
-                var outline = new[] { (0.08, 0.02), (0.5, 0.04), (0.78, 0.23), (0.96, 0.55), (1.0, 0.78), (0.82, 0.98), (0.55, 1.0), (0.24, 0.82), (0.02, 0.5) }
+                var outline = new[] { (0.035, 0.04), (0.13, -0.02), (0.22, -0.04), (0.32, -0.02), (0.44, 0.04), (0.54, 0.13), (0.66, 0.25), (0.78, 0.40), (0.90, 0.56), (0.98, 0.72), (1.0, 0.82), (0.97, 0.90), (0.89, 0.98), (0.78, 1.01), (0.64, 1.0), (0.48, 0.94), (0.32, 0.84), (0.17, 0.69), (0.0, 0.52), (-0.025, 0.34), (-0.01, 0.16) }
                     .Select(p => new RigPoint(limb.X + p.Item1 * limb.Width, limb.Y + p.Item2 * limb.Height)).ToArray();
                 var center = new RigPoint(limb.X + limb.Width * .5, limb.Y + limb.Height * .5);
                 var transform = LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.RightHand, 1);
