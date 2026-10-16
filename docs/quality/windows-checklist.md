@@ -1,5 +1,14 @@
 # Windows 실사용 검증 기록
 
+## plan041 처음부터 전체 재시험
+
+2026-10-16 새 기준 b44685e의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38874585603)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38874637732) 통과. bin/obj 없는 새 작업트리에서 locked restore/format/analyzer/Release/Core를 다시 실행했고 Windows/OBS도 새 runner를 사용했다. 앱 소스는 이전 완료본과 동일하다.
+
+- Core369/369·경고0/오류0·WPF1981/0(이전 검사 집합과 정확히 동일)·실화면305장·unsigned/signed 각9개 일반 시작/정상 종료/파일 보존·Windows ZIP 재압축 해제/PowerShell5.1 동봉 도구1694/0 통과.
+- 단일 사이드바·의상14분류/동작9종·착용/충돌/관절/효과/idle·방송창 공유·관리 복사본 재사용·선택값/팝업·눈물 패널 이름 회귀 통과. 새56화면을 직접 시각 검토했다. 가장 큰1280×820 요청은 CI 작업 영역에 맞춘 실제992×688이며 작은 창은 스크롤한다.
+- OBS32.2.2 WGC 초록/크로마/투명·같은 HWND 배경 전환·각7프레임 변화 통과. BitBlt의 기존 layered 제한 유지. 실제 마이크/GPU/DPI·개인 그림 화면·새60분 측정은 별도 실기다.
+- 새 `artifacts/VoxPet-Windows-test-plan041.zip`:52파일/95,605,003bytes·PE x64/CRC/SHA256 확인. CI 공용39파일과 기존 개인13PNG byte-identical, 이전 ZIP/원본 보존·개인 자료 외부 전송 없음. 상세 해시·결과는 [자체 리뷰](../reviews/plan-041-full-retest-review.md), 증거는 `artifacts/test-results/plan041/`를 따른다.
+
 ## plan040 통합 Studio와 전체 의상·동작 샘플
 
 2026-10-15 최종 c8bcf46의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38733607211), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38733607371) 통과. 단일 에이전트가 QA 후 자체 리뷰하고 발견한 화면 대비/설정 이름 문제를 보완 후 재검증했다.

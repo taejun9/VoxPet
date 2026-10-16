@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -34,10 +34,10 @@ codex/plan-041-full-retest / .worktree/plan-041-full-retest에서 단일 에이�
 ## Implementation Plan
 
 - [x] 이전 main push와 작업 상태를 확인하고 승인 제한으로 중단된 plan040 정리를 재개한다.
-- [ ] 새 작업트리에서 문서/자산/Python/locked restore/format/analyzer/Release/Core 전체 검사를 수행한다.
-- [ ] 새 Windows runner에서 일반/서명 시작·WPF·실화면305장·ZIP 재압축 해제 후 실행을 검사한다.
-- [ ] OBS 초록/크로마/투명·같은 HWND·프레임 변화 회귀를 새로 수행한다.
-- [ ] 화면/결과를 대조하고 개인13PNG를 보존한 새 ZIP·자체 리뷰·완료 기록을 준비한다.
+- [x] 새 작업트리에서 문서/자산/Python/locked restore/format/analyzer/Release/Core 전체 검사를 수행한다.
+- [x] 새 Windows runner에서 일반/서명 시작·WPF·실화면305장·ZIP 재압축 해제 후 실행을 검사한다.
+- [x] OBS 초록/크로마/투명·같은 HWND·프레임 변화 회귀를 새로 수행한다.
+- [x] 화면/결과를 대조하고 개인13PNG를 보존한 새 ZIP·자체 리뷰·완료 기록을 준비한다.
 
 ## QA Plan
 
@@ -60,6 +60,17 @@ codex/plan-041-full-retest / .worktree/plan-041-full-retest에서 단일 에이�
 |---|---|---|
 | 2026-10-16 | 설계 | main5c5dd4c 깨끗함/origin과0·0 확인. plan040 정리 완료, 다른 plan024 작업트리2개/기존 ZIP 보존. plan041 새 작업트리에서 계획 작성. |
 
+| 2026-10-16 | 검증 | bin/obj 없는 새 작업트리 확인 후 문서111개·자산36RGBA/잠금·금지 API·Python compileall/diff check, locked restore, format verify/analyzer, Release 경고0·오류0, Core369/369(샘플3/3) 통과. 새 Windows38874585603/OBS38874637732를 b44685e에서 실행했다. |
+
+| 2026-10-16 | 검증 | OBS38874637732 통과. source b44685e 일치, WGC 초록/크로마/투명·동일 HWND 배경 왕복·각7프레임 변화 확인. BitBlt는 기존 layered 창 제한으로 유지한다. 번들 샘플57파일/32개512RGBA PNG 전체 chunk CRC도 통과했다. |
+
+| 2026-10-16 | 검증 | 새 Windows38874585603 전체 통과: Core369/369·WPF1981/0(이전 집합과 동일)·실화면305·unsigned/signed 각9개·portable1694/0. JSON/TRX/로그와 소스 커밋을 대조했다. |
+| 2026-10-16 | 심사 | 모든 QA 후 같은 에이전트가 새 Studio56화면을 시각 검토했다. 통합 navigation/14의상/9동작/선택값 대비·눈물 이름 정상, 추가 필수 수정 사항 없음. CI39파일+개인13PNG byte equality/PE/CRC/SHA256 통과, 이전 파일 보존. |
+
 ## Completion Notes
 
-새 실행의 명령·결과·화면·패키지 무결성 및 실기 제한은 QA 후 기록한다.
+새 작업트리·새 runner에서 모든 기존 자동 검사를 처음부터 다시 실행해 통과했다. 앱 변경 없이 이전 수정의 회귀 없음과 동일 검사 집합을 확인했다. [자체 리뷰](../../reviews/plan-041-full-retest-review.md)에 명령·결과·실기 제한을 기록했다.
+
+Windows 파일은 `artifacts/VoxPet-Windows-test-plan041.zip`(52파일/95,605,003bytes), SHA256 `2cbb2b016a55222e94c1a0bf38688bc3971ceb25f0444cd3661670e027d027e0`다. 새 CI에서 실행한 공용39파일과 기존 개인13PNG의 bytes를 보존했다. 모든 증거는 `artifacts/test-results/plan041/`에 있다.
+
+물리 마이크/GPU/DPI·개인 그림의 Windows 시각 검증·새60분 측정은 대상PC 실기와 구분한다. 이전 plan040 정리는 정상 승인 경로로 완료했다. 이번 완료 기록을 통합한 뒤 하네스 순서로 main push와 작업 브랜치/작업트리를 정리한다.
