@@ -62,7 +62,8 @@ public sealed class LegacyHandMotionSchedulerAdapter
                 for (int n = 0; n < 5; n++) { int i = (cursor + n) % 5; if (profiles[i].Enabled && profiles[i].Mode == HandTriggerMode.Always) { chosen = i; break; } }
             if (chosen >= 0) { pending[chosen] = false; engine.TryPlay(actions[chosen], seconds); state = engine.Current; cursor = (chosen + 1) % 5; }
         }
-        return state.IsPlaying ? new(Enum.Parse<HandGesture>(state.ActionId!), state.Progress) : null;
+        // The same engine also owns the nine companion sample actions.
+        return state.IsPlaying && Enum.TryParse<HandGesture>(state.ActionId, out var gesture) && Enum.IsDefined(gesture) ? new(gesture, state.Progress) : null;
     }
     public void Stop() { stopped = true; engine.Stop(); Array.Clear(pending); }
     public void Cancel() { engine.Stop(); Array.Clear(pending); }

@@ -35,5 +35,5 @@ public partial class StudioShell : UserControl
     private void LegacySettings(object sender, RoutedEventArgs e)
     { if (Window.GetWindow(this) is MainWindow window && sender is FrameworkElement { Tag: string tab } && int.TryParse(tab, out int i)) window.ShowStudioSettings(i); }
     private void NativeAction(object sender, RoutedEventArgs e)
-    { if (Model != null && sender is FrameworkElement { Tag: string id }) Model.Main.Packages.Play(id); }
+    { if (Model != null && sender is FrameworkElement { Tag: string id }) Model.PlayAction(id); }
 }

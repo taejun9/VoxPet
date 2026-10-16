@@ -1,0 +1,5 @@
+VoxPet companion costume artwork and code-authored ornament details — CC0-1.0.
+Original AI-assisted illustrations created with the built-in imagegen tool for VoxPet.
+Generation prompts and original file hashes are in generation.json.
+No personal character PNGs or third-party image references are included.
+Original generated outputs are retained; cape-v2.png is the selected wing atlas.

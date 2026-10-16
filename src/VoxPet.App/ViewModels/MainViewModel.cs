@@ -302,7 +302,10 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         Runtime.Activate(startupPack);
         characterInitialized = true;
         await Expressions.InitializeAsync(startupSlot, startupBuiltin); await Wardrobe.InitializeAsync(); await Hands.InitializeAsync(); Hands.SetCharacter(MotionCharacterId); await RefreshDevicesAsync();
+        Character.SetCompanionSamples(await CompanionSampleLibrary.LoadAsync(appliedCharacter.Id), appliedCharacter.Id);
         await Packages.InitializeAsync();
+        // Upgrade the old automatic stand-in selection without deleting its managed file.
+        if (Packages.Loaded?.Package.Manifest.Id == CompanionSampleLibrary.LegacySampleId) await Packages.DeactivateAsync();
         settingsReady = true;
     }
     /// <summary>전체 가족을 worker에서 읽고 최신 요청만 적용한다. 실패하면 선택과 현재 그림을 되돌린다.</summary>
@@ -319,9 +322,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             {
                 var pack = legacy ? null : await Runtime.PrepareAsync(item.Id);
                 var family = pack == null ? await Task.Run(() => CharacterViewModel.LoadFamily(Path.Combine(charactersFolder, item.FileName))) : null;
+                var samples = pack == null ? await CompanionSampleLibrary.LoadAsync(item.Id) : null;
                 return () =>
                 {
                     if (family != null) Character.SetDefault(family, item.Name);
+                    Character.SetCompanionSamples(samples, item.Id);
                     if (characterInitialized) _ = Packages.DeactivateAsync(); appliedCharacter = item; Runtime.Activate(pack); Hands.SetCharacter(item.Id);
                     CharacterStatus = $"{item.Name}{(item.SideView ? " · 측면" : "")} · 입{pack?.Definition.Mouths.Length ?? Character.MouthFrameCount}단계 / 눈 깜박임 · 두 창에 적용했습니다." +
                         (family?.Warnings > 0 ? " 일부 표정 파일은 평상 모습으로 표시합니다." : "");

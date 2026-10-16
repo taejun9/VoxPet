@@ -1,2 +1,4 @@
 VoxPet Studio Samples — CC0-1.0
 Procedural artwork and original public VoxPet template. No personal character assets.
+
+Companion costume packs (neulbo/pelly): CC0-1.0 original AI-assisted storybook illustrations and project-authored vector ornaments. No personal character images included. Source prompts and hashes: harness/assets/companion-art/generation.json.

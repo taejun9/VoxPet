@@ -50,6 +50,53 @@ public sealed class CharacterViewModel : ObservableObject
     private CharacterRuntimeViewModel? runtimeScene;
     private readonly LegacySpriteSheetRuntime legacy = new();
     private CharacterRuntimeViewModel legacyScene = null!;
+    private LoadedCharacterPackage? companionSamples;
+    private readonly Dictionary<string, string[]> companionSelections = [];
+    public string CompanionCharacterId { get; private set; } = "";
+    public CharacterRuntimeViewModel CompanionScene => legacyScene;
+    public bool HasCompanionSamples => companionSamples != null;
+    internal void SetCompanionSamples(LoadedCharacterPackage? loaded, string characterId)
+    {
+        if (companionSamples != null) companionSelections[CompanionCharacterId] = legacyScene.Runtime.Attachments.EnabledIds.ToArray();
+        legacyScene.Stop(); companionSamples = loaded; CompanionCharacterId = characterId; legacy.Samples = loaded?.Package.Character;
+        legacy.PreserveForegroundWing = characterId == "pelly";
+        RebuildLegacyScene();
+        var valid = legacyScene.Runtime.Definition.Attachments.Select(a => a.Id).ToHashSet();
+        legacyScene.Runtime.Attachments.Restore((companionSelections.GetValueOrDefault(characterId) ?? []).Where(valid.Contains));
+        cachedSprites = null; RefreshMotion(); Notify(nameof(HasCompanionSamples)); Notify(nameof(CompanionCharacterId));
+    }
+    private void RebuildLegacyScene()
+    {
+        var engine = legacyScene.Runtime.Actions; var enabled = legacyScene.Runtime.Attachments.EnabledIds;
+        var definition = LegacySpriteSheetAdapter.Convert(sprites.GetLength(0), profile, companionSamples?.Package.Character);
+        legacyScene = new(new CharacterRuntime(definition, processor: legacy, geometry: companionSamples == null ? null : legacy,
+            startedAt: Math.Max(now, engine.LastTime), actions: engine), legacyScene.Images, Math.Max(now, engine.LastTime));
+        var valid = definition.Attachments.Select(a => a.Id).ToHashSet();
+        legacyScene.Runtime.Attachments.Restore(enabled.Where(valid.Contains));
+        Notify(nameof(CompanionScene));
+    }
+    public void PlayCompanionAction(string id) { if (HasCompanionSamples) legacyScene.Runtime.RequestAction(id); }
+    public void StopCompanionActions() { legacyScene.Stop(); RefreshMotion(); }
+    internal async Task<VoxPet.Core.Packages.VoxPetPackage?> EditableCompanionAsync()
+    {
+        if (companionSamples == null) return null;
+        var loaded = companionSamples; var sheet = (ImageSource[,])sprites.Clone(); var expression = profile;
+        string id = CompanionCharacterId; string displayName = defaultName;
+        return await Task.Run(() =>
+        {
+            var definition = LegacySpriteSheetAdapter.Convert(sheet.GetLength(0), expression, loaded.Package.Character);
+            var assets = loaded.Package.AssetPaths.ToDictionary(p => p, loaded.Package.ReadAsset);
+            for (int mouth = 0; mouth < sheet.GetLength(0); mouth++) for (int eye = 0; eye < 2; eye++)
+            {
+                var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create((BitmapSource)sheet[mouth, eye]));
+                using var buffer = new MemoryStream(); encoder.Save(buffer); assets[LegacySpriteSheetAdapter.Asset(mouth, eye)] = buffer.ToArray();
+            }
+            var manifest = new VoxPet.Core.Packages.VoxPetManifest("companion." + id, displayName + " · 의상 편집", "1.0.0",
+                description: "개인 캐릭터의 현재 표정과 의상·동작. 내보내기는 이 PC에서만 수행합니다.", thumbnail: LegacySpriteSheetAdapter.Asset(0, 1),
+                actions: loaded.Package.Manifest.Actions, attachments: loaded.Package.Manifest.Attachments);
+            return new VoxPet.Core.Packages.VoxPetPackageValidator().Validate(manifest, definition, assets);
+        });
+    }
     public VoxPet.Core.Actions.ActionEngine LegacyActions => legacyScene.Runtime.Actions;
     public CharacterRuntimeViewModel RuntimeScene => runtimeScene ?? legacyScene;
     public void SetRuntimeScene(CharacterRuntimeViewModel? scene)
@@ -86,6 +133,7 @@ public sealed class CharacterViewModel : ObservableObject
             (!ShowMotionGuides || cachedGuideRig == Rig) && costumes.SequenceEqual(cachedCostumes)) return;
         cachedSprites = sprites; cachedPrevious = PreviousSprite; cachedGuides = ShowMotionGuides; cachedGuideRig = Rig; cachedCostumes = costumes;
         var images = new Dictionary<string, ImageSource>(LegacyDrawingAssets.All);
+        if (companionSamples != null) foreach (var pair in companionSamples.Images) images.Add(pair.Key, pair.Value);
         for (int m = 0; m < sprites.GetLength(0); m++) for (int e = 0; e < 2; e++) images.Add(LegacySpriteSheetAdapter.Asset(m, e), sprites[m, e]);
         if (PreviousSprite != null) images.Add("legacy/previous.png", PreviousSprite);
         foreach (var item in CostumeLayers.Where(item => item.Enabled && item.Image != null)) images.Add("legacy/costume-" + item.Id.ToString("N") + ".png", item.Image!);
@@ -230,9 +278,7 @@ public sealed class CharacterViewModel : ObservableObject
         sprites = sheet ?? builtin; UsesCustomSheet = sheet != null;
         legacy.Apply(expression, sprites.GetLength(0), now);
         // source의 정의도 실제 시트/표정과 동기화한다. scheduler가 참조하는 중앙 ActionEngine은 유지한다.
-        var engine = legacyScene.Runtime.Actions;
-        legacyScene = new(new CharacterRuntime(new LegacySpriteSheetSource(sprites.GetLength(0), expression).Load(), processor: legacy,
-            startedAt: Math.Max(now, engine.LastTime), actions: engine), legacyScene.Images, Math.Max(now, engine.LastTime));
+        RebuildLegacyScene();
         cachedSprites = null;
         Name = sheet == null ? $"{defaultName} · {expression.Name}" : $"{expression.Name} · 사용자 캐릭터";
         Notify(nameof(TearLeftX)); Notify(nameof(TearRightX)); Update(current, now);

@@ -17,6 +17,8 @@ def package_windows(published: Path, destination: Path) -> dict:
         "Assets/Characters/manifest.json",
         "Assets/ImageSetTemplate/imageset.json",
         "Assets/Samples/studio-samples.voxpet",
+        "Assets/Samples/companion-neulbo.voxpet",
+        "Assets/Samples/companion-pelly.voxpet",
         "Assets/Samples/LICENSE.txt",
         "Licenses/NAudio-LICENSE.txt",
         "Licenses/DOTNET-LICENSE.txt",

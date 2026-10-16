@@ -1,0 +1,91 @@
+{
+  "tool": "built-in imagegen",
+  "privateReferencesUsed": false,
+  "assets": [
+    {
+      "id": "hat",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset: a charming illustrated helicopter beanie, isolated on genuine transparent background. This is a SINGLE asset sprite sheet, 4 columns x 2 rows, eight equally sized square cells with identical registration. No labels, borders, character, mannequin, text or shadows outside the object. Each cell shows the same warm mustard and soft sage fabric beanie with ribbed brim, tiny stitched detail, brass propeller mast and rounded cream/coral rotor blades. Soft storybook gouache, subtle watercolor grain, warm dark-brown clean outlines, gently shaded curved volumes; polished boutique mobile game quality. Straight front view, wearable on a round chibi animal head, open/transparent underneath the brim; not a standalone animal. Fill about 75 percent of each cell's width, upper-to-middle half of cell, leaving transparent padding all around. Rotate ONLY the little overhead two-blade propeller through 8 evenly spaced phase positions; beanie and mast remain pixel-aligned and visually identical in every cell. The eight frame poses must read as a continuous looping helicopter rotor. Avoid crude geometry, neon, black heavy outline, plastic 3D, photorealism, checkerboard painted background. Request actual alpha.",
+      "file": "hat.png",
+      "sha256": "9f941c94995926555e88ea436f96830ef7163fc2817bb45454f7c7f0d5c70756"
+    },
+    {
+      "id": "cape",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset, genuine transparent background. A single animation sprite sheet of a PAIR of elegant small angel wings, 3 columns by 2 rows, six equal square cells, evenly registered. Warm ivory feathers, lavender-blue shadows, layered soft curved feather tips and subtle gold sheen. Each cell has TWO mirrored wings, a broad transparent gap between them for the character's body. Flap loop angles: spread low, spread horizontal, raised, fully raised, raised, spread horizontal. Whole pair stays centered, identical roots each frame. No body or shoulder pad. Both wings together are the one asset. Polished hand-painted storybook gouache with delicate watercolor grain, warm thin dark-brown outlines, rounded natural volumes, restrained soft shading, matches cute cream-and-brown sloth and pelican mascots. Warm pastel boutique game aesthetic. Entire object visible with generous transparent margin on all sides. No text, logos, scene, ground shadow, checkerboard, solid backdrop, photorealism, plastic 3D, crude flat polygons. Actual alpha channel.",
+      "file": "cape.png",
+      "sha256": "fc4b376e4e09b90ecc503addfd20d9c4708451dcb8fb3c1c5b878147908ba99e"
+    },
+    {
+      "id": "top",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset, genuine transparent background. ONE front-facing soft sage mint knitted sweater for a short round chibi animal: empty garment, softly rounded torso, short wide sleeves angled down, cream ribbed crew neck/cuffs/hem, subtle cable-knit and a small embroidered leaf near the hem. Neck opening genuinely transparent. No body, hands, head, mannequin or hanger. Polished hand-painted storybook gouache with delicate watercolor grain, warm thin dark-brown outlines, rounded natural volumes, restrained soft shading, matches cute cream-and-brown sloth and pelican mascots. Warm pastel boutique game aesthetic. Entire object visible with generous transparent margin on all sides. No text, logos, scene, ground shadow, checkerboard, solid backdrop, photorealism, plastic 3D, crude flat polygons. Actual alpha channel.",
+      "file": "top.png",
+      "sha256": "bf378c8b88a50b3c89ece403b40cc642d6ab270f0b8a875c165e0969f4ef613c"
+    },
+    {
+      "id": "outerwear",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset, genuine transparent background. ONE front-facing coral peach cropped cardigan jacket for a short round chibi animal: empty garment, rounded short wide sleeves, open front with a genuine transparent V-shaped middle opening so the animal body can show, cream lining, tiny wooden buttons and curved pockets. Soft fabric folds, cozy tailored silhouette. No body, hands, head, mannequin or hanger. Polished hand-painted storybook gouache with delicate watercolor grain, warm thin dark-brown outlines, rounded natural volumes, restrained soft shading, matches cute cream-and-brown sloth and pelican mascots. Warm pastel boutique game aesthetic. Entire object visible with generous transparent margin on all sides. No text, logos, scene, ground shadow, checkerboard, solid backdrop, photorealism, plastic 3D, crude flat polygons. Actual alpha channel.",
+      "file": "outerwear.png",
+      "sha256": "9bd992a7940558c4d4436045a3c3e9f1a56a0249bae123359d44a316fd1cecc5"
+    },
+    {
+      "id": "onePiece",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset, genuine transparent background. ONE front-facing lavender denim overalls for a short round chibi animal: empty garment, rounded bib, two curved shoulder straps, gold buttons, cream stitched pocket with little leaf, two short leg openings. Two small holes between shoulder straps are transparent; no underlying T-shirt, no body, hands, head, mannequin or hanger. Polished hand-painted storybook gouache with delicate watercolor grain, warm thin dark-brown outlines, rounded natural volumes, restrained soft shading, matches cute cream-and-brown sloth and pelican mascots. Warm pastel boutique game aesthetic. Entire object visible with generous transparent margin on all sides. No text, logos, scene, ground shadow, checkerboard, solid backdrop, photorealism, plastic 3D, crude flat polygons. Actual alpha channel.",
+      "file": "onePiece.png",
+      "sha256": "bd443a0d7d5dc8a13fb4c51bc3c3fe9600ecce3991e7a6f0850542ee6710c5de"
+    },
+    {
+      "id": "hair-short",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset. ONE short bob hairstyle wig, warm dark chestnut brown, delicately curved fringe and two softly curled side locks, for a round animal head. A broad oval face opening in the middle must be fully transparent. Only the top fringe and sides are painted; absolutely no face, scalp, skin, eyes, head, neck or mannequin. Hair ends just below the chin, natural strand highlights, soft rounded silhouette. Polished hand-painted storybook watercolor and gouache, delicate paper grain INSIDE the object only, warm thin dark-brown outlines, natural rounded volumes, cohesive with cute cream sloth and white pelican. Entire object centered with generous empty padding. Background completely empty TRANSPARENT alpha, NO haze, NO diffuse glow, NO shadows outside the silhouette, no ground shadow, no scene, no checkerboard, no text or logos, no rectangular colored backdrop. Crisp clean alpha edges. Avoid flat crude polygons, plastic 3D and photorealism.",
+      "file": "hair-short.png",
+      "sha256": "4d85575f43caac55c61744de64d28dc2f0d0b66a67f0418327e010eb3564f44e"
+    },
+    {
+      "id": "hair-long",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset. ONE long wavy chestnut hairstyle wig, soft flowing side locks with honey highlights and a parted fringe for a round animal head. The large oval face opening in the middle must be fully transparent and occupy the central upper half. Only hair is painted. No skin, eyes, face, head, scalp, neck, mannequin. Long locks fall to mid body, elegant softly waved ends. Polished hand-painted storybook watercolor and gouache, delicate paper grain INSIDE the object only, warm thin dark-brown outlines, natural rounded volumes, cohesive with cute cream sloth and white pelican. Entire object centered with generous empty padding. Background completely empty TRANSPARENT alpha, NO haze, NO diffuse glow, NO shadows outside the silhouette, no ground shadow, no scene, no checkerboard, no text or logos, no rectangular colored backdrop. Crisp clean alpha edges. Avoid flat crude polygons, plastic 3D and photorealism.",
+      "file": "hair-long.png",
+      "sha256": "53dc77aaa62c9fa4b680a5ba065c4b1738cd6510a0989d9ab1bcd1ed0bde2d9b"
+    },
+    {
+      "id": "hair-afro",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset. ONE fluffy rounded afro hairstyle wig in deep cocoa brown, many distinct soft ringlet curls, warm subtle highlights, a little curled fringe and round side curls. A large oval face opening in the middle must be fully transparent. Only the outer halo of curls is painted, no skin, face, eyes, head, scalp, neck, mannequin. Polished hand-painted storybook watercolor and gouache, delicate paper grain INSIDE the object only, warm thin dark-brown outlines, natural rounded volumes, cohesive with cute cream sloth and white pelican. Entire object centered with generous empty padding. Background completely empty TRANSPARENT alpha, NO haze, NO diffuse glow, NO shadows outside the silhouette, no ground shadow, no scene, no checkerboard, no text or logos, no rectangular colored backdrop. Crisp clean alpha edges. Avoid flat crude polygons, plastic 3D and photorealism.",
+      "file": "hair-afro.png",
+      "sha256": "06f3f0893f6e591b363ea811a09bbeaf04a5e6ed0f4bd58f3ab760816f6102c4"
+    },
+    {
+      "id": "bottom",
+      "prompt": "Use case: stylized-concept. Production 2D dress-up game asset. ONE pair of front-facing high-waisted short indigo denim shorts for a short round chibi animal, empty garment, rounded hips, two short cuffed legs, warm cream stitching, tiny brass button, curved pockets, soft fabric folds. No animal, body, hands, mannequin or hanger. Polished hand-painted storybook watercolor and gouache, delicate paper grain INSIDE the object only, warm thin dark-brown outlines, natural rounded volumes, cohesive with cute cream sloth and white pelican. Entire object centered with generous empty padding. Background completely empty TRANSPARENT alpha, NO haze, NO diffuse glow, NO shadows outside the silhouette, no ground shadow, no scene, no checkerboard, no text or logos, no rectangular colored backdrop. Crisp clean alpha edges. Avoid flat crude polygons, plastic 3D and photorealism.",
+      "file": "bottom.png",
+      "sha256": "b9d2b89bb78354eee44ed4ba9fbce49abde0f48e1924e73c79edd08d6055dce6"
+    },
+    {
+      "id": "shoes",
+      "prompt": "Use case: stylized-concept. ONE production 2D dress-up game prop on genuinely transparent alpha. A PAIR of small honey-yellow canvas sneakers for a chibi animal, off-white rounded rubber toe caps and soles, little cream laces, stitch detail, soft rounded volume. The pair sits side by side, one subtly angled left and one subtly angled right, entire shoes visible. No feet or legs. High quality hand-painted storybook gouache, delicate watercolor paper grain within the object, warm thin brown outlines, warm pastel shading, natural curved edges, cohesive with cute sloth/pelican mascots. Centered with clean generous transparent margin. No diffuse glow, no backdrop, no checkerboard, no ground shadow, no text/logos. Actual empty transparent background. Avoid flat geometric placeholders, plastic 3D and photorealism.",
+      "file": "shoes.png",
+      "sha256": "168e228771983c846dcd974382bc9b32d8e38f3720db26ae456b0a16f96e63d1"
+    },
+    {
+      "id": "toy-gun",
+      "prompt": "Use case: stylized-concept. ONE production 2D dress-up game prop on genuinely transparent alpha. ONE charming clearly toy water pistol, pale sky-blue and cream with coral-orange nozzle, rounded barrel and sage grip, small translucent water tank, brass accent. Side view pointing to the LEFT, chunky safe playful silhouette. No hand, no character, no ammunition. High quality hand-painted storybook gouache, delicate watercolor paper grain within the object, warm thin brown outlines, warm pastel shading, natural curved edges, cohesive with cute sloth/pelican mascots. Centered with clean generous transparent margin. No diffuse glow, no backdrop, no checkerboard, no ground shadow, no text/logos. Actual empty transparent background. Avoid flat geometric placeholders, plastic 3D and photorealism.",
+      "file": "toy-gun.png",
+      "sha256": "446f1f2ebe3dfc4d6b4d7b1a0a519e71ee31fe1052d101a3daca0b8d00b7f4f0"
+    },
+    {
+      "id": "toy-sword",
+      "prompt": "Use case: stylized-concept. ONE production 2D dress-up game prop on genuinely transparent alpha. ONE small rounded toy fantasy sword, pearlescent pale blue blade with soft gleam, warm brass curved guard, sage fabric-wrapped grip and leaf-shaped pommel. Diagonal from bottom right handle to upper left blade. No hand or character, no blood. High quality hand-painted storybook gouache, delicate watercolor paper grain within the object, warm thin brown outlines, warm pastel shading, natural curved edges, cohesive with cute sloth/pelican mascots. Centered with clean generous transparent margin. No diffuse glow, no backdrop, no checkerboard, no ground shadow, no text/logos. Actual empty transparent background. Avoid flat geometric placeholders, plastic 3D and photorealism.",
+      "file": "toy-sword.png",
+      "sha256": "7c0deda40e66681ccd156ec854de5a6574c98e1d09d54bbd74818704b4f6f337"
+    },
+    {
+      "id": "magic-wand",
+      "prompt": "Use case: stylized-concept. ONE production 2D dress-up game prop on genuinely transparent alpha. ONE charming star-tipped magic wand, carved plum wood handle with cream ribbon and tiny brass details, warm gold five-point star with a soft painted highlight (no halo outside), two little dangling lavender ribbons. Diagonal from lower right handle to upper left star. No hand or character. High quality hand-painted storybook gouache, delicate watercolor paper grain within the object, warm thin brown outlines, warm pastel shading, natural curved edges, cohesive with cute sloth/pelican mascots. Centered with clean generous transparent margin. No diffuse glow, no backdrop, no checkerboard, no ground shadow, no text/logos. Actual empty transparent background. Avoid flat geometric placeholders, plastic 3D and photorealism.",
+      "file": "magic-wand.png",
+      "sha256": "50d1384b6862c2d9e4f87b74bbbda1c0a577c0afad90488d08c5f2636ecbb734"
+    },
+    {
+      "id": "cape-v2",
+      "file": "cape-v2.png",
+      "sha256": "501030d11333d1953253423776c6b656c1b85be41917b41736f7316b41e96b6a",
+      "prompt": "Use case: stylized-concept. One production animation atlas for ONE matched pair of miniature ivory angel wings, six frames, EXACT 3 columns x 2 rows equal cells. True transparent alpha. Each pair must fit entirely WITHIN the CENTRAL 65% of its own cell; reserve at least 15% empty transparent padding on ALL FOUR sides of EVERY cell. Absolutely NO feather fragments or neighboring wings in the padding. No object may touch or cross a cell edge. Wings have watercolor-gouache cream layered feathers, warm thin brown contour, pale lavender shadows and golden highlights, charming storybook mascot dress-up style. TWO mirrored wings in EACH cell, with a very wide clear central gap where an animal body will be placed. Six flap phases: lowered, horizontal, raised, vertical, raised, horizontal. Wings connect at SAME root positions in every frame; animate outer feather fan only. No body, back, torso, character, text, lines, borders, labels, haze, glow, backdrop, watermark or ground shadows. Deliver clean transparent-background sprite atlas with fully separated complete wing pairs. Natural softly curved feather tips, no crude polygon feathers."
+    }
+  ],
+  "selectedCape": "cape-v2.png"
+}

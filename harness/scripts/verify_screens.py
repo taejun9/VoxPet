@@ -56,6 +56,15 @@ for frame in range(4):
 for item in ['hat', 'cape']: expected.add('studio-editor-animation-' + item)
 
 for case in ['keyboard', 'editor', 'restarted']: expected.add('card-library-' + case)
+for character in ['neulbo', 'pelly']:
+    for category in ['hat','glasses','facedecoration','earrings','top','bottom','onepiece','shoes','outerwear','cape','headaccessory','backaccessory','handaccessory','effect','hair-short','hair-long','hair-afro']:
+        expected.add(f'companion-{character}-costume-{category}')
+    for action in ['claw','toy-gun','heart','toy-sword','magic-wand','firearm','bow','one-hand','two-hand']:
+        expected.add(f'companion-{character}-action-{action}')
+    for hair in ['hair-short', 'hair-long', 'hair-afro']: expected.add(f'companion-{character}-{hair}')
+    for frame in range(4): expected.add(f'companion-{character}-animation-{frame}')
+    for case in ['broadcast','editor']: expected.add(f'companion-{character}-{case}')
+expected.update(['companion-library','companion-restarted'])
 
 records = []
 for name in sorted(expected):

@@ -66,7 +66,7 @@ internal static class CardDisplayQa
         var layer = new RuntimeLayer(image, new(0, 0));
         check(layer.ToString() == nameof(RuntimeLayer) && await Task.Run(() => layer.ToString() == nameof(RuntimeLayer)), "card_display_runtime_layer_never_formats_image");
         check(await Task.Run(() => Enumerable.Range(0, 1000).AsParallel().All(i => cards[i % cards.Length].ToString() == cards[i % cards.Length].Name)), "card_display_parallel_label_reads");
-        check(typeof(App).Assembly.GetName().Version?.ToString() == "1.0.1.0", "card_display_fixed_build_version");
+        check(typeof(App).Assembly.GetName().Version?.ToString() == "1.1.0.0", "card_display_fixed_build_version");
         await CheckLibraryAsync(loaded.Package, check);
     }
     private static async Task CheckLibraryAsync(VoxPetPackage sample, Action<bool, string> check)
@@ -90,7 +90,7 @@ internal static class CardDisplayQa
             check(await model.Packages.ImportAsync(alpha) && await model.Packages.ImportAsync(beta), "card_library_import_native_thumbnails");
             await window.Studio.RefreshAsync(); window.UpdateLayout();
             var studio = window.Studio; var list = window.StudioSurface.LibraryList;
-            check(list.Items.Count == 5 && studio.Cards.All(c => c.Image is { IsFrozen: true } && c.ToString() == c.Name), "card_library_legacy_sample_native_labels_and_images");
+            check(list.Items.Count == 4 && studio.Cards.All(c => c.Image is { IsFrozen: true } && c.ToString() == c.Name), "card_library_legacy_sample_native_labels_and_images");
             check(TextSearch.GetTextPath(list) == "Name" && list.IsTextSearchEnabled, "card_library_explicit_text_search_contract");
             foreach (var item in studio.Cards)
             {
@@ -105,7 +105,7 @@ internal static class CardDisplayQa
             void Type(string text) => list.RaiseEvent(new TextCompositionEventArgs(Keyboard.PrimaryDevice, new TextComposition(InputManager.Current, list, text)) { RoutedEvent = TextCompositionManager.TextInputEvent });
             list.SelectedItem = studio.Cards.Single(c => c.Id == "qa.alpha");
             Type("B"); await Task.Delay(30); check(studio.Selected?.Id == "qa.beta", "card_library_text_composition_search");
-            await Task.Delay(checked((int)GetDoubleClickTime() * 2 + 100)); Type("테"); await Task.Delay(30); check(studio.Selected?.Sample == true, "card_library_korean_text_search");
+            await Task.Delay(checked((int)GetDoubleClickTime() * 2 + 100)); Type("늘"); await Task.Delay(30); check(studio.Selected?.Legacy?.Id == "neulbo", "card_library_korean_text_search");
             await ScreenEvidence.CaptureAsync(window, "card-library-keyboard", check);
             studio.Search = "Alpha"; window.UpdateLayout(); check(list.Items.Count == 1 && ((CharacterCard)list.Items[0]).Id == "qa.alpha", "card_library_filter_name");
             studio.Search = "qa.beta"; window.UpdateLayout(); check(list.Items.Count == 1 && ((CharacterCard)list.Items[0]).Id == "qa.beta", "card_library_filter_id");

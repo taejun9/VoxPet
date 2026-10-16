@@ -39,8 +39,9 @@ public sealed class StudioShellViewModel : ObservableObject
     public string[] SettingsSections => Main.Packages.IsActive ? ["마이크", "음성 반응", "방송 / 캐릭터"] : ["마이크", "음성 반응", "방송 / 캐릭터", "표정 슬롯", "눈 깜빡임 / 눈물", "의상 배치", "손동작 / 입력"];
     public string CurrentCharacter => Main.Character.Name;
     public string PackageStatus => Main.Packages.Status;
-    public IReadOnlyList<VoxPet.Core.Attachments.AttachmentDefinition> LiveAttachments => Main.Packages.Scene?.Runtime.Definition.Attachments ?? [];
-    public IReadOnlyList<VoxPet.Core.Actions.ActionDefinition> LiveActions => Main.Packages.Scene?.Runtime.Definition.Actions ?? [];
+    public CharacterRuntimeViewModel? DisplayScene => Main.Packages.Scene ?? (IsSheet ? Main.Character.CompanionScene : null);
+    public IReadOnlyList<VoxPet.Core.Attachments.AttachmentDefinition> LiveAttachments => DisplayScene?.Runtime.Definition.Attachments ?? [];
+    public IReadOnlyList<VoxPet.Core.Actions.ActionDefinition> LiveActions => DisplayScene?.Runtime.Definition.Actions ?? [];
     public IReadOnlyList<VoxPet.Core.Character.ExpressionDefinition> LiveExpressions => Main.Packages.Scene?.Runtime.Definition.Expressions ?? [];
     public bool IsLibrary => page == 1;
     public bool IsEditor => page == 5;
@@ -56,6 +57,7 @@ public sealed class StudioShellViewModel : ObservableObject
     public AsyncCommand DeleteCommand { get; }
     public RelayCommand QuickPlayCommand { get; }
     public AsyncCommand SampleCommand { get; }
+    public AsyncCommand EditCompanionCommand { get; }
     public RelayCommand StopActionsCommand { get; }
     public RelayCommand RemoveAttachmentsCommand { get; }
     public ObservableCollection<StudioAttachment> AttachmentCards { get; } = [];
@@ -71,24 +73,43 @@ public sealed class StudioShellViewModel : ObservableObject
     {
         if (closing) return;
         int destination = Page == 3 ? 3 : 2;
-        await Main.Packages.RefreshAsync(); if (closing) return;
-        var existing = Main.Packages.Entries.FirstOrDefault(e => e.CharacterId == SampleId && e.Version == SampleVersion);
-        bool ok = existing != null && await Main.Packages.SelectAsync(existing.LibraryId);
-        if (!ok && !closing) ok = await Main.Packages.ImportAsync(SamplePath);
-        Status = Main.Packages.Status;
-        if (ok && !closing) { Page = destination; UpdateAttachmentCards(); await RefreshAsync(); if (!closing) Selected = Cards.FirstOrDefault(c => c.Sample); }
+        string id = Main.SelectedCharacter.Id;
+        if ((Main.Packages.IsActive || Main.Runtime.IsActive) && !await Main.SelectCharacterAsync(id, true))
+        { Status = Main.CharacterStatus; return; }
+        if (closing || Main.SelectedCharacter.Id != id) return;
+        if (!Main.Character.HasCompanionSamples)
+        {
+            var prepared = await CompanionSampleLibrary.LoadAsync(id);
+            if (closing || Main.SelectedCharacter.Id != id || Main.Packages.IsActive || Main.Runtime.IsActive) return;
+            Main.Character.SetCompanionSamples(prepared, id);
+        }
+        if (closing) return;
+        Status = Main.Character.HasCompanionSamples ? Main.SelectedCharacter.Name + " · 의상17종과 동작9종이 준비되어 있습니다." : "의상 파일을 읽지 못했습니다. Assets/Samples 폴더를 확인하세요.";
+        Page = destination; UpdateAttachmentCards();
     }
+    public void PlayAction(string id)
+    { if (Main.Packages.IsActive) Main.Packages.Play(id); else if (IsSheet) Main.Character.PlayCompanionAction(id); }
     private void UpdateAttachmentCards()
     {
         AttachmentCards.Clear();
-        if (Main.Packages.Loaded is not { } loaded || Main.Packages.Scene is not { } scene) return;
+        if (DisplayScene is not { } scene) return;
         foreach (var item in scene.Runtime.Definition.Attachments)
         {
             var layer = item.Layers.FirstOrDefault();
-            AttachmentCards.Add(new StudioAttachment(item.Id, item.Name, item.Category, layer != null ? loaded.Images[layer.Asset] : null,
-                () => scene.Runtime.Attachments.EnabledIds.Contains(item.Id), () => { if (!Main.Packages.CanReceiveInput) return; scene.Runtime.Attachments.SetEnabled(item.Id, !scene.Runtime.Attachments.EnabledIds.Contains(item.Id)); foreach (var card in AttachmentCards) card.Refresh(); }));
+            var thumbnail = scene.Images.GetValueOrDefault("thumbnails/" + item.Id + ".png") ?? (layer != null ? scene.Images.GetValueOrDefault(layer.Asset) : null);
+            AttachmentCards.Add(new StudioAttachment(item.Id, item.Name, item.Category, thumbnail,
+                () => scene.Runtime.Attachments.EnabledIds.Contains(item.Id), () =>
+                {
+                    if (closing || !ReferenceEquals(scene, DisplayScene) || Main.Packages.IsBusy) return;
+                    scene.Runtime.Attachments.SetEnabled(item.Id, !scene.Runtime.Attachments.EnabledIds.Contains(item.Id));
+                    if (!Main.Packages.IsActive) Main.Character.RefreshMotion();
+                    foreach (var card in AttachmentCards) card.Refresh();
+                }));
         }
     }
+    private void RefreshSamples()
+    { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(DisplayScene)); UpdateAttachmentCards(); EditCompanionCommand.Refresh(); }
+
     public event Func<string?>? ChoosePackage;
     public event Func<string?>? ChooseExport;
     public event Action<int>? SettingsRequested;
@@ -96,12 +117,22 @@ public sealed class StudioShellViewModel : ObservableObject
     {
         Main = main; this.persistent = persistent;
         SampleCommand = new(UseSamplesAsync, () => !busy && !closing && !Main.Packages.IsBusy);
-        StopActionsCommand = new(() => { Main.Packages.Scene?.Stop(); Main.Hands.StopCommand.Execute(null); }, () => !closing);
-        RemoveAttachmentsCommand = new(() => { if (Main.Packages.Scene is { } scene) foreach (string id in scene.Runtime.Attachments.EnabledIds.ToArray()) scene.Runtime.Attachments.SetEnabled(id, false); foreach (var card in AttachmentCards) card.Refresh(); if (!Main.Packages.IsActive) Main.Wardrobe.RemoveAllCommand.Execute(null); }, () => !closing);
+        EditCompanionCommand = new(async () =>
+        {
+            try
+            {
+                string id = Main.Character.CompanionCharacterId;
+                if (IsSheet && await Main.Character.EditableCompanionAsync() is { } package && !closing && IsSheet && Main.Character.CompanionCharacterId == id && await Editor.OpenPackageAsync(package)) Page = 5;
+            }
+            catch (Exception error) when (CharacterPackageLibrary.Expected(error) || error is InvalidOperationException)
+            { if (!closing) Status = "편집 자료를 준비하지 못했습니다. 현재 캐릭터와 원본은 유지합니다."; }
+        }, () => !busy && !closing && IsSheet && Main.Character.HasCompanionSamples);
+        StopActionsCommand = new(() => { Main.Packages.Scene?.Stop(); Main.Character.StopCompanionActions(); Main.Hands.StopCommand.Execute(null); }, () => !closing);
+        RemoveAttachmentsCommand = new(() => { if (DisplayScene is { } scene) foreach (string id in scene.Runtime.Attachments.EnabledIds.ToArray()) scene.Runtime.Attachments.SetEnabled(id, false); foreach (var card in AttachmentCards) card.Refresh(); if (!Main.Packages.IsActive) Main.Wardrobe.RemoveAllCommand.Execute(null); Main.Character.RefreshMotion(); }, () => !closing);
         RefreshCommand = new(RefreshAsync, () => !busy && !closing);
         ImportCommand = new(async () => { if (ChoosePackage?.Invoke() is { } path) { await Main.Packages.ImportAsync(path); Status = Main.Packages.Status; await RefreshAsync(); } }, () => !busy && !closing);
         NewCommand = new(async () => { await Editor.NewAsync(); Page = 5; }, () => !busy && !closing);
-        SelectCommand = new(async () => { if (Selected == null) return; if (Selected.Sample) { await UseSamplesAsync(); return; } if (Selected.Legacy is { } legacy) await Main.SelectCharacterAsync(legacy.Id); else await Main.Packages.SelectAsync(Selected.LibraryId); Status = Main.Packages.IsActive ? Main.Packages.Status : Main.CharacterStatus; }, () => Selected != null && !busy && !closing);
+        SelectCommand = new(async () => { if (Selected == null) return; if (Selected.Legacy is { } legacy) await Main.SelectCharacterAsync(legacy.Id); else await Main.Packages.SelectAsync(Selected.LibraryId); Status = Main.Packages.IsActive ? Main.Packages.Status : Main.CharacterStatus; }, () => Selected != null && !busy && !closing);
         EditCommand = new(async () =>
         {
             if (Selected == null) return;
@@ -110,13 +141,13 @@ public sealed class StudioShellViewModel : ObservableObject
         }, () => Selected?.Legacy == null && Selected != null && !busy && !closing);
         ExportCommand = new(async () => { if (Selected == null || ChooseExport?.Invoke() is not { } path) return; var loaded = await ReadCardAsync(Selected); if (loaded != null) try { await Task.Run(() => new VoxPetPackageExporter().Export(loaded.Package, path)); Status = "캐릭터 내보내기 완료"; } catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "내보내기 실패 · " + e.Message; } }, () => Selected?.Legacy == null && Selected != null && !busy && !closing);
         DeleteCommand = new(async () => { if (Selected != null) { await Main.Packages.DeleteAsync(Selected.LibraryId); Status = Main.Packages.Status; await RefreshAsync(); } }, () => Selected?.Legacy == null && Selected != null && !Selected.Sample && !busy && !closing);
-        QuickPlayCommand = new(() => { if (Main.Packages.Scene is { } scene && scene.Runtime.Definition.Actions.FirstOrDefault() is { } action) Main.Packages.Play(action.Id); else Main.Hands.PreviewCommand.Execute(null); }, () => !closing);
-        Main.Packages.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Packages.Scene)) { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(LiveExpressions)); Notify(nameof(RuntimeState)); Notify(nameof(IsLegacy)); Notify(nameof(IsSheet)); Notify(nameof(IsImageSet)); Notify(nameof(SettingsSections)); UpdateAttachmentCards(); if (Main.Packages.IsActive && Main.SettingsTab > 2) Main.SettingsTab = 0; } if (e.PropertyName == nameof(Main.Packages.Status)) Notify(nameof(PackageStatus)); SampleCommand.Refresh(); };
-        Main.Character.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Character.RuntimeScene)) Notify(nameof(RuntimeState)); if (e.PropertyName == nameof(Main.Character.Name)) Notify(nameof(CurrentCharacter)); };
-        Main.Runtime.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Runtime.IsActive)) { Notify(nameof(IsSheet)); Notify(nameof(IsImageSet)); } };
+        QuickPlayCommand = new(() => { if (DisplayScene is { } scene && scene.Runtime.Definition.Actions.FirstOrDefault() is { } action) PlayAction(action.Id); else Main.Hands.PreviewCommand.Execute(null); }, () => !closing);
+        Main.Packages.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Packages.Scene)) { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(LiveExpressions)); Notify(nameof(RuntimeState)); Notify(nameof(IsLegacy)); Notify(nameof(IsSheet)); Notify(nameof(IsImageSet)); Notify(nameof(SettingsSections)); RefreshSamples(); if (Main.Packages.IsActive && Main.SettingsTab > 2) Main.SettingsTab = 0; } if (e.PropertyName == nameof(Main.Packages.Status)) Notify(nameof(PackageStatus)); SampleCommand.Refresh(); };
+        Main.Character.PropertyChanged += (_, e) => { if (e.PropertyName is nameof(Main.Character.RuntimeScene) or nameof(Main.Character.Motion)) Notify(nameof(RuntimeState)); if (e.PropertyName == nameof(Main.Character.Name)) Notify(nameof(CurrentCharacter)); if (e.PropertyName is nameof(Main.Character.HasCompanionSamples) or nameof(Main.Character.CompanionCharacterId) or nameof(Main.Character.CompanionScene)) RefreshSamples(); };
+        Main.Runtime.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.Runtime.IsActive)) { Notify(nameof(IsSheet)); Notify(nameof(IsImageSet)); RefreshSamples(); } };
         Main.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.VoiceLevel)) Notify(nameof(RuntimeState)); };
     }
-    private void RefreshCommands() { foreach (var c in new[] { RefreshCommand, ImportCommand, NewCommand, SelectCommand, EditCommand, ExportCommand, DeleteCommand, SampleCommand }) c.Refresh(); }
+    private void RefreshCommands() { foreach (var c in new[] { RefreshCommand, ImportCommand, NewCommand, SelectCommand, EditCommand, ExportCommand, DeleteCommand, SampleCommand, EditCompanionCommand }) c.Refresh(); }
     public async Task RefreshAsync()
     {
         if (closing || busy) return; busy = true; RefreshCommands(); string? id = Selected?.LibraryId ?? (Main.Packages.Loaded?.Package.Manifest is { Id: SampleId, Version: SampleVersion } ? "builtin-sample" : Main.Packages.Loaded?.LibraryId ?? "legacy-" + Main.SelectedCharacter.Id);
@@ -129,18 +160,9 @@ public sealed class StudioShellViewModel : ObservableObject
                 string path = Path.Combine(Main.CharacterFolder, legacy.FileName);
                 try { if (File.Exists(path)) image = await Task.Run(() => LegacyCharacterImporter.Load(path)[0, 1]); }
                 catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { /* Original remains available to the legacy recovery flow. */ }
-                cards.Add(new("legacy-" + legacy.Id, legacy.Name, legacy.Id, "v1", "", "기존 PNG 시트 · 기존 설정 유지", image, legacy));
+                cards.Add(new("legacy-" + legacy.Id, legacy.Name, legacy.Id, "v1", "", "의상17종 · 동작9종 포함 · 기존 PNG와 표정 유지", image, legacy));
             }
-            if (File.Exists(SamplePath))
-            {
-                try
-                {
-                    var sample = await Task.Run(() => CharacterPackageLibrary.Decode(new VoxPetPackageLoader().Load(SamplePath)));
-                    cards.Add(new("builtin-sample", sample.Package.Manifest.Name, SampleId, sample.Package.Manifest.Version, "VoxPet · CC0", "14분류·의상17종(헤어3종)/동작9종 · 움직이는 모자와 날개", sample.Images[sample.Package.Manifest.Thumbnail!], Sample: true));
-                }
-                catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "샘플을 읽지 못했습니다. Assets/Samples 폴더를 확인하세요. 기존 캐릭터는 유지합니다."; }
-            }
-            foreach (var entry in Main.Packages.Entries.Where(e => e.CharacterId != SampleId || e.Version != SampleVersion))
+            foreach (var entry in Main.Packages.Entries.Where(e => e.CharacterId != SampleId))
             {
                 try
                 {

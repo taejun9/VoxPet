@@ -31,6 +31,16 @@ internal static class UnifiedStudioQa
         check(item != null && Find<TextBlock>(item).Any(t => t.IsVisible && t.Foreground is SolidColorBrush b && b.Color == Colors.Black), "studio_selector_popup_black_" + id);
         combo.IsDropDownOpen = false;
     }
+    // Preserve the original native-package/editor regressions using their public fixture.
+    // Product sample navigation is independently tested on both real catalog selections.
+    private static async Task UseReferenceSamplesAsync(MainWindow window)
+    {
+        var model = window.Model; int destination = window.Studio.Page == 3 ? 3 : 2;
+        await model.Packages.RefreshAsync();
+        var current = model.Packages.Entries.FirstOrDefault(e => e.CharacterId == StudioShellViewModel.SampleId && e.Version == StudioShellViewModel.SampleVersion);
+        if (current == null) await model.Packages.ImportAsync(StudioShellViewModel.SamplePath); else await model.Packages.SelectAsync(current.LibraryId);
+        window.Studio.Page = destination; await window.Studio.RefreshAsync();
+    }
     public static async Task RunAsync(Action<bool, string> check)
     {
         string folder = Path.Combine(Path.GetTempPath(), "VoxPet-studio-qa-" + Guid.NewGuid()); Directory.CreateDirectory(folder);
@@ -41,7 +51,7 @@ internal static class UnifiedStudioQa
         {
             window.Show(); await window.Ready; model.Devices.Add(new VoxPet.App.Services.AudioDevice("qa-studio", "QA 마이크 표시 시험")); model.SelectedDevice = model.Devices[0]; resume = model.PauseVisualForQa(); window.ShowStudio();
             check(window.StudioSurface.IsVisible && !window.LayoutRoot.IsVisible && ReferenceEquals(window.SettingsTabs.Parent, window.StudioSurface.SettingsHost), "studio_single_shell_mounts_settings");
-            await window.Studio.RefreshAsync(); check(window.Studio.Cards.Count(c => c.Sample) == 1, "studio_sample_card_bundled");
+            await window.Studio.RefreshAsync(); check(window.Studio.Cards.All(c => !c.Sample), "studio_no_standalone_sample_card");
             var bundled = new VoxPetPackageLoader().Load(StudioShellViewModel.SamplePath);
             var m = bundled.Manifest;
             string previous = Path.Combine(folder, "previous.voxpet");
@@ -50,11 +60,11 @@ internal static class UnifiedStudioQa
             string previousId = model.Packages.Loaded!.LibraryId;
             string managedPrevious = Path.Combine(folder, "CharactersV2", previousId + ".voxpet");
             byte[] previousBytes = File.ReadAllBytes(managedPrevious);
-            await window.Studio.UseSamplesAsync();
+            await UseReferenceSamplesAsync(window);
             check(model.Packages.Loaded?.Package.Manifest.Version == StudioShellViewModel.SampleVersion && model.Packages.IsActive && window.Studio.AttachmentCards.Count == 17 && window.Studio.LiveAttachments.Select(a => a.Category).Distinct().Order().SequenceEqual(AttachmentSystem.Categories.Order()) && window.Studio.LiveActions.Count == 9, "studio_sample_ready_without_user_files");
             var scene = model.Packages.Scene!; double now = scene.Runtime.Actions.LastTime;
-            await window.Studio.UseSamplesAsync(); check(model.Packages.Entries.Count(e => e.CharacterId == StudioShellViewModel.SampleId && e.Version == StudioShellViewModel.SampleVersion) == 1, "studio_sample_reselect_reuses_managed_copy");
-            check(model.Packages.Entries.Any(e => e.LibraryId == previousId) && window.Studio.Cards.Any(c => c.LibraryId == previousId) && previousBytes.SequenceEqual(File.ReadAllBytes(managedPrevious)), "studio_sample_upgrade_preserves_previous_copy");
+            await UseReferenceSamplesAsync(window); check(model.Packages.Entries.Count(e => e.CharacterId == StudioShellViewModel.SampleId && e.Version == StudioShellViewModel.SampleVersion) == 1, "studio_sample_reselect_reuses_managed_copy");
+            check(model.Packages.Entries.Any(e => e.LibraryId == previousId) && previousBytes.SequenceEqual(File.ReadAllBytes(managedPrevious)), "studio_sample_upgrade_preserves_previous_copy");
             scene = model.Packages.Scene!; now = scene.Runtime.Actions.LastTime;
             window.Width = Math.Min(1280, SystemParameters.WorkArea.Width - 40); window.Height = Math.Min(820, SystemParameters.WorkArea.Height - 40); window.Left = 20; window.Top = 20;
             foreach (var card in window.Studio.AttachmentCards)
@@ -82,7 +92,7 @@ internal static class UnifiedStudioQa
                 await ScreenEvidence.CaptureAsync(window, "studio-action-" + action.Id, check);
                 model.Packages.Update(now += 1.2, 0); check(scene.Runtime.State.ActionId == null, "studio_action_idle_" + action.Id);
             }
-            window.Studio.Page = 3; await window.Studio.UseSamplesAsync(); check(window.Studio.Page == 3, "studio_action_sample_keeps_page");
+            window.Studio.Page = 3; await UseReferenceSamplesAsync(window); check(window.Studio.Page == 3, "studio_action_sample_keeps_page");
             window.Studio.AttachmentCards.Single(c => c.Id == "top").ToggleCommand.Execute(null);
             var broadcastScene = model.Packages.Scene!; double broadcastTime = broadcastScene.Runtime.Actions.LastTime;
             model.Packages.Play("heart"); model.Packages.Update(broadcastTime, 0); model.Packages.Update(broadcastTime + .2, 0);

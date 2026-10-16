@@ -4,6 +4,7 @@ from pathlib import Path
 import json
 import struct
 import sys
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[2]
 errors = []
@@ -36,9 +37,22 @@ for path in (ROOT / 'src').rglob('*.cs'):
         if forbidden in content:
             errors.append(f'{path.relative_to(ROOT)} contains forbidden API {forbidden}')
 # 배포에 필요한 잠금 파일과 고정 SDK/솔루션의 존재를 확인한다.
+for character in ('neulbo', 'pelly'):
+    try:
+        with zipfile.ZipFile(ROOT / 'src/VoxPet.App/Assets/Samples' / f'companion-{character}.voxpet') as pack:
+            m = json.loads(pack.read('manifest.json'))
+            attachments = [json.loads(pack.read(p)) for p in m['attachments']]
+            definition = json.loads(pack.read('character.json'))
+            if (pack.testzip() is not None or m['id'] != f'voxpet.samples.{character}' or len(attachments) != 17
+                    or len({a['category'] for a in attachments}) != 14 or len(m['actions']) != 9
+                    or len(definition['parts']) != 1 or definition['parts'][0]['file'] != 'samples/empty.png'
+                    or any(p.startswith('legacy/') or p.startswith('images/') for p in pack.namelist())):
+                errors.append(f'Incomplete or non-accessory companion pack: {character}')
+    except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
+        errors.append(f'Cannot validate companion samples {character}: {type(error).__name__}')
 for name in ('src/VoxPet.App/packages.lock.json', 'tests/VoxPet.Core.Tests/packages.lock.json', 'VoxPet.sln', 'global.json'):
     if not (ROOT / name).is_file(): errors.append(f'Missing release contract: {name}')
 if errors:
     for error in errors: print(f'FAIL: {error}')
     sys.exit(1)
-print('PASS: 36 RGBA PNG headers, pinned packages, no recording/network/blocking UI APIs')
+print('PASS: 36 RGBA PNG headers, two complete companion packs, pinned packages, no recording/network/blocking UI APIs')
