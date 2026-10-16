@@ -14,7 +14,7 @@ public partial class StudioShell : UserControl
     }
     private void Attach() { Detach(); attached = Model; if (attached != null) attached.PropertyChanged += Changed; Responsive(); }
     private void Detach() { if (attached != null) attached.PropertyChanged -= Changed; attached = null; }
-    private void Changed(object? sender, System.ComponentModel.PropertyChangedEventArgs e) { if (e.PropertyName == nameof(StudioShellViewModel.Page)) Responsive(); }
+    private void Changed(object? sender, System.ComponentModel.PropertyChangedEventArgs e) { if (e.PropertyName == nameof(StudioShellViewModel.Page)) { Responsive(); PageScroll.ScrollToTop(); } }
     private void Responsive()
     {
         if (SidebarColumn == null) return;

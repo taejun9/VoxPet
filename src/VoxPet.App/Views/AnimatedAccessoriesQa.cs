@@ -40,7 +40,10 @@ internal static class AnimatedAccessoriesQa
         studio.RemoveAttachmentsCommand.Execute(null); model.Packages.Update(now += .1, 0);
         check(!scene.Frame.Layers.Any(l => l.Asset.StartsWith("samples/hat") || l.Asset.StartsWith("samples/cape") || l.Asset.StartsWith("samples/hair-")), "studio_animated_accessories_remove");
         await CheckEditorAsync(window, folder, check);
-        window.ShowStudio(2);
+        window.StudioSurface.PageScroll.ScrollToBottom(); window.UpdateLayout(); await Task.Delay(30);
+        check(window.StudioSurface.PageScroll.VerticalOffset > 0, "studio_editor_scroll_fixture");
+        window.ShowStudio(2); window.UpdateLayout(); await Task.Delay(30);
+        check(window.StudioSurface.PageScroll.VerticalOffset == 0 && window.StudioSurface.SharedPreview.TranslatePoint(new Point(), window.StudioSurface.PageScroll).Y >= 0, "studio_navigation_after_editor_restores_header_and_preview");
         return now;
     }
     private static async Task CheckEditorAsync(MainWindow window, string folder, Action<bool, string> check)
@@ -88,6 +91,7 @@ internal static class AnimatedAccessoriesQa
         for (DependencyObject? ancestor = box; ancestor != null; ancestor = VisualTreeHelper.GetParent(ancestor))
             if (ancestor is ScrollViewer { Content: UIElement content } scroll && content is not TextBox)
             { scroll.ScrollToVerticalOffset(box.TranslatePoint(new Point(), content).Y - 10); break; }
+        window.StudioSurface.PageScroll.ScrollToTop(); window.UpdateLayout();
         await ScreenEvidence.CaptureAsync(window, "studio-editor-animation-" + id, check);
     }
 }

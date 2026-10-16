@@ -56,6 +56,8 @@ codex/plan-042-animated-accessories / .worktree/plan-042-animated-accessories에
 
 | 2026-10-16 | Windows 첫 실행에서 발견한 편집기 선택값의 흰 글씨를 명시적 검정 item template으로 수정하고 선택/팝업 검사를 추가한다. | 새 애니메이션 편집 진입으로 기존 편집기 선택값 대비 문제를 재현했다. 정지→반복 신규 생성의 기본 간격100ms는 fixture에서160ms를 다시 지정하도록 바로잡는다. |
 
+| 2026-10-16 | 시각 QA에서 편집 후 메뉴 전환 시 남은 외부 스크롤 위치가 제목/미리보기를 가리는 문제를 수정한다. | Page 전환 시 상단으로 복원하고 실제 스크롤 후 이동을 재현하는 회귀 검사를 추가한다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -66,6 +68,8 @@ codex/plan-042-animated-accessories / .worktree/plan-042-animated-accessories에
 | 2026-10-16 | 검증 | locked restore, Core380/380, Release 경고0/오류0, base/app/compileall/diff 통과. Windows 화면·편집 왕복 회귀 검사를 확장했다. |
 
 | 2026-10-16 | 검증 | 첫 Windows38878311478: Core380/경고0·오류0, WPF2027통과/2실패. 편집기 선택 글자색 문제와 fixture 간격 기대를 수정한다. OBS38878311487은 source1dd8fab 일치/WGC·크로마·alpha·동일 HWND·각7프레임 통과했다. |
+
+| 2026-10-16 | 검증 | 두 번째 Windows38879448822: Core380/WPF2035·portable1732/실화면321/unsigned·signed 각9개 모두 통과. OBS38879448821도 최종source3cc710c에서 통과. 시각 QA에서 편집→동작 이동의 스크롤 잔류를 추가로 발견해 수정·전체 재검증한다. 중간 ZIP042는 보존하고 최종 ZIP은 별도 이름을 쓴다. |
 
 ## Completion Notes
 
