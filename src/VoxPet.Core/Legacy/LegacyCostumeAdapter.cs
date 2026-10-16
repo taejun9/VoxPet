@@ -6,16 +6,17 @@ namespace VoxPet.Core.Legacy;
 
 public static class LegacyCostumeAdapter
 {
+    internal static string CategoryName(CostumeCategory category) => category switch
+    {
+        CostumeCategory.FaceDecoration => "faceDecoration",
+        CostumeCategory.OnePiece => "onePiece",
+        _ => category.ToString().ToLowerInvariant()
+    };
     public static AttachmentDefinition Convert(CostumeProfile profile, string asset, int order = 0)
     {
         ArgumentNullException.ThrowIfNull(profile); profile.Validate();
         string id = profile.Id.ToString("N");
-        string category = profile.Category switch
-        {
-            CostumeCategory.FaceDecoration => "faceDecoration",
-            CostumeCategory.OnePiece => "onePiece",
-            _ => profile.Category.ToString().ToLowerInvariant()
-        };
+        string category = CategoryName(profile.Category);
         string anchor = profile.EffectiveAttachment switch
         {
             MotionAttachment.Head => "head",

@@ -112,4 +112,24 @@ public sealed class CompanionSampleTests
         }
         Assert.Equal(9, poses.Count);
     }
+
+    [Theory]
+    [InlineData("neulbo")]
+    [InlineData("pelly")]
+    public void SampleTryOnTemporarilyHidesConflictingSavedClothes(string id)
+    {
+        var package = Load(id); var definition = LegacySpriteSheetAdapter.Convert(3, samples: package.Character);
+        var saved = new CostumeProfile(Guid.NewGuid(), "Saved shirt", CostumeCategory.Top, 0, 0, 512, 512);
+        var processor = new LegacySpriteSheetRuntime { Samples = package.Character, Rig = CharacterRig.Default(id), Costumes = [new(saved, "legacy/custom-shirt.png")] };
+        var runtime = new CharacterRuntime(definition, processor: processor, geometry: processor);
+        Assert.Contains(runtime.Update(new(0, 0, 0)).Layers, l => l.Asset == "legacy/custom-shirt.png");
+        foreach (string choice in new[] { "top", "onePiece" })
+        {
+            runtime.Attachments.SetEnabled(choice, true);
+            var frame = runtime.Update(new(.1, 0, 0)); Assert.DoesNotContain(frame.Layers, l => l.Asset == "legacy/custom-shirt.png");
+            Assert.True(saved.Enabled); Assert.Same(saved, processor.Costumes[0].Profile);
+            runtime.Attachments.SetEnabled(choice, false);
+            Assert.Contains(runtime.Update(new(.1, 0, 0)).Layers, l => l.Asset == "legacy/custom-shirt.png");
+        }
+    }
 }

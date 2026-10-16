@@ -11,6 +11,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
 {
     private VoxPet.Core.Character.CharacterDefinition? samples;
     private IReadOnlyDictionary<string, VoxPet.Core.Attachments.AttachmentLayer> placements = new Dictionary<string, VoxPet.Core.Attachments.AttachmentLayer>();
+    private IReadOnlyDictionary<string, string> sampleCategories = new Dictionary<string, string>();
     public VoxPet.Core.Character.CharacterDefinition? Samples
     {
         get => samples;
@@ -19,6 +20,8 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
             samples = value;
             placements = value?.Attachments.SelectMany(a => a.Layers.Select(l => (Id: "attachment-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(a.Id)) + "-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(l.Id)), Layer: l))).ToDictionary(p => p.Id, p => p.Layer)
                 ?? new Dictionary<string, VoxPet.Core.Attachments.AttachmentLayer>();
+            sampleCategories = value?.Attachments.SelectMany(a => a.Layers.Select(l => (Id: "attachment-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(a.Id)) + "-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(l.Id)), a.Category))).ToDictionary(p => p.Id, p => p.Category)
+                ?? new Dictionary<string, string>();
         }
     }
     public ExpressionProfile Profile { get; private set; } = ExpressionProfile.Default(0);
@@ -92,9 +95,12 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
             if (opacity > 0) layers.Add(new("legacy-tear-" + id, "legacy/tear.png", opacity: opacity, zIndex: 2,
                 matrix: LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.Head, 1).Compose(new(offsetX: x, offsetY: y)), width: 10, height: 20));
         int order = 0;
+        var activeCategories = frame.Layers.Where(l => sampleCategories.ContainsKey(l.Id)).Select(l => sampleCategories[l.Id]).ToHashSet(StringComparer.Ordinal);
         foreach (var item in Costumes)
         {
             var profile = item.Profile; if (!profile.Enabled) continue;
+            // A sample try-on temporarily takes precedence without rewriting saved clothes.
+            if (activeCategories.Any(category => VoxPet.Core.Attachments.AttachmentSystem.Conflicts(category, LegacyCostumeAdapter.CategoryName(profile.Category)))) continue;
             var placement = new AffineTransform2D(offsetX: profile.X, offsetY: profile.Y);
             var attachment = profile.EffectiveAttachment;
             var deformation = attachment == MotionAttachment.Garment ? geometry.Compose(item.Asset, true, profile.Follow, context) : null;
