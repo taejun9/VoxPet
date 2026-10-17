@@ -1,5 +1,5 @@
 # Published EXE only: no SDK, microphone, personal fixture, or CI desktop capture.
-param([string]$ResultsDirectory)
+param([string]$ResultsDirectory, [string]$EvidenceDirectory)
 $ErrorActionPreference = 'Stop'
 $process = $null
 try {
@@ -36,5 +36,10 @@ try {
     Write-Host "FAIL: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 } finally {
+    if (-not [string]::IsNullOrWhiteSpace($EvidenceDirectory) -and $results -and (Test-Path -LiteralPath $results)) {
+        $copy = [IO.Path]::GetFullPath($EvidenceDirectory)
+        New-Item -ItemType Directory -Path $copy -ErrorAction Stop | Out-Null
+        Get-ChildItem -LiteralPath $results | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $copy -Recurse }
+    }
     if ($null -ne $process) { $process.Dispose() }
 }
