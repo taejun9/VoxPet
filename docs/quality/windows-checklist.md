@@ -388,3 +388,14 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 공개 제작 틀로 생성/편집/실제 Anchor drag/16입/full-sprite banks/8종 timeline/trigger/pose/부착 preview·export/reimport를 검사했다. 지원 필드·원본 PNG bytes·preview/native broadcast frame exact 비교와4크기×8페이지의 입력 접근성/글자 대비가 통과했다.10개 새 화면을 시각 검토했다. OBS32.2.2 WGC/크로마/투명 native alpha/같은 HWND 배경 왕복이 통과했다. BitBlt는 기존 제한이다.
 
 증거는 artifacts/test-results/plan037/last에 보존한다. 이번 시험은 public/synthetic 자료만 쓰며 물리 마이크/권한/USB·혼합 DPI/사용자 GPU·실제 입력 장시간을 대체하지 않는다.
+
+
+## plan046 실제 파츠·무기 선택·법규
+
+2026-10-17, 앱1.2.0/코드·자산 a3e83393의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38986207016)와 [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38986206969) 전체 통과. Core421/421/skip0·formatter/analyzer·Release 경고0/오류0, WPF2515/실패0, 실제 desktop437장/CRC, 일반/서명 각9시작, CI ZIP 자체 도구2096/실패0을 확인했다. 이전405 Core/2370 WPF 검사 이름을 모두 보존했다.
+
+두 캐릭터의6파츠 PNG/팔-소매 공유 격자/독립 양발 의상 연결, 헤어3버튼, 무기7선택과 항상 들기/idle/동작/법규/캐릭터별 재시작, 편집·내보내기·재읽기를 시험했다. 새 원본 픽셀 비교로 WPF 몸통 복원의 사각 흔적을 발견·수정했고 허용치1%를 유지해656/490픽셀(각262144, 채널 차24 초과)로 통과했다. 부리 너비 변화의 머리 위치도 확인했다. Windows117화면·개인 로컬64정적합성·OBS4캡처를 직접 검토했다.
+
+최종 개인 ZIP은 artifacts/VoxPet-Windows-test-plan046.zip,54파일/104527606bytes, SHA256 561b899f2b43f88bb0772b9b31bedc9bfcdf57dba08e32bd859149c2326c101f. 시험한 공용41파일과 동일하며 기존 개인13PNG는 byte-identical로 보존했다. [자체 리뷰](../reviews/plan-046-part-wardrobe-review.md)에 상세 근거와 한계를 기록했다.
+
+Windows 자동 실행은 공개 교정 자료이며 개인 그림은 로컬 정적 합성이다. 물리 마이크/권한/USB·사용자 GPU/혼합 DPI·새60분 실기는 위 수동 매트릭스대로 별도다. OBS32.2.2 WGC/크로마/native alpha/동일 HWND 왕복은 통과했고 BitBlt 제한은 유지한다. 음성 녹음/전송과 사용자 신뢰 저장소 변경은 없다.
