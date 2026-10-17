@@ -80,6 +80,8 @@ verify_base/verify_app/compileall/diff, SDK10.0.401 locked restore/format/analyz
 
 | 2026-10-17 | UIA의 실제 입력·바인딩·렌더 처리 완료를 공통 helper로 기다리고 편집 메뉴를3회 왕복한다. | 실제 Windows JSON에서 편집 버튼20ms 판정의 간헐 실패를 확인했다. 허용치나 체크를 없애지 않고 비동기 입력을 올바른 시점에 검증한다. |
 
+| 2026-10-18 | 다중 시점 캡처는 실제 진행률·rig·효과 기준값과 대조하고 렌더 완료 후 desktop pixels를 읽는다. | 캡처 이름과 화면 자세의 불일치 가능성을 발견해, 이름만으로 정한 시점을 QA 근거로 쓰지 않는다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -128,3 +130,5 @@ Candidate4 d1bcfaa/39024251666: Core446·WPF2869/0·화면541·서명/일반 시
 Candidate5 3463e06/39025495236의 실제 JSON은 `natural_expression_editor_same_shell_neulbo` 1건 실패를 보였다. 편집 버튼에도 UI Automation 뒤20ms 고정 대기가 남아 Input 처리 전에 Normal 우선순위 continuation이 판정할 수 있었다. 모든 UIA Invoke를 하나의 helper로 묶고 Input/DataBind/Render보다 낮은 Background dispatcher 완료 뒤 판정한다. 헤어 버튼의 같은20ms도 바꾸고 편집 메뉴는 두 캐릭터에서3회씩 왕복한다. 기존 체크를 제거하지 않고 왕복4개를 추가한다. 임시 같은 EXE 재현 job은 실행 중인 기록을 남기고 저장소 최종 workflow에서 제거했다. 기본 임시 경로·진단 복사는 유지한다.
 
 동일 d1bcfaa EXE의 기본 임시 경로3회 재현(39025920013 portable_repro)은1·2회2346/0,3회 `natural_expression_editor_same_shell_neulbo` 1실패였다. 별도 전체 실행3463e06에서도 같은 이름으로 실패해, 경로 길이 문제가 아닌 편집 UIA 판정 시점의 간헐 실패를 재현했다. 원래 경로를 유지하며 진단을 보존한 효과를 확인했다. UiAutomationQa Background 완료 대기와3회 왕복 보강을 최종으로 전체 재검증한다.
+
+f4c53db Windows39026608323/OBS39026608329은 Core446·WPF2873/0·portable2350/0·desktop541·시작/서명18개까지 모두 통과했다. 최종 시각 대조에서 일부 이름상590ms 화면이 앞선 준비 자세처럼 보여, 캡처의 Normal 우선순위 대기가 Render보다 앞설 가능성을 추가 확인한다. 실제 앱 CurrentProgress·양손/몸통 rig·총구 효과를 같은 정의의 독립 기준 Runtime 5시점에 대조하는90개 통합 검사를 추가하고 매 캐릭터45개 phase JSON을 남긴다. 캡처는 Render 완료 이후100ms compositor 대기와 다시 Background 완료를 거쳐 실제 desktop pixels를 읽는다. 모델/사진의 시점이 맞는지 최종 전체 실행과 화면으로 확인하기 전에는 완료하지 않는다.

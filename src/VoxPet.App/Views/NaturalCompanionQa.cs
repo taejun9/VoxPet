@@ -78,6 +78,32 @@ internal static class NaturalCompanionQa
                 check(await model.SelectCharacterAsync(item.Id, true), "natural_select_" + item.Id); Seams(item.Id, item.SideView, check);
                 double now = model.Character.CompanionScene.Runtime.Actions.LastTime;
                 void Tick(double dt = .1) { now = Math.Max(now, model.Character.CompanionScene.Runtime.Actions.LastTime) + dt; model.Hands.Update(now); model.Character.Update(new(0, 0, 0, 0, 1, MouthState.Closed), now); }
+                var phases = new List<object>();
+                void Phase(string action, double seconds)
+                {
+                    var scene = model.Character.CompanionScene; var actual = scene.Runtime;
+                    var expected = new CharacterRuntime(actual.Definition); expected.RequestAction(action); expected.Update(new(0, 0, 0)); expected.Update(new(seconds, seconds, 0));
+                    static bool Close(AffineTransform2D a, AffineTransform2D b) => new[] { a.M11 - b.M11, a.M12 - b.M12, a.M21 - b.M21, a.M22 - b.M22, a.OffsetX - b.OffsetX, a.OffsetY - b.OffsetY }.All(v => Math.Abs(v) < .00001);
+                    bool flash = scene.Frame.Layers.Any(l => l.Asset == "samples/muzzle-flash.png");
+                    bool expectedFlash = expected.Actions.Current.Effects.Any(e => e.Asset == "samples/muzzle-flash.png");
+                    bool valid = actual.State.ActionId == action && Math.Abs(actual.Actions.Current.Progress - expected.Actions.Current.Progress) < .00001 && flash == expectedFlash &&
+                        new[] { "leftHand", "rightHand", "body" }.All(a => Close(actual.CurrentRig.Animated[a], expected.CurrentRig.Animated[a]));
+                    check(valid, $"natural_timeline_phase_{item.Id}_{action}_{(int)(seconds * 1000)}");
+                    phases.Add(new
+                    {
+                        action,
+                        seconds,
+                        actualProgress = actual.Actions.Current.Progress,
+                        expectedProgress = expected.Actions.Current.Progress,
+                        flash,
+                        expectedFlash,
+                        valid,
+                        left = actual.CurrentRig.Animated["leftHand"],
+                        right = actual.CurrentRig.Animated["rightHand"],
+                        expectedLeft = expected.CurrentRig.Animated["leftHand"],
+                        expectedRight = expected.CurrentRig.Animated["rightHand"]
+                    });
+                }
                 window.ShowStudio(2); window.UpdateLayout();
                 var selector = Find<ComboBox>(window.StudioSurface).Single(c => System.Windows.Automation.AutomationProperties.GetName(c) == "의상 분류");
                 foreach (var category in window.Studio.ClothingCategories)
@@ -127,7 +153,7 @@ internal static class NaturalCompanionQa
                     window.Studio.PlayAction(weapon.Id); Tick(0); double previous = 0;
                     foreach (double t in new[] { .26, .38, .405, .59, .76 })
                     {
-                        Tick(t - previous); previous = t;
+                        Tick(t - previous); previous = t; Phase(weapon.Id, t);
                         var scene = model.Character.CompanionScene; var matrix = scene.Frame.Layers.Single(l => l.Id == "companion-equipped-weapon").Matrix;
                         var rest = scene.Runtime.CurrentRig.Static[weapon.Anchor].Map(0, 0); var actual = matrix.Map(rest.X, rest.Y); var hand = scene.Runtime.CurrentRig.Animated[weapon.Anchor].Map(0, 0);
                         check(Math.Abs(actual.X - hand.X) < .01 && Math.Abs(actual.Y - hand.Y) < .01 && scene.Frame.Layers.Any(l => l.Asset == "samples/grip-" + (weapon.Anchor == "leftHand" ? "left" : "right") + ".png"), $"natural_grip_contact_{item.Id}_{weapon.Id}_{(int)(t * 1000)}");
@@ -140,12 +166,14 @@ internal static class NaturalCompanionQa
                     window.Studio.PlayAction(gesture); Tick(0); double previous = 0;
                     foreach (double t in new[] { .26, .38, .405, .59, .76 })
                     {
-                        Tick(t - previous); previous = t; var scene = model.Character.CompanionScene;
+                        Tick(t - previous); previous = t; Phase(gesture, t); var scene = model.Character.CompanionScene;
                         check(scene.Runtime.State.ActionId == gesture && scene.Frame.Layers.Any(l => l.Asset == "samples/" + gesture + ".png") && scene.Frame.Layers.All(l => l.Id != "companion-equipped-weapon"), $"natural_gesture_pose_{item.Id}_{gesture}_{(int)(t * 1000)}");
                         await ScreenEvidence.CaptureAsync(window, $"natural-{item.Id}-{gesture}-{(int)(t * 1000)}", check);
                     }
                     Tick(1.4);
                 }
+                if (Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } phaseFolder)
+                    File.WriteAllText(Path.Combine(phaseFolder, "voxpet-runtime-natural-phases-" + item.Id + ".json"), System.Text.Json.JsonSerializer.Serialize(phases));
                 window.Studio.PlayAction("firearm"); Tick(0); Tick(.38);
                 check(model.Character.CompanionScene.Frame.Layers.Any(l => l.Asset == "samples/muzzle-flash.png"), "natural_shoot_before_unequip_" + item.Id);
                 window.ShowStudio(6); window.UpdateLayout();

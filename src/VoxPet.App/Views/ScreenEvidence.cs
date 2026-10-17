@@ -55,7 +55,11 @@ internal static class ScreenEvidence
         {
             if (!window.IsVisible || window.WindowState == WindowState.Minimized) throw new InvalidOperationException("Screen target is not visible");
             window.SetCurrentValue(Window.TopmostProperty, true); window.Activate(); window.UpdateLayout();
+            // A Normal-priority delay continuation can overtake a pending Render.
+            // Submit the current frame before allowing the desktop compositor time.
+            await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
             await Task.Delay(100);
+            await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
             var handle = new WindowInteropHelper(window).Handle;
             if (!GetWindowRect(handle, out var bounds)) throw new InvalidOperationException("Screen bounds unavailable");
             int width = bounds.Right - bounds.Left, height = bounds.Bottom - bounds.Top;
