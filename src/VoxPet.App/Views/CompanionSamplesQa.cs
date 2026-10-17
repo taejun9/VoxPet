@@ -93,7 +93,7 @@ internal static class CompanionSamplesQa
                 }
                 var top = window.Studio.AttachmentCards.Single(c => c.Id == "top"); top.ToggleCommand.Execute(null);
                 window.Studio.Page = 3;
-                var actionPoses = new HashSet<(double Left, double Right)>();
+                var actionPoses = new HashSet<string>(); var actionImages = new HashSet<string>();
                 foreach (var action in window.Studio.LiveActions)
                 {
                     Tick(1.4); string rest = UnifiedStudioQa.Render(model.Character);
@@ -101,11 +101,20 @@ internal static class CompanionSamplesQa
                     Tick(0); Tick(.2);
                     check(scene.Runtime.State.ActionId == action.Id && UnifiedStudioQa.Render(model.Character) != rest && scene.Frame.Layers.Any(l => l.Id == "part-arm-right" && l.Mesh != null), "companion_action_moves_original_" + item.Id + "_" + action.Id);
                     check(scene.Frame.Layers.Single(l => l.Id == "part-arm-right").ZIndex > scene.Frame.Layers.Single(l => l.Id == "part-body").ZIndex, "companion_front_wing_layer_" + item.Id + "_" + action.Id);
-                    actionPoses.Add((model.Character.Motion.LeftAngle, model.Character.Motion.RightAngle));
+                    var poses = new List<string>(); var images = new List<string>();
+                    void Sample()
+                    {
+                        poses.Add(string.Join("/", new[] { "leftHand", "rightHand" }.Select(h => scene.Runtime.CurrentRig.Animated[h].ToString())));
+                        images.Add(UnifiedStudioQa.Render(model.Character));
+                    }
+                    Sample();
                     await ScreenEvidence.CaptureAsync(window, "companion-" + item.Id + "-action-" + action.Id, check);
+                    for (int sample = 0; sample < 3; sample++) { Tick(.2); Sample(); }
+                    actionPoses.Add(string.Join(";", poses)); actionImages.Add(string.Join(";", images));
                     Tick(1.3); check(scene.Runtime.State.ActionId == null && top.IsWorn, "companion_action_idle_keeps_clothes_" + item.Id + "_" + action.Id);
                 }
                 check(actionPoses.Count == 9, "companion_nine_distinct_action_poses_" + item.Id);
+                check(actionImages.Count == 9, "companion_nine_distinct_rendered_actions_" + item.Id);
                 window.Studio.RemoveAttachmentsCommand.Execute(null); window.Studio.Page = 2;
                 foreach (string id in new[] { "hat", "cape" }) window.Studio.AttachmentCards.Single(c => c.Id == id).ToggleCommand.Execute(null);
                 foreach (string hair in new[] { "hair-short", "hair-long", "hair-afro" })

@@ -27,9 +27,7 @@ public static class JointSkinning
         double rx = restEnd.X - restStart.X, ry = restEnd.Y - restStart.Y, restLength = Math.Sqrt(rx * rx + ry * ry);
         double dx = end.X - start.X, dy = end.Y - start.Y, distance = Math.Sqrt(dx * dx + dy * dy);
         if (distance < .01) return Compose(endDelta, skin, width, height, rootDelta);
-        // A wide wing cannot wrap around a tiny-radius elbow without folding its
-        // inner contour through itself. Limit curvature while preserving endpoints.
-        double bend = Math.Min(Math.Sqrt(Math.Max(0, restLength * restLength - distance * distance)) * .5, distance * .18) * (left ? 1 : -1);
+        double bend = Math.Sqrt(Math.Max(0, restLength * restLength - distance * distance)) * .5 * (left ? 1 : -1);
         // A wing whose shoulder already points at the wrist folds lengthwise.
         // Adding a second elbow curve would turn its wide inner contour inside out.
         double aimAngle = Math.Atan2(dy, dx) - Math.Atan2(ry, rx);

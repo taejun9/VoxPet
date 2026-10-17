@@ -23,6 +23,12 @@ internal static class NaturalCompanionQa
         var solid = BitmapSource.Create(512, 512, 96, 96, PixelFormats.Pbgra32, null, Enumerable.Repeat((byte)255, 512 * 512 * 4).ToArray(), 2048); solid.Freeze();
         var sheet = new ImageSource[3, 2]; for (int m = 0; m < 3; m++) for (int e = 0; e < 2; e++) sheet[m, e] = solid;
         var images = CompanionPartImages.Create(sheet, side);
+        if (side)
+        {
+            var pixel = new byte[4];
+            ((BitmapSource)images[CompanionParts.Asset("body")]).CopyPixels(new Int32Rect(350, 253, 1, 1), pixel, 4, 0);
+            check(pixel.All(c => c >= 240), "natural_neck_has_no_internal_closing_stroke_pelly");
+        }
         var p = new VoxPetPackageLoader().Load(Path.Combine(AppContext.BaseDirectory, "Assets", "Samples", "companion-" + id + ".voxpet"));
         var runtime = new CharacterRuntime(LegacySpriteSheetAdapter.Convert(3, samples: p.Character));
         runtime.RequestAction("firearm"); runtime.Update(new(0, 0, 0));

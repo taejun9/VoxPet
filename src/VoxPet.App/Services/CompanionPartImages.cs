@@ -60,6 +60,8 @@ internal static class CompanionPartImages
         // The torso may overlap only inside its reconstructed silhouette. Retaining
         // an old wing-tip outline here leaves a stationary ghost during a fold.
         Geometry extra = id == "body" ? Geometry.Combine(extension, Geometry.Parse(CompanionParts.BodyContour(side)), GeometryCombineMode.Intersect, null) : extension;
+        // A horizontal head cut must not pick up the outer shoulder outline.
+        if (side && id == "head") extra = Geometry.Combine(extra, new RectangleGeometry(new Rect(0, 0, 342, 512)), GeometryCombineMode.Intersect, null);
         var overlap = Geometry.Combine(boundary, extra, GeometryCombineMode.Union, null);
         var cut = new DrawingGroup { ClipGeometry = overlap };
         cut.Children.Add(new ImageDrawing(original, new Rect(0, 0, 512, 512)));
@@ -72,7 +74,13 @@ internal static class CompanionPartImages
             // Reconstruct the torso hidden under the original arms. A clipped-out
             // arm must not leave a transparent hole when its independent bone moves.
             var outline = new Pen(new SolidColorBrush(Color.FromRgb(65, 34, 18)), 5);
-            var underlay = Pixels(Raster(d => d.DrawGeometry(skin, outline, Geometry.Parse(CompanionParts.BodyContour(side)))));
+            string torso = CompanionParts.BodyContour(side);
+            var underlay = Pixels(Raster(d =>
+            {
+                d.DrawGeometry(skin, null, Geometry.Parse(torso));
+                // The closing edge is inside the neck, not an outside silhouette.
+                d.DrawGeometry(null, outline, Geometry.Parse(torso.TrimEnd('Z', 'z')));
+            }));
             var source = Pixels(Raster(d => d.DrawImage(original, new Rect(0, 0, 512, 512))));
             var arms = Pixels(Raster(d => { foreach (string arm in new[] { "arm-left", "arm-right" }) d.DrawGeometry(Brushes.White, null, Masks(side)[arm]); }));
             var legs = Pixels(Raster(d => { foreach (string leg in new[] { "leg-left", "leg-right" }) d.DrawGeometry(Brushes.White, null, Masks(side)[leg]); }));
@@ -116,10 +124,10 @@ internal static class CompanionPartImages
             if (side)
             {
                 var pixels = Pixels((BitmapSource)rightWing); var color = Skin(sheet[0, 1], true);
-                for (int y = 260; y < 360; y++) for (int x = 0; x < 320; x++)
+                for (int y = 240; y < 330; y++) for (int x = 0; x < 512; x++)
                 {
                     int i = (y * 512 + x) * 4; double alpha = pixels[i + 3] / 255d;
-                    double mix = Math.Clamp((360 - y) / 18d, 0, 1) * Math.Clamp((320 - x) / 14d, 0, 1);
+                    double mix = Math.Clamp((330 - y) / 30d, 0, 1);
                     pixels[i] = (byte)Math.Round(pixels[i] * (1 - mix) + color.B * alpha * mix);
                     pixels[i + 1] = (byte)Math.Round(pixels[i + 1] * (1 - mix) + color.G * alpha * mix);
                     pixels[i + 2] = (byte)Math.Round(pixels[i + 2] * (1 - mix) + color.R * alpha * mix);
