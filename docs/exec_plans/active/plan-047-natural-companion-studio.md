@@ -76,6 +76,8 @@ verify_base/verify_app/compileall/diff, SDK10.0.401 locked restore/format/analyz
 
 | 2026-10-17 | 펠리 머리 분리의 어깨 윤곽과 몸통 닫힘선은 실제 목 안쪽에 남기지 않는다. | 최종 합성에서 닫힌 body 곡선의 윗변이 목선으로 드러나, 채움은 닫고 외곽선은 열린 경로로 그리며 전용 WPF 픽셀 회귀를 추가한다. |
 
+| 2026-10-17 | ZIP 도구 실패의 JSON을 CI artifact 안에 보존하고 동일 EXE로 별도 짧은 재현을 사용한다. | 앱 WPF2869개는 통과했으나 SDK 없는 실행의 진단이 임시 폴더에만 남아, 원인 확인 시간을 줄이고 사용자 도구의 실패 정보도 보강한다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -116,3 +118,5 @@ e0cbb38 Windows39022376020/OBS39022376046은 모두 전체 성공했다. 최초 
 Windows152086e/39023300045는446 Core·이전 얼굴/표정 회귀를 통과했으나 `companion_nine_distinct_action_poses_pelly` 1건이 실패했다. 기존 검사는0.2초의 legacy LeftAngle/RightAngle만 비교해, 새 네이티브 손목 이동과 동작 후반을 보지 못한다. 같은9개 구별 요구를 유지하며 실제 양손 rig의0.2/0.4/0.6/0.8초 궤적을 비교하도록 맞추고, WPF 렌더 픽셀 해시9개 구별도 별도 추가한다. Core의4시점9동작 검증과 대응하며 체크 제거/건너뛰기는 없다.
 
 최종 로컬 후보: 팔꿈치 곡선을 늘보군에 유지하고 회전 어깨에 맞춰 접히는 펠리를 구분했다. Core446/446(core-elbow-final.trx)·Release 경고0/오류0·format verify-no-changes·verify_base124문서/verify_app/diff 통과. 다음 소스 커밋을 Windows/OBS 최종 검증 대상으로 삼는다.
+
+Candidate4 d1bcfaa/39024251666: Core446·WPF2869/0·화면541·서명/일반 시작 각9개 통과 후 SDK 없는 ZIP 실행에서 exit1이 발생했다. 기존 스크립트가 결과를 별도 임시 폴더에 쓰고 실패 이름을 출력하지 않아 이 단계의 JSON이 CI 업로드에 빠졌다. 실패 이름/예외 종류 출력과 선택 결과 폴더를 추가하고 CI 증거 안에 보존한다. 같은 d1bcfaa EXE로 짧은 별도 Windows 재현 job을 임시 사용한 뒤 제거하며, 최종 전체 QA는 유지한다.
