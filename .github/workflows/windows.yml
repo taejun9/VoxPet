@@ -94,38 +94,3 @@ jobs:
             ${{ runner.temp }}/voxpet-screen-*.png
             ${{ runner.temp }}/voxpet-screen-*.json
           if-no-files-found: warn
-
-  portable_repro:
-    if: contains(github.event.head_commit.message, '[portable-repro]')
-    runs-on: windows-latest
-    timeout-minutes: 12
-    permissions:
-      contents: read
-      actions: read
-    steps:
-      - uses: actions/checkout@v7
-      - name: Reproduce the exact published EXE without SDK or desktop-capture environment
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $source = gh run view 39024251666 --json headSha --jq .headSha
-          if ($LASTEXITCODE -ne 0 -or $source -ne 'd1bcfaa424d48a4b31b533affea29baa98f0fbbe') { throw 'Repro source mismatch' }
-          gh run download 39024251666 -n VoxPet-win-x64 -D artifacts/repro-publish
-          if ($LASTEXITCODE -ne 0) { throw 'Published EXE download failed' }
-          Copy-Item harness/windows-test/TEST-SMOKE.ps1 artifacts/repro-publish/TEST-SMOKE.ps1
-          $failed = 0
-          foreach ($attempt in 1..3) {
-            powershell.exe -NoProfile -ExecutionPolicy Bypass -File artifacts/repro-publish/TEST-SMOKE.ps1 -EvidenceDirectory "artifacts/test-results/portable-repro/$attempt" | Tee-Object "artifacts/portable-repro-$attempt.log"
-            if ($LASTEXITCODE -ne 0) { $failed++ }
-          }
-          if ($failed -ne 0) { throw "$failed of 3 default-path reproductions failed" }
-      - name: Preserve portable diagnostics
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: Portable-repro-evidence
-          path: |
-            artifacts/test-results/portable-repro/
-            artifacts/portable-repro-*.log
-          if-no-files-found: error

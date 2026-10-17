@@ -78,6 +78,8 @@ verify_base/verify_app/compileall/diff, SDK10.0.401 locked restore/format/analyz
 
 | 2026-10-17 | ZIP 도구 실패의 JSON을 CI artifact 안에 보존하고 동일 EXE로 별도 짧은 재현을 사용한다. | 앱 WPF2869개는 통과했으나 SDK 없는 실행의 진단이 임시 폴더에만 남아, 원인 확인 시간을 줄이고 사용자 도구의 실패 정보도 보강한다. |
 
+| 2026-10-17 | UIA의 실제 입력·바인딩·렌더 처리 완료를 공통 helper로 기다리고 편집 메뉴를3회 왕복한다. | 실제 Windows JSON에서 편집 버튼20ms 판정의 간헐 실패를 확인했다. 허용치나 체크를 없애지 않고 비동기 입력을 올바른 시점에 검증한다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -122,3 +124,7 @@ Windows152086e/39023300045는446 Core·이전 얼굴/표정 회귀를 통과했�
 Candidate4 d1bcfaa/39024251666: Core446·WPF2869/0·화면541·서명/일반 시작 각9개 통과 후 SDK 없는 ZIP 실행에서 exit1이 발생했다. 기존 스크립트가 결과를 별도 임시 폴더에 쓰고 실패 이름을 출력하지 않아 이 단계의 JSON이 CI 업로드에 빠졌다. 실패 이름/예외 종류 출력과 선택 결과 폴더를 추가하고 CI 증거 안에 보존한다. 같은 d1bcfaa EXE로 짧은 별도 Windows 재현 job을 임시 사용한 뒤 제거하며, 최종 전체 QA는 유지한다.
 
 동일 d1bcfaa EXE의 첫 빠른 재현은 통과했다. 다만 선택 결과 폴더가 저장 위치를 바꾸므로, 사용자 기본 임시 경로를 유지하고 종료 뒤 증거만 별도 폴더로 복사하도록 보강한다. 실제 기본 경로로3회 반복하며 첫 실패의 정보를 잃지 않도록 한다. 원인 미확인 실패를 재실행 성공만으로 해결됐다고 판정하지 않는다.
+
+Candidate5 3463e06/39025495236의 실제 JSON은 `natural_expression_editor_same_shell_neulbo` 1건 실패를 보였다. 편집 버튼에도 UI Automation 뒤20ms 고정 대기가 남아 Input 처리 전에 Normal 우선순위 continuation이 판정할 수 있었다. 모든 UIA Invoke를 하나의 helper로 묶고 Input/DataBind/Render보다 낮은 Background dispatcher 완료 뒤 판정한다. 헤어 버튼의 같은20ms도 바꾸고 편집 메뉴는 두 캐릭터에서3회씩 왕복한다. 기존 체크를 제거하지 않고 왕복4개를 추가한다. 임시 같은 EXE 재현 job은 실행 중인 기록을 남기고 저장소 최종 workflow에서 제거했다. 기본 임시 경로·진단 복사는 유지한다.
+
+동일 d1bcfaa EXE의 기본 임시 경로3회 재현(39025920013 portable_repro)은1·2회2346/0,3회 `natural_expression_editor_same_shell_neulbo` 1실패였다. 별도 전체 실행3463e06에서도 같은 이름으로 실패해, 경로 길이 문제가 아닌 편집 UIA 판정 시점의 간헐 실패를 재현했다. 원래 경로를 유지하며 진단을 보존한 효과를 확인했다. UiAutomationQa Background 완료 대기와3회 왕복 보강을 최종으로 전체 재검증한다.

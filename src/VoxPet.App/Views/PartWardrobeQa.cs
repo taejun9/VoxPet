@@ -82,8 +82,7 @@ internal static class PartWardrobeQa
                 {
                     var card = window.Studio.HairCards.Single(c => c.Id == hair);
                     var button = Find<Button>(window.StudioSurface).Single(b => ReferenceEquals(b.DataContext, card));
-                    var invoke = (System.Windows.Automation.Provider.IInvokeProvider)new System.Windows.Automation.Peers.ButtonAutomationPeer(button).GetPattern(System.Windows.Automation.Peers.PatternInterface.Invoke);
-                    invoke.Invoke(); await Task.Delay(20);
+                    await UiAutomationQa.InvokeAsync(button); window.UpdateLayout();
                     Tick(); check(card.IsWorn && button.IsVisible && scene.Runtime.Attachments.EnabledIds.Contains(hair), "parts_hair_visible_and_worn_" + entry.Id + "_" + hair);
                     await ScreenEvidence.CaptureAsync(window, "parts-" + entry.Id + "-" + hair, check);
                 }

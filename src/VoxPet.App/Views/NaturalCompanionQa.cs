@@ -17,7 +17,6 @@ internal static class NaturalCompanionQa
 {
     private static IEnumerable<T> Find<T>(DependencyObject node) where T : DependencyObject
     { if (node is T item) yield return item; for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++) foreach (var child in Find<T>(VisualTreeHelper.GetChild(node, i))) yield return child; }
-    private static void Invoke(Button button) => ((System.Windows.Automation.Provider.IInvokeProvider)new System.Windows.Automation.Peers.ButtonAutomationPeer(button).GetPattern(System.Windows.Automation.Peers.PatternInterface.Invoke)).Invoke();
     private static void Seams(string id, bool side, Action<bool, string> check)
     {
         var solid = BitmapSource.Create(512, 512, 96, 96, PixelFormats.Pbgra32, null, Enumerable.Repeat((byte)255, 512 * 512 * 4).ToArray(), 2048); solid.Freeze();
@@ -95,10 +94,8 @@ internal static class NaturalCompanionQa
                 check(window.Studio.Page == 6 && window.Studio.IsExpressions && Find<ItemsControl>(window.StudioSurface).Any(c => c.IsVisible && System.Windows.Automation.AutomationProperties.GetName(c) == "표정 슬롯 선택"), "natural_expression_sidebar_visible_" + item.Id);
                 foreach (var slot in model.Expressions.Slots)
                 {
-                    var button = Find<Button>(window.StudioSurface).Single(b => ReferenceEquals(b.DataContext, slot) && b.IsVisible); Invoke(button);
-                    // UI Automation posts its click at Input priority. Drain it before
-                    // asserting; a Normal-priority fixed delay can overtake that click.
-                    await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Input);
+                    var button = Find<Button>(window.StudioSurface).Single(b => ReferenceEquals(b.DataContext, slot) && b.IsVisible);
+                    await UiAutomationQa.InvokeAsync(button);
                     for (int attempt = 0; attempt < 100 && (model.Expressions.Selected != slot || model.Character.ExpressionKind != slot.Saved.Kind); attempt++) await Task.Delay(10);
                     Tick(.4);
                     bool valid = model.Expressions.Selected == slot && model.Character.ExpressionKind == slot.Saved.Kind && model.Character.CompanionScene.Runtime.Attachments.EnabledIds.Count == 3 && model.Character.CompanionScene.Frame.Layers.Any(l => l.Id == "companion-equipped-weapon");
@@ -114,8 +111,14 @@ internal static class NaturalCompanionQa
                     await ScreenEvidence.CaptureAsync(window, $"natural-{item.Id}-expression-{(int)size.Width}", check);
                 }
                 window.Width = Math.Min(1100, SystemParameters.WorkArea.Width - 32); window.Height = Math.Min(760, SystemParameters.WorkArea.Height - 32); window.UpdateLayout();
-                var edit = Find<Button>(window.StudioSurface).Single(b => b.IsVisible && b.Content is string text && text == "슬롯 편집 / PNG 등록"); Invoke(edit); await Task.Delay(20);
-                check(window.Studio.Page == 4 && model.SettingsTab == 3 && window.SettingsTabs.IsVisible && !window.LayoutRoot.IsVisible, "natural_expression_editor_same_shell_" + item.Id);
+                for (int round = 1; round <= 3; round++)
+                {
+                    if (round > 1) { window.ShowStudio(6); window.UpdateLayout(); }
+                    var edit = Find<Button>(window.StudioSurface).Single(b => b.IsVisible && b.Content is string text && text == "슬롯 편집 / PNG 등록");
+                    await UiAutomationQa.InvokeAsync(edit); window.UpdateLayout();
+                    check(window.Studio.Page == 4 && model.SettingsTab == 3 && window.SettingsTabs.IsVisible && !window.LayoutRoot.IsVisible,
+                        "natural_expression_editor_same_shell_" + item.Id + (round == 1 ? "" : "_round" + round));
+                }
                 window.ShowStudio(3); model.Equipment.HoldWeapon = false;
                 check(!window.Studio.HasLegacyQuickActions && Find<Button>(window.StudioSurface).Where(b => b.Tag is string tag && int.TryParse(tag, out int n) && n is >= 0 and <= 4).All(b => !b.IsVisible), "natural_no_duplicate_legacy_gestures_" + item.Id);
                 window.Studio.AttachmentCards.Single(c => c.Id == "handAccessory").ToggleCommand.Execute(null);
@@ -147,8 +150,7 @@ internal static class NaturalCompanionQa
                 check(model.Character.CompanionScene.Frame.Layers.Any(l => l.Asset == "samples/muzzle-flash.png"), "natural_shoot_before_unequip_" + item.Id);
                 window.ShowStudio(6); window.UpdateLayout();
                 var switchSlot = model.Expressions.Slots.First(s => s.Saved.Kind != model.Character.ExpressionKind);
-                Invoke(Find<Button>(window.StudioSurface).Single(b => b.IsVisible && ReferenceEquals(b.DataContext, switchSlot)));
-                await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Input); Tick(0);
+                await UiAutomationQa.InvokeAsync(Find<Button>(window.StudioSurface).Single(b => b.IsVisible && ReferenceEquals(b.DataContext, switchSlot))); Tick(0);
                 var transition = model.Character.CompanionScene.Frame;
                 check(transition.Layers.Any(l => l.Id == "legacy-previous-head") && transition.Layers.All(l => l.Id != "legacy-previous") && transition.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal) && l.Id != "part-head").All(l => l.Opacity == 1), "natural_expression_during_action_no_body_ghost_" + item.Id);
                 await ScreenEvidence.CaptureAsync(window, "natural-" + item.Id + "-expression-during-action", check);
