@@ -138,6 +138,33 @@ public sealed class NaturalCompanionTests
         Assert.Contains(frame.Layers, l => l.Id == "companion-equipped-weapon");
     }
     [Theory]
+    [InlineData("claw")]
+    [InlineData("heart")]
+    [InlineData("toy-gun")]
+    [InlineData("toy-sword")]
+    [InlineData("magic-wand")]
+    [InlineData("firearm")]
+    [InlineData("bow")]
+    [InlineData("one-hand")]
+    [InlineData("two-hand")]
+    public void FoldingWingNeverTurnsItsFeatherStripsInsideOut(string action)
+    {
+        var runtime = Load("pelly").CreateRuntime(); runtime.RequestAction(action); runtime.Update(new(0, 0, 0));
+        for (int i = 1; i < 60; i++)
+        {
+            var frame = runtime.Update(new(i * .02, .02, 0));
+            var mesh = frame.Layers.Single(l => l.Id == "part-arm-right").Mesh;
+            if (mesh == null) continue;
+            foreach (var triangle in mesh.Triangles)
+            {
+                double x = (triangle.A.X + triangle.B.X + triangle.C.X) / 3, y = (triangle.A.Y + triangle.B.Y + triangle.C.Y) / 3;
+                if (x is <= 300 or >= 440 || y is <= 302 or >= 402) continue;
+                var m = triangle.Matrix;
+                Assert.True(m.M11 * m.M22 - m.M12 * m.M21 > 0, $"{action} at {i * 20}ms folds a feather strip");
+            }
+        }
+    }
+    [Theory]
     [InlineData("neulbo")]
     [InlineData("pelly")]
     public void ShootingHasBriefMuzzleFlashRecoilAndRecovery(string id)

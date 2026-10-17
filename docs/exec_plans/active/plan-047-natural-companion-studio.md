@@ -101,3 +101,9 @@ verify_base/verify_app/compileall/diff, SDK10.0.401 locked restore/format/analyz
 - 최신 소스 Release 빌드 경고0/오류0, Core437/437 통과(core-final-candidate.trx), format verify-no-changes 통과. verify_base124문서/verify_app/diff 통과.
 - 원본 PNG 없이 Core226개 프레임을 내보내 실제 개인 원본의 로컬 합성과 비교한다. 두 패키지는 각각114항목,17착용/14분류/9동작이며 개인/대체 캐릭터 이미지를 포함하지 않는다.
 - 첫 Windows 실패27건의 수정과 머리만 표정 전환/목 안쪽 보완/발 경계/양팔 전경/멜빵 순서/손하트를 포함한 새 Windows 전체 실행을 진행한다. 결과 전에는 합격 처리하지 않는다.
+
+## Candidate2 and final visual corrections
+
+e0cbb38 Windows39022376020/OBS39022376046은 모두 전체 성공했다. 최초 실패27건은 제거/완화하지 않고 수정 후 통과했다. 그 뒤 실제 개인 합성에서 펠리의 넓은 날개가 작은 반경으로 접히며 안쪽 면이 뒤집히는 결함을 발견해, 어깨를 손목 방향으로 회전하고 그 축을 따라 날개가 접히도록 수정했다. 어깨 뒤 몸통과 동작용 날개 뿌리도 보완하고 겉옷 잠금선의 밑단 돌출을 고쳤다. 새9개 동작별20ms 검사에서 깃털 면의 양의 방향을 확인하며 Core446/446 통과했다. 이 추가 수정도 Windows/OBS 전체를 다시 실행한다.
+
+| 2026-10-17 | 펠리 팔 root는 회전하는 shoulder를 쓰고 몸통 보완은 원본 arm 영역으로 제한한다. | 넓은 깃털을 고정 몸통 축으로 구부리면 실제 합성에서 면이 뒤집혀, 손목 접점과 깃털 방향을 함께 유지한다. |

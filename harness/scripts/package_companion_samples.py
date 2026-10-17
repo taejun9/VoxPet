@@ -23,7 +23,10 @@ def build(character_id):
     skinning = dict(rootAnchor='body', rootY=315 if character_id=='neulbo' else 302, fullY=422 if character_id=='neulbo' else 402)
     for part in definition['parts']:
         if part['type'] == 'arm': part['skinning'] = dict(skinning, endAnchor='leftHand' if part['id']=='arm-left' else 'rightHand')
-    if character_id == 'pelly': definition['parts'][0]['skinning'].update(rootY=360, fullY=427)
+    if character_id == 'pelly':
+        for part in definition['parts']:
+            if part['type']=='arm': part['skinning']['rootAnchor']=part['anchor']
+        definition['parts'][0]['skinning'].update(rootY=360, fullY=427)
     for key in ['mouth', 'expressions', 'face']:
         definition.pop(key, None)
     # Public pack has no stand-in character. The app supplies the selected real sheet.
@@ -88,7 +91,9 @@ def build(character_id):
             attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftShoulder', 91, 'arm-left'), ('body', 'body', 65 if kind=='outerwear' else 60, 'body'), ('right', 'rightShoulder', 101, 'arm-right')]]
             for layer in attachment['layers']:
                 if layer['id'] in ['left', 'right']: layer['skinning'] = dict(skinning, endAnchor='leftHand' if layer['id']=='left' else 'rightHand')
-            if character_id == 'pelly': attachment['layers'][0]['skinning'].update(rootY=360, fullY=427)
+            if character_id == 'pelly':
+                attachment['layers'][0]['skinning'].update(rootY=360, fullY=427,rootAnchor='leftShoulder')
+                attachment['layers'][2]['skinning']['rootAnchor']='rightShoulder'
             attachment['layers'].append(dict(id='collar', file=f'samples/{kind}-collar.png', anchor='body', zIndex=85 if kind=='top' else 86, requiredVisibleParts=['body']))
         if kind == 'onePiece':
             attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('body', 'body', 60, 'body'), ('left', 'leftFoot', 55, 'leg-left'), ('right', 'rightFoot', 55, 'leg-right')]]
@@ -99,7 +104,7 @@ def build(character_id):
             if kind == 'shoes':
                 for layer in attachment['layers']: layer['replacesParts'] = layer['requiredVisibleParts']
         if kind == 'handAccessory':
-            attachment['layers'][0].update(anchor='rightShoulder', skinning=dict(skinning, endAnchor='rightHand'), requiredVisibleParts=['arm-right'])
+            attachment['layers'][0].update(anchor='rightShoulder', skinning=dict(skinning, endAnchor='rightHand',rootAnchor='rightShoulder' if character_id=='pelly' else 'body'), requiredVisibleParts=['arm-right'])
         if attachment['id'] == 'faceDecoration':
             attachment['layers'][0]['anchor'] = 'head'
             attachment['layers'][0]['inherit']['mouthMotion'] = False

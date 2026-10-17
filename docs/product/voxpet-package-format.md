@@ -60,7 +60,7 @@ CharacterDocument는 변경하지 않은 지원 모델·manifest의 character/ac
 
 action의 선택 `interpolateTransforms:true`는 같은 target의 두 transform 키 사이를 smoothstep으로 보간한다. 기본false는 기존 step 의미를 유지한다. pose 이벤트는 트랙을 초기화하므로 그 경계를 넘겨 보간하지 않는다. 반전 배율은0을 지나지 않게 다음 키에서 전환한다.
 
-part와 attachment layer의 `skinning`은 기존 rootY/fullY에 선택 `rootAnchor`/`endAnchor`를 지원한다. rootAnchor의 기준 변환에서 endAnchor의 기준 변환까지 Y 가중치를 늘린다. 기본값은 기존 고정 어깨/부위 앵커이며 두 앵커는 character에 존재해야 한다. 몸통 기울기와 손목/무기의 접점을 함께 유지할 때 사용한다. 양 끝 앵커가 있는 팔/소매는 원본 단면 폭을 유지하는 팔꿈치 곡선으로 굽히며 기존 skinning 기본값은 유지한다.
+part와 attachment layer의 `skinning`은 기존 rootY/fullY에 선택 `rootAnchor`/`endAnchor`를 지원한다. rootAnchor의 기준 변환에서 endAnchor의 기준 변환까지 Y 가중치를 늘린다. 기본값은 기존 고정 어깨/부위 앵커이며 두 앵커는 character에 존재해야 한다. 몸통 기울기와 손목/무기의 접점을 함께 유지할 때 사용한다. 양 끝 앵커가 있는 팔/소매는 원본 단면 폭을 유지하는 팔꿈치 곡선으로 굽힌다. 어깨 회전이 손목 방향과 일치하면 그 축을 따라 접혀 넓은 날개가 안쪽으로 뒤집히는 것을 피한다. 기존 skinning 기본값은 유지한다.
 
 attachment layer의 선택 `replacesParts:[ID…]`는 실제로 resolve되어 그려지는 동안에만 해당 원본 part 레이어를 대체한다. 필수 파츠/포즈/호환 태그 때문에 숨겨진 의상은 원본을 제거하지 않는다. 선택 해제·재생 종료에는 원본 part가 다시 보인다. 기본 신발은 양발을 각각 대체한다.
 

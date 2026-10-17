@@ -27,7 +27,14 @@ public static class JointSkinning
         double rx = restEnd.X - restStart.X, ry = restEnd.Y - restStart.Y, restLength = Math.Sqrt(rx * rx + ry * ry);
         double dx = end.X - start.X, dy = end.Y - start.Y, distance = Math.Sqrt(dx * dx + dy * dy);
         if (distance < .01) return Compose(endDelta, skin, width, height, rootDelta);
-        double bend = Math.Sqrt(Math.Max(0, restLength * restLength - distance * distance)) * .5 * (left ? 1 : -1);
+        // A wide wing cannot wrap around a tiny-radius elbow without folding its
+        // inner contour through itself. Limit curvature while preserving endpoints.
+        double bend = Math.Min(Math.Sqrt(Math.Max(0, restLength * restLength - distance * distance)) * .5, distance * .18) * (left ? 1 : -1);
+        // A wing whose shoulder already points at the wrist folds lengthwise.
+        // Adding a second elbow curve would turn its wide inner contour inside out.
+        double aimAngle = Math.Atan2(dy, dx) - Math.Atan2(ry, rx);
+        double aligned = Math.Atan2(Math.Sin(aimAngle - Math.Atan2(rootDelta.M12, rootDelta.M11)), Math.Cos(aimAngle - Math.Atan2(rootDelta.M12, rootDelta.M11)));
+        if (Math.Abs(aligned) < .001) bend = 0;
         var elbow = new RigPoint((start.X + end.X) * .5 - dy / distance * bend, (start.Y + end.Y) * .5 + dx / distance * bend);
         var control = new RigPoint(elbow.X * 2 - (start.X + end.X) * .5, elbow.Y * 2 - (start.Y + end.Y) * .5);
         double restAngle = Math.Atan2(ry, rx), rootAngle = Math.Atan2(rootDelta.M12, rootDelta.M11);
@@ -46,7 +53,7 @@ public static class JointSkinning
             double t = (p.Y - skin.RootY) / (skin.FullY - skin.RootY), u = 1 - t;
             double cx = u * u * start.X + 2 * u * t * control.X + t * t * end.X, cy = u * u * start.Y + 2 * u * t * control.Y + t * t * end.Y;
             double tx = 2 * (u * (control.X - start.X) + t * (end.X - control.X)), ty = 2 * (u * (control.Y - start.Y) + t * (end.Y - control.Y));
-            double amount = Math.Clamp(t * 4, 0, 1); amount = amount * amount * (3 - 2 * amount);
+            double amount = t; amount = amount * amount * (3 - 2 * amount);
             double angle = rootAngle + Angle(Math.Atan2(ty, tx) - restAngle - rootAngle) * amount;
             double scale = Math.Sqrt(rootDelta.M11 * rootDelta.M11 + rootDelta.M12 * rootDelta.M12) * u + Math.Sqrt(endDelta.M11 * endDelta.M11 + endDelta.M12 * endDelta.M12) * t;
             double offset = (p.X - CenterX(p.Y)) * scale;

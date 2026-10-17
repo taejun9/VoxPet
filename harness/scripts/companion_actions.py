@@ -24,6 +24,9 @@ def build_actions(files, manifest, character_id, anchors):
             rest = position('rightHand')
             aim = (310,355) if side else (300,350)
             turn = 52 if kind=='claw' else 24
+            if side:
+                sx, sy = position('rightShoulder'); hx, hy = position('rightHand')
+                turn = math.degrees(math.atan2(aim[1]-sy, aim[0]-sx)-math.atan2(hy-sy,hx-sx))
             for time, target, angle in [(0,rest,0),(180 if kind=='claw' else 220,aim,turn),(700 if kind=='claw' else 780,aim,turn),(duration,rest,0)]:
                 sx,sy = position('rightShoulder');hx,hy = rest;a = math.radians(angle)
                 dx,dy = target[0]-sx,target[1]-sy
@@ -42,6 +45,9 @@ def build_actions(files, manifest, character_id, anchors):
                 events.append(dict(time=0, sprite=dict(target='arm-'+arm, file='parts/arm-'+arm+'-grip.png')))
         knots = []
         def pose(time, r, l=None, angle=0, left_angle=0, body=0, shoulder=0, record=True):
+            if side and kind=='two-hand' and 220 <= time <= 940:
+                rad = math.radians(angle)
+                l = (r[0]-23*math.sin(rad), r[1]+23*math.cos(rad))
             if kind=='two-hand' and record:
                 knots.append((time, r, l or position('leftHand'), angle, left_angle, body, shoulder))
                 return
@@ -50,6 +56,8 @@ def build_actions(files, manifest, character_id, anchors):
             for hand, target, rotation, turn in [('right', r, angle, shoulder), ('left', l or position('leftHand'), left_angle, -shoulder*.35)]:
                 sx, sy = position(hand+'Shoulder')
                 hx, hy = position(hand+'Hand')
+                if side:
+                    turn = math.degrees(math.atan2(target[1]-sy,target[0]-sx)-math.atan2(hy-sy,hx-sx))
                 a = math.radians(turn)
                 dx, dy = target[0]-sx, target[1]-sy
                 local_x = dx*math.cos(a)+dy*math.sin(a)-(hx-sx)

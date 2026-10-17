@@ -109,9 +109,27 @@ internal static class CompanionPartImages
         foreach (string hand in new[] { "left", "right" })
         {
             var arm = result[CompanionParts.Asset("arm-" + hand)];
+            // The original tucked wing has a dark inner crease against the torso.
+            // A reaching wing exposes that crease as a false shoulder hole. Repair
+            // only its hidden root in the action copy using the original skin tone.
+            var rightWing = result[CompanionParts.Asset("arm-right")];
+            if (side)
+            {
+                var pixels = Pixels((BitmapSource)rightWing); var color = Skin(sheet[0, 1], true);
+                for (int y = 260; y < 360; y++) for (int x = 0; x < 320; x++)
+                {
+                    int i = (y * 512 + x) * 4; double alpha = pixels[i + 3] / 255d;
+                    double mix = Math.Clamp((360 - y) / 18d, 0, 1) * Math.Clamp((320 - x) / 14d, 0, 1);
+                    pixels[i] = (byte)Math.Round(pixels[i] * (1 - mix) + color.B * alpha * mix);
+                    pixels[i + 1] = (byte)Math.Round(pixels[i + 1] * (1 - mix) + color.G * alpha * mix);
+                    pixels[i + 2] = (byte)Math.Round(pixels[i + 2] * (1 - mix) + color.R * alpha * mix);
+                }
+                var repaired = BitmapSource.Create(512, 512, 96, 96, PixelFormats.Pbgra32, null, pixels, 512 * 4); repaired.Freeze();
+                rightWing = repaired;
+                if (hand == "right") arm = rightWing;
+            }
             if (side && hand == "left")
             {
-                var rightWing = result[CompanionParts.Asset("arm-right")];
                 // The hidden far wing is reconstructed locally from the original
                 // feather pixels. It is only selected by two-hand action sprites.
                 arm = Raster(d => { d.PushTransform(new MatrixTransform(-.55, 0, 0, .55, 420.35, 205.9)); d.DrawImage(rightWing, new Rect(0, 0, 512, 512)); d.Pop(); });
