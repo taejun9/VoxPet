@@ -23,6 +23,13 @@ internal static class PartWardrobeQa
         var image = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); image.Render(visual);
         var pixels = new byte[512 * 512 * 4]; image.CopyPixels(pixels, 512 * 4, 0); return pixels;
     }
+    private static double BlueHeadCenter(ImageSource image)
+    {
+        var pixels = Pixels(d => d.DrawImage(image, new Rect(0, 0, 512, 512))); long sum = 0; int count = 0;
+        for (int i = 0; i < pixels.Length; i += 4)
+            if (pixels[i + 3] > 240 && pixels[i + 2] > 150 && pixels[i] - pixels[i + 2] > 35 && pixels[i + 1] - pixels[i + 2] > 25) { sum += i / 4 % 512; count++; }
+        return count > 1000 ? (double)sum / count : double.NaN;
+    }
     public static async Task RunAsync(Action<bool, string> check)
     {
         string folder = Path.Combine(Path.GetTempPath(), "VoxPet-parts-qa-" + Guid.NewGuid()), characters = Path.Combine(folder, "Characters"); Directory.CreateDirectory(characters);
@@ -48,7 +55,7 @@ internal static class PartWardrobeQa
                 using (var stream = new MemoryStream(body, false))
                 {
                     var bitmap = new PngBitmapDecoder(stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad).Frames[0]; var pixel = new byte[4];
-                    bitmap.CopyPixels(new Int32Rect(256, 470, 1, 1), pixel, 4, 0);
+                    bitmap.CopyPixels(new Int32Rect(256, 500, 1, 1), pixel, 4, 0);
                     check(pixel[3] == 255, "parts_body_keeps_pixels_between_feet_" + entry.Id);
                 }
                 foreach (var part in CompanionParts.Ids)
@@ -63,6 +70,7 @@ internal static class PartWardrobeQa
                 var rebuilt = Pixels(d => RenderFrameDrawing.Draw(d, new RenderFrame(scene.Frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal))), scene.Images));
                 int changed = Enumerable.Range(0, 512 * 512).Count(i => Enumerable.Range(0, 4).Any(c => Math.Abs(original[i * 4 + c] - rebuilt[i * 4 + c]) > 24));
                 check(changed < 512 * 512 / 100, "parts_rest_pixels_preserve_original_" + entry.Id);
+                if (entry.SideView) check(Math.Abs(BlueHeadCenter(scene.Images[CompanionParts.Head(0, 1)]) - BlueHeadCenter(scene.Images[CompanionParts.Head(model.Character.MouthFrameCount - 1, 1)])) < 1, "parts_head_stays_registered_when_bill_widens");
                 if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") == "true" && Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } pixelFolder)
                     File.WriteAllText(Path.Combine(pixelFolder, "voxpet-runtime-part-pixels-" + entry.Id + ".json"), System.Text.Json.JsonSerializer.Serialize(new { changed, total = 512 * 512, tolerance = 24, maxChangedFraction = .01, layers = scene.Frame.Layers.Select(l => new { l.Id, l.Opacity, l.Matrix, mesh = l.Mesh != null }) }));
                 foreach (string costume in new[] { "top", "bottom", "shoes" }) window.Studio.AttachmentCards.Single(c => c.Id == costume).ToggleCommand.Execute(null);

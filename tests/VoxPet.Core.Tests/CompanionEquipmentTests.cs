@@ -1,4 +1,5 @@
 using VoxPet.Core.Character;
+using VoxPet.Core.Actions;
 using VoxPet.Core.Legacy;
 using VoxPet.Core.Models;
 using VoxPet.Core.Packages;
@@ -45,7 +46,7 @@ public sealed class CompanionEquipmentTests
         var p = Load(id); var runtime = new CharacterRuntime(LegacySpriteSheetAdapter.Convert(3, samples: p.Character));
         foreach (var garment in new[] { "top", "outerwear" })
         {
-            runtime.Attachments.SetEnabled(garment, true); runtime.Attachments.SetEnabled("shoes", true);
+            runtime.Attachments.SetEnabled(garment, true); runtime.Attachments.SetEnabled("shoes", true); runtime.Attachments.SetEnabled("bottom", true);
             runtime.RequestAction("two-hand"); runtime.Update(new(runtime.Actions.LastTime, 0, 0));
             var frame = runtime.Update(new(runtime.Actions.LastTime + .2, .2, 0));
             foreach (var side in new[] { "left", "right" })
@@ -53,7 +54,7 @@ public sealed class CompanionEquipmentTests
                 var sleeve = frame.Layers.Single(l => l.Asset == $"samples/{garment}-{side}.png");
                 var arm = frame.Layers.Single(l => l.Id == "part-arm-" + side);
                 Assert.Equal(arm.Matrix, sleeve.Matrix); Assert.NotNull(sleeve.Mesh); Assert.Same(arm.Mesh, sleeve.Mesh);
-                Assert.Equal(frame.Layers.Single(l => l.Id == "part-leg-" + side).Matrix, frame.Layers.Single(l => l.Asset == $"samples/shoes-{side}.png").Matrix);
+                foreach (string item in new[] { "shoes", "bottom" }) Assert.Equal(frame.Layers.Single(l => l.Id == "part-leg-" + side).Matrix, frame.Layers.Single(l => l.Asset == $"samples/{item}-{side}.png").Matrix);
             }
             Assert.Equal(frame.Layers.Single(l => l.Id == "part-body").Matrix, frame.Layers.Single(l => l.Asset == $"samples/{garment}-body.png").Matrix);
             runtime.Attachments.SetEnabled(garment, false); runtime.StopActions();
@@ -61,6 +62,20 @@ public sealed class CompanionEquipmentTests
         var law = p.Character.Actions.Single(a => a.Id == "claw"); Assert.Equal("법규", law.Name);
         Assert.Contains(law.Timeline, e => e.Kind == VoxPet.Core.Actions.ActionEventKind.Effect && e.Target == "rightHand");
         Assert.Contains(law.Timeline, e => e.Kind == VoxPet.Core.Actions.ActionEventKind.Transform && e.Target == "rightHand");
+        var step = new ActionDefinition("step", "독립 발 움직임", 1000,
+            [new(0, ActionEventKind.Transform, "leftFoot", transform: new(x: 8, y: -5, rotation: 8)), new(0, ActionEventKind.Transform, "rightFoot", transform: new(x: -4, rotation: -6))]);
+        var walking = new CharacterRuntime(new VoxPet.Core.Character.CharacterDefinition(p.Character.Parts, p.Character.Anchors, actions: [step], attachments: p.Character.Attachments, motion: p.Character.Motion));
+        walking.Attachments.SetEnabled("shoes", true);
+        foreach (string garment in new[] { "bottom", "onePiece" })
+        {
+            walking.Attachments.SetEnabled(garment, true); walking.RequestAction("step"); var frame = walking.Update(new(walking.Actions.LastTime, 0, 0));
+            foreach (string side in new[] { "left", "right" })
+            {
+                var foot = frame.Layers.Single(l => l.Id == "part-leg-" + side).Matrix; Assert.NotEqual(AffineTransform2D.Identity, foot);
+                foreach (string item in new[] { garment, "shoes" }) Assert.Equal(foot, frame.Layers.Single(l => l.Asset == $"samples/{item}-{side}.png").Matrix);
+            }
+            Assert.NotEqual(frame.Layers.Single(l => l.Id == "part-leg-left").Matrix, frame.Layers.Single(l => l.Id == "part-leg-right").Matrix); walking.StopActions();
+        }
     }
     [Fact]
     public void EquipmentStorePreservesBothCharactersAndRejectsInvalidReplacement()

@@ -28,6 +28,22 @@ internal static class CompanionPartImages
         bitmap.CopyPixels(new Int32Rect((int)(bitmap.PixelWidth * .5), (int)(bitmap.PixelHeight * (side ? .69 : .60)), 1, 1), pixel, 4, 0);
         return Color.FromRgb(pixel[2], pixel[1], pixel[0]);
     }
+    private static RenderTargetBitmap Raster(Action<DrawingContext> draw)
+    {
+        var visual = new DrawingVisual(); using (var drawing = visual.RenderOpen()) draw(drawing);
+        var image = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); image.Render(visual); image.Freeze(); return image;
+    }
+    private static byte[] Pixels(BitmapSource image)
+    { var pixels = new byte[512 * 512 * 4]; image.CopyPixels(pixels, 512 * 4, 0); return pixels; }
+    private static (double X, double Y) LowerBody(ImageSource source)
+    {
+        if (source is not BitmapSource bitmap) return (0, 0);
+        var bgra = new FormatConvertedBitmap(bitmap, PixelFormats.Bgra32, null, 0); int width = bgra.PixelWidth, height = bgra.PixelHeight;
+        var pixels = new byte[width * height * 4]; bgra.CopyPixels(pixels, width * 4, 0); int left = width, right = -1, bottom = -1;
+        for (int y = (int)(height * .65); y < height; y++) for (int x = 0; x < width; x++)
+            if (pixels[(y * width + x) * 4 + 3] > 32) { left = Math.Min(left, x); right = Math.Max(right, x); bottom = Math.Max(bottom, y); }
+        return right < 0 ? (0, 0) : ((left + right) * 256d / width, bottom * 512d / height);
+    }
     internal static ImageSource Cut(ImageSource original, string id, bool side)
     {
         var cut = new DrawingGroup { ClipGeometry = Masks(side)[id] };
@@ -41,24 +57,37 @@ internal static class CompanionPartImages
             // Reconstruct the torso hidden under the original arms. A clipped-out
             // arm must not leave a transparent hole when its independent bone moves.
             var outline = new Pen(new SolidColorBrush(Color.FromRgb(65, 34, 18)), 5);
-            Geometry clip = new RectangleGeometry(new Rect(0, 0, 512, 512));
-            foreach (string leg in new[] { "leg-left", "leg-right" }) clip = Geometry.Combine(clip, Masks(side)[leg], GeometryCombineMode.Exclude, null);
-            var alpha = new ImageBrush(original) { ViewboxUnits = BrushMappingMode.Absolute, Viewbox = new Rect(0, 0, original.Width, original.Height), ViewportUnits = BrushMappingMode.Absolute, Viewport = new Rect(0, 0, 512, 512), Stretch = Stretch.Fill };
-            var underlay = new DrawingGroup { ClipGeometry = clip, OpacityMask = alpha };
-            underlay.Children.Add(new GeometryDrawing(skin, outline, Geometry.Parse(CompanionParts.BodyContour(side))));
-            canvas.Children.Add(underlay);
+            var underlay = Pixels(Raster(d => d.DrawGeometry(skin, outline, Geometry.Parse(CompanionParts.BodyContour(side)))));
+            var source = Pixels(Raster(d => d.DrawImage(original, new Rect(0, 0, 512, 512))));
+            var arms = Pixels(Raster(d => { foreach (string arm in new[] { "arm-left", "arm-right" }) d.DrawGeometry(Brushes.White, null, Masks(side)[arm]); }));
+            var legs = Pixels(Raster(d => { foreach (string leg in new[] { "leg-left", "leg-right" }) d.DrawGeometry(Brushes.White, null, Masks(side)[leg]); }));
+            // Explicit premultiplied alpha avoids WPF's nested vector opacity-mask
+            // bounds artifacts. Only the original arm footprint may reveal backing.
+            for (int pixel = 0; pixel < underlay.Length; pixel += 4)
+            {
+                double alpha = source[pixel + 3] / 255d * arms[pixel + 3] / 255 * (1 - legs[pixel + 3] / 255d);
+                for (int channel = 0; channel < 4; channel++) underlay[pixel + channel] = (byte)Math.Round(underlay[pixel + channel] * alpha);
+            }
+            var backing = BitmapSource.Create(512, 512, 96, 96, PixelFormats.Pbgra32, null, underlay, 512 * 4); backing.Freeze();
+            canvas.Children.Add(new ImageDrawing(backing, new Rect(0, 0, 512, 512)));
         }
         canvas.Children.Add(cut); canvas.Freeze();
         // Rasterize absolute Canvas coordinates once. DrawingImage ink bounds can
         // otherwise normalize clipped regions differently in desktop/bitmap draws.
-        var visual = new DrawingVisual(); using (var drawing = visual.RenderOpen()) drawing.DrawDrawing(canvas);
-        var image = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); image.Render(visual); image.Freeze(); return image;
+        return Raster(d => d.DrawDrawing(canvas));
     }
     internal static IReadOnlyDictionary<string, ImageSource> Create(ImageSource[,] sheet, bool side)
     {
         var result = new Dictionary<string, ImageSource>();
         foreach (string id in CompanionParts.Ids.Where(id => id != "head")) result.Add(CompanionParts.Asset(id), Cut(sheet[0, 1], id, side));
-        for (int m = 0; m < sheet.GetLength(0); m++) for (int e = 0; e < 2; e++) result.Add(CompanionParts.Head(m, e), Cut(sheet[m, e], "head", side));
+        var reference = LowerBody(sheet[0, 1]);
+        for (int m = 0; m < sheet.GetLength(0); m++) for (int e = 0; e < 2; e++)
+        {
+            var source = sheet[m, e]; var body = LowerBody(source);
+            double x = reference.X - body.X, y = reference.Y - body.Y;
+            if (x != 0 || y != 0) source = Raster(d => { d.PushTransform(new TranslateTransform(x, y)); d.DrawImage(sheet[m, e], new Rect(0, 0, 512, 512)); d.Pop(); });
+            result.Add(CompanionParts.Head(m, e), Cut(source, "head", side));
+        }
         return result;
     }
     internal static byte[] Encode(ImageSource source)

@@ -19,7 +19,7 @@ def build(character_id):
     part_anchors = {'arm-left': 'leftShoulder', 'leg-left': 'leftFoot', 'leg-right': 'rightFoot', 'body': 'body', 'head': 'head', 'arm-right': 'rightShoulder'}
     part_orders = {'arm-left': 50, 'leg-left': 20, 'leg-right': 30, 'body': 40, 'head': 80, 'arm-right': 100}
     definition['parts'] = [dict(id=part, type='arm' if part.startswith('arm-') else 'leg' if part.startswith('leg-') else part, file='samples/empty.png', anchor=anchor, zIndex=part_orders[part]) for part, anchor in part_anchors.items()]
-    skinning = dict(rootY=315 if character_id=='neulbo' else 285, fullY=415 if character_id=='neulbo' else 360)
+    skinning = dict(rootY=315 if character_id=='neulbo' else 302, fullY=415 if character_id=='neulbo' else 377)
     for part in definition['parts']:
         if part['type'] == 'arm': part['skinning'] = skinning
     for key in ['mouth', 'expressions', 'face']:
@@ -43,6 +43,12 @@ def build(character_id):
     for hand, shoulder, parent in [(hand_left, shoulder_left, 'leftShoulder'), (hand_right, shoulder_right, 'rightShoulder')]:
         hand.update(x=hand['x'] - shoulder['x'], y=hand['y'] - shoulder['y'], parent=parent)
     anchors.update(hips=dict(parent='body', x=256, y=400), leftFoot=dict(parent='body', x=190 if character_id=='neulbo' else 260, y=465 if character_id=='neulbo' else 435), rightFoot=dict(parent='body', x=322 if character_id=='neulbo' else 340, y=465 if character_id=='neulbo' else 445))
+    if character_id == 'pelly':
+        # Match CharacterSheetLoader centering/baseline alignment of this silhouette.
+        for anchor in anchors.values():
+            if anchor.get('parent') == 'body':
+                anchor['x'] = anchor.get('x', 0) - 18
+                anchor['y'] = anchor.get('y', 0) + 17
     definition['anchors'] = anchors
     definition['motion'] = {'idle': {'breathing': 0, 'sway': 0}, 'voice': {'bodyBounce': 0, 'headBounce': 0, 'headRotation': 0}}
     manifest = files['manifest.json']
@@ -51,7 +57,7 @@ def build(character_id):
     for reference in manifest['actions']:
         files[reference]['name'] = files[reference]['name'].split(' · ')[0]
         action = files[reference]
-        grip = (402, 422) if character_id == 'neulbo' else (415, 385)
+        grip = (402, 422) if character_id == 'neulbo' else (397, 402)
         if action['id'] in ['toy-gun', 'toy-sword', 'magic-wand', 'firearm', 'bow', 'one-hand', 'two-hand']:
             for entry in action['timeline']:
                 if 'effect' in entry:
@@ -72,7 +78,7 @@ def build(character_id):
         if kind == 'onePiece':
             attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('body', 'body', 60, 'body'), ('left', 'leftFoot', 55, 'leg-left'), ('right', 'rightFoot', 55, 'leg-right')]]
         if kind in ['bottom', 'shoes']:
-            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftFoot' if kind=='shoes' else 'hips', 25 if kind=='shoes' else 50, 'leg-left' if kind=='shoes' else 'body'), ('right', 'rightFoot' if kind=='shoes' else 'hips', 35 if kind=='shoes' else 50, 'leg-right' if kind=='shoes' else 'body')]]
+            attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftFoot', 25 if kind=='shoes' else 50, 'leg-left'), ('right', 'rightFoot', 35 if kind=='shoes' else 50, 'leg-right')]]
         if attachment['id'] == 'faceDecoration':
             attachment['layers'][0]['anchor'] = 'head'
             attachment['layers'][0]['inherit']['mouthMotion'] = False

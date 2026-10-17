@@ -115,6 +115,11 @@ async function frame(kind,index,columns,rows) {
       const faceWindow=Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><ellipse cx="300" cy="187" rx="100" ry="88" fill="white"/><ellipse cx="181" cy="206" rx="110" ry="88" fill="white"/></svg>');
       images[kind+'-fringe']=id==='pelly'?await sharp(images[kind]).composite([{input:faceWindow,blend:'dest-out'}]).png().toBuffer():images[kind];
     }
+    // Same registration as the aligned Pelly silhouette and its rig/part masks.
+    if(id==='pelly')for(const[name,bytes]of Object.entries(images)) {
+      const cropped=await sharp(bytes).extract({left:18,top:0,width:494,height:495}).png().toBuffer();
+      images[name]=await sharp({create:{width:512,height:512,channels:4,background:'#00000000'}}).composite([{input:cropped,left:0,top:17}]).png().toBuffer();
+    }
     for(const[name,bytes]of Object.entries(images))await fs.writeFile(path.join(out,name+'.png'),bytes);
     await sharp({create:{width:1,height:1,channels:4,background:'#00000000'}}).png().toFile(path.join(out,'empty.png'));
     for(const kind of ['hat','glasses','faceDecoration','earrings','top','bottom','onePiece','shoes','outerwear','cape','headAccessory','backAccessory','handAccessory','effect','hair-short','hair-long','hair-afro']){

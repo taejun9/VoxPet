@@ -40,7 +40,7 @@ internal static class CompanionSamplesQa
                 drawing.DrawEllipse(Brushes.LightBlue, outline, side ? new Point(303, 165) : new Point(256, 178), side ? 100 : 165, side ? 92 : 120);
                 if (side)
                 {
-                    drawing.DrawRoundedRectangle(Brushes.PaleGoldenrod, outline, new Rect(86, 153, 176, 76), 35, 35);
+                    drawing.DrawRoundedRectangle(Brushes.PaleGoldenrod, outline, new Rect(86 - mouth * 16, 153, 176 + mouth * 16, 76), 35, 35);
                     drawing.DrawEllipse(Brushes.CadetBlue, outline, new Point(384, 337), 64, 70);
                 }
                 else foreach (double x in new[] { 111d, 401d }) drawing.DrawEllipse(Brushes.CadetBlue, outline, new Point(x, 366), 39, 67);

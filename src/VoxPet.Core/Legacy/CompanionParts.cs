@@ -23,11 +23,12 @@ public static class CompanionParts
         id.StartsWith("arm-", StringComparison.Ordinal) ? "arm" : id.StartsWith("leg-", StringComparison.Ordinal) ? "leg" : id,
         id == "head" ? Head(0, 1) : Asset(id), Anchor(id), Order(id), skinning: samples.Parts.FirstOrDefault(p => p.Id == id)?.Skinning)).ToArray();
 
+    // Pelly contours include the loader centering/baseline registration (-18,+17).
     // Public numeric contours only. They contain no personal pixels. The head owns
     // the original eyes/mouth; all other regions are disjoint cuts of that frame.
-    public static string HeadContour(bool side) => side ? "M0,0 H512 V248 H360 C341,265 331,282 315,292 C302,299 286,297 272,287 C262,275 252,271 238,274 C225,285 208,290 184,292 H0 Z" : "M0,0 H512 V285 H0 Z";
+    public static string HeadContour(bool side) => side ? "M -18 17 H 494 V 265 H 342 C 323 282 313 299 297 309 C 284 316 268 314 254 304 C 244 292 234 288 220 291 C 207 302 190 307 166 309 L160,326 H -18 Z" : "M0,0 H512 V285 H0 Z";
     public static string BodyContour(bool side) => side
-        ? "M230,245 C200,265 181,302 184,345 C180,397 214,427 283,430 C344,438 376,409 377,367 C376,322 358,282 337,257 Z"
+        ? "M 212 262 C 182 282 163 319 166 362 C 162 414 196 444 265 447 C 326 455 358 426 359 384 C 358 339 340 299 319 274 Z"
         : "M150,274 C137,286 127,308 130,334 L132,400 C134,449 156,462 197,460 L228,456 Q256,449 284,456 L315,460 C356,462 379,448 380,403 L382,334 C385,309 373,286 358,274 Z";
     public static string Contour(string id, bool side) => (side, id) switch
     {
@@ -36,9 +37,9 @@ public static class CompanionParts
         (false, "leg-left") => "M146,444 L245,444 L241,512 L146,512 Z",
         (false, "leg-right") => "M267,444 L366,444 L366,512 L271,512 Z",
         (true, "arm-left") => "M0,0 Z",
-        (true, "arm-right") => "M305,264 C320,244 351,249 374,267 C409,294 444,337 465,379 C481,410 457,431 425,429 C390,426 361,408 338,386 C312,363 301,340 300,316 C298,293 300,274 305,264 Z",
-        (true, "leg-left") => "M250,410 L291,410 L311,431 L291,455 L215,456 L205,442 L237,425 Z",
-        (true, "leg-right") => "M307,410 L346,411 L349,429 C373,438 390,453 360,471 L301,471 L284,452 L302,429 Z",
+        (true, "arm-right") => "M 287 281 C 302 261 333 266 356 284 C 391 311 426 354 447 396 C 463 427 439 448 407 446 C 372 443 343 425 320 403 C 294 380 283 357 282 333 C 280 310 282 291 287 281 Z",
+        (true, "leg-left") => "M228,435 H278 V463 L254,484 H180 V458 L215,443 Z",
+        (true, "leg-right") => "M278,435 H330 L335,451 C360,462 360,485 342,495 H254 V484 L278,463 Z",
         _ => throw new ArgumentException("분리할 신체 부위가 없습니다.", nameof(id))
     };
 }
