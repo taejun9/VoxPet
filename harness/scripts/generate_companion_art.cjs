@@ -12,7 +12,7 @@ if (!destination) throw new Error('Provide a new development output directory');
 const profiles = {
   neulbo: {hat:[110,0,292,145],top:[88,282,342,170],outerwear:[87,280,344,175],onePiece:[143,284,230,192],bottom:[150,388,218,95],shoes:[158,450,208,53],cape:[12,209,488,260],backAccessory:[48,244,416,198],
     'hair-short':[66,29,388,300],'hair-long':[16,15,480,410],'hair-afro':[38,8,440,345],gun:[285,326,160,112],sword:[278,257,151,184],wand:[287,244,140,192],bow:[376,338,127,169]},
-  pelly: {hat:[223,2,180,109],top:[183,241,220,176],outerwear:[182,241,224,178],onePiece:[203,241,185,199],bottom:[206,373,177,82],shoes:[224,423,157,59],cape:[58,170,442,269],backAccessory:[97,219,387,193],
+  pelly: {hat:[223,2,180,109],top:[183,241,220,176],outerwear:[182,241,224,178],onePiece:[203,241,185,199],bottom:[206,373,177,82],shoes:[206,417,177,66],cape:[58,170,442,269],backAccessory:[97,219,387,193],
     'hair-short':[168,30,247,246],'hair-long':[155,28,270,365],'hair-afro':[152,17,281,260],gun:[277,278,158,116],sword:[269,204,165,199],wand:[276,197,155,206],bow:[389,295,120,181]}
 };
 const ink='#70503d';
@@ -99,11 +99,11 @@ async function frame(kind,index,columns,rows) {
       await split(name,'right',`<rect x="${right}" y="${id==='pelly'?285:0}" width="${512-right}" height="${id==='pelly'?227:430}" fill="white"/>`);
     }
     await split('onePiece','body','<rect width="512" height="400" fill="white"/>');
-    const hips=id==='pelly'?310:256;
+    const hips=id==='pelly'?296:256;
     await split('onePiece','left',`<rect y="400" width="${hips}" height="112" fill="white"/>`);
     await split('onePiece','right',`<rect x="${hips}" y="400" width="${512-hips}" height="112" fill="white"/>`);
     for(const name of ['shoes','bottom']) {
-      const middle=id==='pelly'?310:256;
+      const middle=id==='pelly'?296:256;
       await split(name,'left',`<rect width="${middle}" height="512" fill="white"/>`);
       await split(name,'right',`<rect x="${middle}" width="${512-middle}" height="512" fill="white"/>`);
     }
