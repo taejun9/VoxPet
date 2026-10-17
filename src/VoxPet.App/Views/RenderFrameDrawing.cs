@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using VoxPet.Core.Character;
 using VoxPet.Core.Rendering;
 
@@ -32,6 +33,11 @@ internal static class RenderFrameDrawing
         {
             if (!props && layer.Id.StartsWith("legacy-prop-", StringComparison.Ordinal)) continue;
             if (!images.TryGetValue(layer.Asset, out var image)) throw new InvalidOperationException("준비되지 않은 Runtime asset: " + layer.Asset);
+            if (image is BitmapSource { PixelWidth: 1, PixelHeight: 1 } pixel && (pixel.Format == PixelFormats.Bgra32 || pixel.Format == PixelFormats.Pbgra32))
+            {
+                var rgba = new byte[4]; pixel.CopyPixels(rgba, 4, 0);
+                if (rgba[3] == 0) continue;
+            }
             drawing.PushOpacity(layer.Opacity);
             if (layer.Mesh is null)
             {
@@ -45,7 +51,7 @@ internal static class RenderFrameDrawing
                 var clip = new StreamGeometry();
                 using (var context = clip.Open())
                 {
-                    var joined = Joined(triangle);
+                    var joined = layer.Mesh.JoinEdges ? Joined(triangle) : (A: new Point(triangle.A.X, triangle.A.Y), B: new Point(triangle.B.X, triangle.B.Y), C: new Point(triangle.C.X, triangle.C.Y));
                     context.BeginFigure(joined.A, true, true);
                     context.LineTo(joined.B, true, false);
                     context.LineTo(joined.C, true, false);

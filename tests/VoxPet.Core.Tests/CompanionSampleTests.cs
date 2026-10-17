@@ -26,7 +26,7 @@ public sealed class CompanionSampleTests
         Assert.Equal(14, definition.Attachments.Select(a => a.Category).Distinct().Count());
         int bodyOrder = definition.Parts.Single(p => p.Id == "body").ZIndex, armOrder = definition.Parts.Single(p => p.Id == "arm-left").ZIndex;
         var shirt = definition.Attachments.Single(a => a.Id == "top");
-        Assert.True(bodyOrder < armOrder && armOrder < shirt.Layers.Single(l => l.Id == "left").ZIndex && shirt.Layers.Single(l => l.Id == "left").ZIndex < shirt.Layers.Single(l => l.Id == "body").ZIndex);
+        Assert.True(bodyOrder < shirt.Layers.Single(l => l.Id == "body").ZIndex && shirt.Layers.Single(l => l.Id == "body").ZIndex < armOrder && armOrder < shirt.Layers.Single(l => l.Id == "left").ZIndex);
         Assert.Equal(17, package.AssetPaths.Count(p => p.StartsWith("thumbnails/", StringComparison.Ordinal)));
         Assert.Equal(8, definition.Attachments.Single(a => a.Id == "hat").Layers[0].Animation!.Frames.Count);
         Assert.Equal(6, definition.Attachments.Single(a => a.Id == "cape").Layers[0].Animation!.Frames.Count);

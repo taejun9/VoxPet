@@ -72,9 +72,9 @@ for character in ['neulbo', 'pelly']:
         for state in ['idle', 'action']: expected.add(f'parts-{character}-weapon-{weapon}-{state}')
 expected.add('parts-equipment-restart')
 for character in ['neulbo', 'pelly']:
-    expected.update(f'natural-{character}-{case}' for case in ['categories', 'expressions'])
+    expected.update(f'natural-{character}-{case}' for case in ['categories', 'expressions', 'expression-during-action'])
     expected.update(f'natural-{character}-expression-{width}' for width in [1280, 960, 640, 480])
-    for weapon in ['toy-gun', 'toy-sword', 'magic-wand', 'firearm', 'bow', 'one-hand', 'two-hand']:
+    for weapon in ['claw', 'heart', 'toy-gun', 'toy-sword', 'magic-wand', 'firearm', 'bow', 'one-hand', 'two-hand']:
         for time in [260, 380, 405, 590, 760]: expected.add(f'natural-{character}-{weapon}-{time}')
 
 records = []

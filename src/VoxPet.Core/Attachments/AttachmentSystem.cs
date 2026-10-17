@@ -4,7 +4,7 @@ using VoxPet.Core.Motion;
 
 namespace VoxPet.Core.Attachments;
 
-public sealed record ResolvedAttachmentLayer(string Id, string Asset, AffineTransform2D Matrix, int ZIndex, AttachmentTransform Placement, IReadOnlyList<string> ReplacesParts, string Anchor);
+public sealed record ResolvedAttachmentLayer(string Id, string Asset, AffineTransform2D Matrix, int ZIndex, AttachmentTransform Placement, IReadOnlyList<string> ReplacesParts, string Anchor, AttachmentInheritance Inherit);
 
 /// <summary>착용 선택·충돌·이미지/Anchor 상속을 Core에서 결정한다.</summary>
 public sealed class AttachmentSystem
@@ -74,7 +74,7 @@ public sealed class AttachmentSystem
                 var origin = layer.Placement.Space == AttachmentSpace.Canvas ? bone : bone.Compose(baseline);
                 var matrix = origin.Compose(AffineTransform2D.FromTransform(layer.Transform));
                 string renderId = "attachment-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(item.Id)) + "-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(layer.Id));
-                layers.Add(new(renderId, asset, matrix, layer.ZIndex, layer.Placement, layer.ReplacesParts, layer.Anchor));
+                layers.Add(new(renderId, asset, matrix, layer.ZIndex, layer.Placement, layer.ReplacesParts, layer.Anchor, layer.Inherit));
             }
         }
         return Array.AsReadOnly(layers.OrderBy(l => l.ZIndex).ToArray());
@@ -83,8 +83,12 @@ public sealed class AttachmentSystem
         => Resolve(rig, action, visibleParts, ids, compatibilityTag, time);
     internal static AffineTransform2D AnchorDelta(RigPose rig, string anchor, double follow, AttachmentInheritance inherit)
     {
-        var baseline = rig.Static[anchor]; var animated = rig.Bone(follow)[anchor];
-        var delta = animated.Compose(baseline.Inverse()); var bone = Filter(delta, baseline, animated, inherit, 1);
+        var baseline = rig.Static[anchor];
+        if (follow == 0) return AffineTransform2D.Identity;
+        var animated = rig.Bone(follow)[anchor];
+        var delta = animated.Compose(baseline.Inverse());
+        if (inherit.Position && inherit.Rotation && inherit.Scale && !inherit.MouthMotion) return delta;
+        var bone = Filter(delta, baseline, animated, inherit, 1);
         if (inherit.MouthMotion)
         {
             var extra = baseline.Compose(animated.Inverse()).Compose(rig.Mouth(follow)[anchor]).Compose(baseline.Inverse());

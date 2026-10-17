@@ -10,9 +10,9 @@ const source = path.join(root, 'harness/assets/companion-art');
 const destination = process.argv[2];
 if (!destination) throw new Error('Provide a new development output directory');
 const profiles = {
-  neulbo: {hat:[110,0,292,145],top:[88,282,342,170],outerwear:[87,280,344,175],onePiece:[143,284,230,192],bottom:[150,388,218,95],shoes:[158,450,208,53],cape:[12,209,488,260],backAccessory:[48,244,416,198],
+  neulbo: {hat:[110,0,292,145],top:[88,282,342,170],outerwear:[87,280,344,175],onePiece:[127,284,260,192],bottom:[150,388,218,95],shoes:[158,450,208,53],cape:[12,209,488,260],backAccessory:[48,244,416,198],
     'hair-short':[66,29,388,300],'hair-long':[16,15,480,410],'hair-afro':[38,8,440,345],gun:[285,326,160,112],sword:[278,257,151,184],wand:[287,244,140,192],bow:[376,338,127,169]},
-  pelly: {hat:[223,2,180,109],top:[183,241,220,176],outerwear:[182,241,224,178],onePiece:[203,241,185,199],bottom:[206,373,177,82],shoes:[206,417,177,66],cape:[153,200,350,220],backAccessory:[200,235,270,165],
+  pelly: {hat:[223,2,180,109],top:[183,241,220,176],outerwear:[182,241,224,178],onePiece:[180,245,217,221],bottom:[206,373,177,82],shoes:[206,417,177,66],cape:[153,200,350,220],backAccessory:[200,235,270,165],
     'hair-short':[162,43,280,285],'hair-long':[162,43,280,390],'hair-afro':[143,33,288,295],gun:[277,278,158,116],sword:[269,204,165,199],wand:[276,197,155,206],bow:[389,295,120,181]}
 };
 const ink='#70503d';
@@ -119,6 +119,7 @@ async function frame(kind,index,columns,rows) {
     await require('./companion_props.cjs')(images,id,source,trimmed);
     // Same registration as the aligned Pelly silhouette and its rig/part masks.
     if(id==='pelly')for(const[name,bytes]of Object.entries(images)) {
+      const dimensions=await sharp(bytes).metadata();if(dimensions.width===1&&dimensions.height===1)continue;
       const cropped=await sharp(bytes).extract({left:18,top:0,width:494,height:495}).png().toBuffer();
       images[name]=await sharp({create:{width:512,height:512,channels:4,background:'#00000000'}}).composite([{input:cropped,left:0,top:17}]).png().toBuffer();
     }

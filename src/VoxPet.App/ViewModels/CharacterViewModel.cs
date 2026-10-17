@@ -148,7 +148,11 @@ public sealed class CharacterViewModel : ObservableObject
             foreach (var pair in partImages) images[pair.Key] = pair.Value;
         }
         for (int m = 0; m < sprites.GetLength(0); m++) for (int e = 0; e < 2; e++) images.Add(LegacySpriteSheetAdapter.Asset(m, e), sprites[m, e]);
-        if (PreviousSprite != null) images.Add("legacy/previous.png", PreviousSprite);
+        if (PreviousSprite != null)
+        {
+            images.Add("legacy/previous.png", PreviousSprite);
+            if (companionSamples != null) images.Add("legacy/previous-head.png", CompanionPartImages.PreviousHead(PreviousSprite, sprites[0, 1], CompanionCharacterId == "pelly"));
+        }
         foreach (var item in CostumeLayers.Where(item => item.Enabled && item.Image != null)) images.Add("legacy/costume-" + item.Id.ToString("N") + ".png", item.Image!);
         if (ShowMotionGuides) images.Add("legacy/guides.png", LegacyDrawingAssets.Guides(Rig));
         legacyScene.SetImages(images);

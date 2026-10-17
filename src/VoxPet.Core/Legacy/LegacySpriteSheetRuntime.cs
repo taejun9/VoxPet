@@ -95,7 +95,8 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
         bool legacyWeaponAction = Motion.Gesture is HandGesture.ToyGun or HandGesture.ToySword or HandGesture.MagicWand;
         var heldWeapon = separated && CompanionWeapon.Find(WeaponId) is { } selectedWeapon &&
             (context.Action.IsPlaying ? CompanionWeapon.Find(context.Action.ActionId) != null || legacyWeaponAction : HoldWeapon) ? selectedWeapon : null;
-        if (HasPrevious) layers.Add(new("legacy-previous", "legacy/previous.png", opacity: 1 - Blend, mesh: mesh));
+        AffineTransform2D? headPose = null;
+        if (HasPrevious && !separated) layers.Add(new("legacy-previous", "legacy/previous.png", opacity: 1 - Blend, mesh: mesh));
         if (separated)
             foreach (var part in frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal)))
             {
@@ -112,12 +113,17 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 string asset = part.Id == "part-head" ? CompanionParts.Head(mouth, Profile.Blink && Parameters.EyeOpen < .5 ? 0 : 1) : part.Asset;
                 if (heldWeapon != null && (part.Id == "part-arm-right" && heldWeapon.Anchor == "rightHand" || part.Id == "part-arm-left" && heldWeapon.Anchor == "leftHand"))
                     asset = CompanionParts.GripArm(part.Id == "part-arm-left" ? "left" : "right");
-                layers.Add(new(part.Id, asset, opacity: part.Opacity * Blend, zIndex: part.ZIndex, matrix: matrix, width: part.Width, height: part.Height, mesh: partMesh));
+                if (part.Id == "part-head")
+                {
+                    headPose = matrix;
+                    if (HasPrevious) layers.Add(new("legacy-previous-head", "legacy/previous-head.png", opacity: 1 - Blend, zIndex: part.ZIndex, matrix: matrix));
+                }
+                layers.Add(new(part.Id, asset, opacity: part.Opacity * (part.Id == "part-head" ? Blend : 1), zIndex: part.ZIndex, matrix: matrix, width: part.Width, height: part.Height, mesh: partMesh));
             }
         else layers.Add(new("legacy-sprite", Sprite, opacity: Blend, zIndex: 1, mesh: mesh));
         foreach (var (x, y, opacity, id) in new[] { (TearLeftX, TearLeftY, TearLeftOpacity, "left"), (TearRightX, TearRightY, TearRightOpacity, "right") })
             if (opacity > 0) layers.Add(new("legacy-tear-" + id, "legacy/tear.png", opacity: opacity, zIndex: separated ? 180 : 2,
-                matrix: LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.Head, 1).Compose(new(offsetX: x, offsetY: y)), width: 10, height: 20));
+                matrix: (headPose ?? LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.Head, 1)).Compose(new(offsetX: x, offsetY: y)), width: 10, height: 20));
         int order = 0;
         var activeCategories = frame.Layers.Where(l => sampleCategories.ContainsKey(l.Id)).Select(l => sampleCategories[l.Id]).ToHashSet(StringComparer.Ordinal);
         foreach (var item in Costumes)

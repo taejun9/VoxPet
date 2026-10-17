@@ -16,5 +16,7 @@ public sealed record RenderTriangle
 public sealed record RenderMesh
 {
     public IReadOnlyList<RenderTriangle> Triangles { get; }
-    public RenderMesh(IEnumerable<RenderTriangle> triangles) => Triangles = DefinitionValidation.Copy(triangles, nameof(triangles));
+    public bool JoinEdges { get; }
+    public RenderMesh(IEnumerable<RenderTriangle> triangles, bool joinEdges = false)
+    { Triangles = DefinitionValidation.Copy(triangles, nameof(triangles)); JoinEdges = joinEdges; }
 }

@@ -13,6 +13,7 @@ public sealed class PartSkinningTests
     {
         var delta = new AffineTransform2D(offsetX: 367, offsetY: 315).Compose(AffineTransform2D.FromTransform(new(rotation: angle))).Compose(new(offsetX: -367, offsetY: -315));
         var mesh = JointSkinning.Compose(delta, new(315, 415))!;
+        Assert.True(mesh.JoinEdges);
         foreach (var triangle in mesh.Triangles)
             foreach (var point in new[] { triangle.A, triangle.B, triangle.C })
             {

@@ -17,7 +17,22 @@ def build_actions(files, manifest, character_id, anchors):
     for reference in manifest['actions']:
         action = files[reference]
         if action['id'] not in WEAPONS:
-            action['interpolateTransforms'] = True
+            kind = action['id']
+            duration = 1000 if kind=='claw' else 1200
+            action.update(duration=duration, interpolateTransforms=True, timeline=[])
+            events = action['timeline']
+            rest = position('rightHand')
+            aim = (310,355) if side else (300,350)
+            turn = 52 if kind=='claw' else 24
+            for time, target, angle in [(0,rest,0),(180 if kind=='claw' else 220,aim,turn),(700 if kind=='claw' else 780,aim,turn),(duration,rest,0)]:
+                sx,sy = position('rightShoulder');hx,hy = rest;a = math.radians(angle)
+                dx,dy = target[0]-sx,target[1]-sy
+                events.extend([dict(time=time,transform=dict(target='rightShoulder',rotation=angle)),
+                               dict(time=time,transform=dict(target='rightHand',x=round(dx*math.cos(a)+dy*math.sin(a)-(hx-sx),5),y=round(-dx*math.sin(a)+dy*math.cos(a)-(hy-sy),5),rotation=-angle))])
+            events.append(dict(time=0,sprite=dict(target='arm-right',file='parts/arm-right-grip.png')))
+            events.append(dict(time=0,effect=dict(anchor='rightHand',file='samples/grip-back-right.png',duration=duration,zIndex=1990,transform=dict(x=-rest[0],y=-rest[1]))))
+            events.append(dict(time=160 if kind=='claw' else 0,effect=dict(anchor='rightHand',file='samples/'+kind+'.png',duration=620 if kind=='claw' else duration,zIndex=2010,transform=dict(x=-rest[0],y=-rest[1]))))
+            events.sort(key=lambda e:e['time'])
             continue
         kind = action['id']
         action.update(duration=1200, interpolateTransforms=True, timeline=[])

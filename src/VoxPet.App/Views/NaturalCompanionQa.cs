@@ -36,12 +36,26 @@ internal static class NaturalCompanionQa
                 using (var drawing = visual.RenderOpen()) RenderFrameDrawing.Draw(drawing, new RenderFrame(frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal))), images, width: size, height: size);
                 var bitmap = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32); bitmap.Render(visual); var pixels = new byte[size * size * 4]; bitmap.CopyPixels(pixels, size * 4, 0);
                 bool opaque = true;
-                foreach (var point in side ? new[] { new RigPoint(312, 302), new RigPoint(271, 299) } : new[] { new RigPoint(145, 315), new RigPoint(367, 315), new RigPoint(256, 285) })
+                foreach (var point in side ? new[] { new RigPoint(312, 302), new RigPoint(350, 302), new RigPoint(271, 299) } : new[] { new RigPoint(145, 315), new RigPoint(367, 315), new RigPoint(256, 285) })
                 {
                     var mapped = root.Map(point.X, point.Y); int cx = (int)(mapped.X * size / 512), cy = (int)(mapped.Y * size / 512);
                     for (int y = cy - 1; y <= cy + 1; y++) for (int x = cx - 1; x <= cx + 1; x++) if (pixels[(y * size + x) * 4 + 3] < 248) opaque = false;
                 }
                 check(opaque, $"natural_joint_opaque_{id}_{size}_{(int)(t * 1000)}");
+            }
+        }
+        if (!side)
+        {
+            runtime.StopActions(); var rest = runtime.Update(new(.6, .08, 0));
+            foreach (int angle in new[] { -8, 8 }) foreach (int size in new[] { 128, 256, 512 })
+            {
+                var pivot = new AffineTransform2D(offsetX: 256, offsetY: 285).Compose(AffineTransform2D.FromTransform(new(rotation: angle))).Compose(new(offsetX: -256, offsetY: -285));
+                var posed = rest.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal)).Select(l => l.Id == "part-head" ? new RenderLayer(l.Id, l.Asset, zIndex: l.ZIndex, matrix: pivot) : l);
+                var visual = new DrawingVisual(); RenderOptions.SetEdgeMode(visual, EdgeMode.Aliased); RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
+                using (var drawing = visual.RenderOpen()) RenderFrameDrawing.Draw(drawing, new RenderFrame(posed), images, width: size, height: size);
+                var bitmap = new RenderTargetBitmap(size, size, 96, 96, PixelFormats.Pbgra32); bitmap.Render(visual); var pixels = new byte[size * size * 4]; bitmap.CopyPixels(pixels, size * 4, 0);
+                int x = (angle > 0 ? 160 : 352) * size / 512, y = 278 * size / 512;
+                check(pixels[(y * size + x) * 4 + 3] >= 248, $"natural_head_joint_opaque_{id}_{size}_{angle}");
             }
         }
     }
@@ -64,6 +78,8 @@ internal static class NaturalCompanionQa
                 foreach (var category in window.Studio.ClothingCategories)
                 {
                     selector.SelectedValue = category.Key; await Task.Delay(10); window.UpdateLayout();
+                    int visibleCount = category.Key == "all" ? 17 : category.Key == "headAccessory" ? 4 : 1;
+                    check(window.Studio.ClothingCount == $"{visibleCount}개 / 전체 17개", "natural_category_total_" + item.Id + "_" + category.Key);
                     check(window.Studio.ClothingCategory == category.Key && window.Studio.FilteredClothingCards.Count() == (category.Key == "all" ? 14 : 1) && window.Studio.FilteredClothingCards.All(c => category.Key == "all" || c.Category == category.Key), "natural_category_" + item.Id + "_" + category.Key);
                 }
                 selector.SelectedValue = "top"; await ScreenEvidence.CaptureAsync(window, "natural-" + item.Id + "-categories", check); selector.SelectedValue = "all";
@@ -73,8 +89,16 @@ internal static class NaturalCompanionQa
                 check(window.Studio.Page == 6 && window.Studio.IsExpressions && Find<ItemsControl>(window.StudioSurface).Any(c => c.IsVisible && System.Windows.Automation.AutomationProperties.GetName(c) == "표정 슬롯 선택"), "natural_expression_sidebar_visible_" + item.Id);
                 foreach (var slot in model.Expressions.Slots)
                 {
-                    var button = Find<Button>(window.StudioSurface).Single(b => ReferenceEquals(b.DataContext, slot) && b.IsVisible); Invoke(button); await Task.Delay(20); Tick(.4);
-                    check(model.Expressions.Selected == slot && model.Character.ExpressionKind == slot.Saved.Kind && model.Character.CompanionScene.Runtime.Attachments.EnabledIds.Count == 3 && model.Character.CompanionScene.Frame.Layers.Any(l => l.Id == "companion-equipped-weapon"), "natural_expression_slot_keeps_outfit_" + item.Id + "_" + slot.Position);
+                    var button = Find<Button>(window.StudioSurface).Single(b => ReferenceEquals(b.DataContext, slot) && b.IsVisible); Invoke(button);
+                    // UI Automation posts its click at Input priority. Drain it before
+                    // asserting; a Normal-priority fixed delay can overtake that click.
+                    await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Input);
+                    for (int attempt = 0; attempt < 100 && (model.Expressions.Selected != slot || model.Character.ExpressionKind != slot.Saved.Kind); attempt++) await Task.Delay(10);
+                    Tick(.4);
+                    bool valid = model.Expressions.Selected == slot && model.Character.ExpressionKind == slot.Saved.Kind && model.Character.CompanionScene.Runtime.Attachments.EnabledIds.Count == 3 && model.Character.CompanionScene.Frame.Layers.Any(l => l.Id == "companion-equipped-weapon");
+                    if (!valid && Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } diagnostics)
+                        File.WriteAllText(Path.Combine(diagnostics, $"voxpet-runtime-natural-expression-{item.Id}-{slot.Position}.json"), System.Text.Json.JsonSerializer.Serialize(new { expected = slot.Index, selected = model.Expressions.Selected.Index, expectedKind = slot.Saved.Kind.ToString(), actualKind = model.Character.ExpressionKind.ToString(), enabled = model.Character.CompanionScene.Runtime.Attachments.EnabledIds, equipped = model.Character.CompanionScene.Frame.Layers.Where(l => l.Id.StartsWith("companion-equipped-", StringComparison.Ordinal)).Select(l => l.Id), model.Expressions.Status }));
+                    check(valid, "natural_expression_slot_keeps_outfit_" + item.Id + "_" + slot.Position);
                 }
                 await ScreenEvidence.CaptureAsync(window, "natural-" + item.Id + "-expressions", check);
                 foreach (var size in new[] { new Size(1280, 820), new Size(960, 540), new Size(640, 480), new Size(480, 320) })
@@ -88,6 +112,7 @@ internal static class NaturalCompanionQa
                 check(window.Studio.Page == 4 && model.SettingsTab == 3 && window.SettingsTabs.IsVisible && !window.LayoutRoot.IsVisible, "natural_expression_editor_same_shell_" + item.Id);
                 window.ShowStudio(3); model.Equipment.HoldWeapon = false;
                 check(!window.Studio.HasLegacyQuickActions && Find<Button>(window.StudioSurface).Where(b => b.Tag is string tag && int.TryParse(tag, out int n) && n is >= 0 and <= 4).All(b => !b.IsVisible), "natural_no_duplicate_legacy_gestures_" + item.Id);
+                window.Studio.AttachmentCards.Single(c => c.Id == "handAccessory").ToggleCommand.Execute(null);
                 foreach (var weapon in CompanionWeapon.All)
                 {
                     window.Studio.PlayAction(weapon.Id); Tick(0); double previous = 0;
@@ -101,8 +126,27 @@ internal static class NaturalCompanionQa
                     }
                     Tick(1.4); check(model.Character.CompanionScene.Runtime.State.ActionId == null, "natural_recover_" + item.Id + "_" + weapon.Id);
                 }
+                foreach (string gesture in new[] { "claw", "heart" })
+                {
+                    window.Studio.PlayAction(gesture); Tick(0); double previous = 0;
+                    foreach (double t in new[] { .26, .38, .405, .59, .76 })
+                    {
+                        Tick(t - previous); previous = t; var scene = model.Character.CompanionScene;
+                        check(scene.Runtime.State.ActionId == gesture && scene.Frame.Layers.Any(l => l.Asset == "samples/" + gesture + ".png") && scene.Frame.Layers.All(l => l.Id != "companion-equipped-weapon"), $"natural_gesture_pose_{item.Id}_{gesture}_{(int)(t * 1000)}");
+                        await ScreenEvidence.CaptureAsync(window, $"natural-{item.Id}-{gesture}-{(int)(t * 1000)}", check);
+                    }
+                    Tick(1.4);
+                }
                 window.Studio.PlayAction("firearm"); Tick(0); Tick(.38);
                 check(model.Character.CompanionScene.Frame.Layers.Any(l => l.Asset == "samples/muzzle-flash.png"), "natural_shoot_before_unequip_" + item.Id);
+                window.ShowStudio(6); window.UpdateLayout();
+                var switchSlot = model.Expressions.Slots.First(s => s.Saved.Kind != model.Character.ExpressionKind);
+                Invoke(Find<Button>(window.StudioSurface).Single(b => b.IsVisible && ReferenceEquals(b.DataContext, switchSlot)));
+                await window.Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Input); Tick(0);
+                var transition = model.Character.CompanionScene.Frame;
+                check(transition.Layers.Any(l => l.Id == "legacy-previous-head") && transition.Layers.All(l => l.Id != "legacy-previous") && transition.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal) && l.Id != "part-head").All(l => l.Opacity == 1), "natural_expression_during_action_no_body_ghost_" + item.Id);
+                await ScreenEvidence.CaptureAsync(window, "natural-" + item.Id + "-expression-during-action", check);
+                window.ShowStudio(3);
                 model.Equipment.WeaponIndex = 0; Tick(0);
                 check(model.Character.CompanionScene.Runtime.State.ActionId == null && model.Character.CompanionScene.Frame.Layers.All(l => l.Asset != "samples/muzzle-flash.png" && !l.Id.StartsWith("companion-equipped-", StringComparison.Ordinal)), "natural_unequip_stops_old_action_" + item.Id);
                 window.Studio.RemoveAttachmentsCommand.Execute(null);

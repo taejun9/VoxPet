@@ -70,9 +70,10 @@ public sealed class StudioShellViewModel : ObservableObject
     public IEnumerable<StudioAttachment> ClothingCards => AttachmentCards.Where(c => !c.Id.StartsWith("hair-", StringComparison.Ordinal));
     public KeyValuePair<string, string>[] ClothingCategories { get; } = [new("all", "전체"), new("top", "상의"), new("bottom", "하의"), new("onePiece", "한벌옷"), new("outerwear", "겉옷"), new("shoes", "신발"), new("hat", "모자"), new("glasses", "안경"), new("faceDecoration", "얼굴 장식"), new("earrings", "귀걸이"), new("headAccessory", "머리 장식"), new("handAccessory", "손 장식"), new("cape", "망토 / 날개"), new("backAccessory", "등 장식"), new("effect", "이펙트")];
     private string clothingCategory = "all";
-    public string ClothingCategory { get => clothingCategory; set { if (value != null && ClothingCategories.Any(c => c.Key == value) && Set(ref clothingCategory, value)) { Notify(nameof(FilteredClothingCards)); Notify(nameof(ClothingCount)); } } }
+    public string ClothingCategory { get => clothingCategory; set { if (value != null && ClothingCategories.Any(c => c.Key == value) && Set(ref clothingCategory, value)) { Notify(nameof(FilteredClothingCards)); Notify(nameof(ShowHair)); Notify(nameof(ClothingCount)); } } }
     public IEnumerable<StudioAttachment> FilteredClothingCards => ClothingCards.Where(c => ClothingCategory == "all" || c.Category == ClothingCategory);
-    public string ClothingCount => $"{FilteredClothingCards.Count()}개 / 전체 {ClothingCards.Count()}개";
+    public bool ShowHair => HairCards.Any() && ClothingCategory is "all" or "headAccessory";
+    public string ClothingCount => $"{FilteredClothingCards.Count() + (ShowHair ? HairCards.Count() : 0)}개 / 전체 {AttachmentCards.Count}개";
     public static string SamplePath => Path.Combine(AppContext.BaseDirectory, "Assets", "Samples", "studio-samples.voxpet");
     public const string SampleId = "voxpet.samples.studio";
     public const string SampleVersion = "1.1.0";
@@ -104,7 +105,7 @@ public sealed class StudioShellViewModel : ObservableObject
     private void UpdateAttachmentCards()
     {
         AttachmentCards.Clear();
-        Notify(nameof(HairCards)); Notify(nameof(ClothingCards)); Notify(nameof(FilteredClothingCards)); Notify(nameof(ClothingCount));
+        Notify(nameof(HairCards)); Notify(nameof(ClothingCards)); Notify(nameof(FilteredClothingCards)); Notify(nameof(ShowHair)); Notify(nameof(ClothingCount));
         if (DisplayScene is not { } scene) return;
         foreach (var item in scene.Runtime.Definition.Attachments)
         {
@@ -119,7 +120,7 @@ public sealed class StudioShellViewModel : ObservableObject
                     foreach (var card in AttachmentCards) card.Refresh();
                 }));
         }
-        Notify(nameof(HairCards)); Notify(nameof(ClothingCards)); Notify(nameof(FilteredClothingCards)); Notify(nameof(ClothingCount));
+        Notify(nameof(HairCards)); Notify(nameof(ClothingCards)); Notify(nameof(FilteredClothingCards)); Notify(nameof(ShowHair)); Notify(nameof(ClothingCount));
     }
     private void RefreshSamples()
     { Notify(nameof(HasLegacyQuickActions)); Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(DisplayScene)); UpdateAttachmentCards(); EditCompanionCommand.Refresh(); }

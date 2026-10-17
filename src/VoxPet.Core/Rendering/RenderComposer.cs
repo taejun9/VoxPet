@@ -47,16 +47,16 @@ public sealed class RenderComposer
     public RenderFrame Compose(RuntimeRenderContext context, string expressionId, int mouthFrame, AttachmentSystem attachments, IEnumerable<string> selectedIds, Transform2D viewport)
     {
         var action = context.Action; var rig = context.Rig; var layers = new List<RenderLayer>(); var visible = new HashSet<string>(StringComparer.Ordinal);
-        var jointMeshes = new Dictionary<(AffineTransform2D Matrix, PartSkinning Skin, string? Shoulder), RenderMesh?>();
-        RenderMesh? Joint(AffineTransform2D matrix, PartSkinning skin, string? shoulderAnchor)
+        var jointMeshes = new Dictionary<(AffineTransform2D Matrix, PartSkinning Skin, string? Shoulder, AffineTransform2D Root), RenderMesh?>();
+        RenderMesh? Joint(AffineTransform2D matrix, PartSkinning skin, string? shoulderAnchor, AffineTransform2D? rootOverride = null)
         {
-            if (!jointMeshes.TryGetValue((matrix, skin, shoulderAnchor), out var mesh))
+            var root = rootOverride ?? (skin.RootAnchor == null ? AffineTransform2D.Identity : Anchor(skin.RootAnchor));
+            if (!jointMeshes.TryGetValue((matrix, skin, shoulderAnchor, root), out var mesh))
             {
-                var root = skin.RootAnchor == null ? AffineTransform2D.Identity : Anchor(skin.RootAnchor);
                 mesh = skin.EndAnchor is { } hand && shoulderAnchor is { } shoulder && rig.Static.ContainsKey(shoulder) ?
                     JointSkinning.ComposeChain(matrix, root, skin, rig.Static[shoulder].Map(0, 0), rig.Static[hand].Map(0, 0), hand.StartsWith("left", StringComparison.Ordinal), definition.CanvasWidth, definition.CanvasHeight) :
                     JointSkinning.Compose(matrix, skin, definition.CanvasWidth, definition.CanvasHeight, root);
-                jointMeshes.Add((matrix, skin, shoulderAnchor), mesh);
+                jointMeshes.Add((matrix, skin, shoulderAnchor, root), mesh);
             }
             return mesh;
         }
@@ -86,8 +86,11 @@ public sealed class RenderComposer
             Layer("part-" + part.Id, asset, part.ZIndex, part.Skinning == null ? matrix.Compose(local) : local,
                 mesh: part.Skinning is { } skin ? Joint(skin.EndAnchor == null ? matrix : Anchor(skin.EndAnchor), skin, part.Anchor) : geometry?.Compose(part.Id, false, 1, context));
         }
+        var resolvedAttachments = attachments.Compose(rig, action, context.Action.ActionId is null ? null : definition.Actions.FirstOrDefault(a => a.Id == context.Action.ActionId)?.CompatibilityTag, visible, selectedIds, context.Input.Time);
+        var replaced = resolvedAttachments.SelectMany(a => a.ReplacesParts).ToHashSet(StringComparer.Ordinal);
+        layers.RemoveAll(layer => replaced.Any(id => layer.Id == "part-" + id));
         string? required = definition.Face.RequiredVisiblePart ?? definition.Parts.FirstOrDefault(p => p.Type == "head")?.Id;
-        bool faceVisible = required is null || visible.Contains(required);
+        bool faceVisible = required is null || visible.Contains(required) && !replaced.Contains(required);
         var expression = definition.Expressions.FirstOrDefault(e => e.Id == expressionId) ?? definition.Expressions.FirstOrDefault(e => e.Id == "neutral") ?? definition.Expressions.FirstOrDefault();
         if (definition.SpriteSheet is null && faceVisible && expression is not null)
         {
@@ -101,15 +104,19 @@ public sealed class RenderComposer
             string? asset = Sprite("mouth", mouth.Frames[mouthFrame]);
             if (asset is not null) Layer("face-mouth", asset, mouth.ZIndex, Anchor(mouth.Anchor, true));
         }
-        foreach (var attachment in attachments.Compose(rig, action, context.Action.ActionId is null ? null : definition.Actions.FirstOrDefault(a => a.Id == context.Action.ActionId)?.CompatibilityTag, visible, selectedIds, context.Input.Time))
+        foreach (var attachment in resolvedAttachments)
         {
             // Resolve visibility first: hidden or incompatible clothing must never
             // remove a body part. Shoes replace the original feet only when drawn.
-            layers.RemoveAll(layer => attachment.ReplacesParts.Any(id => layer.Id == "part-" + id));
             var matrix = attachment.Matrix;
             RenderMesh? mesh;
             if (attachment.Placement.Skinning is { } skin)
-            { var local = AffineTransform2D.FromTransform(attachment.Placement.Local); mesh = Joint(skin.EndAnchor == null ? matrix.Compose(local.Inverse()) : Anchor(skin.EndAnchor), skin, attachment.Anchor); matrix = local; }
+            {
+                var local = AffineTransform2D.FromTransform(attachment.Placement.Local);
+                var end = skin.EndAnchor == null ? matrix.Compose(local.Inverse()) : AttachmentSystem.AnchorDelta(rig, skin.EndAnchor, attachment.Placement.Follow, attachment.Inherit);
+                var root = skin.RootAnchor == null ? AffineTransform2D.Identity : AttachmentSystem.AnchorDelta(rig, skin.RootAnchor, attachment.Placement.Follow, attachment.Inherit);
+                mesh = Joint(end, skin, attachment.Anchor, root); matrix = local;
+            }
             else mesh = attachment.Placement.DeformWithRig ? geometry is IPlacedRenderGeometryProvider placed ? placed.Compose(attachment, context) : geometry?.Compose(attachment.Id, true, attachment.Placement.Follow, context) : null;
             if (attachment.Placement.DeformWithRig && geometry is null && action.IsPlaying) throw new InvalidOperationException("garment 연결 격자 provider가 필요합니다.");
             Layer(attachment.Id, attachment.Asset, attachment.ZIndex, matrix, attachment.Placement.Width, attachment.Placement.Height, mesh);

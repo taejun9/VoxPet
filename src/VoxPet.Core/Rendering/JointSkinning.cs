@@ -19,6 +19,7 @@ public static class JointSkinning
     /// <summary>원본 팔의 폭을 유지하며 굽힌 팔꿈치를 지난다. 두 endpoint는 각 rig 앵커와 정확히 일치한다.</summary>
     public static RenderMesh? ComposeChain(AffineTransform2D endDelta, AffineTransform2D rootDelta, PartSkinning skin, RigPoint shoulder, RigPoint hand, bool left, double width = 512, double height = 512)
     {
+        if (skin.FullY > height) throw new ArgumentException("관절 연결 범위가 Canvas 밖입니다.");
         if (endDelta == rootDelta || Math.Abs(hand.Y - shoulder.Y) < .001 || Math.Abs(skin.FullY - hand.Y) > .1 || endDelta.M11 * endDelta.M22 - endDelta.M12 * endDelta.M21 <= 0 || rootDelta.M11 * rootDelta.M22 - rootDelta.M12 * rootDelta.M21 <= 0) return Compose(endDelta, skin, width, height, rootDelta);
         double CenterX(double y) => shoulder.X + (hand.X - shoulder.X) * (y - shoulder.Y) / (hand.Y - shoulder.Y);
         var restStart = new RigPoint(CenterX(skin.RootY), skin.RootY); var restEnd = new RigPoint(CenterX(skin.FullY), skin.FullY);
@@ -71,6 +72,6 @@ public static class JointSkinning
             var c = new RigPoint(b.X, rows[y + 1]); var d = new RigPoint(a.X, rows[y + 1]);
             Triangle(a, b, c); Triangle(a, c, d);
         }
-        return new(triangles);
+        return new(triangles, joinEdges: true);
     }
 }

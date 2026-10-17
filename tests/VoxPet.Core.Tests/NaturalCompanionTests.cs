@@ -36,6 +36,27 @@ public sealed class NaturalCompanionTests
         runtime.StopActions(); Assert.Contains(runtime.Update(new(.2, .1, 0)).Layers, l => l.Id == "part-foot");
         Assert.Throws<ArgumentException>(() => new CharacterDefinition(definition.Parts, definition.Anchors, attachments: [new("bad", "Bad", "shoes", [new("x", "shoe.png", replacesParts: ["missing"])])]));
     }
+    [Fact]
+    public void HeadReplacementAlsoHidesTheFaceThatBelongsToIt()
+    {
+        var helmet = new AttachmentDefinition("helmet", "Helmet", "hat", [new("front", "helmet.png", requiredVisibleParts: ["head"], replacesParts: ["head"])]);
+        var runtime = new CharacterRuntime(new([new("head", "head", "head.png", "head")], [new("root"), new("head", parent: "root")], expressions: [new("neutral", "eyes.png", "closed.png")], attachments: [helmet]));
+        runtime.Attachments.SetEnabled("helmet", true); var frame = runtime.Update(new(0, 0, 0));
+        Assert.Single(frame.Layers); Assert.Equal("helmet.png", frame.Layers[0].Asset);
+        runtime.Attachments.SetEnabled("helmet", false); frame = runtime.Update(new(.1, .1, 0));
+        Assert.Contains(frame.Layers, l => l.Id == "part-head"); Assert.Contains(frame.Layers, l => l.Id == "face-eyes");
+    }
+    [Fact]
+    public void ZeroFollowStillDisablesTheNewWristSkinning()
+    {
+        var anchors = new AnchorDefinition[] { new("root"), new("body", parent: "root"), new("shoulder", 300, 300, "body"), new("hand", 50, 120, "shoulder") };
+        var sleeve = new AttachmentDefinition("sleeve", "Sleeve", "top", [new("cloth", "cloth.png", "shoulder", placement: new(follow: 0, skinning: new(300, 420, "hand", "body")))]);
+        var action = new ActionDefinition("move", "Move", 1000, [new(0, ActionEventKind.Transform, "hand", transform: new(x: -80, y: -40))]);
+        var runtime = new CharacterRuntime(new([new("arm", "arm", "arm.png", "shoulder", skinning: new(300, 420, "hand", "body"))], anchors, actions: [action], attachments: [sleeve]));
+        runtime.Attachments.SetEnabled("sleeve", true); runtime.RequestAction("move"); var frame = runtime.Update(new(0, 0, 0));
+        Assert.NotNull(frame.Layers.Single(l => l.Id == "part-arm").Mesh);
+        var garment = frame.Layers.Single(l => l.Asset == "cloth.png"); Assert.Null(garment.Mesh); Assert.Equal(AffineTransform2D.Identity, garment.Matrix);
+    }
     [Theory]
     [InlineData("neulbo")]
     [InlineData("pelly")]
@@ -92,6 +113,29 @@ public sealed class NaturalCompanionTests
         var edge = frame.Layers.Single(l => l.Id == "part-arm-right").Mesh!.Triangles.First(t => t.A.Y == skin.FullY && t.B.Y == skin.FullY && t.A.X <= bind.X && t.B.X >= bind.X);
         var wrist = edge.Matrix.Map(bind.X, bind.Y); var target = runtime.CurrentRig.Animated["rightHand"].Map(0, 0);
         Assert.Equal(target.X, wrist.X, 7); Assert.Equal(target.Y, wrist.Y, 7);
+    }
+    [Theory]
+    [InlineData("neulbo")]
+    [InlineData("pelly")]
+    public void WristbandFollowsTheForearmInsteadOfFloatingBesideTheRotatingFist(string id)
+    {
+        var runtime = Load(id).CreateRuntime(); runtime.Attachments.SetEnabled("handAccessory", true); runtime.RequestAction("firearm"); runtime.Update(new(0, 0, 0));
+        var frame = runtime.Update(new(.405, .405, 0));
+        Assert.Same(frame.Layers.Single(l => l.Id == "part-arm-right").Mesh, frame.Layers.Single(l => l.Asset == "samples/handAccessory.png").Mesh);
+    }
+    [Theory]
+    [InlineData("neulbo")]
+    [InlineData("pelly")]
+    public void ExpressionCrossfadeKeepsPosedBodyPartsOpaqueAndMovesBothHeadsTogether(string id)
+    {
+        var p = Load(id); var processor = new LegacySpriteSheetRuntime { Samples = p.Character, Rig = CharacterRig.Default(id), WeaponId = "firearm", HoldWeapon = false };
+        var runtime = new CharacterRuntime(LegacySpriteSheetAdapter.Convert(3, samples: p.Character), processor: processor);
+        runtime.RequestAction("firearm"); runtime.Update(new(0, 0, 0)); runtime.Update(new(.38, .38, 0));
+        processor.Apply(ExpressionProfile.Default(1), 3, .38); var frame = runtime.Update(new(.38, 0, 0));
+        Assert.DoesNotContain(frame.Layers, l => l.Id == "legacy-previous");
+        Assert.All(frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal) && l.Id != "part-head"), l => Assert.Equal(1, l.Opacity));
+        Assert.Equal(frame.Layers.Single(l => l.Id == "part-head").Matrix, frame.Layers.Single(l => l.Id == "legacy-previous-head").Matrix);
+        Assert.Contains(frame.Layers, l => l.Id == "companion-equipped-weapon");
     }
     [Theory]
     [InlineData("neulbo")]

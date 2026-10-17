@@ -44,6 +44,12 @@ internal static class CompanionPartImages
             if (pixels[(y * width + x) * 4 + 3] > 32) { left = Math.Min(left, x); right = Math.Max(right, x); bottom = Math.Max(bottom, y); }
         return right < 0 ? (0, 0) : ((left + right) * 256d / width, bottom * 512d / height);
     }
+    internal static ImageSource PreviousHead(ImageSource snapshot, ImageSource reference, bool side)
+    {
+        var from = LowerBody(snapshot); var to = LowerBody(reference); double x = to.X - from.X, y = to.Y - from.Y;
+        var aligned = x == 0 && y == 0 ? snapshot : Raster(d => { d.PushTransform(new TranslateTransform(x, y)); d.DrawImage(snapshot, new Rect(0, 0, 512, 512)); d.Pop(); });
+        return Cut(aligned, "head", side);
+    }
     internal static ImageSource Cut(ImageSource original, string id, bool side)
     {
         // Adjacent antialiased cuts leave a translucent seam after source-over.
@@ -70,6 +76,17 @@ internal static class CompanionPartImages
             var source = Pixels(Raster(d => d.DrawImage(original, new Rect(0, 0, 512, 512))));
             var arms = Pixels(Raster(d => { foreach (string arm in new[] { "arm-left", "arm-right" }) d.DrawGeometry(Brushes.White, null, Masks(side)[arm]); }));
             var legs = Pixels(Raster(d => { foreach (string leg in new[] { "leg-left", "leg-right" }) d.DrawGeometry(Brushes.White, null, Masks(side)[leg]); }));
+            // Extend the hidden neck with skin, rather than old face pixels. This
+            // closes the small gap revealed by independent head rotation.
+            var neck = Pixels(Raster(d => d.DrawGeometry(skin, null, Geometry.Parse(CompanionParts.NeckContour(side)))));
+            var head = Pixels(Raster(d => d.DrawGeometry(Brushes.White, null, Masks(side)["head"])));
+            for (int pixel = 0; pixel < neck.Length; pixel += 4)
+            {
+                double alpha = source[pixel + 3] / 255d * head[pixel + 3] / 255;
+                for (int channel = 0; channel < 4; channel++) neck[pixel + channel] = (byte)Math.Round(neck[pixel + channel] * alpha);
+            }
+            var neckBacking = BitmapSource.Create(512, 512, 96, 96, PixelFormats.Pbgra32, null, neck, 512 * 4); neckBacking.Freeze();
+            canvas.Children.Add(new ImageDrawing(neckBacking, new Rect(0, 0, 512, 512)));
             // Explicit premultiplied alpha avoids WPF's nested vector opacity-mask
             // bounds artifacts. Only the original arm footprint may reveal backing.
             for (int pixel = 0; pixel < underlay.Length; pixel += 4)
@@ -100,8 +117,9 @@ internal static class CompanionPartImages
                 arm = Raster(d => { d.PushTransform(new MatrixTransform(-.55, 0, 0, .55, 420.35, 205.9)); d.DrawImage(rightWing, new Rect(0, 0, 512, 512)); d.Pop(); });
             }
             var sourceArm = arm;
-            result.Add(CompanionParts.GripArm(hand), side ? sourceArm : Raster(d =>
-            { d.PushClip(new RectangleGeometry(new Rect(0, 0, 512, 422))); d.DrawImage(sourceArm, new Rect(0, 0, 512, 512)); d.Pop(); }));
+            double wrist = side ? hand == "left" ? 427 : 402 : 422;
+            result.Add(CompanionParts.GripArm(hand), Raster(d =>
+            { d.PushClip(new RectangleGeometry(new Rect(0, 0, 512, wrist))); d.DrawImage(sourceArm, new Rect(0, 0, 512, 512)); d.Pop(); }));
         }
         var reference = LowerBody(sheet[0, 1]);
         for (int m = 0; m < sheet.GetLength(0); m++) for (int e = 0; e < 2; e++)
