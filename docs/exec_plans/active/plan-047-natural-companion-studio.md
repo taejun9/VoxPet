@@ -145,3 +145,6 @@ Git `add`가 worktree index.lock 생성의 Operation not permitted로 중단됐�
 
 
 d1be8ce Windows39047157538은 Core446/0·빌드/lint·WPF2981통과 후 썸네일 격리20회 중2·6·16회가 실패했다. 파일 잠금 안내/복구는 통과했으므로 기존 간헐 실패를 같은 원인으로 단정하지 않는다. 상세 진단이 system TEMP에만 있어 artifact에서 빠진 것을 확인해 RUNNER_TEMP 결과 폴더로 바로 기록하고, 실제 preview 예외의 타입/HResult/스택을 합성 fixture에서만 수집하도록 보강한다. 기존 판정과20회를 유지하며 원인 확인 전에는 배포하지 않는다.
+
+
+6ce64ce Windows39048044541에서13회차에 count0, 정상 패키지의 `BitmapDecoder.get_IsDownloading → BitmapSource.FreezeCore → DrawingDrawingContext.DrawImage` InvalidOperationException을 확인했다. 비정상 패키지의 m11 overflow는 의도한 격리였고 정상 카드까지 빠진 것이 실제 결함이다. decode와 DrawingGroup 생성이 별도 Task.Run으로 나뉘어 frozen frame도 원래 decoder의 스레드 경계를 다시 건넜다. 같은 worker 호출에서 load+prepare를 완료한 뒤 frozen card만 UI로 반환한다. 공개 fixture를 UI/worker 사이에서 강제로 넘긴 기존 실패 경계를 강제로 넘기는 대조 재현과 decoder.CheckAccess의 동일 worker 준비 검사를 추가하며20회 실제 새로고침 판정을 유지한다. Core 단독1,000회 overflow 거부는 모두 일관됐고 Windows drawing 경로의 실패와 구분한다.

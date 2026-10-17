@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Windows.Media.Imaging;
 using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Actions;
@@ -48,6 +49,21 @@ internal static class RuntimeSafetyQa
             var shell = new StudioShellViewModel(main, true);
             try
             {
+                var workerDecoded = await Task.Run(() => CharacterPackageLibrary.Decode(valid));
+                Exception? boundaryError = null;
+                try { _ = StudioShellViewModel.CreateCard(workerDecoded); }
+                catch (InvalidOperationException error) { boundaryError = error; }
+                bool reproduced = boundaryError?.StackTrace?.Contains("BitmapDecoder.get_IsDownloading", StringComparison.Ordinal) == true;
+                check(reproduced && workerDecoded.Images.Values.All(image => image.IsFrozen), "safety_thumbnail_frozen_decoder_cross_worker_repro");
+                File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "voxpet-runtime-safety-thumbnail-repro.json"),
+                    JsonSerializer.Serialize(new { reproduced, type = boundaryError?.GetType().FullName, boundaryError?.HResult, boundaryError?.StackTrace }));
+                bool onDecoderThread = false;
+                var preparedCard = await main.Packages.LoadPreparedAsync(loaded!.LibraryId, decoded =>
+                {
+                    onDecoderThread = decoded.Images.Values.OfType<BitmapFrame>().All(frame => frame.Decoder.CheckAccess());
+                    return StudioShellViewModel.CreateCard(decoded);
+                });
+                check(onDecoderThread && preparedCard?.Image?.IsFrozen == true, "safety_thumbnail_prepared_on_decoder_worker");
                 var observations = new List<object>();
                 var errors = new List<object>();
                 shell.PreviewFailed += (id, error) => errors.Add(new { id, type = error.GetType().FullName, error.HResult, error.Message, error.StackTrace });

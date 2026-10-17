@@ -76,9 +76,15 @@ public sealed class NativeCharacterViewModel : ObservableObject
     }
     public async Task<LoadedCharacterPackage?> LoadForEditorAsync(string id)
     {
-        if (closing) return null; await io.WaitAsync();
-        try { return await Task.Run(() => library.Load(id)); }
+        try { return await LoadPreparedAsync(id, loaded => loaded); }
         catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "보관함 읽기 실패 · " + e.Message; return null; }
+    }
+    // DrawingGroup.DrawImage may clone a frozen frame and revisit its thread-owned
+    // decoder. Decode and prepare the frozen card in one worker invocation.
+    internal async Task<T?> LoadPreparedAsync<T>(string id, Func<LoadedCharacterPackage, T> prepare) where T : class
+    {
+        if (closing) return null; await io.WaitAsync();
+        try { return await Task.Run(() => prepare(library.Load(id))); }
         finally { io.Release(); }
     }
     public async Task<bool> DeleteAsync(string id)

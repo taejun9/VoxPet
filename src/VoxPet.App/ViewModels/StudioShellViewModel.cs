@@ -164,6 +164,19 @@ public sealed class StudioShellViewModel : ObservableObject
         Main.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(Main.VoiceLevel)) Notify(nameof(RuntimeState)); };
     }
     private void RefreshCommands() { foreach (var c in new[] { RefreshCommand, ImportCommand, NewCommand, SelectCommand, EditCommand, ExportCommand, DeleteCommand, SampleCommand, EditCompanionCommand }) c.Refresh(); }
+    // Called on the same worker that decoded this package, before returning a frozen image.
+    internal static CharacterCard CreateCard(LoadedCharacterPackage loaded)
+    {
+        var m = loaded.Package.Manifest; ImageSource? image;
+        if (m.Thumbnail is { } thumbnailAsset) image = loaded.Images[thumbnailAsset];
+        else
+        {
+            var runtime = loaded.Package.CreateRuntime(new Random(1)); var frame = runtime.Update(new(0, 0, 0, false));
+            var group = new DrawingGroup(); using (var drawing = group.Open()) RenderFrameDrawing.Draw(drawing, frame, loaded.Images);
+            group.Freeze(); var thumbnail = new DrawingImage(group); thumbnail.Freeze(); image = thumbnail;
+        }
+        return new(loaded.LibraryId, m.Name, m.Id, m.Version, m.Author, m.Description, image);
+    }
     public async Task RefreshAsync()
     {
         if (closing || busy) return; busy = true; RefreshCommands(); string? id = Selected?.LibraryId ?? (Main.Packages.Loaded?.Package.Manifest is { Id: SampleId, Version: SampleVersion } ? "builtin-sample" : Main.Packages.Loaded?.LibraryId ?? "legacy-" + Main.SelectedCharacter.Id);
@@ -183,14 +196,9 @@ public sealed class StudioShellViewModel : ObservableObject
             {
                 try
                 {
-                    var loaded = await Main.Packages.LoadForEditorAsync(entry.LibraryId); if (loaded == null) { unavailable++; continue; }
-                    var m = loaded.Package.Manifest; ImageSource? image = m.Thumbnail is { } t ? loaded.Images[t] : await Task.Run(() =>
-                    {
-                        var runtime = loaded.Package.CreateRuntime(new Random(1)); var frame = runtime.Update(new(0, 0, 0, false));
-                        var group = new DrawingGroup(); using (var drawing = group.Open()) RenderFrameDrawing.Draw(drawing, frame, loaded.Images);
-                        group.Freeze(); var thumbnail = new DrawingImage(group); thumbnail.Freeze(); return thumbnail;
-                    });
-                    cards.Add(new(entry.LibraryId, m.Name, m.Id, m.Version, m.Author, m.Description, image));
+                    var card = await Main.Packages.LoadPreparedAsync(entry.LibraryId, CreateCard);
+                    if (card == null) { unavailable++; continue; }
+                    cards.Add(card);
                 }
                 catch (Exception e) when (CharacterPackageLibrary.Expected(e) || e is InvalidOperationException)
                 { unavailable++; PreviewFailed?.Invoke(entry.LibraryId, e); }
