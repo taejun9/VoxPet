@@ -49,21 +49,24 @@ internal static class RuntimeSafetyQa
             try
             {
                 var observations = new List<object>();
+                var errors = new List<object>();
+                shell.PreviewFailed += (id, error) => errors.Add(new { id, type = error.GetType().FullName, error.HResult, error.Message, error.StackTrace });
                 for (int round = 0; round < 20; round++)
                 {
-                    await shell.RefreshAsync();
+                    errors.Clear(); await shell.RefreshAsync();
                     int count = shell.Cards.Count(c => c.Legacy == null && !c.Sample);
                     observations.Add(new
                     {
                         round,
                         count,
+                        errors = errors.ToArray(),
                         shell.Status,
                         packageStatus = main.Packages.Status,
                         main.Packages.UnavailableEntries,
                         entries = main.Packages.Entries.Select(e => e.LibraryId).ToArray(),
                         cards = shell.Cards.Where(c => c.Legacy == null && !c.Sample).Select(c => c.LibraryId).ToArray()
                     });
-                    File.WriteAllText(Path.Combine(Path.GetTempPath(), "voxpet-runtime-safety-library.json"), JsonSerializer.Serialize(observations));
+                    File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "voxpet-runtime-safety-library.json"), JsonSerializer.Serialize(observations));
                     check(count == 1 && shell.Status.StartsWith("일부 캐릭터"), round == 0 ? "safety_library_bad_thumbnail_isolated" : $"safety_library_bad_thumbnail_isolated_round{round + 1}");
                 }
                 // A package temporarily held by another process must not disappear silently.

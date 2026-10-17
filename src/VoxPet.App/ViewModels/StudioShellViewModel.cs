@@ -125,6 +125,7 @@ public sealed class StudioShellViewModel : ObservableObject
     private void RefreshSamples()
     { Notify(nameof(HasLegacyQuickActions)); Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(DisplayScene)); UpdateAttachmentCards(); EditCompanionCommand.Refresh(); }
 
+    internal event Action<string, Exception>? PreviewFailed;
     public event Func<string?>? ChoosePackage;
     public event Func<string?>? ChooseExport;
     public event Action<int>? SettingsRequested;
@@ -192,7 +193,7 @@ public sealed class StudioShellViewModel : ObservableObject
                     cards.Add(new(entry.LibraryId, m.Name, m.Id, m.Version, m.Author, m.Description, image));
                 }
                 catch (Exception e) when (CharacterPackageLibrary.Expected(e) || e is InvalidOperationException)
-                { unavailable++; }
+                { unavailable++; PreviewFailed?.Invoke(entry.LibraryId, e); }
             }
             if (closing) return;
             if (unavailable > 0) Status = "일부 캐릭터의 미리보기를 만들지 못했습니다. 기존 원본은 유지합니다.";
