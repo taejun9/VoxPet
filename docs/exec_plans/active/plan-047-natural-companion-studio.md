@@ -132,3 +132,6 @@ Candidate5 3463e06/39025495236의 실제 JSON은 `natural_expression_editor_same
 동일 d1bcfaa EXE의 기본 임시 경로3회 재현(39025920013 portable_repro)은1·2회2346/0,3회 `natural_expression_editor_same_shell_neulbo` 1실패였다. 별도 전체 실행3463e06에서도 같은 이름으로 실패해, 경로 길이 문제가 아닌 편집 UIA 판정 시점의 간헐 실패를 재현했다. 원래 경로를 유지하며 진단을 보존한 효과를 확인했다. UiAutomationQa Background 완료 대기와3회 왕복 보강을 최종으로 전체 재검증한다.
 
 f4c53db Windows39026608323/OBS39026608329은 Core446·WPF2873/0·portable2350/0·desktop541·시작/서명18개까지 모두 통과했다. 최종 시각 대조에서 일부 이름상590ms 화면이 앞선 준비 자세처럼 보여, 캡처의 Normal 우선순위 대기가 Render보다 앞설 가능성을 추가 확인한다. 실제 앱 CurrentProgress·양손/몸통 rig·총구 효과를 같은 정의의 독립 기준 Runtime 5시점에 대조하는90개 통합 검사를 추가하고 매 캐릭터45개 phase JSON을 남긴다. 캡처는 Render 완료 이후100ms compositor 대기와 다시 Background 완료를 거쳐 실제 desktop pixels를 읽는다. 모델/사진의 시점이 맞는지 최종 전체 실행과 화면으로 확인하기 전에는 완료하지 않는다.
+
+
+d802ec3 Windows39044875940은 주 WPF2963/0 및 실제 재생 시점90개·화면541개를 통과했으나 portable의 `safety_library_bad_thumbnail_isolated`가1건 실패했다. 원인을 추정해 통과 처리하지 않고 목록수·상태·entry/card ID만 기록하는 합성 진단과5회 새로고침 회귀를 추가해 동일 경로를 확인한다. 개인 이미지·마이크·사용자 경로는 기록하지 않는다.

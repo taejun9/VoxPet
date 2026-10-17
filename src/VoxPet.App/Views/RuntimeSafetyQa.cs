@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using VoxPet.App.Services;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Actions;
@@ -47,8 +48,23 @@ internal static class RuntimeSafetyQa
             var shell = new StudioShellViewModel(main, true);
             try
             {
-                await shell.RefreshAsync();
-                check(shell.Cards.Count(c => c.Legacy == null && !c.Sample) == 1 && shell.Status.StartsWith("일부 캐릭터"), "safety_library_bad_thumbnail_isolated");
+                var observations = new List<object>();
+                for (int round = 0; round < 5; round++)
+                {
+                    await shell.RefreshAsync();
+                    int count = shell.Cards.Count(c => c.Legacy == null && !c.Sample);
+                    observations.Add(new
+                    {
+                        round,
+                        count,
+                        shell.Status,
+                        packageStatus = main.Packages.Status,
+                        entries = main.Packages.Entries.Select(e => e.LibraryId).ToArray(),
+                        cards = shell.Cards.Where(c => c.Legacy == null && !c.Sample).Select(c => c.LibraryId).ToArray()
+                    });
+                    File.WriteAllText(Path.Combine(Path.GetTempPath(), "voxpet-runtime-safety-library.json"), JsonSerializer.Serialize(observations));
+                    check(count == 1 && shell.Status.StartsWith("일부 캐릭터"), round == 0 ? "safety_library_bad_thumbnail_isolated" : $"safety_library_bad_thumbnail_isolated_round{round + 1}");
+                }
             }
             finally { await shell.CloseAsync(); await main.DisposeAsync(); }
             for (int i = 0; i < 10000; i++) native.Input(new(TriggerKind.Manual, "unbound"));
