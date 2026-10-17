@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
@@ -71,7 +72,7 @@ internal static class ExpressionQa
         try
         {
             await editor.InitializeAsync(); editor.Selected = editor.Slots[11];
-            editor.Selected.Name = "QA 눈물"; editor.Selected.Kind = ExpressionKind.Sad; editor.Selected.Tears = true;
+            editor.Selected.Name = "QA 눈물"; editor.Selected.Kind = ExpressionKind.Sad; editor.Selected.Tears = true; editor.Selected.Blink = true;
             editor.Selected.TearLeft = .3; editor.Selected.TearRight = .7; editor.Selected.TearTop = .4;
             await editor.SaveAsync();
             var restart = new ExpressionViewModel(character, persistent: true, folder); await restart.InitializeAsync();
@@ -97,10 +98,25 @@ internal static class ExpressionQa
             await restart.CloseAsync(); restart = new ExpressionViewModel(character, persistent: true, folder); await restart.InitializeAsync();
             await restart.ActivateAsync(11);
             check(character.Name.Contains("QA 눈물") && character.Sprite is BitmapSource bitmap && bitmap.PixelWidth == importedWidth, "expression_owned_copy_survives_original_removal");
-            var customSprite = character.Sprite;
+            // The live main timer may blink while file IO is awaited. Compare the
+            // same explicit input before/after rejection, then check both eye frames.
+            var open = new CharacterParameters(0, 0, 0, 0, 1, MouthState.Closed);
+            var closed = new CharacterParameters(0, 0, 0, 0, 0, MouthState.Closed);
+            character.Update(open); var customSprite = character.Sprite;
+            character.Update(closed); var customBlink = character.Sprite; character.Update(open);
             File.WriteAllText(Path.Combine(folder, restart.Slots[11].Saved.SheetId + ".png"), "corrupt");
-            await restart.ActivateAsync(11);
-            check(ReferenceEquals(customSprite, character.Sprite) && restart.Status.Contains("현재 표정을 유지"), "expression_corrupt_sheet_preserves_display");
+            var corruptObservations = new List<object>(); bool allBlinkFramesPreserved = !ReferenceEquals(customSprite, customBlink);
+            for (int round = 0; round < 20; round++)
+            {
+                await restart.ActivateAsync(11); bool liveFrameChanged = !ReferenceEquals(customSprite, character.Sprite);
+                character.Update(open); bool openPreserved = ReferenceEquals(customSprite, character.Sprite);
+                character.Update(closed); bool blinkPreserved = ReferenceEquals(customBlink, character.Sprite); character.Update(open);
+                allBlinkFramesPreserved &= blinkPreserved;
+                corruptObservations.Add(new { round, liveFrameChanged, openPreserved, blinkPreserved, character.UsesCustomSheet, restart.Status });
+                File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("RUNNER_TEMP") ?? Path.GetTempPath(), "voxpet-runtime-expression-corrupt-recovery.json"), JsonSerializer.Serialize(corruptObservations));
+                check(openPreserved && character.UsesCustomSheet && restart.Status.Contains("현재 표정을 유지"), round == 0 ? "expression_corrupt_sheet_preserves_display" : $"expression_corrupt_sheet_preserves_display_round{round + 1}");
+            }
+            check(allBlinkFramesPreserved, "expression_corrupt_sheet_preserves_blink_frames");
             // 앞선 손상 시트 요청과 뒤의 정상 전환을 동시에 큐에 넣어 최신 요청 우선 계약을 확인한다.
             var requests = new List<Task> { restart.ActivateAsync(11) };
             for (int i = 0; i < 30; i++) requests.Add(restart.ActivateAsync(i % 6));

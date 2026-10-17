@@ -148,3 +148,6 @@ d1be8ce Windows39047157538은 Core446/0·빌드/lint·WPF2981통과 후 썸네�
 
 
 6ce64ce Windows39048044541에서13회차에 count0, 정상 패키지의 `BitmapDecoder.get_IsDownloading → BitmapSource.FreezeCore → DrawingDrawingContext.DrawImage` InvalidOperationException을 확인했다. 비정상 패키지의 m11 overflow는 의도한 격리였고 정상 카드까지 빠진 것이 실제 결함이다. decode와 DrawingGroup 생성이 별도 Task.Run으로 나뉘어 frozen frame도 원래 decoder의 스레드 경계를 다시 건넜다. 같은 worker 호출에서 load+prepare를 완료한 뒤 frozen card만 UI로 반환한다. 공개 fixture를 UI/worker 사이에서 강제로 넘긴 기존 실패 경계를 강제로 넘기는 대조 재현과 decoder.CheckAccess의 동일 worker 준비 검사를 추가하며20회 실제 새로고침 판정을 유지한다. Core 단독1,000회 overflow 거부는 모두 일관됐고 Windows drawing 경로의 실패와 구분한다.
+
+
+b05d9a2 Windows39048798186의 앱 전체 및 디코더 재현/동일 worker/20회 격리는 통과했지만 portable에서 기존 `expression_corrupt_sheet_preserves_display` 1건이 실패했다. 이 검사는 실제 Main 타이머가 눈을 깜빡이는 동안 await 전후 Sprite 참조를 그대로 비교했다. 깨진 시트의 표시 보존은 같은 입/눈 입력에서 비교해야 한다. 기존 참조 동일/오류 상태 판정을 유지하되 open/closed 고정 입력 두 프레임을 모두 보존하는지 확인하고20회 반복 및 각 회차 raw frame 변경/보존 결과 JSON을 추가한다. 허용치 변경이나 검사 제거가 아니다. Native 주석의 clone 표현도 실제 Freeze 경로에 맞춰 re-freeze로 정정한다.

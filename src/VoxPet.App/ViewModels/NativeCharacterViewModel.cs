@@ -79,7 +79,7 @@ public sealed class NativeCharacterViewModel : ObservableObject
         try { return await LoadPreparedAsync(id, loaded => loaded); }
         catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "보관함 읽기 실패 · " + e.Message; return null; }
     }
-    // DrawingGroup.DrawImage may clone a frozen frame and revisit its thread-owned
+    // DrawingGroup.DrawImage may re-freeze a frozen frame and revisit its thread-owned
     // decoder. Decode and prepare the frozen card in one worker invocation.
     internal async Task<T?> LoadPreparedAsync<T>(string id, Func<LoadedCharacterPackage, T> prepare) where T : class
     {
