@@ -20,6 +20,7 @@ public sealed class NativeCharacterViewModel : ObservableObject
     private string status = ".voxpet 캐릭터를 등록할 수 있습니다.";
     public LoadedCharacterPackage? Loaded { get; private set; }
     public ObservableCollection<CharacterPackageEntry> Entries { get; } = [];
+    public int UnavailableEntries { get; private set; }
     public bool IsActive => scene != null;
     public bool IsBusy => busy;
     public bool CanReceiveInput => IsActive && !busy && !closing && !faulted;
@@ -39,7 +40,7 @@ public sealed class NativeCharacterViewModel : ObservableObject
     {
         if (!persistent || closing) return;
         await io.WaitAsync();
-        try { var entries = await Task.Run(library.List); if (!closing) { Entries.Clear(); foreach (var entry in entries) Entries.Add(entry); } }
+        try { var entries = await Task.Run(library.List); if (!closing) { UnavailableEntries = library.SkippedCount; Entries.Clear(); foreach (var entry in entries) Entries.Add(entry); } }
         catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { if (!closing) Status = "캐릭터 보관함 읽기 실패 · 기존 파일을 유지합니다. " + e.Message; }
         finally { io.Release(); }
     }

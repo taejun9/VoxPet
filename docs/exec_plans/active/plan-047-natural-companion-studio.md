@@ -135,3 +135,10 @@ f4c53db Windows39026608323/OBS39026608329은 Core446·WPF2873/0·portable2350/0�
 
 
 d802ec3 Windows39044875940은 주 WPF2963/0 및 실제 재생 시점90개·화면541개를 통과했으나 portable의 `safety_library_bad_thumbnail_isolated`가1건 실패했다. 원인을 추정해 통과 처리하지 않고 목록수·상태·entry/card ID만 기록하는 합성 진단과5회 새로고침 회귀를 추가해 동일 경로를 확인한다. 개인 이미지·마이크·사용자 경로는 기록하지 않는다.
+
+
+목록 검토에서 `CharacterPackageLibrary.List`가 읽지 못한 파일을 상태 전달 없이 제외하고 `LoadForEditorAsync`의 null도 Studio 경고 없이 건너뛰는 경로를 확인했다. 이를 누락 수로 전달하고 새로고침 완료 시 경고를 집계하며 정상 복구 시 기존 경고를 해제한다. 다른 프로세스가 패키지를 FileShare.None으로 잠근 상황과 잠금/문제 파일 해제 후 복구를 실제 WPF 회귀로 추가한다. 직전 간헐 실패와 같은 원인이라고 단정하지 않으며5회 진단 결과와 함께 검증한다.
+
+최종 수정본은 기존 썸네일 격리 판정을20회씩 반복하고 파일 잠금/정상 복구2개를 추가한다. 검사 이름·개수만으로 성공 처리하지 않고 JSON의 항목 수와 경고/복구 상태를 대조한다.
+
+Git `add`가 worktree index.lock 생성의 Operation not permitted로 중단됐다. 잠금 파일은 존재하지 않았고5개 수정 파일과 HEAD7697330은 그대로 보존됐다. 이어 실행된 push는 Everything up-to-date로 새 변경을 올리지 않았다. 강제 삭제/초기화 대신 권한을 갖춘 동일 add 단계로 복구한다.

@@ -11,6 +11,7 @@ public sealed record CharacterPackageEntry(string LibraryId, string Name, string
 /// <summary>worker 전용 보관함. ZIP는 추출하지 않고 원본 bytes와 마지막 선택을 atomic 저장한다.</summary>
 public sealed class CharacterPackageLibrary(string folder)
 {
+    public int SkippedCount { get; private set; }
     private string FilePath(string id)
     {
         if (!Guid.TryParseExact(id, "N", out _)) throw new ArgumentException("보관함ID를 확인하세요.");
@@ -52,13 +53,13 @@ public sealed class CharacterPackageLibrary(string folder)
     }
     public IReadOnlyList<CharacterPackageEntry> List()
     {
-        var entries = new List<CharacterPackageEntry>(); if (!Directory.Exists(folder)) return entries;
+        SkippedCount = 0; var entries = new List<CharacterPackageEntry>(); if (!Directory.Exists(folder)) return entries;
         foreach (string path in Directory.EnumerateFiles(folder, "*.voxpet").Take(101))
         {
             if (entries.Count >= 100) break;
             string id = Path.GetFileNameWithoutExtension(path); if (!Guid.TryParseExact(id, "N", out _)) continue;
             try { var manifest = new VoxPetPackageLoader().Load(path).Manifest; entries.Add(new(id, manifest.Name, manifest.Id, manifest.Version, manifest.Author)); }
-            catch (Exception e) when (Expected(e)) { /* 손상 원본을 보존하고 다른 항목을 읽는다. */ }
+            catch (Exception e) when (Expected(e)) { SkippedCount++; /* 원본을 보존하고 UI에 누락을 알린다. */ }
         }
         return entries;
     }

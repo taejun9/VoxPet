@@ -169,6 +169,7 @@ public sealed class StudioShellViewModel : ObservableObject
         try
         {
             await Main.Packages.RefreshAsync(); var cards = new List<CharacterCard>();
+            int unavailable = Main.Packages.UnavailableEntries;
             foreach (var legacy in Main.Characters)
             {
                 ImageSource? image = null;
@@ -181,7 +182,7 @@ public sealed class StudioShellViewModel : ObservableObject
             {
                 try
                 {
-                    var loaded = await Main.Packages.LoadForEditorAsync(entry.LibraryId); if (loaded == null) continue;
+                    var loaded = await Main.Packages.LoadForEditorAsync(entry.LibraryId); if (loaded == null) { unavailable++; continue; }
                     var m = loaded.Package.Manifest; ImageSource? image = m.Thumbnail is { } t ? loaded.Images[t] : await Task.Run(() =>
                     {
                         var runtime = loaded.Package.CreateRuntime(new Random(1)); var frame = runtime.Update(new(0, 0, 0, false));
@@ -191,9 +192,12 @@ public sealed class StudioShellViewModel : ObservableObject
                     cards.Add(new(entry.LibraryId, m.Name, m.Id, m.Version, m.Author, m.Description, image));
                 }
                 catch (Exception e) when (CharacterPackageLibrary.Expected(e) || e is InvalidOperationException)
-                { Status = "일부 캐릭터의 미리보기를 만들지 못했습니다. 기존 원본은 유지합니다."; }
+                { unavailable++; }
             }
-            if (closing) return; Cards.Clear(); foreach (var card in cards) Cards.Add(card); Selected = Cards.FirstOrDefault(c => c.LibraryId == id) ?? Cards.FirstOrDefault(); Notify(nameof(Filtered));
+            if (closing) return;
+            if (unavailable > 0) Status = "일부 캐릭터의 미리보기를 만들지 못했습니다. 기존 원본은 유지합니다.";
+            else if (Status.StartsWith("일부 캐릭터", StringComparison.Ordinal)) Status = "캐릭터 목록을 새로 불러왔습니다.";
+            Cards.Clear(); foreach (var card in cards) Cards.Add(card); Selected = Cards.FirstOrDefault(c => c.LibraryId == id) ?? Cards.FirstOrDefault(); Notify(nameof(Filtered));
         }
         finally { busy = false; RefreshCommands(); }
     }

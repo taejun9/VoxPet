@@ -49,7 +49,7 @@ internal static class RuntimeSafetyQa
             try
             {
                 var observations = new List<object>();
-                for (int round = 0; round < 5; round++)
+                for (int round = 0; round < 20; round++)
                 {
                     await shell.RefreshAsync();
                     int count = shell.Cards.Count(c => c.Legacy == null && !c.Sample);
@@ -59,12 +59,22 @@ internal static class RuntimeSafetyQa
                         count,
                         shell.Status,
                         packageStatus = main.Packages.Status,
+                        main.Packages.UnavailableEntries,
                         entries = main.Packages.Entries.Select(e => e.LibraryId).ToArray(),
                         cards = shell.Cards.Where(c => c.Legacy == null && !c.Sample).Select(c => c.LibraryId).ToArray()
                     });
                     File.WriteAllText(Path.Combine(Path.GetTempPath(), "voxpet-runtime-safety-library.json"), JsonSerializer.Serialize(observations));
                     check(count == 1 && shell.Status.StartsWith("일부 캐릭터"), round == 0 ? "safety_library_bad_thumbnail_isolated" : $"safety_library_bad_thumbnail_isolated_round{round + 1}");
                 }
+                // A package temporarily held by another process must not disappear silently.
+                using (var locked = new FileStream(Path.Combine(folder, "CharactersV2", brokenId + ".voxpet"), FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    await shell.RefreshAsync();
+                    check(main.Packages.UnavailableEntries == 1 && shell.Cards.Count(c => c.Legacy == null && !c.Sample) == 1 && shell.Status.StartsWith("일부 캐릭터"), "safety_library_locked_package_reports_skipped_preview");
+                }
+                File.Delete(Path.Combine(folder, "CharactersV2", brokenId + ".voxpet"));
+                await shell.RefreshAsync();
+                check(main.Packages.UnavailableEntries == 0 && shell.Cards.Count(c => c.Legacy == null && !c.Sample) == 1 && !shell.Status.StartsWith("일부 캐릭터"), "safety_library_preview_warning_clears_after_recovery");
             }
             finally { await shell.CloseAsync(); await main.DisposeAsync(); }
             for (int i = 0; i < 10000; i++) native.Input(new(TriggerKind.Manual, "unbound"));
