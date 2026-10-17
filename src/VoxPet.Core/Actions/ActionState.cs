@@ -9,11 +9,16 @@ public sealed record ActionEffect
     public string Asset { get; }
     public string Anchor { get; }
     public Transform2D Transform { get; }
+    public int ZIndex { get; }
+    public string? EndAnchor { get; }
+    public Transform2D EndTransform { get; }
     public double Progress { get; }
-    public ActionEffect(string id, string asset, string anchor, Transform2D transform, double progress)
+    public ActionEffect(string id, string asset, string anchor, Transform2D transform, double progress, string? endAnchor = null, Transform2D? endTransform = null, int zIndex = 2000)
     {
         Id = DefinitionValidation.Id(id, nameof(id)); Asset = DefinitionValidation.Asset(asset, ".png", nameof(asset));
         Anchor = DefinitionValidation.Id(anchor, nameof(anchor)); ArgumentNullException.ThrowIfNull(transform); Transform = transform;
+        ZIndex = zIndex;
+        EndAnchor = endAnchor == null ? null : DefinitionValidation.Id(endAnchor, nameof(endAnchor)); EndTransform = endTransform ?? Transform2D.Identity;
         Progress = DefinitionValidation.Unit(progress, nameof(progress));
     }
 }

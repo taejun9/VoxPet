@@ -39,7 +39,7 @@ public static class PackageJson
     private static string Path(string? path) => PackagePath.Normalize(path ?? throw new VoxPetPackageException("문서/자산 경로가 없습니다."));
     private static Transform2D T(JsonElement e) => new(N(e, "x"), N(e, "y"), N(e, "scaleX", N(e, "scale", 1)), N(e, "scaleY", N(e, "scale", 1)), N(e, "rotation"));
     private static object Transform(Transform2D t) => new { t.X, t.Y, t.ScaleX, t.ScaleY, t.Rotation };
-    private static PartSkinning? Skin(JsonElement e) => e.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null ? null : new(N(e, "rootY"), N(e, "fullY"));
+    private static PartSkinning? Skin(JsonElement e) => e.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null ? null : new(N(e, "rootY"), N(e, "fullY"), S(e, "endAnchor"), S(e, "rootAnchor"));
     private static void Schema(JsonElement e) { if (I(e, "schemaVersion", 2) != 2) throw new VoxPetPackageException("schemaVersion2만 지원합니다."); }
     public static VoxPetManifest ReadManifest(byte[] bytes)
     {
@@ -114,7 +114,7 @@ public static class PackageJson
         double derived = timeline.Length == 0 ? 1000 : timeline.Max(t => t.TimeMs + t.DurationMs); if (derived == 0) derived = 1000;
         var mode = S(playback, "mode", "once") switch { "once" => ActionPlaybackMode.Once, "loop" => ActionPlaybackMode.Loop, _ => throw new VoxPetPackageException("재생 mode를 확인하세요.") };
         var triggers = A(e, "triggers").Select((t, i) => ReadTrigger(t, id, i)).ToArray();
-        return new(id, S(e, "name", id)!, N(e, "duration", derived), timeline, I(e, "priority", 50), new(mode, B(playback, "interruptible", true), B(playback, "returnToIdle", true)), S(e, "compatibilityTag"), triggers);
+        return new(id, S(e, "name", id)!, N(e, "duration", derived), timeline, I(e, "priority", 50), new(mode, B(playback, "interruptible", true), B(playback, "returnToIdle", true)), S(e, "compatibilityTag"), triggers, B(e, "interpolateTransforms"));
     }
     private static TriggerDefinition ReadTrigger(JsonElement e, string action, int index)
     {
@@ -136,7 +136,7 @@ public static class PackageJson
             "visibility" => new(time, ActionEventKind.Visibility, S(value, "target"), enabled: B(value, "visible", true)),
             "sprite" => new(time, ActionEventKind.Sprite, S(value, "target"), Path(S(value, "file"))),
             "effect" => new(time, ActionEventKind.Effect, S(value, "anchor"), Path(S(value, "file")),
-                P(value, "transform").ValueKind == JsonValueKind.Object ? T(P(value, "transform")) : null, durationMs: N(value, "duration")),
+                P(value, "transform").ValueKind == JsonValueKind.Object ? T(P(value, "transform")) : null, durationMs: N(value, "duration"), endAnchor: S(value, "endAnchor"), endTransform: Has(value, "endTransform") ? T(P(value, "endTransform")) : null, zIndex: I(value, "zIndex", 2000)),
             "sound" => new(time, ActionEventKind.Sound, value: S(value, "file")),
             "expression" => new(time, ActionEventKind.Expression, value: value.GetString()),
             "attachment" => new(time, ActionEventKind.Attachment, value: S(value, "id"), enabled: B(value, "enabled", true)),
@@ -151,7 +151,7 @@ public static class PackageJson
             ActionEventKind.Transform => new { e.Target, e.Transform!.X, e.Transform.Y, e.Transform.ScaleX, e.Transform.ScaleY, e.Transform.Rotation },
             ActionEventKind.Visibility => new { e.Target, visible = e.Enabled },
             ActionEventKind.Sprite => new { e.Target, file = e.Value },
-            ActionEventKind.Effect => new { anchor = e.Target, file = e.Value, duration = e.DurationMs, transform = e.Transform is null ? null : Transform(e.Transform) },
+            ActionEventKind.Effect => new { anchor = e.Target, file = e.Value, duration = e.DurationMs, transform = e.Transform is null ? null : Transform(e.Transform), e.EndAnchor, endTransform = Transform(e.EndTransform), e.ZIndex },
             ActionEventKind.Sound => new { file = e.Value },
             ActionEventKind.Attachment => new { id = e.Value, enabled = e.Enabled },
             _ => throw new VoxPetPackageException("이벤트를 확인하세요.")
@@ -165,6 +165,7 @@ public static class PackageJson
         a.Name,
         a.Priority,
         duration = a.DurationMs,
+        a.InterpolateTransforms,
         a.CompatibilityTag,
         playback = new { mode = a.Playback.Mode.ToString().ToLowerInvariant(), a.Playback.Interruptible, a.Playback.ReturnToIdle },
         timeline = a.Timeline.Select(Event),
@@ -196,7 +197,7 @@ public static class PackageJson
             requiredVisibleParts: A(l, "requiredVisibleParts").Select(v => v.GetString()!), onlyDuringAction: B(l, "onlyDuringAction"), hideOnMissingPose: B(l, "hideOnMissingPose"),
             placement: new(T(P(l, "transform")), S(l, "space", "canvas") switch { "canvas" => AttachmentSpace.Canvas, "anchor" => AttachmentSpace.Anchor, _ => throw new VoxPetPackageException("배치 space를 확인하세요.") },
                 N(l, "follow", 1), Has(l, "width") && P(l, "width").ValueKind != JsonValueKind.Null ? N(l, "width") : null,
-                Has(l, "height") && P(l, "height").ValueKind != JsonValueKind.Null ? N(l, "height") : null, B(l, "deformWithRig"), Skin(P(l, "skinning"))), animation: ReadAnimation(P(l, "animation")))).ToArray();
+                Has(l, "height") && P(l, "height").ValueKind != JsonValueKind.Null ? N(l, "height") : null, B(l, "deformWithRig"), Skin(P(l, "skinning"))), animation: ReadAnimation(P(l, "animation")), replacesParts: A(l, "replacesParts").Select(v => v.GetString()!))).ToArray();
         return new(S(e, "id")!, S(e, "name")!, S(e, "category")!, layers, S(e, "compatibilityTag"), S(e, "exclusiveGroup"));
     }
     public static byte[] WriteAttachment(AttachmentDefinition a) => JsonSerializer.SerializeToUtf8Bytes(new
@@ -217,6 +218,7 @@ public static class PackageJson
             inherit = l.Inherit,
             l.Poses,
             l.RequiredVisibleParts,
+            l.ReplacesParts,
             l.OnlyDuringAction,
             l.HideOnMissingPose,
             animation = l.Animation is { } a ? new { a.Frames, a.FrameDurationMs } : null,

@@ -54,3 +54,14 @@ AttachmentStore의 native index는 attachments-v2.json이며 공통 attachment c
 CharacterDocument는 변경하지 않은 지원 모델·manifest의 character/action/attachment 참조·사용하지 않는 보유 PNG도 보존한다. metadata만 바꾸거나 no-op edit한 파일의 지원 데이터/원본 bytes를 시험한다. 사용자 변경으로 참조 무결성이 깨지면 적용을 거부하고 이전 문서를 유지한다. 새 asset은 managed 상대 PNG 경로로 추가하며 원본 파일을 수정하지 않는다. Editor와 native 방송의 동일 입력 frame 왕복도 검사한다. unknown JSON 확장 속성을 무손실 편집하는 기능은 제공하지 않는다.
 
 필수 최소 예제/공개 제작 틀과 지원 필드의 실제 codec은 VoxPetPackageTests, CharacterDocumentTests, CharacterEditorQa가 검증한다. Runtime thread/renderer 계약과 Legacy 보존은 [아키텍처](../architecture/voxpet-2-runtime.md), [최종 완료 근거](migration-completion-audit.md)를 따른다.
+
+
+## 연속 동작·파지 연결 (plan047)
+
+action의 선택 `interpolateTransforms:true`는 같은 target의 두 transform 키 사이를 smoothstep으로 보간한다. 기본false는 기존 step 의미를 유지한다. pose 이벤트는 트랙을 초기화하므로 그 경계를 넘겨 보간하지 않는다. 반전 배율은0을 지나지 않게 다음 키에서 전환한다.
+
+part와 attachment layer의 `skinning`은 기존 rootY/fullY에 선택 `rootAnchor`/`endAnchor`를 지원한다. rootAnchor의 기준 변환에서 endAnchor의 기준 변환까지 Y 가중치를 늘린다. 기본값은 기존 고정 어깨/부위 앵커이며 두 앵커는 character에 존재해야 한다. 몸통 기울기와 손목/무기의 접점을 함께 유지할 때 사용한다. 양 끝 앵커가 있는 팔/소매는 원본 단면 폭을 유지하는 팔꿈치 곡선으로 굽히며 기존 skinning 기본값은 유지한다.
+
+attachment layer의 선택 `replacesParts:[ID…]`는 실제로 resolve되어 그려지는 동안에만 해당 원본 part 레이어를 대체한다. 필수 파츠/포즈/호환 태그 때문에 숨겨진 의상은 원본을 제거하지 않는다. 선택 해제·재생 종료에는 원본 part가 다시 보인다. 기본 신발은 양발을 각각 대체한다.
+
+effect의 선택 `endAnchor`와 `endTransform:{x,y}`는 시작 anchor/transform의 위치에서 끝 앵커의 위치까지 수평 PNG를 늘려 활시위·화살을 연결한다. PNG의 두께를 유지하고 양 끝을 현재 rig에서 계산한다. 두 점이 겹치면 해당 레이어를 생략한다. effect의 선택 `zIndex` 기본값2000은 기존 순서를 유지한다. 손바닥1990·무기2000·활시위2002·앞 손가락2010처럼 파지 앞뒤를 분리할 수 있다. 일반 effect의 기본 의미는 유지한다. 편집기에서 보간·앵커·대체 파츠·연결 끝점을 수정하고 export/load로 보존한다.

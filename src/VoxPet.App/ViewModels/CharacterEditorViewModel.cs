@@ -236,7 +236,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 Field(Fields, "id", "ID", e.Id); Field(Fields, "name", "이름", e.Name); Field(Fields, "open", "눈 뜸 PNG", e.EyesOpen, asset: true); Field(Fields, "closed", "눈 감음 PNG", e.EyesClosed, asset: true); Field(Fields, "brows", "눈썹 PNG (선택)", e.Brows, asset: true);
                 Field(Fields, "eyesAnchor", "눈 앵커", c.Face.EyesAnchor, anchorIds); Field(Fields, "browsAnchor", "눈썹 앵커", c.Face.BrowsAnchor, anchorIds); Field(Fields, "eyesZ", "눈 Z-index", c.Face.EyesZIndex); Field(Fields, "browsZ", "눈썹 Z-index", c.Face.BrowsZIndex); Field(Fields, "required", "얼굴 표시 파츠", c.Face.RequiredVisiblePart, ["", .. c.Parts.Select(p => p.Id)]); break;
             case 5 when Selected?.Item is ActionDefinition action:
-                Field(Fields, "id", "ID", action.Id); Field(Fields, "name", "이름", action.Name); Field(Fields, "priority", "우선순위 (0~100)", action.Priority); Field(Fields, "duration", "길이 (ms)", action.DurationMs); Field(Fields, "mode", "재생", action.Playback.Mode, Enum.GetNames<ActionPlaybackMode>()); Field(Fields, "interrupt", "중단 가능", action.Playback.Interruptible, Booleans); Field(Fields, "idle", "idle 복귀", action.Playback.ReturnToIdle, Booleans); Field(Fields, "tag", "호환 태그", action.CompatibilityTag);
+                Field(Fields, "id", "ID", action.Id); Field(Fields, "name", "이름", action.Name); Field(Fields, "priority", "우선순위 (0~100)", action.Priority); Field(Fields, "duration", "길이 (ms)", action.DurationMs); Field(Fields, "mode", "재생", action.Playback.Mode, Enum.GetNames<ActionPlaybackMode>()); Field(Fields, "interrupt", "중단 가능", action.Playback.Interruptible, Booleans); Field(Fields, "idle", "idle 복귀", action.Playback.ReturnToIdle, Booleans); Field(Fields, "tag", "호환 태그", action.CompatibilityTag); Field(Fields, "interpolate", "동작 사이 부드럽게 연결", action.InterpolateTransforms, Booleans);
                 foreach (var evt in action.Timeline) Details.Add(new("event/" + eventIds.GetValue(evt, _ => Guid.NewGuid().ToString("N")), $"{evt.TimeMs:0.##}ms · {evt.Kind}", evt));
                 foreach (var trigger in action.Triggers) Details.Add(new("trigger/" + trigger.Id, "트리거 · " + trigger.Kind, trigger));
                 foreach (var pose in c.Poses) Details.Add(new("pose/" + pose.Id, "포즈 · " + pose.Name, pose)); break;
@@ -257,6 +257,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
         if (c != null) switch (SelectedDetail?.Item)
             {
                 case ActionTimelineEvent e:
+                    Field(DetailFields, "effectZ", "효과 Z-index", e.ZIndex); Field(DetailFields, "endAnchor", "연결 효과 끝 앵커 (빈 값=일반 PNG)", e.EndAnchor); Field(DetailFields, "endX", "끝 X", e.EndTransform.X); Field(DetailFields, "endY", "끝 Y", e.EndTransform.Y);
                     Field(DetailFields, "time", "시간 (ms)", e.TimeMs); Field(DetailFields, "kind", "이벤트", e.Kind, Enum.GetNames<ActionEventKind>()); Field(DetailFields, "target", "대상 ID", e.Target, c.Anchors.Select(a => a.Id).Concat(c.Parts.Select(p => p.Id)).Append("eyes").Append("mouth")); Field(DetailFields, "value", "값 / PNG / 상태 ID", e.Value, asset: true); Field(DetailFields, "enabled", "표시 / 착용", e.Enabled, Booleans); Field(DetailFields, "duration", "효과 길이 (ms)", e.DurationMs); Field(DetailFields, "hasTransform", "변환 사용", e.Transform != null, Booleans); TransformFields(DetailFields, e.Transform ?? Transform2D.Identity); break;
                 case TriggerDefinition t:
                     Field(DetailFields, "id", "트리거 ID", t.Id); Field(DetailFields, "kind", "종류", t.Kind, Enum.GetNames<TriggerKind>()); Field(DetailFields, "key", "키 / 수동 ID", t.Key); Field(DetailFields, "button", "마우스 버튼", t.Button, ["left", "right", "middle"]); Field(DetailFields, "modifiers", "조합 키", t.Modifiers.ToString()); Field(DetailFields, "threshold", "음량 경계 (0~1)", t.Threshold); Field(DetailFields, "interval", "간격 (초)", t.IntervalSeconds); Field(DetailFields, "immediate", "바로 시작", t.StartImmediately, Booleans); Field(DetailFields, "enabled", "사용", t.Enabled, Booleans); break;
@@ -269,6 +270,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                     Field(DetailFields, "space", "위치 기준", l.Placement.Space, Enum.GetNames<AttachmentSpace>()); Field(DetailFields, "follow", "영향도 (0~1)", l.Placement.Follow); Field(DetailFields, "width", "너비 (빈 값=Canvas)", l.Placement.Width); Field(DetailFields, "height", "높이 (빈 값=Canvas)", l.Placement.Height); Field(DetailFields, "deform", "소매 격자 변형", l.Placement.DeformWithRig, Booleans);
                     SkinFields(DetailFields, l.Placement.Skinning);
                     Field(DetailFields, "position", "위치 상속", l.Inherit.Position, Booleans); Field(DetailFields, "rotationInherit", "회전 상속", l.Inherit.Rotation, Booleans); Field(DetailFields, "scaleInherit", "배율 상속", l.Inherit.Scale, Booleans); Field(DetailFields, "mouthMotion", "입 움직임 상속", l.Inherit.MouthMotion, Booleans); Field(DetailFields, "during", "동작 중에만", l.OnlyDuringAction, Booleans); Field(DetailFields, "missing", "포즈 없으면 숨김", l.HideOnMissingPose, Booleans);
+                    Field(DetailFields, "replaces", "대체할 파츠 (쉼표)", string.Join(",", l.ReplacesParts));
                     Field(DetailFields, "required", "필요 파츠 (쉼표)", string.Join(",", l.RequiredVisibleParts));
                     foreach (string pose in l.Poses.Keys.Concat(c.Poses.Select(p => p.Name)).Append("idle").Distinct()) Field(DetailFields, "pose:" + pose, "포즈 PNG · " + pose, l.Poses.GetValueOrDefault(pose), asset: true); break;
                 case PoseDefinition pose:
@@ -284,12 +286,12 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     private static Dictionary<string, string> Values(IEnumerable<EditorField> fields) => fields.ToDictionary(f => f.Key, f => f.Value);
     private void SkinFields(ObservableCollection<EditorField> fields, PartSkinning? skin)
-    { Field(fields, "skinRoot", "어깨 고정 경계 Y (빈 값=해제)", skin?.RootY); Field(fields, "skinFull", "손목 연결 경계 Y (빈 값=해제)", skin?.FullY); }
+    { Field(fields, "skinRoot", "어깨 고정 경계 Y (빈 값=해제)", skin?.RootY); Field(fields, "skinFull", "손목 연결 경계 Y (빈 값=해제)", skin?.FullY); Field(fields, "skinEnd", "손목 앵커 (빈 값=부위 앵커)", skin?.EndAnchor); Field(fields, "skinBase", "어깨가 따르는 몸통 앵커", skin?.RootAnchor); }
     private static PartSkinning? Skin(Dictionary<string, string> v)
     {
         if (Opt(v, "skinRoot") == null && Opt(v, "skinFull") == null) return null;
         if (Opt(v, "skinRoot") == null || Opt(v, "skinFull") == null) throw new ArgumentException("어깨와 손목 경계를 함께 지정하세요.");
-        return new(N(v, "skinRoot"), N(v, "skinFull"));
+        return new(N(v, "skinRoot"), N(v, "skinFull"), Opt(v, "skinEnd"), Opt(v, "skinBase"));
     }
     private static string S(Dictionary<string, string> v, string key) => v.GetValueOrDefault(key) ?? "";
     private static string? Opt(Dictionary<string, string> v, string key) => string.IsNullOrWhiteSpace(S(v, key)) ? null : S(v, key);
@@ -316,7 +318,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                     d.Motion = new(B(v, "blink"), N(v, "min"), N(v, "max"), N(v, "blinkDuration"), B(v, "idleMotion"), N(v, "breathing"), N(v, "sway"), N(v, "mouthWeight"), N(v, "bodyBounce"), N(v, "headBounce"), N(v, "headRotation"), N(v, "mouthTravel"), S(v, "bodyAnchor"), S(v, "headAnchor"), B(v, "viewport")); break;
                 case 4 when item is ExpressionDefinition e:
                     d.Expressions[d.Expressions.FindIndex(x => x.Id == e.Id)] = new(S(v, "id"), S(v, "open"), S(v, "closed"), Opt(v, "brows"), S(v, "name")); if (d.SpriteSheet is { } sheet) d.SpriteSheet = new(sheet.Part, sheet.Expressions.Select(b => b.Id == e.Id ? new SpriteSheetExpression(S(v, "id"), b.Open, b.Closed, b.Blink) : b), sheet.Curve); d.Face = new(S(v, "eyesAnchor"), S(v, "browsAnchor"), I(v, "eyesZ"), I(v, "browsZ"), Opt(v, "required")); break;
-                case 5 when item is ActionDefinition a: d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), N(v, "duration"), a.Timeline, I(v, "priority"), new(E<ActionPlaybackMode>(v, "mode"), B(v, "interrupt"), B(v, "idle")), Opt(v, "tag"), a.Triggers.Select(t => new TriggerDefinition(t.Id, S(v, "id"), t.Kind, t.Key, t.Button, t.Modifiers, t.Threshold, t.IntervalSeconds, t.StartImmediately, t.Enabled))); break;
+                case 5 when item is ActionDefinition a: d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), N(v, "duration"), a.Timeline, I(v, "priority"), new(E<ActionPlaybackMode>(v, "mode"), B(v, "interrupt"), B(v, "idle")), Opt(v, "tag"), a.Triggers.Select(t => new TriggerDefinition(t.Id, S(v, "id"), t.Kind, t.Key, t.Button, t.Modifiers, t.Threshold, t.IntervalSeconds, t.StartImmediately, t.Enabled)), B(v, "interpolate")); break;
                 case 6 when item is AttachmentDefinition a: d.Attachments[d.Attachments.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), S(v, "category"), a.Layers, Opt(v, "tag"), Opt(v, "group")); break;
             }
         }));
@@ -335,10 +337,10 @@ public sealed class CharacterEditorViewModel : ObservableObject
                     events[events.FindIndex(e => ReferenceEquals(e, evt))] = new(N(v, "time"), kind,
                         kind is ActionEventKind.Transform or ActionEventKind.Visibility or ActionEventKind.Sprite or ActionEventKind.Effect ? Opt(v, "target") : null,
                         kind is ActionEventKind.Transform or ActionEventKind.Visibility ? null : Opt(v, "value"),
-                        kind is ActionEventKind.Transform or ActionEventKind.Effect && B(v, "hasTransform") ? T(v) : null, B(v, "enabled"), kind == ActionEventKind.Effect ? N(v, "duration") : 0);
+                        kind is ActionEventKind.Transform or ActionEventKind.Effect && B(v, "hasTransform") ? T(v) : null, B(v, "enabled"), kind == ActionEventKind.Effect ? N(v, "duration") : 0, kind == ActionEventKind.Effect ? Opt(v, "endAnchor") : null, new(x: N(v, "endX"), y: N(v, "endY")), kind == ActionEventKind.Effect ? I(v, "effectZ") : 2000);
                 }
                 if (item is TriggerDefinition tr) triggers[triggers.IndexOf(tr)] = new(S(v, "id"), a.Id, E<TriggerKind>(v, "kind"), Opt(v, "key"), Opt(v, "button"), Enum.Parse<TriggerModifiers>(S(v, "modifiers")), N(v, "threshold"), N(v, "interval"), B(v, "immediate"), B(v, "enabled"));
-                d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers);
+                d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers, a.InterpolateTransforms);
             }
             if (owner is AttachmentDefinition attachment && item is AttachmentLayer l)
             {
@@ -346,7 +348,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 if (count is < 0 or 1 or > AttachmentAnimation.MaxFrames) throw new ArgumentException("반복 프레임 수는0또는2~64입니다.");
                 var animation = count == 0 ? null : new AttachmentAnimation(Enumerable.Range(0, count).Select(i => v.GetValueOrDefault("animation:" + i, l.Animation?.Frames.LastOrDefault() ?? l.Asset)), N(v, "animationMs"));
                 var layers = attachment.Layers.ToArray(); layers[Array.IndexOf(layers, l)] = new(S(v, "id"), S(v, "asset"), S(v, "anchor"), I(v, "z"), inherit: new(B(v, "position"), B(v, "rotationInherit"), B(v, "scaleInherit"), B(v, "mouthMotion")), poses: v.Where(p => p.Key.StartsWith("pose:") && !string.IsNullOrWhiteSpace(p.Value)).ToDictionary(p => p.Key[5..], p => p.Value), requiredVisibleParts: S(v, "required").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries), onlyDuringAction: B(v, "during"), hideOnMissingPose: B(v, "missing"),
-                    placement: new(T(v), E<AttachmentSpace>(v, "space"), N(v, "follow"), Opt(v, "width") == null ? null : N(v, "width"), Opt(v, "height") == null ? null : N(v, "height"), B(v, "deform"), Skin(v)), animation: animation);
+                    placement: new(T(v), E<AttachmentSpace>(v, "space"), N(v, "follow"), Opt(v, "width") == null ? null : N(v, "width"), Opt(v, "height") == null ? null : N(v, "height"), B(v, "deform"), Skin(v)), animation: animation, replacesParts: S(v, "replaces").Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
                 d.Attachments[d.Attachments.FindIndex(x => x.Id == attachment.Id)] = new(attachment.Id, attachment.Name, attachment.Category, layers, attachment.CompatibilityTag, attachment.ExclusiveGroup);
             }
             if (item is PoseDefinition pose)
@@ -425,7 +427,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
             {
                 var triggers = trigger ? a.Triggers.Append(new TriggerDefinition("trigger-" + Guid.NewGuid().ToString("N")[..8], a.Id, TriggerKind.Manual, a.Id)) : a.Triggers;
                 var events = trigger ? a.Timeline : a.Timeline.Append(new ActionTimelineEvent(0, ActionEventKind.Transform, d.Anchors.FirstOrDefault()?.Id ?? d.Parts[0].Id, transform: Transform2D.Identity));
-                d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers);
+                d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers, a.InterpolateTransforms);
             }
             if (item is AttachmentDefinition outfit) d.Attachments[d.Attachments.FindIndex(x => x.Id == outfit.Id)] = new(outfit.Id, outfit.Name, outfit.Category, outfit.Layers.Append(new("layer-" + Guid.NewGuid().ToString("N")[..8], doc.Package.AssetPaths.First(), d.Anchors.First().Id)), outfit.CompatibilityTag, outfit.ExclusiveGroup);
         }));
@@ -437,7 +439,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
         await TransactionAsync(() => doc.Edit(d =>
         {
             if (item is PoseDefinition pose) d.Poses.RemoveAll(p => p.Id == pose.Id);
-            if (owner is ActionDefinition a) d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, a.Timeline.Where(e => !ReferenceEquals(e, item)), a.Priority, a.Playback, a.CompatibilityTag, a.Triggers.Where(t => !ReferenceEquals(t, item)));
+            if (owner is ActionDefinition a) d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, a.Timeline.Where(e => !ReferenceEquals(e, item)), a.Priority, a.Playback, a.CompatibilityTag, a.Triggers.Where(t => !ReferenceEquals(t, item)), a.InterpolateTransforms);
             if (owner is AttachmentDefinition outfit) d.Attachments[d.Attachments.FindIndex(x => x.Id == outfit.Id)] = new(outfit.Id, outfit.Name, outfit.Category, outfit.Layers.Where(l => !ReferenceEquals(l, item)), outfit.CompatibilityTag, outfit.ExclusiveGroup);
         }));
     }

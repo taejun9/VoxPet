@@ -6,7 +6,7 @@ Windows QA workflow의 `VoxPet-Windows-test-package` artifact에서 `VoxPet-Wind
 
 ## 마이크 없는 자동 검사
 
-다른 앱을 닫은 전용 Windows 테스트 환경 또는 가상머신에서 `TEST-SMOKE.cmd`를 실행한다. Windows PowerShell 5.1에서 동작하며 일부 검사는 실제 합성 키/좌클릭을 보내므로 작업 중인 일반 데스크톱에서는 아래 수동 검사만 수행한다. 180초 안에 완료하고 종료 코드0·JSON failures0·실행된 검사 목록을 함께 확인한다. 오류/시간 초과/JSON 누락은 실패다.
+다른 앱을 닫은 전용 Windows 테스트 환경 또는 가상머신에서 `TEST-SMOKE.cmd`를 실행한다. Windows PowerShell 5.1에서 동작하며 일부 검사는 실제 합성 키/좌클릭을 보내므로 작업 중인 일반 데스크톱에서는 아래 수동 검사만 수행한다. 240초 안에 완료하고 종료 코드0·JSON failures0·실행된 검사 목록을 함께 확인한다. 오류/시간 초과/JSON 누락은 실패다.
 
 결과는 `%TEMP%/VoxPet-tests/<새 ID>/`에 PNG/JSON으로 남고 콘솔에 위치를 표시한다. 마이크·개인 PNG·기존 사용자 설정을 사용하지 않으며 네트워크 전송이 없다. 일반 사용자 실행에서는 CI desktop 캡처를 활성화하지 않는다. 자동 검증은 이전 회귀용 화면도 잠시 표시하며, 직접 조작할 때는 `START.cmd`의 통합 Studio를 사용한다. 자동 검사 결과는 물리 마이크/사용자 GPU/OBS 실기 합격을 의미하지 않는다.
 

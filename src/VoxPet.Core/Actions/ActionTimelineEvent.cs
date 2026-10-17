@@ -12,13 +12,20 @@ public sealed record ActionTimelineEvent
     public string? Target { get; }
     public string? Value { get; }
     public Transform2D? Transform { get; }
+    public int ZIndex { get; }
+    public string? EndAnchor { get; }
+    public Transform2D EndTransform { get; }
     public bool Enabled { get; }
     public double DurationMs { get; }
     public ActionTimelineEvent(double timeMs, ActionEventKind kind, string? target = null, string? value = null,
-        Transform2D? transform = null, bool enabled = true, double durationMs = 0)
+        Transform2D? transform = null, bool enabled = true, double durationMs = 0, string? endAnchor = null, Transform2D? endTransform = null, int zIndex = 2000)
     {
         TimeMs = DefinitionValidation.Finite(timeMs, nameof(timeMs)); DurationMs = DefinitionValidation.Finite(durationMs, nameof(durationMs));
         if (timeMs < 0 || durationMs < 0 || !Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(timeMs));
+        ZIndex = zIndex;
+        if (zIndex != 2000 && kind != ActionEventKind.Effect) throw new ArgumentException("효과의 순서만 지정합니다.");
+        EndAnchor = endAnchor == null ? null : DefinitionValidation.Id(endAnchor, nameof(endAnchor)); EndTransform = endTransform ?? Transform2D.Identity;
+        if (endAnchor != null && kind != ActionEventKind.Effect) throw new ArgumentException("연결 끝점은 effect에만 지정합니다.");
         Kind = kind; Target = target is null ? null : DefinitionValidation.Id(target, nameof(target));
         Value = value; Transform = transform; Enabled = enabled;
         switch (kind)

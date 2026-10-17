@@ -201,6 +201,7 @@ public partial class App : Application
             await UnifiedStudioQa.RunAsync(Check);
             await CompanionSamplesQa.RunAsync(Check);
             await PartWardrobeQa.RunAsync(Check);
+            await NaturalCompanionQa.RunAsync(Check);
             await CharacterEditorQa.RunAsync(Check);
             await SettingsPersistenceQa.RunAsync(Check);
             await ExpressionQa.RunAsync(main, Check);

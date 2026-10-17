@@ -9,6 +9,19 @@ namespace VoxPet.App.Views;
 internal static class RenderFrameDrawing
 {
     internal static Matrix Matrix(AffineTransform2D value) => new(value.M11, value.M12, value.M21, value.M22, value.OffsetX, value.OffsetY);
+    private static (Point A, Point B, Point C) Joined(RenderTriangle triangle)
+    {
+        var a = new Point(triangle.A.X, triangle.A.Y); var b = new Point(triangle.B.X, triangle.B.Y); var c = new Point(triangle.C.X, triangle.C.Y);
+        double la = (b - c).Length, lb = (a - c).Length, lc = (a - b).Length, perimeter = la + lb + lc;
+        double area2 = Math.Abs((b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X));
+        if (area2 < .001) return (a, b, c);
+        var center = new Point((la * a.X + lb * b.X + lc * c.X) / perimeter, (la * a.Y + lb * b.Y + lc * c.Y) / perimeter);
+        // A half-pixel overlap hides texture-clip rasterization cracks. Shared UVs
+        // meet on the same edge; the source PNG alpha keeps the outer silhouette.
+        double amount = 1 + .5 * perimeter / area2;
+        Point Expand(Point point) => center + (point - center) * amount;
+        return (Expand(a), Expand(b), Expand(c));
+    }
     internal static void Draw(DrawingContext drawing, RenderFrame frame, IReadOnlyDictionary<string, ImageSource> images, bool props = true, double width = 512, double height = 512)
     {
         double scale = Math.Min(width / frame.CanvasWidth, height / frame.CanvasHeight);
@@ -32,9 +45,10 @@ internal static class RenderFrameDrawing
                 var clip = new StreamGeometry();
                 using (var context = clip.Open())
                 {
-                    context.BeginFigure(new Point(triangle.A.X, triangle.A.Y), true, true);
-                    context.LineTo(new Point(triangle.B.X, triangle.B.Y), true, false);
-                    context.LineTo(new Point(triangle.C.X, triangle.C.Y), true, false);
+                    var joined = Joined(triangle);
+                    context.BeginFigure(joined.A, true, true);
+                    context.LineTo(joined.B, true, false);
+                    context.LineTo(joined.C, true, false);
                 }
                 drawing.PushClip(clip); drawing.PushTransform(new MatrixTransform(Matrix(layer.Matrix)));
                 drawing.DrawImage(image, new Rect(0, 0, layer.Width, layer.Height)); drawing.Pop(); drawing.Pop(); drawing.Pop();

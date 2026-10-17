@@ -19,7 +19,7 @@ public sealed class StudioShellViewModel : ObservableObject
 {
     public MainViewModel Main { get; }
     public CharacterEditorViewModel Editor { get; } = new();
-    public string[] Navigation { get; } = ["홈", "캐릭터", "의상 / 부착물", "동작", "방송 / 설정", "캐릭터 편집기"];
+    public string[] Navigation { get; } = ["홈", "캐릭터", "표정", "의상 / 부착물", "동작", "방송 / 설정", "캐릭터 편집기"];
     private readonly bool persistent;
     private bool closing, busy;
     private int page;
@@ -28,10 +28,14 @@ public sealed class StudioShellViewModel : ObservableObject
     public ObservableCollection<CharacterCard> Cards { get; } = [];
     public IEnumerable<CharacterCard> Filtered => Cards.Where(c => c.Name.Contains(Search, StringComparison.CurrentCultureIgnoreCase) || c.Id.Contains(Search, StringComparison.OrdinalIgnoreCase));
     public string Search { get => search; set { if (Set(ref search, value)) Notify(nameof(Filtered)); } }
-    public int Page { get => page; set { if (Set(ref page, value)) { Notify(nameof(IsHome)); Notify(nameof(IsLibrary)); Notify(nameof(IsEditor)); Notify(nameof(IsAttachments)); Notify(nameof(IsActions)); Notify(nameof(IsSettings)); if (IsEditor) Editor.StartPreview(); else Editor.PausePreview(); if (value == 4) SettingsRequested?.Invoke(Main.SettingsTab); } } }
+    public int Page { get => page; set { if (Set(ref page, value)) { Notify(nameof(NavigationIndex)); Notify(nameof(IsExpressions)); Notify(nameof(IsHome)); Notify(nameof(IsLibrary)); Notify(nameof(IsEditor)); Notify(nameof(IsAttachments)); Notify(nameof(IsActions)); Notify(nameof(IsSettings)); if (IsEditor) Editor.StartPreview(); else Editor.PausePreview(); if (value == 4) SettingsRequested?.Invoke(Main.SettingsTab); } } }
+    private static readonly int[] navigationPages = [0, 1, 6, 2, 3, 4, 5];
+    public int NavigationIndex { get => Array.IndexOf(navigationPages, Page); set { if (value >= 0 && value < navigationPages.Length) Page = navigationPages[value]; } }
+    public bool IsExpressions => page == 6;
     public bool IsHome => page == 0;
     public bool IsLegacy => !Main.Packages.IsActive;
     public bool IsSheet => !Main.Packages.IsActive && !Main.Runtime.IsActive;
+    public bool HasLegacyQuickActions => IsSheet && !Main.Character.HasCompanionSamples;
     public bool IsImageSet => !Main.Packages.IsActive && Main.Runtime.IsActive;
     public bool IsAttachments => page == 2;
     public bool IsActions => page == 3;
@@ -64,6 +68,11 @@ public sealed class StudioShellViewModel : ObservableObject
     public ObservableCollection<StudioAttachment> AttachmentCards { get; } = [];
     public IEnumerable<StudioAttachment> HairCards => AttachmentCards.Where(c => c.Id.StartsWith("hair-", StringComparison.Ordinal));
     public IEnumerable<StudioAttachment> ClothingCards => AttachmentCards.Where(c => !c.Id.StartsWith("hair-", StringComparison.Ordinal));
+    public KeyValuePair<string, string>[] ClothingCategories { get; } = [new("all", "전체"), new("top", "상의"), new("bottom", "하의"), new("onePiece", "한벌옷"), new("outerwear", "겉옷"), new("shoes", "신발"), new("hat", "모자"), new("glasses", "안경"), new("faceDecoration", "얼굴 장식"), new("earrings", "귀걸이"), new("headAccessory", "머리 장식"), new("handAccessory", "손 장식"), new("cape", "망토 / 날개"), new("backAccessory", "등 장식"), new("effect", "이펙트")];
+    private string clothingCategory = "all";
+    public string ClothingCategory { get => clothingCategory; set { if (value != null && ClothingCategories.Any(c => c.Key == value) && Set(ref clothingCategory, value)) { Notify(nameof(FilteredClothingCards)); Notify(nameof(ClothingCount)); } } }
+    public IEnumerable<StudioAttachment> FilteredClothingCards => ClothingCards.Where(c => ClothingCategory == "all" || c.Category == ClothingCategory);
+    public string ClothingCount => $"{FilteredClothingCards.Count()}개 / 전체 {ClothingCards.Count()}개";
     public static string SamplePath => Path.Combine(AppContext.BaseDirectory, "Assets", "Samples", "studio-samples.voxpet");
     public const string SampleId = "voxpet.samples.studio";
     public const string SampleVersion = "1.1.0";
@@ -95,7 +104,7 @@ public sealed class StudioShellViewModel : ObservableObject
     private void UpdateAttachmentCards()
     {
         AttachmentCards.Clear();
-        Notify(nameof(HairCards)); Notify(nameof(ClothingCards));
+        Notify(nameof(HairCards)); Notify(nameof(ClothingCards)); Notify(nameof(FilteredClothingCards)); Notify(nameof(ClothingCount));
         if (DisplayScene is not { } scene) return;
         foreach (var item in scene.Runtime.Definition.Attachments)
         {
@@ -110,10 +119,10 @@ public sealed class StudioShellViewModel : ObservableObject
                     foreach (var card in AttachmentCards) card.Refresh();
                 }));
         }
-        Notify(nameof(HairCards)); Notify(nameof(ClothingCards));
+        Notify(nameof(HairCards)); Notify(nameof(ClothingCards)); Notify(nameof(FilteredClothingCards)); Notify(nameof(ClothingCount));
     }
     private void RefreshSamples()
-    { Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(DisplayScene)); UpdateAttachmentCards(); EditCompanionCommand.Refresh(); }
+    { Notify(nameof(HasLegacyQuickActions)); Notify(nameof(LiveAttachments)); Notify(nameof(LiveActions)); Notify(nameof(DisplayScene)); UpdateAttachmentCards(); EditCompanionCommand.Refresh(); }
 
     public event Func<string?>? ChoosePackage;
     public event Func<string?>? ChooseExport;

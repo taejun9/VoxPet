@@ -46,7 +46,16 @@ internal static class CompanionPartImages
     }
     internal static ImageSource Cut(ImageSource original, string id, bool side)
     {
-        var cut = new DrawingGroup { ClipGeometry = Masks(side)[id] };
+        // Adjacent antialiased cuts leave a translucent seam after source-over.
+        // Sample the same original pixels in a 6px joint overlap instead.
+        // The original PNG alpha still defines every outer silhouette edge.
+        var boundary = Masks(side)[id];
+        var extension = boundary.GetWidenedPathGeometry(new Pen(Brushes.White, 12));
+        // The torso may overlap only inside its reconstructed silhouette. Retaining
+        // an old wing-tip outline here leaves a stationary ghost during a fold.
+        Geometry extra = id == "body" ? Geometry.Combine(extension, Geometry.Parse(CompanionParts.BodyContour(side)), GeometryCombineMode.Intersect, null) : extension;
+        var overlap = Geometry.Combine(boundary, extra, GeometryCombineMode.Union, null);
+        var cut = new DrawingGroup { ClipGeometry = overlap };
         cut.Children.Add(new ImageDrawing(original, new Rect(0, 0, 512, 512)));
         // Fixed canvas bounds keep WPF from stretching a cropped arm/head to 512px.
         var canvas = new DrawingGroup();
@@ -80,6 +89,20 @@ internal static class CompanionPartImages
     {
         var result = new Dictionary<string, ImageSource>();
         foreach (string id in CompanionParts.Ids.Where(id => id != "head")) result.Add(CompanionParts.Asset(id), Cut(sheet[0, 1], id, side));
+        foreach (string hand in new[] { "left", "right" })
+        {
+            var arm = result[CompanionParts.Asset("arm-" + hand)];
+            if (side && hand == "left")
+            {
+                var rightWing = result[CompanionParts.Asset("arm-right")];
+                // The hidden far wing is reconstructed locally from the original
+                // feather pixels. It is only selected by two-hand action sprites.
+                arm = Raster(d => { d.PushTransform(new MatrixTransform(-.55, 0, 0, .55, 420.35, 205.9)); d.DrawImage(rightWing, new Rect(0, 0, 512, 512)); d.Pop(); });
+            }
+            var sourceArm = arm;
+            result.Add(CompanionParts.GripArm(hand), side ? sourceArm : Raster(d =>
+            { d.PushClip(new RectangleGeometry(new Rect(0, 0, 512, 422))); d.DrawImage(sourceArm, new Rect(0, 0, 512, 512)); d.Pop(); }));
+        }
         var reference = LowerBody(sheet[0, 1]);
         for (int m = 0; m < sheet.GetLength(0); m++) for (int e = 0; e < 2; e++)
         {

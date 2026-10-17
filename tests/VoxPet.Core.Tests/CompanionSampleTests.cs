@@ -110,16 +110,18 @@ public sealed class CompanionSampleTests
     public void NineTimelinesHaveNineDistinctArmPoses(string id)
     {
         var package = Load(id); var definition = LegacySpriteSheetAdapter.Convert(id == "neulbo" ? 8 : 3, samples: package.Character);
-        var poses = new HashSet<(double Left, double Right)>();
+        var poses = new HashSet<string>();
         foreach (var action in package.Character.Actions)
         {
-            var processor = new LegacySpriteSheetRuntime { Samples = package.Character, Rig = CharacterRig.Default(id) };
-            var runtime = new CharacterRuntime(definition, processor: processor, geometry: processor);
-            runtime.RequestAction(action.Id); runtime.Update(new(0, 0, 0)); runtime.Update(new(.2, .2, 0));
-            poses.Add((processor.Motion.LeftAngle, processor.Motion.RightAngle));
-            if (action.Id == "one-hand") Assert.Equal(0, processor.Motion.LeftAngle);
-            if (action.Id == "two-hand" && id == "neulbo") Assert.True(processor.Motion.LeftAngle < 0 && processor.Motion.RightAngle > 0);
-            if (id == "pelly") Assert.Equal(0, processor.Motion.LeftAngle);
+            var runtime = new CharacterRuntime(definition);
+            runtime.RequestAction(action.Id); runtime.Update(new(0, 0, 0));
+            var samples = new List<string>();
+            foreach (double t in new[] { .2, .4, .6, .8 })
+            {
+                runtime.Update(new(t, .2, 0));
+                samples.Add(string.Join("/", new[] { "leftHand", "rightHand" }.Select(h => runtime.CurrentRig.Animated[h].ToString())));
+            }
+            poses.Add(string.Join(";", samples));
         }
         Assert.Equal(9, poses.Count);
     }

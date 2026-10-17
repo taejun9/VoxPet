@@ -17,7 +17,7 @@ try {
     $start.EnvironmentVariables['RUNNER_TEMP'] = $results
     foreach ($name in @('GITHUB_ACTIONS', 'VOXPET_QA_SHEET', 'VOXPET_QA_DATA_DIR')) { $start.EnvironmentVariables.Remove($name) }
     $process = [System.Diagnostics.Process]::Start($start)
-    if (-not $process.WaitForExit(180000)) { $process.Kill(); $process.WaitForExit(); throw 'WPF test timed out after 180 seconds.' }
+    if (-not $process.WaitForExit(240000)) { $process.Kill(); $process.WaitForExit(); throw 'WPF test timed out after 240 seconds.' }
     if ($process.ExitCode -ne 0) { throw "WPF test failed (exit $($process.ExitCode)). See $results" }
     $summary = Get-Content -Raw -LiteralPath (Join-Path $results 'voxpet-smoke-result.json') | ConvertFrom-Json
     if ($null -eq $summary.failures -or $summary.failures -ne 0 -or @($summary.passedChecks).Count -eq 0) { throw 'Test result is missing or reports failures.' }

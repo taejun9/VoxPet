@@ -92,6 +92,9 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
         var layers = new List<RenderLayer>();
         bool separated = Samples != null && frame.Layers.Any(l => l.Id == "part-head");
         var mesh = geometry.Compose("sprite", false, 1, context);
+        bool legacyWeaponAction = Motion.Gesture is HandGesture.ToyGun or HandGesture.ToySword or HandGesture.MagicWand;
+        var heldWeapon = separated && CompanionWeapon.Find(WeaponId) is { } selectedWeapon &&
+            (context.Action.IsPlaying ? CompanionWeapon.Find(context.Action.ActionId) != null || legacyWeaponAction : HoldWeapon) ? selectedWeapon : null;
         if (HasPrevious) layers.Add(new("legacy-previous", "legacy/previous.png", opacity: 1 - Blend, mesh: mesh));
         if (separated)
             foreach (var part in frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal)))
@@ -107,6 +110,8 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                     else matrix = extra.Compose(matrix);
                 }
                 string asset = part.Id == "part-head" ? CompanionParts.Head(mouth, Profile.Blink && Parameters.EyeOpen < .5 ? 0 : 1) : part.Asset;
+                if (heldWeapon != null && (part.Id == "part-arm-right" && heldWeapon.Anchor == "rightHand" || part.Id == "part-arm-left" && heldWeapon.Anchor == "leftHand"))
+                    asset = CompanionParts.GripArm(part.Id == "part-arm-left" ? "left" : "right");
                 layers.Add(new(part.Id, asset, opacity: part.Opacity * Blend, zIndex: part.ZIndex, matrix: matrix, width: part.Width, height: part.Height, mesh: partMesh));
             }
         else layers.Add(new("legacy-sprite", Sprite, opacity: Blend, zIndex: 1, mesh: mesh));
@@ -127,7 +132,6 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 matrix: LegacyRenderGeometryProvider.Attachment(Rig, Motion, attachment, profile.Follow).Compose(placement),
                 width: profile.BaseWidth * profile.Scale, height: profile.BaseHeight * profile.Scale, mesh: deformation));
         }
-        bool legacyWeaponAction = Motion.Gesture is HandGesture.ToyGun or HandGesture.ToySword or HandGesture.MagicWand;
         if (SampleGesture(context.Action.ActionId) == null && Motion.Gesture is { } gesture && Motion.Effect > 0 && (Rig.Left.Enabled || Rig.Right.Enabled) && !(separated && legacyWeaponAction && CompanionWeapon.Find(WeaponId) != null))
         {
             var limb = Rig.Right.Enabled ? Rig.Right : Rig.Left;
@@ -146,7 +150,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 var matrix = AffineTransform2D.Identity; RenderMesh? deformation = null;
                 if (separated)
                 {
-                    if (context.Action.Effects.Any(e => e.Id == rendered.Id) && CompanionWeapon.All.Any(w => w.Asset == rendered.Asset)) continue;
+                    if (context.Action.Effects.Any(e => e.Id == rendered.Id) && (CompanionWeapon.All.Any(w => w.Asset == rendered.Asset) || heldWeapon != null && (rendered.Asset == "samples/grip-" + (heldWeapon.Anchor == "leftHand" ? "left" : "right") + ".png" || rendered.Asset == "samples/grip-back-" + (heldWeapon.Anchor == "leftHand" ? "left" : "right") + ".png"))) continue;
                     matrix = rendered.Matrix;
                     deformation = rendered.Mesh;
                     if (placements.TryGetValue(rendered.Id, out var binding) &&
@@ -180,13 +184,23 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 layers.Add(new("legacy-sample-foreground-wing", Sprite, opacity: Blend, zIndex: 120,
                     mesh: new RenderMesh(outline.Select((p, i) => new RenderTriangle(center, p, outline[(i + 1) % outline.Length], transform)))));
             }
-            if (separated && CompanionWeapon.Find(WeaponId) is { } weapon &&
-                (context.Action.IsPlaying ? CompanionWeapon.Find(context.Action.ActionId) != null || legacyWeaponAction : HoldWeapon))
+            if (heldWeapon is { } weapon)
             {
-                var rest = context.Rig.Static["rightHand"];
-                var weaponMatrix = context.Rig.Animated["rightHand"].Compose(rest.Inverse());
+                var rest = context.Rig.Static[weapon.Anchor];
+                var weaponMatrix = context.Rig.Animated[weapon.Anchor].Compose(rest.Inverse());
                 if (context.Action.Transforms.Count == 0 && legacyWeaponAction) weaponMatrix = LegacyRenderGeometryProvider.Attachment(Rig, Motion, MotionAttachment.RightHand, 1).Compose(weaponMatrix);
-                layers.Add(new("companion-equipped-weapon", weapon.Asset, zIndex: 150, matrix: weaponMatrix));
+                layers.Add(new("companion-equipped-palm", "samples/grip-back-" + (weapon.Anchor == "leftHand" ? "left" : "right") + ".png", zIndex: 1990, matrix: weaponMatrix));
+                layers.Add(new("companion-equipped-weapon", weapon.Asset, zIndex: 2000, matrix: weaponMatrix));
+                if (weapon.Id == "bow" && context.Action.ActionId != "bow")
+                {
+                    var top = weaponMatrix.Map(rest.OffsetX + 63, rest.OffsetY - 97); var bottom = weaponMatrix.Map(rest.OffsetX + 63, rest.OffsetY + 97);
+                    double dx = bottom.X - top.X, dy = bottom.Y - top.Y, length = Math.Sqrt(dx * dx + dy * dy);
+                    if (length > .001) layers.Add(new("companion-bow-idle-string", "samples/bow-string.png", zIndex: 2002,
+                        matrix: new(dx / 512, dy / 512, -dy / length, dx / length, top.X, top.Y)));
+                }
+                string hand = weapon.Anchor == "leftHand" ? "left" : "right";
+                // Folds/claws cover the handle edge, placing it inside the closed grip.
+                layers.Add(new("companion-equipped-grip", "samples/grip-" + hand + ".png", zIndex: 2010, matrix: weaponMatrix));
             }
         }
         if (ShowGuides) layers.Add(new("legacy-guides", "legacy/guides.png", zIndex: 3000));

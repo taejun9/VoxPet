@@ -28,6 +28,18 @@ public sealed class PartSkinningTests
         }
         Assert.Null(JointSkinning.Compose(AffineTransform2D.Identity, new(315, 415)));
     }
+    [Fact]
+    public void RaisedForearmRetainsItsCrossSectionInsteadOfCollapsingToAFlatStrip()
+    {
+        var mesh = JointSkinning.ComposeChain(new(offsetX: -116, offsetY: -68), AffineTransform2D.Identity, new(315, 422), new(367, 315), new(402, 422), false)!;
+        var row = mesh.Triangles.SelectMany(t => new[] { (Point: t.A, t.Matrix), (Point: t.B, t.Matrix), (Point: t.C, t.Matrix) }).Where(v => v.Point.Y == 368.5).GroupBy(v => v.Point.X).OrderBy(g => g.Key).Select(g => g.First()).ToArray();
+        Assert.Equal(9, row.Length);
+        for (int i = 1; i < row.Length; i++)
+        {
+            var a = row[i - 1].Matrix.Map(row[i - 1].Point.X, 368.5); var b = row[i].Matrix.Map(row[i].Point.X, 368.5);
+            Assert.Equal(64, Math.Sqrt(Math.Pow(a.X - b.X, 2) + Math.Pow(a.Y - b.Y, 2)), 7);
+        }
+    }
     [Theory]
     [InlineData(-1, 2)]
     [InlineData(4, 4)]

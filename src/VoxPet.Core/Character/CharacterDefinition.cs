@@ -63,12 +63,12 @@ public sealed record CharacterDefinition
         if (spriteSheet != null && (mouth != null || !Parts.Any(p => p.Id == spriteSheet.Part) || spriteSheet.Expressions.Any(e => !Expressions.Any(x => x.Id == e.Id))))
             throw new ArgumentException("full-sprite의 파츠/표정 참조를 확인하세요. 분리 mouth와 함께 사용하지 않습니다.");
         foreach (var part in Parts)
-            if (part.Anchor is not null && !byId.ContainsKey(part.Anchor)) throw new ArgumentException("파츠의 Anchor가 없습니다.", nameof(parts));
+            if (part.Anchor is not null && !byId.ContainsKey(part.Anchor) || part.Skinning?.EndAnchor is { } end && !byId.ContainsKey(end) || part.Skinning?.RootAnchor is { } root && !byId.ContainsKey(root)) throw new ArgumentException("파츠의 Anchor가 없습니다.", nameof(parts));
         foreach (var anchor in Anchors)
             if (anchor.Parent is not null && !byId.ContainsKey(anchor.Parent)) throw new ArgumentException("부모 Anchor가 없습니다.", nameof(anchors));
         if (mouth is not null && !byId.ContainsKey(mouth.Anchor)) throw new ArgumentException("입 Anchor가 없습니다.", nameof(mouth));
         foreach (var layer in Attachments.SelectMany(a => a.Layers))
-            if (!byId.ContainsKey(layer.Anchor) || layer.RequiredVisibleParts.Any(id => !Parts.Any(p => p.Id == id)))
+            if (!byId.ContainsKey(layer.Anchor) || layer.RequiredVisibleParts.Concat(layer.ReplacesParts).Any(id => !Parts.Any(p => p.Id == id)) || layer.Placement.Skinning?.EndAnchor is { } end && !byId.ContainsKey(end) || layer.Placement.Skinning?.RootAnchor is { } root && !byId.ContainsKey(root))
                 throw new ArgumentException("부착물의 Anchor/파츠 참조가 없습니다.", nameof(attachments));
         foreach (var pose in Poses)
             if (pose.Sprites.Keys.Any(id => !Parts.Any(p => p.Id == id)) || pose.Transforms.Keys.Any(id => !byId.ContainsKey(id) && !Parts.Any(p => p.Id == id)))
@@ -83,7 +83,7 @@ public sealed record CharacterDefinition
                 ActionEventKind.Transform => byId.ContainsKey(entry.Target!) || Parts.Any(p => p.Id == entry.Target),
                 ActionEventKind.Visibility or ActionEventKind.Sprite => Parts.Any(p => p.Id == entry.Target) ||
                     entry.Target == "mouth" && mouth is not null || entry.Target is "eyes" or "brows" && Expressions.Count != 0,
-                ActionEventKind.Effect => byId.ContainsKey(entry.Target!),
+                ActionEventKind.Effect => byId.ContainsKey(entry.Target!) && (entry.EndAnchor == null || byId.ContainsKey(entry.EndAnchor)),
                 _ => true
             };
             if (!valid) throw new ArgumentException("액션 이벤트 참조가 없습니다.", nameof(actions));

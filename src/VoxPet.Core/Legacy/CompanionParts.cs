@@ -7,6 +7,7 @@ public static class CompanionParts
 {
     public static IReadOnlyList<string> Ids { get; } = Array.AsReadOnly(new[] { "arm-left", "leg-left", "leg-right", "body", "head", "arm-right" });
     public static string Asset(string id) => "parts/" + id + ".png";
+    public static string GripArm(string side) => "parts/arm-" + side + "-grip.png";
     public static string Head(int mouth, int eye) => $"parts/head-{mouth}-{eye}.png";
     public static string Anchor(string id) => id switch
     {
@@ -37,7 +38,7 @@ public static class CompanionParts
         (false, "leg-left") => "M146,444 L245,444 L241,512 L146,512 Z",
         (false, "leg-right") => "M267,444 L366,444 L366,512 L271,512 Z",
         (true, "arm-left") => "M0,0 Z",
-        (true, "arm-right") => "M 287 281 C 302 261 333 266 356 284 C 391 311 426 354 447 396 C 463 427 439 448 407 446 C 372 443 343 425 320 403 C 294 380 283 357 282 333 C 280 310 282 291 287 281 Z",
+        (true, "arm-right") => "M 287 281 C 302 261 333 266 356 284 H512 V452 H407 C 372 443 343 425 320 403 C 294 380 283 357 282 333 C 280 310 282 291 287 281 Z",
         (true, "leg-left") => "M228,435 H278 V463 L254,484 H180 V458 L215,443 Z",
         (true, "leg-right") => "M278,435 H330 L335,451 C360,462 360,485 342,495 H254 V484 L278,463 Z",
         _ => throw new ArgumentException("분리할 신체 부위가 없습니다.", nameof(id))

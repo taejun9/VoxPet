@@ -30,3 +30,10 @@ python3 harness/scripts/package_companion_samples.py /tmp/voxpet-companion-art
 늘보군은 둥근 정면 머리·넓은 몸통, 펠리는 측면 얼굴·부리와 앞 날개를 고려한다. 장발의 얼굴 빈 공간을 넓히고 펠리의 얼굴/부리 앞 헤어와 뒤쪽 머리카락을 곡선 안전 영역으로 나눠 눈과 입을 가리지 않게 한다. 수평으로 잘린 앞머리를 사용하지 않고 펠리의 앞 날개를 실제 분리 파츠로 의상 앞에 합성한다. 원본 시트·표정·입 프레임은 수정하지 않는다. 펠리는 실제 PNG loader의 중앙/발밑 정렬(-18,+17)을 그림·파츠 영역·관절·연결 경계에 동일하게 적용한다. 실제 개인 그림 합성 증거는 ignored 로컬 artifacts에만 둔다.
 
 Windows 공개 QA는 두 체형의 교정 도형을 만들어17의상·9동작·헤어/모자/날개·입/눈·방송 공유·편집/내보내기를 시험한다. 공개 합성 QA와 개인 그림의 로컬 시각 검토를 구분한다. 기존 standalone 샘플은 과거 native/편집기 회귀 fixture이며 새 일반 화면의 캐릭터 목록에는 추가하지 않는다.
+
+
+## plan047 측면 헤어·무기·재단
+
+새 원본11개와 프롬프트는 [generation-v3.json](../../harness/assets/companion-art/generation-v3.json)에 보존한다. 내장 imagegen으로 공개 소품만 제작했고, 개인 원본을 참고 이미지로 전송하지 않았다. bow-v3은 원본 보존용, 선택한 bow-v4는 앱이 시위를 따로 그릴 수 있는 형태다. 기존15개 PNG도 유지한다.
+
+`generate_companion_art.cjs`는 `companion_tailoring.cjs`에서 몸통/소매/칼라·좌우 신발을 재단하고, `companion_props.cjs`에서 손잡이·접힌 파지·효과를 등록한다. `package_companion_samples.py`는 `companion_actions.py`의 연속 동작과 두 앵커 연결을 두 캐릭터에 조립한다. 펠리의 보이지 않던 지지 날개는 앱 내부에서 원본 앞 날개의 픽셀을 로컬로 재배치하며 공개 pack에는 투명 자리만 둔다. 실제 체형 합성 검토는 로컬, Windows 자동 시험은 공개 교정 도형으로 구분한다.

@@ -5,8 +5,12 @@ public sealed record PartSkinning
 {
     public double RootY { get; }
     public double FullY { get; }
-    public PartSkinning(double rootY, double fullY)
+    public string? EndAnchor { get; }
+    public string? RootAnchor { get; }
+    public PartSkinning(double rootY, double fullY, string? endAnchor = null, string? rootAnchor = null)
     {
+        RootAnchor = rootAnchor == null ? null : DefinitionValidation.Id(rootAnchor, nameof(rootAnchor));
+        EndAnchor = endAnchor == null ? null : DefinitionValidation.Id(endAnchor, nameof(endAnchor));
         RootY = DefinitionValidation.Finite(rootY, nameof(rootY)); FullY = DefinitionValidation.Finite(fullY, nameof(fullY));
         if (rootY < 0 || fullY - rootY < 1 || fullY > 16384) throw new ArgumentOutOfRangeException(nameof(fullY));
     }

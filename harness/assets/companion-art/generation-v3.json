@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-17",
+  "tool": "Built-in image_gen",
+  "privacy": "Only generated public props are used as references. No personal character pixels were uploaded.",
+  "assets": [
+    {
+      "name": "pelly-hair-short-v3",
+      "prompt": "Use case: illustration-story. Asset type: transparent 2D game hairstyle overlay. Draw ONLY one soft chestnut brown short bob wig for a cartoon pelican bird in strict LEFT-FACING SIDE PROFILE, with a huge rounded pear-shaped cranium and a long bill extending LEFT (bill and face MUST remain absent/transparent). The hair forms a domed crescent over the top/back of the head, warm layered locks sweeping toward the RIGHT rear, rounded ends at back-right cheek; sparse short side-swept fringe confined to the very top-left brow. The central lower-left 65 percent of the head opening is completely transparent for the eye and bill; no front-facing symmetrical bangs. Soft clean storybook cel shading, tidy dark brown outlines, gentle warm highlights, natural layered strands. Centered single wig, no face, no skin, no bird, no body, no objects, no text, no shadow/background. Genuine transparent alpha. Broad 1:1 silhouette with hair mass primarily in upper and right areas, no isolated stray pieces.",
+      "file": "pelly-hair-short-v3.png",
+      "sha256": "05ead1074d02c590fae98c3b273ae9b4b01b9c74ea020dc18cb3fdbf900b0b5e",
+      "bytes": 852926
+    },
+    {
+      "name": "pelly-hair-long-v3",
+      "prompt": "Draw ONLY a chestnut brown long hairstyle wig for a bird head in LEFT-FACING SIDE PROFILE, not a person. Rounded domed top, long softly layered locks fall down the RIGHT rear only, open crescent silhouette around a transparent central lower-left face opening. Eye/beak/head/body absent, sparse fringe only along top left brow; no hair curtain crossing eye or beak. Long graceful back locks, clean dark outlines, soft cel shading, true transparent alpha.",
+      "file": "pelly-hair-long-v3.png",
+      "sha256": "ee1ebfda78dc592a531570c4f309ddffb85c30c6bc1e399b21810fcffbfbc0ff",
+      "bytes": 944014
+    },
+    {
+      "name": "pelly-hair-afro-v3",
+      "prompt": "Draw ONLY one dark chestnut brown rounded afro hairstyle overlay in LEFT-FACING SIDE PROFILE for a bird with large round head and long beak pointing left. Fluffy rounded natural curl clusters form the top and RIGHT REAR of a crescent, leaving the lower-left face area completely transparent. Small curly fringe at the top-left brow only. No face, bird, beak, body, skin or objects. Clean dark brown outlines, soft cel shading, lovely balanced curls, transparent alpha.",
+      "file": "pelly-hair-afro-v3.png",
+      "sha256": "ed701f3e6ef7a2855b1cc03e34caddd2e15722c01c50887737ceacd243b19512",
+      "bytes": 1228588
+    },
+    {
+      "name": "pistol-v3",
+      "prompt": "Use case: illustration-story. Asset type: transparent 2D game prop, a single isolated object with genuine alpha, tidy dark brown outline, soft clean cel shading, warm highlights, attractive storybook illustration, readable functional proportions, no hands, no character, no background, no labels or text. Strict SIDE VIEW, no perspective; the grip must be clear and usable by a cartoon character. A compact unbranded semi-automatic pistol, muzzle points LEFT, horizontal barrel and slide, full closed trigger guard, a clearly defined dark brown grip sloping down to the RIGHT. Matte charcoal metal, subtle restrained edge highlights. Simple rounded stylization while preserving usable pistol anatomy and correct proportions. One gun only, centered, no flash, no ammo.",
+      "file": "pistol-v3.png",
+      "sha256": "46a8ea9e8719a327aa2aae87e7fe5c183ecd508ab0cec2279e16427161a6a49a",
+      "bytes": 1537905
+    },
+    {
+      "name": "one-hand-v3",
+      "prompt": "Use case: illustration-story. Asset type: a single transparent game prop sprite. Clean warm storybook cel shading, tidy dark brown outline, subtle highlights and believable functional proportions. Orthographic SIDE VIEW, no perspective, no hands, no character, no text, no shadow/backdrop, genuine transparent alpha. Center whole object with generous clear margin. A handsome short practical arming sword, straight steel blade pointing UP, single symmetric crossguard, medium brown leather one-hand grip directly below blade, small round pommel. Restrained brass guard. Blade 65% of total length, handle 25%, guard 10%. Unadorned usable sword, not a giant fantasy ornament.",
+      "file": "one-hand-v3.png",
+      "sha256": "0fabf32537b6b6b8807f9add44fbd6941afce9ea23e234fa1b6565aefd21798e",
+      "bytes": 1052912
+    },
+    {
+      "name": "two-hand-v3",
+      "prompt": "Use case: illustration-story. Asset type: a single transparent game prop sprite. Clean warm storybook cel shading, tidy dark brown outline, subtle highlights and believable functional proportions. Orthographic SIDE VIEW, no perspective, no hands, no character, no text, no shadow/backdrop, genuine transparent alpha. Center whole object with generous clear margin. A practical medieval two-handed longsword, straight steel blade pointing UP, simple curved brass crossguard, visibly LONG two-hand brown leather wrapped hilt and round pommel below. Blade 65% of full length, long hilt 30%, guard 5%. Readable rounded stylization with soft metal shading, no jewels or ornate decorations.",
+      "file": "two-hand-v3.png",
+      "sha256": "3f2f8966bdbb9634d42e0b604adade1111e7516ce8f42bb889459df1ae2d06a8",
+      "bytes": 1005335
+    },
+    {
+      "name": "bow-v3",
+      "prompt": "Use case: illustration-story. Asset type: a single transparent game prop sprite. Clean warm storybook cel shading, tidy dark brown outline, subtle highlights and believable functional proportions. Orthographic SIDE VIEW, no perspective, no hands, no character, no text, no shadow/backdrop, genuine transparent alpha. Center whole object with generous clear margin. One elegant functional wooden recurve bow in SIDE VIEW. Bow limbs bend out LEFT, grip is at center-left, top and bottom limb tips point to RIGHT. Thin taut string connects top and bottom tips as a straight VERTICAL LINE on the RIGHT. Polished warm brown wood, a dark leather grip, modest ivory tip details. Bow only; no arrow, hand, body, target, quiver. Entire crescent and string visible.",
+      "file": "bow-v3.png",
+      "sha256": "f3f117b3128991becf3222e769d913d9f377b4a26b353ea20052ed9d5deb846e",
+      "bytes": 1178522
+    },
+    {
+      "name": "toy-gun-v3",
+      "prompt": "Use case: illustration-story. Asset type: single isolated 2D game prop sprite on genuine transparent alpha. Clean soft cel shading with tidy dark brown outlines, functional human-usable proportions, restrained cartoon stylization. NO glow, NO ground shadow, NO background haze, no text, hands or character, no ornament clutter. Entire object with clear margins. A neat blue and ivory foam-dart training pistol, strict SIDE VIEW, muzzle points LEFT, horizontal short barrel, orange safety tip, closed trigger guard and comfortable dark blue grip sloping downward to RIGHT. Clearly one practical toy gun with readable grip, no projectile or effects.",
+      "file": "toy-gun-v3.png",
+      "sha256": "ff6a7efa78b638d472c288aa22b1262e4765457527cb2d66fe39720f5f01a378",
+      "bytes": 1421884
+    },
+    {
+      "name": "toy-sword-v3",
+      "prompt": "Use case: illustration-story. Asset type: single isolated 2D game prop sprite on genuine transparent alpha. Clean soft cel shading with tidy dark brown outlines, functional human-usable proportions, restrained cartoon stylization. NO glow, NO ground shadow, NO background haze, no text, hands or character, no ornament clutter. Entire object with clear margins. A smooth wooden practice sword in side view with straight rounded blade pointing UP, small sturdy wood crossguard, brown cord-wrapped one-hand grip and small pommel below. Lovely polished ash wood grain, believable simple training weapon, clean silhouette. Blade 65 percent, handle 25 percent, guard 10 percent.",
+      "file": "toy-sword-v3.png",
+      "sha256": "ae07bb0b5af6bd0916420fc0f0c5adb68135ff6219e8b7f8e9996527fa68e122",
+      "bytes": 1067568
+    },
+    {
+      "name": "magic-wand-v3",
+      "prompt": "Use case: illustration-story. Asset type: single isolated 2D game prop sprite on genuine transparent alpha. Clean soft cel shading with tidy dark brown outlines, functional human-usable proportions, restrained cartoon stylization. NO glow, NO ground shadow, NO background haze, no text, hands or character, no ornament clutter. Entire object with clear margins. One elegant hand-held magic wand, straight slim wood shaft pointing UP, darker cord-wrapped short grip near bottom with a modest rounded pommel; a small pale blue faceted crystal held by a simple brass socket on top. Practical balanced proportions, small beautiful ornament, no glow or particles. Whole wand visible.",
+      "file": "magic-wand-v3.png",
+      "sha256": "2ea5df18c872a0a1a0cea81297735883ea23f1d41dd310ad9fbcd425a89fe9fe",
+      "bytes": 945332
+    },
+    {
+      "name": "bow-v4",
+      "prompt": "Use case: precise-object-edit. Edit target: attached public bow prop. Change ONLY: completely REMOVE the entire vertical bowstring between the top and bottom tips, leaving a stringless wooden bow limb and its handle. Also REMOVE all outer glow/haze/shadow, transparent empty space should have alpha zero. Keep the wood shape, leather handle, ivory tips, exact side view, colors, scale and framing unchanged. Clean true transparent alpha background; no new objects, no text. The app will draw an animated string itself.",
+      "reference": "bow-v3.png",
+      "file": "bow-v4.png",
+      "sha256": "4c28d55e11bf544ec7fe63554669de29b7569454c8bb7ccf7ec5e45cafc03968",
+      "bytes": 1065222
+    }
+  ]
+}

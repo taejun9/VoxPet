@@ -23,6 +23,7 @@ public sealed class CompanionEquipmentTests
         {
             processor.WeaponId = weapon.Id; processor.HoldWeapon = true;
             Assert.Equal(weapon.Asset, runtime.Update(new(time, 0, 0)).Layers.Single(l => l.Id == "companion-equipped-weapon").Asset);
+            Assert.Equal(weapon.Id == "bow", runtime.Frame.Layers.Any(l => l.Id == "companion-bow-idle-string"));
             processor.HoldWeapon = false;
             Assert.DoesNotContain(runtime.Update(new(time, 0, 0)).Layers, l => l.Id == "companion-equipped-weapon");
             runtime.RequestAction(weapon.Id); runtime.Update(new(time, 0, 0));
@@ -54,7 +55,7 @@ public sealed class CompanionEquipmentTests
                 var sleeve = frame.Layers.Single(l => l.Asset == $"samples/{garment}-{side}.png");
                 var arm = frame.Layers.Single(l => l.Id == "part-arm-" + side);
                 Assert.Equal(arm.Matrix, sleeve.Matrix); Assert.NotNull(sleeve.Mesh); Assert.Same(arm.Mesh, sleeve.Mesh);
-                foreach (string item in new[] { "shoes", "bottom" }) Assert.Equal(frame.Layers.Single(l => l.Id == "part-leg-" + side).Matrix, frame.Layers.Single(l => l.Asset == $"samples/{item}-{side}.png").Matrix);
+                foreach (string item in new[] { "shoes", "bottom" }) Assert.Equal(frame.Layers.Single(l => l.Asset == $"samples/shoes-{side}.png").Matrix, frame.Layers.Single(l => l.Asset == $"samples/{item}-{side}.png").Matrix);
             }
             Assert.Equal(frame.Layers.Single(l => l.Id == "part-body").Matrix, frame.Layers.Single(l => l.Asset == $"samples/{garment}-body.png").Matrix);
             runtime.Attachments.SetEnabled(garment, false); runtime.StopActions();
@@ -71,10 +72,10 @@ public sealed class CompanionEquipmentTests
             walking.Attachments.SetEnabled(garment, true); walking.RequestAction("step"); var frame = walking.Update(new(walking.Actions.LastTime, 0, 0));
             foreach (string side in new[] { "left", "right" })
             {
-                var foot = frame.Layers.Single(l => l.Id == "part-leg-" + side).Matrix; Assert.NotEqual(AffineTransform2D.Identity, foot);
+                var foot = frame.Layers.Single(l => l.Asset == $"samples/shoes-{side}.png").Matrix; Assert.NotEqual(AffineTransform2D.Identity, foot);
                 foreach (string item in new[] { garment, "shoes" }) Assert.Equal(foot, frame.Layers.Single(l => l.Asset == $"samples/{item}-{side}.png").Matrix);
             }
-            Assert.NotEqual(frame.Layers.Single(l => l.Id == "part-leg-left").Matrix, frame.Layers.Single(l => l.Id == "part-leg-right").Matrix); walking.StopActions();
+            Assert.DoesNotContain(frame.Layers, l => l.Id is "part-leg-left" or "part-leg-right"); Assert.NotEqual(frame.Layers.Single(l => l.Asset == "samples/shoes-left.png").Matrix, frame.Layers.Single(l => l.Asset == "samples/shoes-right.png").Matrix); walking.StopActions();
         }
     }
     [Fact]

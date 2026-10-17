@@ -12,8 +12,8 @@ if (!destination) throw new Error('Provide a new development output directory');
 const profiles = {
   neulbo: {hat:[110,0,292,145],top:[88,282,342,170],outerwear:[87,280,344,175],onePiece:[143,284,230,192],bottom:[150,388,218,95],shoes:[158,450,208,53],cape:[12,209,488,260],backAccessory:[48,244,416,198],
     'hair-short':[66,29,388,300],'hair-long':[16,15,480,410],'hair-afro':[38,8,440,345],gun:[285,326,160,112],sword:[278,257,151,184],wand:[287,244,140,192],bow:[376,338,127,169]},
-  pelly: {hat:[223,2,180,109],top:[183,241,220,176],outerwear:[182,241,224,178],onePiece:[203,241,185,199],bottom:[206,373,177,82],shoes:[206,417,177,66],cape:[58,170,442,269],backAccessory:[97,219,387,193],
-    'hair-short':[168,30,247,246],'hair-long':[155,28,270,365],'hair-afro':[152,17,281,260],gun:[277,278,158,116],sword:[269,204,165,199],wand:[276,197,155,206],bow:[389,295,120,181]}
+  pelly: {hat:[223,2,180,109],top:[183,241,220,176],outerwear:[182,241,224,178],onePiece:[203,241,185,199],bottom:[206,373,177,82],shoes:[206,417,177,66],cape:[153,200,350,220],backAccessory:[200,235,270,165],
+    'hair-short':[162,43,280,285],'hair-long':[162,43,280,390],'hair-afro':[143,33,288,295],gun:[277,278,158,116],sword:[269,204,165,199],wand:[276,197,155,206],bow:[389,295,120,181]}
 };
 const ink='#70503d';
 const defs=`<defs><linearGradient id="gold" x2=".7" y2="1"><stop stop-color="#fff1b8"/><stop offset=".45" stop-color="#edc36e"/><stop offset="1" stop-color="#ba8644"/></linearGradient><linearGradient id="pink" x2=".4" y2="1"><stop stop-color="#ffe4df"/><stop offset=".4" stop-color="#eaa4ad"/><stop offset="1" stop-color="#be728b"/></linearGradient><linearGradient id="mint" x2=".6" y2="1"><stop stop-color="#e8f0db"/><stop offset="1" stop-color="#90b3a2"/></linearGradient><radialGradient id="blush"><stop stop-color="#ed9b9f" stop-opacity=".65"/><stop offset="1" stop-color="#ed9b9f" stop-opacity="0"/></radialGradient></defs>`;
@@ -50,7 +50,7 @@ function small(kind,id) {
 async function trimmed(buffer) {
   const {data,info}=await sharp(buffer).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   let x0=info.width,y0=info.height,x1=0,y1=0;
-  for(let y=0;y<info.height;y++)for(let x=0;x<info.width;x++)if(data[(y*info.width+x)*4+3]>32){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
+  for(let y=0;y<info.height;y++)for(let x=0;x<info.width;x++)if(data[(y*info.width+x)*4+3]>180){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
   if(x0>x1)throw new Error('Empty asset');
   return sharp(buffer).extract({left:x0,top:y0,width:x1-x0+1,height:y1-y0+1}).png().toBuffer();
 }
@@ -77,7 +77,7 @@ async function frame(kind,index,columns,rows) {
   await fs.mkdir(destination,{recursive:true});
   for(const id of Object.keys(profiles)){
     const out=path.join(destination,id);await fs.mkdir(out,{recursive:true});const images={};
-    for(const kind of ['top','outerwear','onePiece','bottom','shoes','hair-short','hair-long','hair-afro']) images[kind]=await placed(await fs.readFile(path.join(source,(kind==='hair-long'?'hair-long-v2':kind)+'.png')),profiles[id][kind]);
+    for(const kind of ['top','outerwear','onePiece','bottom','shoes','hair-short','hair-long','hair-afro']) images[kind]=await placed(await fs.readFile(path.join(source,(id==='pelly'&&kind.startsWith('hair-')?'pelly-'+kind+'-v3':kind==='hair-long'?'hair-long-v2':kind)+'.png')),profiles[id][kind]);
     for(const [kind,count,columns,rows] of [['hat',8,4,2],['cape',6,3,2]])for(let i=0;i<count;i++)images[kind+(i?'-'+i:'')]=await placed(await frame(kind,i,columns,rows),profiles[id][kind]);
     for(const kind of ['glasses','faceDecoration','earrings','headAccessory','handAccessory','effect','heart','claw','bow'])images[kind]=await sharp(small(kind,id)).resize(512,512).png().toBuffer();
     // Split clothing inside the fabric, with matching shoulder anchors. Back
@@ -112,9 +112,11 @@ async function frame(kind,index,columns,rows) {
     for(const kind of ['hair-short','hair-long','hair-afro']) {
       // Preserve each painted curl's outline. The side-view face and bill stay in front
       // of the back locks; never crop hair with a visible horizontal cutoff.
-      const faceWindow=Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><ellipse cx="300" cy="187" rx="100" ry="88" fill="white"/><ellipse cx="181" cy="206" rx="110" ry="88" fill="white"/></svg>');
+      const faceWindow=Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><ellipse cx="270" cy="200" rx="80" ry="80" fill="white"/><ellipse cx="150" cy="220" rx="110" ry="95" fill="white"/></svg>');
       images[kind+'-fringe']=id==='pelly'?await sharp(images[kind]).composite([{input:faceWindow,blend:'dest-out'}]).png().toBuffer():images[kind];
     }
+    await require('./companion_tailoring.cjs')(images,id,source);
+    await require('./companion_props.cjs')(images,id,source,trimmed);
     // Same registration as the aligned Pelly silhouette and its rig/part masks.
     if(id==='pelly')for(const[name,bytes]of Object.entries(images)) {
       const cropped=await sharp(bytes).extract({left:18,top:0,width:494,height:495}).png().toBuffer();

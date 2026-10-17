@@ -47,7 +47,9 @@ public sealed class CompanionEquipmentViewModel : ObservableObject
     }
     private void Change(CompanionEquipment value)
     {
-        value.Validate(); choices[character.CompanionCharacterId] = value; dirty = true; revision++; Apply();
+        value.Validate();
+        if (Current.Weapon != value.Weapon) character.StopCompanionActions();
+        choices[character.CompanionCharacterId] = value; dirty = true; revision++; Apply();
         if (persistent) { timer.Stop(); timer.Start(); }
     }
     public void SelectForAction(string id)
