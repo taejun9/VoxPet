@@ -31,6 +31,8 @@ public sealed class EmotiveMotionTests
     {
         var engine = Engine(Key(0, 0), Key(400, 10), Key(400, 50), Key(1000, 100));
         Assert.Equal(50, engine.Update(.4).Transforms["hand"].X);
+        var legacy = new ActionEngine(); legacy.TryPlay(new("legacy", "Legacy", 2000, [Key(0, 0), Key(400, 10), Key(400, 50), Key(1000, 100)], interpolateTransforms: true), 0);
+        Assert.Equal(5, legacy.Update(.2).Transforms["hand"].X); Assert.Equal(50, legacy.Update(.4).Transforms["hand"].X);
         var poses = new[] { new PoseDefinition("reset", transforms: new Dictionary<string, Transform2D> { ["hand"] = new(x: -100) }) };
         var a = new ActionDefinition("move", "Move", 2000, [Key(0, 0), Key(500, 20), new(800, ActionEventKind.Pose, value: "reset"), Key(1200, -50), Key(1800, 0), new(1900, ActionEventKind.Transform, "hand", transform: new(scaleX: -1))], interpolateTransforms: true, transformInterpolation: ActionInterpolation.MonotoneCubic);
         engine = new(poses); engine.TryPlay(a, 0);

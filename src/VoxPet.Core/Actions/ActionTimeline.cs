@@ -61,7 +61,7 @@ internal static class ActionTimeline
                         ? new(key.TimeMs, poseTransform, j) : null;
                 if (key.Kind != ActionEventKind.Transform || key.Target != target || (direction > 0 ? key.TimeMs <= boundary : key.TimeMs >= boundary)) continue;
                 // Match normal timeline evaluation when duplicate keys share a timestamp.
-                while (direction > 0 && j + 1 < action.Timeline.Count && action.Timeline[j + 1].TimeMs == key.TimeMs)
+                while (action.TransformInterpolation == ActionInterpolation.MonotoneCubic && direction > 0 && j + 1 < action.Timeline.Count && action.Timeline[j + 1].TimeMs == key.TimeMs)
                 {
                     j++; var duplicate = action.Timeline[j];
                     if (duplicate.Kind == ActionEventKind.Pose) return null;

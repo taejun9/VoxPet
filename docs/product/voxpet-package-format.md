@@ -68,4 +68,4 @@ effect의 선택 `endAnchor`와 `endTransform:{x,y}`는 시작 anchor/transform�
 
 ## 연속 속도 동작 (plan048)
 
-`interpolateTransforms:true`에 선택 `transformInterpolation:"monotoneCubic"`를 함께 지정하면 같은 target의 양쪽 인접 키 기울기를 가중 조화 평균으로 연결한다. 같은 방향으로 지나가는 키는 속도가 이어지고 정지·방향 전환 키는 속도0이다. 처음/마지막 키의 기울기는0으로 두어 대기 자세로 천천히 들어오고 나간다. 키 구간을 넘어 overshoot하지 않는다. 필드를 생략하거나 `smoothStep`이면 이전 smoothstep 의미이며 false이면 기존 step이다. 같은 시각의 마지막 키가 적용되고 pose reset이나 반전 배율의 경계는 넘지 않는다. 알 수 없는 곡선 값은 거부한다. 편집기의 **움직임 연결 곡선**에서 선택하며 상세 변경·삭제·내보내기·재읽기에 보존한다. 2차 미분 연속은 보장하지 않는다.
+`interpolateTransforms:true`에 선택 `transformInterpolation:"monotoneCubic"`를 함께 지정하면 같은 target의 양쪽 인접 키 기울기를 가중 조화 평균으로 연결한다. 같은 방향으로 지나가는 키는 속도가 이어지고 정지·방향 전환 키는 속도0이다. 처음/마지막 키의 기울기는0으로 두어 대기 자세로 천천히 들어오고 나간다. 키 구간을 넘어 overshoot하지 않는다. 필드를 생략하거나 `smoothStep`이면 이전 smoothstep 의미이며 false이면 기존 step이다. 새 곡선은 같은 시각의 마지막 키를 향해 보간하고, 기존 smoothstep의 중복 미래 키 선택은 유지한다. pose reset이나 반전 배율의 경계는 넘지 않는다. 알 수 없는 곡선 값은 거부한다. 편집기의 **움직임 연결 곡선**에서 선택하며 상세 변경·삭제·내보내기·재읽기에 보존한다. 2차 미분 연속은 보장하지 않는다.
