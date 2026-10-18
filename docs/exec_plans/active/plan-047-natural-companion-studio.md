@@ -163,3 +163,6 @@ b05d9a2 Windows39048798186의 앱 전체 및 디코더 재현/동일 worker/20�
 동일한 자동 승인 절차의 재확인에서 build 실행이 승인됐고 Release 경고0/오류0으로 통과했다. 승인 검토 오류는 일시 상태였으며 우회 없이 해소됐다. 추가90개 실제 표시 픽셀 대조의 Windows 검증은 다음 후보에서 수행한다.
 
 9fca64c의 Neulbo one-hand와 firearm에서405ms/590ms 실제 desktop PNG SHA256이 각각 완전히 동일함도 확인했다. 두 모델 시점의 손목 행렬과 총구 효과는 달라 실제 표시 경로의 지연이라는 근거가 명확하다. 이 원본/검토88화면은 candidate-9fca64c에 보존했으며 완료 근거로 사용하지 않는다.
+
+
+a70a046 Windows39102911694는 Core446·lint·Release0경고/0오류 후 WPF300초 상한으로 종료했다. 수집된76시점 모두 OnRender Frame은 현재 모델과 일치했지만 참고이미지가 부모 StackPanel 안의 약54px VisualOffset을 포함해 아래로 밀렸고, 실제 preview ROI와40~55% 불일치했다. 참고 PNG/실제 GDI crop을 직접 나란히 검토했다. VisualBrush의 absolute source Viewbox를 GetOffset(element)+ActualSize로 맞춰 화면 좌표와 독립적으로 취급한다. 채널24/전체1%/tile75% 기준은 그대로 유지한다. 동기 렌더/DwmFlush 이후 실제 firearm590 화면에서는 이전 섬광이 사라진 것도 확인했으며, 픽셀 일치 전체 증명은 수정본에서 다시 수행한다.

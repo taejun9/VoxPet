@@ -59,7 +59,11 @@ internal static class ScreenEvidence
         bool current = ReferenceEquals(expected.Surface.LastRenderedFrame, expected.Frame);
         var visual = new DrawingVisual(); RenderOptions.SetBitmapScalingMode(visual, BitmapScalingMode.HighQuality);
         var area = new System.Windows.Rect(0, 0, element.ActualWidth, element.ActualHeight);
-        var brush = new VisualBrush(element) { ViewboxUnits = BrushMappingMode.Absolute, Viewbox = area, Stretch = Stretch.Fill };
+        // VisualBrush retains its root visual's layout offset. Select that source
+        // rectangle, then draw it at the element's independent screen origin.
+        var offset = VisualTreeHelper.GetOffset(element);
+        var sourceArea = new System.Windows.Rect(offset.X, offset.Y, element.ActualWidth, element.ActualHeight);
+        var brush = new VisualBrush(element) { ViewboxUnits = BrushMappingMode.Absolute, Viewbox = sourceArea, Stretch = Stretch.Fill };
         using (var drawing = visual.RenderOpen())
         {
             drawing.PushTransform(new TranslateTransform(start.X - left, start.Y - top));
