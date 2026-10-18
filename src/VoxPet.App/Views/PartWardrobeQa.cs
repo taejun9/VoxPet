@@ -67,6 +67,22 @@ internal static class PartWardrobeQa
                         File.WriteAllBytes(Path.Combine(temp, "voxpet-part-" + entry.Id + "-" + part + ".png"), bytes);
                 }
                 var original = Pixels(d => d.DrawImage(scene.Images[LegacySpriteSheetAdapter.Asset(0, 1)], new Rect(0, 0, 512, 512)));
+                if (entry.SideView)
+                {
+                    var arm = Pixels(d => d.DrawImage(scene.SourceImages[CompanionParts.Asset("arm-right")], new Rect(0, 0, 512, 512)));
+                    var grip = Pixels(d => d.DrawImage(scene.SourceImages[CompanionParts.GripArm("right")], new Rect(0, 0, 512, 512)));
+                    int examined = 0; bool intact = true;
+                    for (int y = 240; y < 330; y++) for (int x = 8; x < 504; x++)
+                    {
+                        int i = (y * 512 + x) * 4; if (arm[i + 3] < 128) continue;
+                        bool edge = false;
+                        for (int dy = -8; dy <= 8; dy += 8) for (int dx = -8; dx <= 8; dx += 8)
+                            edge |= original[((y + dy) * 512 + x + dx) * 4 + 3] <= 32;
+                        if (!edge) continue; examined++;
+                        for (int c = 0; c < 4; c++) intact &= Math.Abs(arm[i + c] - grip[i + c]) <= 2;
+                    }
+                    check(examined > 0 && intact, "avatar_reaching_wing_keeps_original_outside_ink_pelly");
+                }
                 var bindPose = new VoxPet.Core.Character.CharacterRuntime(scene.Runtime.Definition).Update(new(0, 0, 0, false));
                 var rebuilt = Pixels(d => RenderFrameDrawing.Draw(d, new RenderFrame(bindPose.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal))), scene.SourceImages));
                 int changed = Enumerable.Range(0, 512 * 512).Count(i => Enumerable.Range(0, 4).Any(c => Math.Abs(original[i * 4 + c] - rebuilt[i * 4 + c]) > 24));

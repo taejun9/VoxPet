@@ -124,8 +124,14 @@ internal static class CompanionPartImages
             if (side)
             {
                 var pixels = Pixels((BitmapSource)rightWing); var color = Skin(sheet[0, 1], true);
+                var silhouette = Pixels(Raster(d => d.DrawImage(sheet[0, 1], new Rect(0, 0, 512, 512))));
                 for (int y = 240; y < 330; y++) for (int x = 0; x < 512; x++)
                 {
+                    // Preserve the original outside ink. Only repaint an internal crease.
+                    bool inside = true;
+                    for (int dy = -8; dy <= 8; dy += 8) for (int dx = -8; dx <= 8; dx += 8)
+                        if (x + dx < 0 || x + dx >= 512 || silhouette[((y + dy) * 512 + x + dx) * 4 + 3] <= 32) inside = false;
+                    if (!inside) continue;
                     int i = (y * 512 + x) * 4; double alpha = pixels[i + 3] / 255d;
                     double mix = Math.Clamp((330 - y) / 30d, 0, 1);
                     pixels[i] = (byte)Math.Round(pixels[i] * (1 - mix) + color.B * alpha * mix);
