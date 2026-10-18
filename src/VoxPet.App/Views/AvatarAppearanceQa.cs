@@ -25,13 +25,15 @@ internal static class AvatarAppearanceQa
         string Face() => scene.Frame.Layers.Single(l => l.Id == "part-head").Asset;
         Tick(.3); string open = Face();
         var mouths = new List<object>(); var seen = new HashSet<string>();
-        int positions = (character.MouthFrameCount - 1) * (id == "pelly" ? 1 : 2) + 1;
+        int positions = character.MouthFrameCount;
+        double[] levels = positions == 8 ? [0, .06, .16, .30, .47, .65, .82, 1] : Enumerable.Range(0, positions).Select(i => i / (positions - 1d)).ToArray();
         for (int i = 0; i < positions; i++)
         {
-            double level = i / (positions - 1d); Tick(.016, level); string asset = Face(); seen.Add(asset);
+            double level = levels[i]; Tick(.016, level); string asset = Face(); seen.Add(asset);
+            check(asset == scene.Runtime.Definition.SpriteSheet!.Expressions.Single(e => e.Id == scene.Runtime.State.ExpressionId).Open[scene.Runtime.MouthFrame], $"avatar_face_keeps_runtime_mouth_curve_{id}_{i}");
             check(scene.Images[asset].IsFrozen, $"avatar_face_frozen_{id}_{i}"); mouths.Add(new { level, asset });
         }
-        check(seen.Count == positions, "avatar_lips_have_intermediate_frames_" + id);
+        check(seen.Count == positions, "avatar_lips_keep_authored_poses_" + id);
         Tick(.1); var eyes = new HashSet<string> { Face() };
         Tick(0, blink: true);
         for (int i = 0; i < 5; i++) { Tick(.016, blink: true); eyes.Add(Face()); }

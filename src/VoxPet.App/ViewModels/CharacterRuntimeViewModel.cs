@@ -39,7 +39,7 @@ public sealed class CharacterRuntimeViewModel
         faces = new(sheet, sideView);
         faces.Changed += () =>
         {
-            Images = faces.Images; displayFrame = faces.Update(Runtime.Frame, Runtime.State.VoiceLevel, last);
+            Images = faces.Images; displayFrame = faces.Update(Runtime.Frame, last);
             FacePreparationChanged?.Invoke();
         };
         return true;
@@ -63,7 +63,7 @@ public sealed class CharacterRuntimeViewModel
         if (ActivateFaces()) faces!.SetImages(sourceImages);
         var frame = Runtime.Update(new(now, now - last, voice, blink, new InputSnapshot(events)));
         last = now; events.Clear();
-        if (faces != null) { displayFrame = faces.Update(frame, voice, now); Images = faces.Images; }
+        if (faces != null) { displayFrame = faces.Update(frame, now); Images = faces.Images; }
         return Frame;
     }
     public void Stop() { events.Clear(); Runtime.StopActions(); }

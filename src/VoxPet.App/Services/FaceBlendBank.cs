@@ -101,27 +101,25 @@ internal sealed class FaceBlendBank(SpriteSheetDefinition sheet, bool side) : ID
     private static string Key(SpriteSheetExpression e, int mouth, int eye) => "avatar-face/" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(e.Id)) + $"-{mouth}-{eye}.png";
     private static Prepared Build(SpriteSheetExpression e, ImageSource[] inputs, bool side, CancellationToken token)
     {
-        int count = e.Open.Count, factor = !side && count <= 8 ? 2 : 1; var original = new byte[inputs.Length][];
+        int count = e.Open.Count; var original = new byte[inputs.Length][];
         for (int i = 0; i < original.Length; i++) { token.ThrowIfCancellationRequested(); original[i] = Pixels(inputs[i]); }
         var reference = original[count]; var pixels = new byte[original.Length][];
         for (int i = 0; i < original.Length; i++) { token.ThrowIfCancellationRequested(); pixels[i] = Register(original[i], reference, side); }
         var images = new Dictionary<string, ImageSource>(StringComparer.OrdinalIgnoreCase);
-        for (int eye = 0; eye < 4; eye++) for (int mouth = 0; mouth <= (count - 1) * factor; mouth++)
+        for (int eye = 0; eye < 4; eye++) for (int mouth = 0; mouth < count; mouth++)
         {
-            token.ThrowIfCancellationRequested(); int a = mouth / factor, b = Math.Min(a + 1, count - 1); bool half = factor == 2 && mouth % 2 != 0;
+            token.ThrowIfCancellationRequested();
             var mixed = new byte[512 * 512 * 4];
             for (int i = 0; i < mixed.Length; i++)
             {
-                int shut = pixels[a][i] + (half ? pixels[b][i] : pixels[a][i]);
-                int open = pixels[count + a][i] + (half ? pixels[count + b][i] : pixels[count + a][i]);
-                mixed[i] = (byte)((shut * (3 - eye) + open * eye + 3) / 6);
+                mixed[i] = (byte)((pixels[mouth][i] * (3 - eye) + pixels[count + mouth][i] * eye + 1) / 3);
             }
-            string key = mouth % factor == 0 && eye is 0 or 3 ? (eye == 0 ? e.Closed[a] : e.Open[a]) : Key(e, mouth, eye);
+            string key = eye is 0 or 3 ? (eye == 0 ? e.Closed[mouth] : e.Open[mouth]) : Key(e, mouth, eye);
             images[key] = Bitmap(mixed);
         }
         return new(e, images);
     }
-    public RenderFrame Update(RenderFrame frame, double voice, double time)
+    public RenderFrame Update(RenderFrame frame, double time)
     {
         var face = frame.Layers.FirstOrDefault(l => l.Id == "part-" + sheet.Part);
         if (face == null) return frame;
@@ -133,10 +131,10 @@ internal sealed class FaceBlendBank(SpriteSheetDefinition sheet, bool side) : ID
         if (!eyeInitialized) { eye = eyeFrom = eyeTarget = shutting ? 0 : 1; closed = shutting; eyeInitialized = true; }
         else if (shutting != closed) { closed = shutting; eyeFrom = eye; eyeTarget = shutting ? 0 : 1; eyeStarted = time; }
         if (prepared?.Expression != expression) return frame;
-        int factor = !side && expression.Open.Count <= 8 ? 2 : 1;
-        int mouth = (int)Math.Round(Math.Clamp(voice, 0, 1) * (expression.Open.Count - 1) * factor);
+        // Keep the runtime's authored voice curve and selected crisp mouth pose.
+        int mouth = Enumerable.Range(0, expression.Open.Count).First(i => expression.Open[i] == face.Asset || expression.Closed[i] == face.Asset);
         int phase = (int)Math.Round(eye * 3);
-        string asset = mouth % factor == 0 && phase is 0 or 3 ? (phase == 0 ? expression.Closed[mouth / factor] : expression.Open[mouth / factor]) : Key(expression, mouth, phase);
+        string asset = phase is 0 or 3 ? (phase == 0 ? expression.Closed[mouth] : expression.Open[mouth]) : Key(expression, mouth, phase);
         var layers = frame.Layers.Select(l => l.Id != face.Id ? l : new RenderLayer(l.Id, asset, opacity: l.Opacity, zIndex: l.ZIndex, matrix: l.Matrix, width: l.Width, height: l.Height, mesh: l.Mesh));
         return new(layers, frame.CanvasWidth, frame.CanvasHeight, frame.ViewportTransform);
     }
