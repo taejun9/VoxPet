@@ -21,8 +21,13 @@ internal static class HandMotionQa
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool PostMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
-    [DllImport("user32.dll")]
-    private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MouseInput { public int X, Y; public uint Data, Flags, Time; public UIntPtr Extra; }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Input { public uint Type; public MouseInput Mouse; }
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint SendInput(uint count, Input[] inputs, int size);
+    private static uint InjectClick() => SendInput(2, [new() { Mouse = new() { Flags = 2 } }, new() { Mouse = new() { Flags = 4 } }], Marshal.SizeOf<Input>());
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetCursorPos(int x, int y);
@@ -159,26 +164,34 @@ internal static class HandMotionQa
                         using var probe = round == 1 ? inputs : new HandMotionInputs(source, _ => hits++, () => clicks++);
                         if (round > 1) { probe.Triggered += signals.Add; probe.Configure(HandMotionSettings.Default()); }
                         string suffix = round == 1 ? "" : "_round" + round;
+                        int initialClicks = clicks, initialSignals = signals.Count;
+                        bool registeredBefore = probe.MouseRegistered;
+                        int registrationError = registeredBefore ? 0 : Marshal.GetLastPInvokeError();
+                        check(registeredBefore, "motion_native_mouse_hook_registered" + suffix);
                         var delivery = Stopwatch.StartNew();
-                        mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(50);
+                        uint inserted = InjectClick(); int injectionError = inserted == 2 ? 0 : Marshal.GetLastPInvokeError();
+                        check(inserted == 2, "motion_native_mouse_injection_accepted" + suffix);
+                        await Task.Delay(50);
                         int clicksAt50 = clicks, signalsAt50 = signals.Count;
                         // The hook posts an Input operation; a Normal-priority timer can
                         // resume first. Wait for this one injected event, never resend it.
-                        while (clicks < round && delivery.Elapsed < TimeSpan.FromMilliseconds(500))
+                        while (clicks == initialClicks && delivery.Elapsed < TimeSpan.FromMilliseconds(500))
                         {
                             await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-                            if (clicks < round) await Task.Delay(10);
+                            if (clicks == initialClicks) await Task.Delay(10);
                         }
                         await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                         double deliveryMs = delivery.Elapsed.TotalMilliseconds;
-                        check(clicks == round, "motion_native_left_down_signal" + suffix);
-                        check(signals.Count == round + 1 && signals[^1].Kind == TriggerKind.Mouse && signals[^1].Button == "left", "motion_platform_neutral_mouse_pulse" + suffix);
+                        check(clicks - initialClicks == 1, "motion_native_left_down_signal" + suffix);
+                        check(signals.Count - initialSignals == 1 && signals[^1].Kind == TriggerKind.Mouse && signals[^1].Button == "left", "motion_platform_neutral_mouse_pulse" + suffix);
                         int clicksBeforeDispose = clicks, signalsBeforeDispose = signals.Count;
-                        probe.Dispose(); mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(100);
+                        probe.Dispose(); uint insertedAfterDispose = InjectClick();
+                        check(insertedAfterDispose == 2, "motion_native_disposed_mouse_injection_accepted" + suffix);
+                        await Task.Delay(100);
                         await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
-                        check(clicks == round && !probe.MouseRegistered, "motion_native_dispose_stops_mouse" + suffix);
-                        check(signals.Count == round + 1, "motion_platform_neutral_dispose_stops_events" + suffix);
-                        deliveries.Add(new { round, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
+                        check(clicks == clicksBeforeDispose && clicks - initialClicks == 1 && !probe.MouseRegistered, "motion_native_dispose_stops_mouse" + suffix);
+                        check(signals.Count == signalsBeforeDispose && signals.Count - initialSignals == 1, "motion_platform_neutral_dispose_stops_events" + suffix);
+                        deliveries.Add(new { round, initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
                     }
                     if (Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } diagnostics)
                         File.WriteAllText(Path.Combine(diagnostics, "voxpet-runtime-hand-input-delivery.json"), JsonSerializer.Serialize(deliveries));

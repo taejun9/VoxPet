@@ -91,3 +91,5 @@
 | SciPy PchipInterpolator | https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.html | 연속 속도 보간 | 2026-10-18 | 인접 구간의 가중 조화 평균 기울기·단조성·C1, 양 끝0은 앱의 별도 정책 |
 
 | Microsoft LowLevelMouseProc | https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelmouseproc | 합성 좌클릭 QA | 2026-10-18 | hook를 설치한 스레드의 메시지 루프와 빠른 반환·다음 hook 전달, UI 입력 작업 완료와 timer 판정을 구분 |
+
+| Microsoft SendInput | https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-sendinput | 입력 주입 판정 | 2026-10-18 | 실제 삽입 이벤트 수 반환·직렬 배열·UIPI 한계; 기존 mouse_event의 반환값 부재와 구분 |
