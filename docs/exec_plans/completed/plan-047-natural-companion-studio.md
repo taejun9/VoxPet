@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -36,10 +36,10 @@ main/origin 880b34a·0/0·깨끗함과 기존 두 작업트리 보존 확인. �
 
 - [x] 현재 경계/의상/동작과 표정 UI 경로를 조사하고 실제 그림·각 동작 다중 시점의 실패를 기록한다.
 - [x] 관절 겹침/렌더 경계를 수정하고 표정 메뉴와 의상 카테고리를 구현한다.
-- [ ] 두 체형에 맞춘 전체 의상·펠리 측면 헤어·무기/손 파지를 제작·연결한다.
-- [ ] 조준·발사·반동·스윙·복귀·양손 지지·활 동작을 구현하고 연속 프레임을 검토한다.
-- [ ] 문서/자산/lint/Release/Core/Windows 실제 UI·화면·portable·OBS 전체 QA를 통과한다.
-- [ ] QA 후 자체 리뷰·완료 이동/미러·새 ZIP/해시·main ff push·브랜치/작업트리 정상 정리를 수행한다.
+- [x] 두 체형에 맞춘 전체 의상·펠리 측면 헤어·무기/손 파지를 제작·연결한다.
+- [x] 조준·발사·반동·스윙·복귀·양손 지지·활 동작을 구현하고 연속 프레임을 검토한다.
+- [x] 문서/자산/lint/Release/Core/Windows 실제 UI·화면·portable·OBS 전체 QA를 통과한다.
+- [x] QA 후 자체 리뷰·완료 이동/미러·새 ZIP/해시를 준비하고 표준 main ff push·브랜치/작업트리 정상 정리 단계로 인계한다.
 
 ## QA Plan
 
@@ -84,6 +84,9 @@ verify_base/verify_app/compileall/diff, SDK10.0.401 locked restore/format/analyz
 
 | 2026-10-18 | OnRender에 사용한 Frame과 실제 GDI preview 픽셀을90시점에서 대조한다. | 모델/Dispatcher 완료만으로 실제 표시가 같은 시점이라고 판정할 수 없었다. 실제 screen pixels는 대체하지 않고 reference를 별도 기록한다. |
 
+| 2026-10-18 | decoder와 썸네일 준비를 같은 worker 호출에서 완료한다. | frozen PNG도 DrawingGroup 처리에서 원래 decoder 상태를 다시 읽는 실제 스레드 예외를 재현했다. |
+| 2026-10-18 | 표정 손상 복구는 동일한 입/눈 입력에서 비교하고 두 눈 프레임을20회 검사한다. | live blink에 따른 Sprite 교체를 자료 손실과 구분하면서 기존 참조/오류 상태 판정을 유지한다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -97,7 +100,7 @@ verify_base/verify_app/compileall/diff, SDK10.0.401 locked restore/format/analyz
 
 9e84b6d: Windows39018920289는 Core431/431·빌드·lint 통과 후 WPF2759통과/27실패로 중단했다. 자연 관절/분류/파지82장 증거는 생성했으나 배포 합격이 아니다. 실패22건은 표정 버튼 검사 시점(최종 화면은F12전환 완료),5건은 전역 삼각형 겹침이 구 legacy 얼굴 고정 영역을 침범한 회귀다. UI Automation Input 처리 완료 대기/진단을 추가하고 겹침은 contiguous JointSkinning만 opt-in한다. 기존5개 얼굴 보존 판정은 유지한다. OBS39018920277은 통과했다. 최종 소스에서는 전부 다시 수행한다.
 
-## Candidate QA (Windows 대기)
+## 중간 후보 QA (과거 기록)
 
 - SDK10.0.401 locked restore 성공. Release 경고0/오류0. Core431/431 통과(`artifacts/test-results/plan047/local/core-candidate.trx`).
 - verify_base124문서/verify_app/compileall/diff 통과. C# format verify-no-changes 통과.
@@ -106,7 +109,13 @@ verify_base/verify_app/compileall/diff, SDK10.0.401 locked restore/format/analyz
 
 ## Completion Notes
 
-실제 QA/리뷰 이후 결과와 제한을 기록한다.
+2026-10-18 최종8cd4fed의 Windows39103837307/OBS39103837391 합격 후 단일 에이전트 자체 리뷰를 완료했다. Core446·WPF3096/0·portable2483/0·desktop541·시작18개·lint/Release 경고0/오류0 통과. 이전421 Core/2515 WPF 이름을 유지했다. 실제 재생90시점과 실제 표시 픽셀90시점·썸네일20회/표정 복구20회(각 앱/배포본)·스레드 경계 대조/같은 worker 준비를 확인했다.
+
+직접 시각 검토는 최종 Windows88장/10 page·OBS5장, 개인 로컬230합성/26 page·512px12개다. 개인 원본은 Windows CI로 전송하지 않았고 실제 private Windows 실행으로 주장하지 않는다. 물리 마이크/권한/USB·사용자 GPU/혼합 DPI·새60분 실기는 별도다.
+
+새 ZIP54파일/103939157bytes·SHA256 `2b30edef679e18b96c4226316d6a7c69c9d8ecbebcdb1c558a5c28890805b0fc`. 공용41파일은 시험한 CI bytes, 개인13PNG는 이전 ZIP/해시와 동일하며 PE/CRC·샘플 pack3개를 확인했다. 원본/이전 ZIP/README/AGENTS/다른 plan024 작업트리를 보존했다. [자체 리뷰](../../reviews/plan-047-natural-companion-studio-review.md)에7개 요구와 실패 수정·한계를 기록했다.
+
+표준 Git 수명은 이 완료 기록 커밋 후 main ff→main push→동일 HEAD detach→branch -d→worktree remove 순서로 수행한다. 실패 시 중단·보고하며 강제 삭제로 우회하지 않는다. 실제 종료 결과와 보존 대상 HEAD/ZIP 해시는 로컬 `artifacts/test-results/plan047/git-completion.json`에 남긴다. 아래 candidate 기록은 최종 합격 이전의 실패/중간 결과다.
 
 ## Corrected candidate local QA
 

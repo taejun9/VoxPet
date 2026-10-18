@@ -1,5 +1,15 @@
 # Windows 실사용 검증 기록
 
+## plan047 자연스러운 파츠·의상·무기와 전체 회귀
+
+2026-10-18 앱1.3.0/8cd4fed의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/39103837307), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/39103837391) 합격 후 단일 에이전트 자체 리뷰를 수행했다.
+
+- 원본 두 캐릭터에17의상/14분류/9동작을 적용한다. 파츠6px 연결·목 내부선·팔/소매·신발 대체·펠리3헤어를 보완하고12표정 메뉴를 복구했다. 총 조준/두 발/반동, 검 준비/스윙/복귀, 양손 지지·활 당김/놓기·무기7파지를 실제 시점90개로 대조했다.
+- Core446/446·WPF3096/0·portable2483/0·desktop541·일반/서명 각9개·lint/Release 경고0/오류0. 기존421 Core/2515 WPF 이름 보존. frozen decoder 썸네일 스레드 예외를 실제 스택으로 재현/수정하고20회씩 반복했으며 표정 손상 복구는 같은 입/눈의 두 프레임으로20회씩 검증했다.
+- 최종 Windows88화면·OBS5캡처, 개인 로컬230합성/26 page·512px12개를 직접 검토했다. OBS32.2.2 WGC/chroma/native alpha·동일 HWND 배경 왕복·각7프레임 통과, 기존 BitBlt 제한 유지.
+- 새 ZIP54파일/103939157bytes·SHA256 `2b30edef679e18b96c4226316d6a7c69c9d8ecbebcdb1c558a5c28890805b0fc`. 공용41파일은 실제 시험본, 개인13PNG는 이전 해시와 동일·PE/CRC 확인. 개인 자료 외부 전송 없음. [자체 리뷰](../reviews/plan-047-natural-companion-studio-review.md)와 `artifacts/test-results/plan047/`에 상세를 보존했다.
+- 실제 개인 그림 Windows 실행·물리 마이크/권한/USB·사용자 GPU/혼합 DPI·새60분 실기는 별도다. 의상은 실행 중 캐릭터별 유지/재실행 시 해제, 무기 선택/상시 들기는 저장한다.
+
 ## plan045 늘보군·펠리 직접 샘플과 그림 개선
 
 2026-10-17 앱1.1.0/최종 앱 a8cdcba의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/38938790352), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/38938790502) 통과. QA 후 단일 에이전트 자체 리뷰/실제 Windows76화면·개인 로컬64정적합성/OBS4캡처를 검토했다.

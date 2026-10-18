@@ -81,3 +81,9 @@
 | Microsoft LowLevelKeyboardProc | https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc | 지정 키 down/up 감지 | 2026-10-13 | 즉시 반환, 원래 입력 전달, 반복 keydown 억제 |
 
 | Microsoft NETSDK1100 | https://learn.microsoft.com/en-us/dotnet/core/tools/sdk-errors/netsdk1100 | macOS Windows 대상 빌드 | 2026-10-13 | EnableWindowsTargeting으로 빌드 허용, WPF 실행 지원과 구분 |
+
+| Microsoft WPF DrawingDrawingContext | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/DrawingDrawingContext.cs | 썸네일 그리기 | 2026-10-18 | DrawImage가 frozen 이미지 처리 중 새 Drawing을 Freeze하는 경로 |
+
+| Microsoft DwmFlush | https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmflush | 실제 표시 동기화 | 2026-10-18 | 호출 앱이 큐에 넣은 DirectX surface 업데이트의 Present 대기; 전체 세션 flush와 구분 |
+
+| Microsoft WPF BitmapSource FreezeCore | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/BitmapSource.cs | 이미지 스레드 경계 | 2026-10-18 | FreezeCore의 IsDownloading 확인과 실제 decoder 예외 스택 대조 |
