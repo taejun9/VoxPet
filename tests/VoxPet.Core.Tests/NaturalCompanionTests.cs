@@ -136,6 +136,13 @@ public sealed class NaturalCompanionTests
         Assert.All(frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal) && l.Id != "part-head"), l => Assert.Equal(1, l.Opacity));
         Assert.Equal(frame.Layers.Single(l => l.Id == "part-head").Matrix, frame.Layers.Single(l => l.Id == "legacy-previous-head").Matrix);
         Assert.Contains(frame.Layers, l => l.Id == "companion-equipped-weapon");
+        foreach (double time in new[] { .44, .50, .56 })
+        {
+            var middle = runtime.Update(new(time, .06, 0));
+            double previous = middle.Layers.Single(l => l.Id == "legacy-previous-head").Opacity;
+            double incoming = middle.Layers.Single(l => l.Id == "part-head").Opacity;
+            Assert.Equal(1, 1 - (1 - previous) * (1 - incoming));
+        }
     }
     [Theory]
     [InlineData("claw")]

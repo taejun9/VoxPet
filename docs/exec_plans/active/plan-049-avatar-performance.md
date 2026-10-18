@@ -108,3 +108,5 @@ ce8241a Windows39145560033: Core461/Release/lint・전체WPF중2개실패. 렌�
 f8dcae2 Windows39149393300: 새 입/눈/곡선/렌더 검사는 모두 통과했으나 기존selection_close_drops_pending_load 1개 실패다. MainWindow가 Editor.CloseAsync를 await한 뒤 Model.DisposeAsync를 시작해 그 사이 캐릭터 선택/준비가 유효했다. Studio 종료를 시작한 즉시 Model 종료도 시작해 대기 선택을 무효화한다. QA는100ms sleep의 완료 추정 대신 실제 Closed 신호(3초 제한)를 기다리며, 종료 요청 즉시 새 선택 차단·진행 선택 false·이전 캐릭터/스프라이트 보존을 추가 확인한다. 기존 case 이름/기능 판정을 유지하고 더 강한 수명 계약을 검사한다.
 
 512px 최종 양손 원본 검토에서 작은 반대편 날개는 주 날개의 바깥 목선까지 축소/반전하면 어깨 안에 어두운 조각이 생기는 것을 확인했다. 원본 외곽 잉크 보존은 실제 오른쪽 날개에만 적용하고, 재구성한 반대편 날개의 숨은 root는 기존 내부 crease 보정 정책을 유지한다. 원래 손/날개 외형과 기존 far-wing 경로를 보존한다.
+
+표정 전환의 이전 head와 새 head를 모두1-Blend/Blend 투명도로 그리면 중간에 opaque 얼굴의 합성 alpha가.75로 내려간다. 분리 companion의 이전 head는1로 유지하고 위에 새 head를Blend로 그려 얼굴 안의 색상 보간과 불투명도를 함께 유지한다. 일반 legacy 전체시트의 기존 fade 계약은 유지한다. 기존 두 Core 사례에3시점의 source-over alpha1을 추가하며 새 WPF2사례는 실제 합성 bitmap의 머리 내부 alpha255를3시점에서 확인한다.

@@ -124,7 +124,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
                 if (part.Id == "part-head")
                 {
                     headPose = matrix;
-                    if (HasPrevious) layers.Add(new("legacy-previous-head", "legacy/previous-head.png", opacity: 1 - Blend, zIndex: part.ZIndex, matrix: matrix));
+                    if (HasPrevious) layers.Add(new("legacy-previous-head", "legacy/previous-head.png", opacity: 1, zIndex: part.ZIndex, matrix: matrix));
                 }
                 layers.Add(new(part.Id, asset, opacity: part.Opacity * (part.Id == "part-head" ? Blend : 1), zIndex: part.ZIndex, matrix: matrix, width: part.Width, height: part.Height, mesh: partMesh));
             }

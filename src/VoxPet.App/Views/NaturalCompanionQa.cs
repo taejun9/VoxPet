@@ -208,6 +208,19 @@ internal static class NaturalCompanionQa
                 await UiAutomationQa.InvokeAsync(Find<Button>(window.StudioSurface).Single(b => b.IsVisible && ReferenceEquals(b.DataContext, switchSlot))); Tick(0);
                 var transition = model.Character.CompanionScene.Frame;
                 check(transition.Layers.Any(l => l.Id == "legacy-previous-head") && transition.Layers.All(l => l.Id != "legacy-previous") && transition.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal) && l.Id != "part-head").All(l => l.Opacity == 1), "natural_expression_during_action_no_body_ghost_" + item.Id);
+                var alphas = new List<byte>();
+                for (int i = 0; i < 3; i++)
+                {
+                    Tick(.06); var current = model.Character.CompanionScene;
+                    var heads = new RenderFrame(current.Frame.Layers.Where(l => l.Id is "part-head" or "legacy-previous-head"));
+                    var visual = new DrawingVisual();
+                    using (var drawing = visual.RenderOpen()) RenderFrameDrawing.Draw(drawing, heads, current.Images);
+                    var bitmap = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); bitmap.Render(visual);
+                    var pixel = new byte[4]; bitmap.CopyPixels(new Int32Rect(item.SideView ? 300 : 256, 160, 1, 1), pixel, 4, 0); alphas.Add(pixel[3]);
+                }
+                check(alphas.All(a => a == 255), "avatar_expression_crossfade_keeps_head_opaque_" + item.Id);
+                if (Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } alphaFolder)
+                    File.WriteAllText(Path.Combine(alphaFolder, "voxpet-runtime-avatar-transition-alpha-" + item.Id + ".json"), System.Text.Json.JsonSerializer.Serialize(alphas));
                 await ScreenEvidence.CaptureAsync(window, "natural-" + item.Id + "-expression-during-action", check);
                 window.ShowStudio(3);
                 model.Equipment.WeaponIndex = 0; Tick(0);
