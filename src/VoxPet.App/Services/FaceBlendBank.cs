@@ -10,6 +10,7 @@ internal sealed class FaceBlendBank(SpriteSheetDefinition sheet, bool side) : ID
 {
     private sealed record Prepared(SpriteSheetExpression Expression, IReadOnlyDictionary<string, ImageSource> Images);
     private readonly SemaphoreSlim gate = new(1, 1);
+    private readonly System.Windows.Threading.Dispatcher owner = System.Windows.Application.Current.Dispatcher;
     private IReadOnlyDictionary<string, ImageSource> source = new Dictionary<string, ImageSource>();
     private ImageSource[] signature = [];
     private SpriteSheetExpression? wanted;
@@ -46,6 +47,15 @@ internal sealed class FaceBlendBank(SpriteSheetDefinition sheet, bool side) : ID
         int version = ++revision; var token = cancellation.Token; Images = source;
         Ready = PrepareAsync(expression, inputs, version, token);
     }
+    private async Task PublishAsync(int version, Action change)
+    {
+        if (disposed || owner.HasShutdownStarted) return;
+        try
+        {
+            await owner.InvokeAsync(() => { if (!disposed && version == revision) change(); }).Task;
+        }
+        catch (OperationCanceledException) { }
+    }
     private async Task PrepareAsync(SpriteSheetExpression expression, ImageSource[] inputs, int version, CancellationToken token)
     {
         bool acquired = false;
@@ -53,12 +63,11 @@ internal sealed class FaceBlendBank(SpriteSheetDefinition sheet, bool side) : ID
         {
             await gate.WaitAsync(token); acquired = true;
             var result = await Task.Run(() => Build(expression, inputs, side, token), token);
-            if (disposed || version != revision) return;
-            prepared = result; Images = Merge(source, result.Images); Changed?.Invoke();
+            await PublishAsync(version, () => { prepared = result; Images = Merge(source, result.Images); Changed?.Invoke(); });
         }
         catch (OperationCanceledException) { }
         catch (Exception error) when (error is ArgumentException or InvalidOperationException or NotSupportedException)
-        { if (!disposed && version == revision) { Error = error.GetType().Name; Changed?.Invoke(); } }
+        { await PublishAsync(version, () => { Error = error.GetType().Name; Changed?.Invoke(); }); }
         finally { if (acquired) gate.Release(); }
     }
     private static byte[] Pixels(ImageSource image)

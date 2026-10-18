@@ -6,6 +6,7 @@ using System.Windows.Media.Imaging;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Models;
 using VoxPet.Core.Motion;
+using VoxPet.Core.Character;
 
 namespace VoxPet.App.Views;
 
@@ -16,6 +17,21 @@ internal static class AvatarAppearanceQa
         var character = model.Character; var scene = character.CompanionScene;
         await scene.FacePreparation.WaitAsync(TimeSpan.FromSeconds(10));
         check(scene.FacePrepared && scene.FaceError == null, "avatar_face_worker_prepared_" + id);
+        // Even a caller without WPF's synchronization context must publish on the UI owner.
+        var context = SynchronizationContext.Current; CharacterRuntimeViewModel probe;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+            probe = new(new CharacterRuntime(scene.Runtime.Definition), scene.SourceImages, interpolateFace: true, sideView: id == "pelly");
+        }
+        finally { SynchronizationContext.SetSynchronizationContext(context); }
+        bool ownerCallback = false; probe.FacePreparationChanged += () => ownerCallback = window.Dispatcher.CheckAccess();
+        try
+        {
+            await probe.FacePreparation.WaitAsync(TimeSpan.FromSeconds(10));
+            check(probe.FacePrepared && ownerCallback && probe.FaceError == null, "avatar_face_publishes_on_ui_without_context_" + id);
+        }
+        finally { probe.ReleaseFacePreparation(); }
         double now = scene.Runtime.Actions.LastTime;
         void Tick(double dt, double voice = 0, bool blink = false)
         {

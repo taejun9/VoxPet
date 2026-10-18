@@ -102,3 +102,7 @@ ce8241a Windows39145560033: Core461/Release/lint・전체WPF중2개실패. 렌�
 늘보군12표정 전체 contact에서도 일부 입 half-frame의 코/입이 흐려지는 것을 확인해 모든 입 혼합 시제품을 제외한다. 출시 구현은 원본8/3입 상태를 보존하며 눈만4단계로 보간한다(32/12 frozen texture). mouth는 raw voice의 새 선형round 계산 대신 Core가 기존 voice curve로 선택한 sprite 인덱스를 그대로 사용한다. 새 QA는 각 voice 위치에서 runtime.MouthFrame과 출력 asset의 동일성을 직접 검증한다. 이는 신규 미출시 보간의 수정이며 기존 Core/WPF의 입 경계·픽셀 검사 허용치를 바꾸지 않는다.
 
 원본 연속 출력에서 펠리의 reaching wing 보정이 외곽 잉크까지 살색으로 지우는 것을 확인했다. 전체 원본 silhouette의8px 이웃이 투명한 경계는 그대로 두고 내부 crease만 보정하도록 제한한다. 새 WPF 검사는 공개 fixture의 해당 경계 픽셀을 보정 전 파츠와 채널차2 이내로 대조한다. 원본 contour/시트와 선택/파지 계약은 유지한다.
+
+얼굴 atlas 완료 통지는 호출자의 SynchronizationContext에 의존하지 않고 생성 시 UI Dispatcher로 명시적으로 전달한다. 종료/세대 변경은 UI 적용 때 재확인하며 shutdown의 예약 취소는 정상 처리한다. 새 WPF QA는 UI에서 표준 SynchronizationContext로 잠시 바꿔 준비를 시작하고 완료 통지의 owner thread를 검사한다. worker에서 UI를 만지지 않는 기존 계약을 보강한다.
+
+f8dcae2 Windows39149393300: 새 입/눈/곡선/렌더 검사는 모두 통과했으나 기존selection_close_drops_pending_load 1개 실패다. MainWindow가 Editor.CloseAsync를 await한 뒤 Model.DisposeAsync를 시작해 그 사이 캐릭터 선택/준비가 유효했다. Studio 종료를 시작한 즉시 Model 종료도 시작해 대기 선택을 무효화한다. QA는100ms sleep의 완료 추정 대신 실제 Closed 신호(3초 제한)를 기다리며, 종료 요청 즉시 새 선택 차단·진행 선택 false·이전 캐릭터/스프라이트 보존을 추가 확인한다. 기존 case 이름/기능 판정을 유지하고 더 강한 수명 계약을 검사한다.

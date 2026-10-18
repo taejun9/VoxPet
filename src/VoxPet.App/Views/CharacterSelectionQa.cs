@@ -76,9 +76,14 @@ internal static class CharacterSelectionQa
             window.CharacterSelector.SelectedItem = null;
             check(model.SelectedCharacter.Id == "neulbo", "selection_transient_null_preserves_model");
             window.CharacterSelector.SelectedItem = model.SelectedCharacter;
+            var beforeClosing = model.Character.Sprite;
+            var closed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            window.Closed += (_, _) => closed.TrySetResult();
             var closing = model.SelectCharacterAsync("pelly");
-            window.Close(); await Task.Delay(100); await closing;
-            check(!window.IsVisible && !model.CanChooseCharacter && !await model.SelectCharacterAsync("neulbo"), "selection_close_drops_pending_load");
+            window.Close();
+            check(!model.CanChooseCharacter && !await model.SelectCharacterAsync("neulbo"), "selection_close_blocks_new_request_immediately");
+            await closed.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            check(!await closing && !window.IsVisible && !model.CanChooseCharacter && model.SelectedCharacter.Id == "neulbo" && ReferenceEquals(beforeClosing, model.Character.Sprite), "selection_close_drops_pending_load");
             var input = new DelayedStopInput();
             var delayed = new MainViewModel(false, () => [new AudioDevice("QA", "합성 지연 종료")], _ => input, folder);
             await delayed.InitializeAsync(); await delayed.SelectCharacterAsync("neulbo");

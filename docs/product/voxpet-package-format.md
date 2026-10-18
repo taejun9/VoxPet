@@ -73,6 +73,6 @@ effect의 선택 `endAnchor`와 `endTransform:{x,y}`는 시작 anchor/transform�
 
 ## 선택형 캐릭터 기본 연기 (plan049)
 
-`motion.companionPerformance`는 `none`(기본값), `neulbo`, `pelly`를 지원한다. 새 원본 의상 편집 내보내기는 캐릭터에 맞는 값을 저장한다. 해당 profile은 rig resolve 전에220ms 중단/재입력 연결·몸통 호흡/음성 관성·목 회전·양발 고정을 적용하며 기본 voice/idle의 전체 bounce와 중복 합성하지 않는다. 기존 파일과 `none`은 기존 타임라인/모션 의미를 유지한다. 알 수 없는 값은 거부한다. 편집기 얼굴 설정의 **기본 움직임**에서 선택하며 필드 수정·내보내기·재읽기에 보존한다. 앱의 해당 profile 미리보기는 현재 표정의 원본 head bank로 입/눈 중간 프레임을 준비한다. 파츠6개와 원본 PNG는 유지하고 생성 프레임은 실행 메모리에만 둔다.
+`motion.companionPerformance`는 `none`(기본값), `neulbo`, `pelly`를 지원한다. 새 원본 의상 편집 내보내기는 캐릭터에 맞는 값을 저장한다. 해당 profile은 rig resolve 전에220ms 중단/재입력 연결·몸통 호흡/음성 관성·목 회전·양발 고정을 적용하며 기본 voice/idle의 전체 bounce와 중복 합성하지 않는다. 기존 파일과 `none`은 기존 타임라인/모션 의미를 유지한다. 알 수 없는 값은 거부한다. 편집기 얼굴 설정의 **기본 움직임**에서 선택하며 필드 수정·내보내기·재읽기에 보존한다. 앱의 해당 profile 미리보기는 현재 표정의 원본 head bank로 눈 중간 프레임을 준비하고 원본 입 단계와 곡선을 보존한다. 파츠6개와 원본 PNG는 유지하고 생성 프레임은 실행 메모리에만 둔다.
 
 해당 기본 연기 profile은 body/head/leftFoot/rightFoot 앵커를 요구한다. 앵커 이름을 바꾸는 일반 리그를 제작할 때는 기본 움직임을 없음으로 선택한다.

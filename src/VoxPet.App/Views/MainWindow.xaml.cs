@@ -338,5 +338,5 @@ public partial class MainWindow : Window
     /// <summary>
     /// 캡처 종료·설정 저장 후 방송창을 닫고 다음 Closing을 허용한다.
     /// </summary>
-    public async Task ShutdownAsync() { nativeInputs?.Dispose(); Model.Packages.InputsChanged -= ConfigureRuntimeInputs; runtimeInputs?.Dispose(); Model.Runtime.InputsChanged -= ConfigureRuntimeInputs; handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; await Studio.CloseAsync(); await Model.DisposeAsync(); hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
+    public async Task ShutdownAsync() { nativeInputs?.Dispose(); Model.Packages.InputsChanged -= ConfigureRuntimeInputs; runtimeInputs?.Dispose(); Model.Runtime.InputsChanged -= ConfigureRuntimeInputs; handInputs?.Dispose(); Model.Hands.InputsChanged -= ConfigureHandInputs; var studioClose = Studio.CloseAsync(); var modelClose = Model.DisposeAsync().AsTask(); await studioClose; await modelClose; hotkeys?.Dispose(); muteHotkey?.Dispose(); character?.Close(); tray?.Dispose(); allowClose = true; }
 }
