@@ -232,14 +232,17 @@ public partial class MainWindow : Window
     {
         if (sender is System.Windows.Controls.Button { Tag: VoxPet.Core.Models.RuntimeOperation operation }) Model.Runtime.Record(operation);
     }
-    private void ConfigureHandInputs()
+    private async void ConfigureHandInputs()
     {
         if (handInputs == null) return;
         var settings = Model.Hands.Snapshot();
         if (Model.Runtime.IsActive || Model.Packages.IsActive) settings = settings with { Profiles = settings.Profiles.Select(p => p with { Enabled = false }).ToArray() };
         handInputs.Configure(settings);
         bool needsMouse = settings.Profiles.Any(profile => profile.Enabled && profile.LeftClick && profile.Mode == VoxPet.Core.Models.HandTriggerMode.Hotkey);
-        Model.Hands.Status = handInputs.Conflicts.Count > 0 || needsMouse && !handInputs.MouseRegistered
+        var readiness = handInputs.MouseReady;
+        bool mouseReady = !needsMouse || await readiness;
+        if (needsMouse && !ReferenceEquals(readiness, handInputs.MouseReady)) return;
+        Model.Hands.Status = handInputs.Conflicts.Count > 0 || needsMouse && !mouseReady
             ? "입력 등록 실패 · 다른 앱과의 키 충돌을 확인하세요. 손동작 시험 버튼은 사용할 수 있습니다."
             : "동작 설정 자동 저장 · 좌클릭은 원래 클릭과 함께 실행됩니다.";
     }

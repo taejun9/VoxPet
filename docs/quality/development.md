@@ -178,3 +178,5 @@ Windows workflow 수동 실행의 `native_input_probe:true`는 가짜 입력과 
 단기입력재현은100회hook등록/press1회/해제/press1회를대조한다. 정상전체와배포본은20회를유지한다. 이확대진단은간헐누락에대한추가근거이며배포합격을대체하지않는다.
 
 입력시험은각hook설치뒤owner HWND가전용native준비메시지를실제로처리한ack를확인하고주입한다. 이메시지는마우스동작을가짜로실행하지않으며이벤트수에포함하지않는다. 그다음down/up은한배열로1회만보낸다.
+
+손동작 좌클릭 hook는 전용 STA dispatcher에서 설치/수신/해제하고 UI에는 Input 작업만 예약한다. 등록과 owner loop 준비는 MouseReady로 비동기 통지하며 UI 스레드를 기다리게 하지 않는다. QA는 매회 ready와 실제 unhook 완료, press1회 전달/해제후0을 확인한다.

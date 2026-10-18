@@ -1,4 +1,5 @@
 using System.IO;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Windows.Threading;
@@ -145,8 +146,8 @@ internal static class HandMotionQa
             character.UseSheet(customSheet, "custom"); check(character.UsesCustomSheet, "motion_custom_sheet_identity"); capture(); check(character.UsesCustomSheet == custom, "motion_test_restore_preserves_asset_identity");
             check(ReferenceEquals(main.ShowCharacter().DataContext, main.Model), "motion_broadcast_keeps_shared_model");
             var source = HwndSource.FromHwnd(new WindowInteropHelper(main).Handle); int hits = 0, clicks = 0;
-            var firstStages = new List<int>(); var firstNative = new List<object>();
-            using (var inputs = new HandMotionInputs(source, _ => hits++, () => clicks++, firstStages.Add, (code, message) => { if (firstNative.Count < 256) firstNative.Add(new { code, message }); }))
+            var firstStages = new ConcurrentQueue<int>(); var firstNative = new ConcurrentQueue<object>();
+            using (var inputs = new HandMotionInputs(source, _ => hits++, () => clicks++, firstStages.Enqueue, (code, message) => { if (firstNative.Count < 256) firstNative.Enqueue(new { code, message }); }))
             {
                 var signals = new List<TriggerEvent>(); inputs.Triggered += signals.Add;
                 var keys = HandMotionSettings.Default() with { Profiles = HandMotionSettings.Default().Profiles.Select(p => p with { LeftClick = false }).ToArray() };
@@ -157,7 +158,7 @@ internal static class HandMotionQa
                 check(hits == 1, "motion_native_wm_hotkey_dispatch");
                 check(signals.Count == 1 && signals[0].Kind == TriggerKind.Hotkey && signals[0].Key == "1" &&
                     signals[0].Modifiers == (TriggerModifiers.Ctrl | TriggerModifiers.Alt) && signals[0].IsPulse, "motion_platform_neutral_hotkey_pulse");
-                inputs.Configure(HandMotionSettings.Default()); check(inputs.Registered.Count == 0 && inputs.MouseRegistered, "motion_native_switch_to_mouse_releases_key");
+                inputs.Configure(HandMotionSettings.Default()); await inputs.MouseReady; check(inputs.Registered.Count == 0 && inputs.MouseRegistered, "motion_native_switch_to_mouse_releases_key");
                 // A neutral same-process surface prevents a synthetic click from
                 // hitting an unrelated button left under the cursor by editor QA.
                 var inputTarget = new Window
@@ -183,17 +184,20 @@ internal static class HandMotionQa
                     var deliveries = new List<object>();
                     for (int round = 1; round <= nativeRounds; round++)
                     {
-                        var stages = round == 1 ? firstStages : new List<int>();
-                        var native = round == 1 ? firstNative : new List<object>();
-                        using var probe = round == 1 ? inputs : new HandMotionInputs(source, _ => hits++, () => clicks++, stages.Add, (code, message) => { if (native.Count < 256) native.Add(new { code, message }); });
+                        var stages = round == 1 ? firstStages : new ConcurrentQueue<int>();
+                        var native = round == 1 ? firstNative : new ConcurrentQueue<object>();
+                        using var probe = round == 1 ? inputs : new HandMotionInputs(source, _ => hits++, () => clicks++, stages.Enqueue, (code, message) => { if (native.Count < 256) native.Enqueue(new { code, message }); });
                         if (round > 1) { probe.Triggered += signals.Add; probe.Configure(HandMotionSettings.Default()); }
                         string suffix = round == 1 ? "" : "_round" + round;
+                        bool nativeOwnerReady = await probe.MouseReady;
                         bool ownerReady = await OwnerReadyAsync(source);
                         int initialClicks = clicks, initialSignals = signals.Count, initialTargetDowns = targetDowns;
+                        int nativeOwnerThread = probe.MouseOwnerThreadId, uiThread = Environment.CurrentManagedThreadId;
+                        check(nativeOwnerThread != 0 && nativeOwnerThread != uiThread, "motion_native_mouse_dedicated_thread" + suffix);
                         bool registeredBefore = probe.MouseRegistered;
-                        int registrationError = registeredBefore ? 0 : Marshal.GetLastPInvokeError();
+                        int registrationError = probe.MouseRegistrationError;
                         check(registeredBefore, "motion_native_mouse_hook_registered" + suffix);
-                        check(ownerReady, "motion_native_mouse_owner_ready" + suffix);
+                        check(ownerReady && nativeOwnerReady, "motion_native_mouse_owner_ready" + suffix);
                         var delivery = Stopwatch.StartNew();
                         uint inserted = InjectClick(); int injectionError = inserted == 2 ? 0 : Marshal.GetLastPInvokeError();
                         check(inserted == 2, "motion_native_mouse_injection_accepted" + suffix);
@@ -211,13 +215,15 @@ internal static class HandMotionQa
                         check(clicks - initialClicks == 1, "motion_native_left_down_signal" + suffix);
                         check(signals.Count - initialSignals == 1 && signals[^1].Kind == TriggerKind.Mouse && signals[^1].Button == "left", "motion_platform_neutral_mouse_pulse" + suffix);
                         int clicksBeforeDispose = clicks, signalsBeforeDispose = signals.Count, targetDownsBeforeDispose = targetDowns;
-                        probe.Dispose(); uint insertedAfterDispose = InjectClick();
+                        probe.Dispose(); bool nativeReleased = await probe.MouseStopped.WaitAsync(TimeSpan.FromSeconds(1));
+                        check(nativeReleased, "motion_native_mouse_owner_released" + suffix);
+                        uint insertedAfterDispose = InjectClick();
                         check(insertedAfterDispose == 2, "motion_native_disposed_mouse_injection_accepted" + suffix);
                         await Task.Delay(100);
                         await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                         check(clicks == clicksBeforeDispose && clicks - initialClicks == 1 && !probe.MouseRegistered, "motion_native_dispose_stops_mouse" + suffix);
                         check(signals.Count == signalsBeforeDispose && signals.Count - initialSignals == 1, "motion_platform_neutral_dispose_stops_events" + suffix);
-                        deliveries.Add(new { round, ownerReady, stages = stages.ToArray(), native = native.ToArray(), initialTargetDowns, targetDownsBeforeDispose, targetDownsAfterDispose = targetDowns, initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
+                        deliveries.Add(new { round, ownerReady, nativeOwnerReady, nativeReleased, nativeOwnerThread, uiThread, stages = stages.ToArray(), native = native.ToArray(), initialTargetDowns, targetDownsBeforeDispose, targetDownsAfterDispose = targetDowns, initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
                     }
                     if (Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } diagnostics)
                         File.WriteAllText(Path.Combine(diagnostics, "voxpet-runtime-hand-input-delivery.json"), JsonSerializer.Serialize(deliveries));
