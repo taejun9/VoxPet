@@ -64,8 +64,9 @@ internal static class HandMotionQa
         }
         return count == 0 ? new(-1, -1) : new(x / count, y / count);
     }
-    public static async Task RunAsync(MainWindow main, Action<bool, string> check)
+    public static async Task RunAsync(MainWindow main, Action<bool, string> check, int nativeRounds = 20)
     {
+        if (nativeRounds is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(nativeRounds));
         check(main.SettingsTabs.Items.Count == 7, "motion_settings_7_top_level_tabs");
         string folder = Path.Combine(Path.GetTempPath(), "VoxPet-motion-qa-" + Guid.NewGuid()); Directory.CreateDirectory(folder);
         var character = new CharacterViewModel(); var hands = new HandMotionViewModel(character, true, folder, () => 1);
@@ -162,7 +163,7 @@ internal static class HandMotionQa
                     var point = inputTarget.PointToScreen(new Point(80, 60));
                     check(SetCursorPos((int)point.X, (int)point.Y), "motion_native_mouse_neutral_target");
                     var deliveries = new List<object>();
-                    for (int round = 1; round <= 20; round++)
+                    for (int round = 1; round <= nativeRounds; round++)
                     {
                         var stages = round == 1 ? firstStages : new List<int>();
                         var native = round == 1 ? firstNative : new List<object>();

@@ -131,7 +131,7 @@ public partial class App : Application
                 await ExpressionManagementQa.RunAsync(main, Check);
                 await StartupTrayQa.RunAsync(Check);
                 await CostumeQa.RunAsync(main, Check);
-                await HandMotionQa.RunAsync(main, Check); await main.ShutdownAsync();
+                await HandMotionQa.RunAsync(main, Check, 100); await main.ShutdownAsync();
                 File.WriteAllText(QaPath("voxpet-smoke-result.json"), JsonSerializer.Serialize(new { probeOnly = true, failures, failedChecks, passedChecks = passedChecks.Order().ToArray() }));
                 Shutdown(failures == 0 ? 0 : 1); return;
             }
