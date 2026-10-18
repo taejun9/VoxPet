@@ -82,6 +82,8 @@ verify_base/verify_app/compileall/diff, SDK10.0.401 locked restore/format/analyz
 
 | 2026-10-18 | 다중 시점 캡처는 실제 진행률·rig·효과 기준값과 대조하고 렌더 완료 후 desktop pixels를 읽는다. | 캡처 이름과 화면 자세의 불일치 가능성을 발견해, 이름만으로 정한 시점을 QA 근거로 쓰지 않는다. |
 
+| 2026-10-18 | OnRender에 사용한 Frame과 실제 GDI preview 픽셀을90시점에서 대조한다. | 모델/Dispatcher 완료만으로 실제 표시가 같은 시점이라고 판정할 수 없었다. 실제 screen pixels는 대체하지 않고 reference를 별도 기록한다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -151,3 +153,13 @@ d1be8ce Windows39047157538은 Core446/0·빌드/lint·WPF2981통과 후 썸네�
 
 
 b05d9a2 Windows39048798186의 앱 전체 및 디코더 재현/동일 worker/20회 격리는 통과했지만 portable에서 기존 `expression_corrupt_sheet_preserves_display` 1건이 실패했다. 이 검사는 실제 Main 타이머가 눈을 깜빡이는 동안 await 전후 Sprite 참조를 그대로 비교했다. 깨진 시트의 표시 보존은 같은 입/눈 입력에서 비교해야 한다. 기존 참조 동일/오류 상태 판정을 유지하되 open/closed 고정 입력 두 프레임을 모두 보존하는지 확인하고20회 반복 및 각 회차 raw frame 변경/보존 결과 JSON을 추가한다. 허용치 변경이나 검사 제거가 아니다. Native 주석의 clone 표현도 실제 Freeze 경로에 맞춰 re-freeze로 정정한다.
+
+
+9fca64c Windows39050090399/OBS39050090425는 Core446·WPF3006/0·portable2483/0·desktop541·시작18개까지 모두 합격했다. 그러나 최종 실제 픽셀 검토에서 Neulbo one-hand590이 준비 자세, firearm590이 이전 발사 섬광을 보여 모델 시점과 GDI 픽셀의 지연을 다시 확인했다. Dispatcher Background는 UI 제출 완료일 뿐 render thread/compositor 완료의 충분한 근거가 아니었다. MotionSurface가 실제 OnRender에 쓴 Frame을 기록하고,90시점에서 현재 Frame 일치·동기 WPF reference/fence·DwmFlush 뒤 실제 GDI preview ROI를 대조한다. 채널차24 초과가 전체1% 미만 및4×4 tile의75% 이하여야 하며, 최대2초 안에 조건이 충족되지 않으면 실패한다. reference PNG는 별도 진단이며 배포 화면은 끝까지 실제 GDI pixels다. 픽셀 대조90개와 render fence 추가에 맞춰 CI smoke300초/개인330초·job20분으로 상한을 기록한다. 사용자 TEST-SMOKE240초와 모든 기존 판정은 유지한다.
+
+
+추가 실제 화면 대조 코드의 빌드 승인이 자동 검토 사용 한도 오류로 실행되지 않았다. 안전성 거절은 아니지만 승인 검토를 우회하지 않는다. 기존9fca64c의 자동 검사 합격 기록과 화면 지연이라는 미해결 증거를 분리하고, 현재7개 변경 파일은 미커밋/미빌드 상태로 보존한다. 사용 한도 조회는 ordinaryUsageAllowed=true로 나와 승인 검토 상태와 불일치하므로 동일 승인 절차로1회 재확인한다. 추가 빌드·Windows 재실행·최종 ZIP·완료 리뷰·main 통합은 아직 수행하지 않았다.
+
+동일한 자동 승인 절차의 재확인에서 build 실행이 승인됐고 Release 경고0/오류0으로 통과했다. 승인 검토 오류는 일시 상태였으며 우회 없이 해소됐다. 추가90개 실제 표시 픽셀 대조의 Windows 검증은 다음 후보에서 수행한다.
+
+9fca64c의 Neulbo one-hand와 firearm에서405ms/590ms 실제 desktop PNG SHA256이 각각 완전히 동일함도 확인했다. 두 모델 시점의 손목 행렬과 총구 효과는 달라 실제 표시 경로의 지연이라는 근거가 명확하다. 이 원본/검토88화면은 candidate-9fca64c에 보존했으며 완료 근거로 사용하지 않는다.

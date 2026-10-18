@@ -157,7 +157,10 @@ internal static class NaturalCompanionQa
                         var scene = model.Character.CompanionScene; var matrix = scene.Frame.Layers.Single(l => l.Id == "companion-equipped-weapon").Matrix;
                         var rest = scene.Runtime.CurrentRig.Static[weapon.Anchor].Map(0, 0); var actual = matrix.Map(rest.X, rest.Y); var hand = scene.Runtime.CurrentRig.Animated[weapon.Anchor].Map(0, 0);
                         check(Math.Abs(actual.X - hand.X) < .01 && Math.Abs(actual.Y - hand.Y) < .01 && scene.Frame.Layers.Any(l => l.Asset == "samples/grip-" + (weapon.Anchor == "leftHand" ? "left" : "right") + ".png"), $"natural_grip_contact_{item.Id}_{weapon.Id}_{(int)(t * 1000)}");
-                        await ScreenEvidence.CaptureAsync(window, $"natural-{item.Id}-{weapon.Id}-{(int)(t * 1000)}", check);
+                        var surface = Find<MotionSurface>(window.StudioSurface).Single(s => s.IsVisible);
+                        var region = Find<Border>(window.StudioSurface).Single(b => b.Height == 280 && b.IsVisible);
+                        await ScreenEvidence.CaptureAsync(window, $"natural-{item.Id}-{weapon.Id}-{(int)(t * 1000)}", check,
+                            expectedPreview: new(region, surface, scene.Frame));
                     }
                     Tick(1.4); check(model.Character.CompanionScene.Runtime.State.ActionId == null, "natural_recover_" + item.Id + "_" + weapon.Id);
                 }
@@ -168,7 +171,10 @@ internal static class NaturalCompanionQa
                     {
                         Tick(t - previous); previous = t; Phase(gesture, t); var scene = model.Character.CompanionScene;
                         check(scene.Runtime.State.ActionId == gesture && scene.Frame.Layers.Any(l => l.Asset == "samples/" + gesture + ".png") && scene.Frame.Layers.All(l => l.Id != "companion-equipped-weapon"), $"natural_gesture_pose_{item.Id}_{gesture}_{(int)(t * 1000)}");
-                        await ScreenEvidence.CaptureAsync(window, $"natural-{item.Id}-{gesture}-{(int)(t * 1000)}", check);
+                        var surface = Find<MotionSurface>(window.StudioSurface).Single(s => s.IsVisible);
+                        var region = Find<Border>(window.StudioSurface).Single(b => b.Height == 280 && b.IsVisible);
+                        await ScreenEvidence.CaptureAsync(window, $"natural-{item.Id}-{gesture}-{(int)(t * 1000)}", check,
+                            expectedPreview: new(region, surface, scene.Frame));
                     }
                     Tick(1.4);
                 }

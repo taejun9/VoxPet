@@ -39,11 +39,11 @@ try {
         } | ConvertTo-Json | Set-Content -LiteralPath 'artifacts/test-results/publisher.json' -Encoding utf8
     }
     if ($Publish) { & (Join-Path $PSScriptRoot 'startup-qa.ps1') }
-    # 자동 시험의 상한: 실제 desktop 캡처 포함 기본240초, 개인 시트 추가 시험270초. 실제 사용자 앱에는 적용하지 않는다.
+    # 자동 시험의 상한: 실제 desktop 캡처 포함 CI 화면 픽셀 대조 기본300초, 개인 시트 추가 시험330초. 실제 사용자 앱에는 적용하지 않는다.
     if ($Smoke) {
         $exe = if ($Publish) { 'artifacts/win-x64/VoxPet.exe' } else { 'src/VoxPet.App/bin/Release/net10.0-windows/win-x64/VoxPet.exe' }
         $process = Start-Process $exe -ArgumentList '--smoke-test' -PassThru
-        $smokeTimeoutMs = if ([string]::IsNullOrWhiteSpace($env:VOXPET_QA_SHEET)) { 240000 } else { 270000 }
+        $smokeTimeoutMs = if ([string]::IsNullOrWhiteSpace($env:VOXPET_QA_SHEET)) { 300000 } else { 330000 }
         if (-not $process.WaitForExit($smokeTimeoutMs)) {
             $process.Kill()
             throw "WPF smoke timed out after $smokeTimeoutMs ms"

@@ -4,6 +4,7 @@ using System.Windows.Media;
 using VoxPet.App.ViewModels;
 using VoxPet.Core.Legacy;
 using VoxPet.Core.Models;
+using VoxPet.Core.Rendering;
 
 namespace VoxPet.App.Views;
 
@@ -11,6 +12,7 @@ namespace VoxPet.App.Views;
 public sealed class MotionSurface : FrameworkElement
 {
     private CharacterViewModel? model;
+    internal RenderFrame? LastRenderedFrame { get; private set; }
     internal bool DrawMotionProps { get; set; } = true;
     public MotionSurface()
     {
@@ -32,6 +34,10 @@ public sealed class MotionSurface : FrameworkElement
     protected override void OnRender(DrawingContext drawing)
     {
         base.OnRender(drawing);
-        if (model?.RuntimeScene is { } scene) RenderFrameDrawing.Draw(drawing, scene.Frame, scene.Images, DrawMotionProps);
+        if (model?.RuntimeScene is { } scene)
+        {
+            var frame = scene.Frame; RenderFrameDrawing.Draw(drawing, frame, scene.Images, DrawMotionProps);
+            LastRenderedFrame = frame;
+        }
     }
 }
