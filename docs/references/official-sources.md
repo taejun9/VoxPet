@@ -89,3 +89,5 @@
 | Microsoft WPF BitmapSource FreezeCore | https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/BitmapSource.cs | 이미지 스레드 경계 | 2026-10-18 | FreezeCore의 IsDownloading 확인과 실제 decoder 예외 스택 대조 |
 
 | SciPy PchipInterpolator | https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.html | 연속 속도 보간 | 2026-10-18 | 인접 구간의 가중 조화 평균 기울기·단조성·C1, 양 끝0은 앱의 별도 정책 |
+
+| Microsoft LowLevelMouseProc | https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelmouseproc | 합성 좌클릭 QA | 2026-10-18 | hook를 설치한 스레드의 메시지 루프와 빠른 반환·다음 hook 전달, UI 입력 작업 완료와 timer 판정을 구분 |

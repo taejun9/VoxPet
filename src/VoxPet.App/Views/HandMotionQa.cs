@@ -1,4 +1,7 @@
 using System.IO;
+using System.Diagnostics;
+using System.Text.Json;
+using System.Windows.Threading;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -20,6 +23,9 @@ internal static class HandMotionQa
     private static extern bool PostMessage(IntPtr window, int message, IntPtr wParam, IntPtr lParam);
     [DllImport("user32.dll")]
     private static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetCursorPos(int x, int y);
     private static ImageSource Markers()
     {
         var pixels = new byte[512 * 512 * 4];
@@ -127,12 +133,57 @@ internal static class HandMotionQa
                 check(signals.Count == 1 && signals[0].Kind == TriggerKind.Hotkey && signals[0].Key == "1" &&
                     signals[0].Modifiers == (TriggerModifiers.Ctrl | TriggerModifiers.Alt) && signals[0].IsPulse, "motion_platform_neutral_hotkey_pulse");
                 inputs.Configure(HandMotionSettings.Default()); check(inputs.Registered.Count == 0 && inputs.MouseRegistered, "motion_native_switch_to_mouse_releases_key");
-                mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(50);
-                check(clicks == 1, "motion_native_left_down_signal");
-                check(signals.Count == 2 && signals[1].Kind == TriggerKind.Mouse && signals[1].Button == "left", "motion_platform_neutral_mouse_pulse");
-                inputs.Dispose(); mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(50);
-                check(clicks == 1 && !inputs.MouseRegistered, "motion_native_dispose_stops_mouse");
-                check(signals.Count == 2, "motion_platform_neutral_dispose_stops_events");
+                // A neutral same-process surface prevents a synthetic click from
+                // hitting an unrelated button left under the cursor by editor QA.
+                var inputTarget = new Window
+                {
+                    Width = 160,
+                    Height = 100,
+                    Left = SystemParameters.WorkArea.Left + 16,
+                    Top = SystemParameters.WorkArea.Top + 16,
+                    WindowStyle = WindowStyle.None,
+                    ResizeMode = ResizeMode.NoResize,
+                    ShowInTaskbar = false,
+                    Topmost = true,
+                    Background = Brushes.White,
+                    Content = new System.Windows.Controls.TextBlock { Text = "VoxPet input QA" }
+                };
+                try
+                {
+                    inputTarget.Show(); inputTarget.UpdateLayout();
+                    var point = inputTarget.PointToScreen(new Point(80, 60));
+                    check(SetCursorPos((int)point.X, (int)point.Y), "motion_native_mouse_neutral_target");
+                    var deliveries = new List<object>();
+                    for (int round = 1; round <= 20; round++)
+                    {
+                        using var probe = round == 1 ? inputs : new HandMotionInputs(source, _ => hits++, () => clicks++);
+                        if (round > 1) { probe.Triggered += signals.Add; probe.Configure(HandMotionSettings.Default()); }
+                        string suffix = round == 1 ? "" : "_round" + round;
+                        var delivery = Stopwatch.StartNew();
+                        mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(50);
+                        int clicksAt50 = clicks, signalsAt50 = signals.Count;
+                        // The hook posts an Input operation; a Normal-priority timer can
+                        // resume first. Wait for this one injected event, never resend it.
+                        while (clicks < round && delivery.Elapsed < TimeSpan.FromMilliseconds(500))
+                        {
+                            await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                            if (clicks < round) await Task.Delay(10);
+                        }
+                        await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                        double deliveryMs = delivery.Elapsed.TotalMilliseconds;
+                        check(clicks == round, "motion_native_left_down_signal" + suffix);
+                        check(signals.Count == round + 1 && signals[^1].Kind == TriggerKind.Mouse && signals[^1].Button == "left", "motion_platform_neutral_mouse_pulse" + suffix);
+                        int clicksBeforeDispose = clicks, signalsBeforeDispose = signals.Count;
+                        probe.Dispose(); mouse_event(2, 0, 0, 0, UIntPtr.Zero); mouse_event(4, 0, 0, 0, UIntPtr.Zero); await Task.Delay(100);
+                        await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
+                        check(clicks == round && !probe.MouseRegistered, "motion_native_dispose_stops_mouse" + suffix);
+                        check(signals.Count == round + 1, "motion_platform_neutral_dispose_stops_events" + suffix);
+                        deliveries.Add(new { round, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
+                    }
+                    if (Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } diagnostics)
+                        File.WriteAllText(Path.Combine(diagnostics, "voxpet-runtime-hand-input-delivery.json"), JsonSerializer.Serialize(deliveries));
+                }
+                finally { inputTarget.Close(); main.Activate(); }
             }
             using (var reused = new HandMotionInputs(source, _ => { }, () => { }))
             {
