@@ -131,7 +131,7 @@ internal static class CompanionPartImages
                     bool inside = true;
                     for (int dy = -8; dy <= 8; dy += 8) for (int dx = -8; dx <= 8; dx += 8)
                         if (x + dx < 0 || x + dx >= 512 || silhouette[((y + dy) * 512 + x + dx) * 4 + 3] <= 32) inside = false;
-                    if (!inside) continue;
+                    if (hand == "right" && !inside) continue;
                     int i = (y * 512 + x) * 4; double alpha = pixels[i + 3] / 255d;
                     double mix = Math.Clamp((330 - y) / 30d, 0, 1);
                     pixels[i] = (byte)Math.Round(pixels[i] * (1 - mix) + color.B * alpha * mix);
