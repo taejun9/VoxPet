@@ -126,7 +126,8 @@ internal static class HandMotionQa
             character.UseSheet(customSheet, "custom"); check(character.UsesCustomSheet, "motion_custom_sheet_identity"); capture(); check(character.UsesCustomSheet == custom, "motion_test_restore_preserves_asset_identity");
             check(ReferenceEquals(main.ShowCharacter().DataContext, main.Model), "motion_broadcast_keeps_shared_model");
             var source = HwndSource.FromHwnd(new WindowInteropHelper(main).Handle); int hits = 0, clicks = 0;
-            using (var inputs = new HandMotionInputs(source, _ => hits++, () => clicks++))
+            var firstStages = new List<int>();
+            using (var inputs = new HandMotionInputs(source, _ => hits++, () => clicks++, firstStages.Add))
             {
                 var signals = new List<TriggerEvent>(); inputs.Triggered += signals.Add;
                 var keys = HandMotionSettings.Default() with { Profiles = HandMotionSettings.Default().Profiles.Select(p => p with { LeftClick = false }).ToArray() };
@@ -161,7 +162,8 @@ internal static class HandMotionQa
                     var deliveries = new List<object>();
                     for (int round = 1; round <= 20; round++)
                     {
-                        using var probe = round == 1 ? inputs : new HandMotionInputs(source, _ => hits++, () => clicks++);
+                        var stages = round == 1 ? firstStages : new List<int>();
+                        using var probe = round == 1 ? inputs : new HandMotionInputs(source, _ => hits++, () => clicks++, stages.Add);
                         if (round > 1) { probe.Triggered += signals.Add; probe.Configure(HandMotionSettings.Default()); }
                         string suffix = round == 1 ? "" : "_round" + round;
                         int initialClicks = clicks, initialSignals = signals.Count;
@@ -191,7 +193,7 @@ internal static class HandMotionQa
                         await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                         check(clicks == clicksBeforeDispose && clicks - initialClicks == 1 && !probe.MouseRegistered, "motion_native_dispose_stops_mouse" + suffix);
                         check(signals.Count == signalsBeforeDispose && signals.Count - initialSignals == 1, "motion_platform_neutral_dispose_stops_events" + suffix);
-                        deliveries.Add(new { round, initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
+                        deliveries.Add(new { round, stages = stages.ToArray(), initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
                     }
                     if (Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } diagnostics)
                         File.WriteAllText(Path.Combine(diagnostics, "voxpet-runtime-hand-input-delivery.json"), JsonSerializer.Serialize(deliveries));

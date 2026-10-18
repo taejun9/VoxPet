@@ -168,3 +168,7 @@ plan043 `CardDisplayQa`는 실제 worker에서 만든 frozen PNG를 UI 카드에
 공개 합성 캐릭터로 실제 Home/End 키, 영문/한글 text composition 검색, UI Automation 이름 읽기, 이름/ID 필터, 빈 결과, 반복 선택/새로고침, 손상 등록 후 기존 출력, 편집/내보내기/재읽기, 복사본 삭제의 원본 보존, 재시작 선택 복원을 실행한다. 실제 마이크/사용자 설정/개인 PNG는 쓰지 않는다. 수정 전 재현의 최소 진단은 `voxpet-runtime-card-display-repro.json`으로 보존하고 실패를 통과로 처리하지 않는다.
 
 근거는 Microsoft WPF의 [BitmapFrameDecode 문자열 변환](https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/BitmapFrameDecode.cs), [BitmapDecoder 스레드 확인](https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationCore/System/Windows/Media/Imaging/BitmapDecoder.cs), [TextSearch의 이름 경로와 ToString fallback](https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/PresentationFramework/System/Windows/Controls/TextSearch.cs)이다(확인2026-10-16).
+
+## native 입력 단기 진단
+
+Windows workflow 수동 실행의 `native_input_probe:true`는 가짜 입력과 runner temp 설정으로 HandMotionQa만 실행한다. core/lint/build를 수행하지만 배포·서명·전체 화면·portable 검사를 생략하므로 release 합격이 아니다. 결과에 `probeOnly:true`를 기록한다. 정상 push/일반 수동 실행은 기존 전체 QA를 그대로 수행한다. 짧은 경로는 GITHUB_ACTIONS와검증된RUNNER_TEMP 내부QA폴더에서만활성화한다. hook trace의1=down진입,2=UI예약,3=전달,4=세대/해제거부,6=disposed,7=handle0,8=이미예약된신호병합이다.

@@ -14,6 +14,7 @@ public sealed class HandMotionInputs : IDisposable
     private readonly Action<HandGesture> activate;
     private readonly Action click;
     private readonly MouseCallback callback;
+    private readonly Action<int>? trace;
     private readonly Dictionary<int, HandMotionProfile> registered = [];
     private IntPtr mouseHook;
     private bool disposed;
@@ -39,8 +40,10 @@ public sealed class HandMotionInputs : IDisposable
     private static extern bool UnhookWindowsHookEx(IntPtr hook);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr GetModuleHandle(string? name);
-    public HandMotionInputs(HwndSource source, Action<HandGesture> activate, Action click)
+    public HandMotionInputs(HwndSource source, Action<HandGesture> activate, Action click) : this(source, activate, click, null) { }
+    internal HandMotionInputs(HwndSource source, Action<HandGesture> activate, Action click, Action<int>? trace)
     {
+        this.trace = trace;
         this.source = source; this.activate = activate; this.click = click; callback = Mouse;
         source.AddHook(Message);
     }
@@ -62,8 +65,11 @@ public sealed class HandMotionInputs : IDisposable
     }
     private IntPtr Mouse(int code, IntPtr message, IntPtr data)
     {
-        if (!disposed && mouseHook != IntPtr.Zero && code >= 0 && message.ToInt64() == 0x0201 && Interlocked.Exchange(ref pendingClick, 1) == 0)
+        bool down = code >= 0 && message.ToInt64() == 0x0201;
+        if (down) trace?.Invoke(1);
+        if (!disposed && mouseHook != IntPtr.Zero && down && Interlocked.Exchange(ref pendingClick, 1) == 0)
         {
+            trace?.Invoke(2);
             int revision = generation;
             // hook를 즉시 반환하며 UI 작업은 하나만 예약한다. data 구조를 역참조하지 않는다.
             _ = source.Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
@@ -71,11 +77,14 @@ public sealed class HandMotionInputs : IDisposable
                 Interlocked.Exchange(ref pendingClick, 0);
                 if (!disposed && mouseHook != IntPtr.Zero && revision == generation)
                 {
+                    trace?.Invoke(3);
                     Triggered?.Invoke(new(TriggerKind.Mouse, button: "left", isPulse: true));
                     click();
                 }
+                else trace?.Invoke(4);
             });
         }
+        else if (down) trace?.Invoke(disposed ? 6 : mouseHook == IntPtr.Zero ? 7 : 8);
         return CallNextHookEx(mouseHook, code, message, data);
     }
     private IntPtr Message(IntPtr window, int message, IntPtr wParam, IntPtr lParam, ref bool handled)

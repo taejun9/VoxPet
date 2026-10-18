@@ -5,6 +5,10 @@ on:
   pull_request:
   workflow_dispatch:
     inputs:
+      native_input_probe:
+        description: 'Diagnose native mouse input only; never a release qualification'
+        type: boolean
+        default: false
       use_personal_sheet:
         description: 'Use a temporary scoped image URL from VOXPET_QA_SHEET_URL for personal character QA'
         type: boolean
@@ -26,7 +30,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Read temporary character fixture with a scoped expiring URL
-        if: github.event_name == 'workflow_dispatch' && inputs.use_personal_sheet
+        if: github.event_name == 'workflow_dispatch' && inputs.use_personal_sheet && !inputs.native_input_probe
         shell: pwsh
         env:
           QA_SHEET_URL: ${{ secrets.VOXPET_QA_SHEET_URL }}
@@ -37,27 +41,39 @@ jobs:
           "VOXPET_QA_SHEET=$env:RUNNER_TEMP/늘보군.png" >> $env:GITHUB_ENV
       - name: Verify, build, test, publish and WPF smoke
         shell: pwsh
-        run: ./harness/scripts/qa.ps1 -Publish -Smoke
+        run: |
+          if ('${{ inputs.native_input_probe }}' -eq 'true') {
+            $env:VOXPET_QA_INPUT_PROBE = '1'
+            $env:VOXPET_QA_DATA_DIR = Join-Path $env:RUNNER_TEMP 'VoxPet-input-probe'
+            ./harness/scripts/qa.ps1 -Smoke
+          } else {
+            ./harness/scripts/qa.ps1 -Publish -Smoke
+          }
       - name: Upload portable application
+        if: ${{ !inputs.native_input_probe }}
         uses: actions/upload-artifact@v7
         with:
           name: VoxPet-win-x64
           path: artifacts/win-x64/
           if-no-files-found: error
       - name: Sign personal package and verify signer, icon and normal startup
+        if: ${{ !inputs.native_input_probe }}
         timeout-minutes: 5
         shell: pwsh
         run: ./harness/scripts/personal-sign-qa.ps1
       - name: Upload personally trusted signed application
+        if: ${{ !inputs.native_input_probe }}
         uses: actions/upload-artifact@v7
         with:
           name: VoxPet-personal-signed-win-x64
           path: artifacts/personal-win-x64/
           if-no-files-found: error
       - name: Verify real desktop screen coverage
+        if: ${{ !inputs.native_input_probe }}
         shell: pwsh
         run: python -X utf8 harness/scripts/verify_screens.py "$env:RUNNER_TEMP"
       - name: Package and test the SDK-free Windows test ZIP
+        if: ${{ !inputs.native_input_probe }}
         shell: pwsh
         run: |
           python -X utf8 harness/scripts/package_windows.py artifacts/win-x64 artifacts/VoxPet-Windows-test.zip | Set-Content artifacts/test-results/windows-package.json -Encoding utf8
@@ -66,6 +82,7 @@ jobs:
           powershell.exe -NoProfile -ExecutionPolicy Bypass -File artifacts/portable-test/TEST-SMOKE.ps1 -EvidenceDirectory artifacts/test-results/portable | Tee-Object artifacts/test-results/portable-smoke.log
           if ($LASTEXITCODE -ne 0) { throw 'Packaged Windows test launcher failed' }
       - name: Upload Windows test ZIP
+        if: ${{ !inputs.native_input_probe }}
         uses: actions/upload-artifact@v7
         with:
           name: VoxPet-Windows-test-package
