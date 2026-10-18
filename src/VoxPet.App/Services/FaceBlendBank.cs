@@ -101,7 +101,7 @@ internal sealed class FaceBlendBank(SpriteSheetDefinition sheet, bool side) : ID
     private static string Key(SpriteSheetExpression e, int mouth, int eye) => "avatar-face/" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(e.Id)) + $"-{mouth}-{eye}.png";
     private static Prepared Build(SpriteSheetExpression e, ImageSource[] inputs, bool side, CancellationToken token)
     {
-        int count = e.Open.Count, factor = count <= 8 ? 2 : 1; var original = new byte[inputs.Length][];
+        int count = e.Open.Count, factor = !side && count <= 8 ? 2 : 1; var original = new byte[inputs.Length][];
         for (int i = 0; i < original.Length; i++) { token.ThrowIfCancellationRequested(); original[i] = Pixels(inputs[i]); }
         var reference = original[count]; var pixels = new byte[original.Length][];
         for (int i = 0; i < original.Length; i++) { token.ThrowIfCancellationRequested(); pixels[i] = Register(original[i], reference, side); }
@@ -133,7 +133,7 @@ internal sealed class FaceBlendBank(SpriteSheetDefinition sheet, bool side) : ID
         if (!eyeInitialized) { eye = eyeFrom = eyeTarget = shutting ? 0 : 1; closed = shutting; eyeInitialized = true; }
         else if (shutting != closed) { closed = shutting; eyeFrom = eye; eyeTarget = shutting ? 0 : 1; eyeStarted = time; }
         if (prepared?.Expression != expression) return frame;
-        int factor = expression.Open.Count <= 8 ? 2 : 1;
+        int factor = !side && expression.Open.Count <= 8 ? 2 : 1;
         int mouth = (int)Math.Round(Math.Clamp(voice, 0, 1) * (expression.Open.Count - 1) * factor);
         int phase = (int)Math.Round(eye * 3);
         string asset = mouth % factor == 0 && phase is 0 or 3 ? (phase == 0 ? expression.Closed[mouth / factor] : expression.Open[mouth / factor]) : Key(expression, mouth, phase);

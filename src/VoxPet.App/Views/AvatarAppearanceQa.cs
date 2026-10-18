@@ -25,7 +25,7 @@ internal static class AvatarAppearanceQa
         string Face() => scene.Frame.Layers.Single(l => l.Id == "part-head").Asset;
         Tick(.3); string open = Face();
         var mouths = new List<object>(); var seen = new HashSet<string>();
-        int positions = (character.MouthFrameCount - 1) * 2 + 1;
+        int positions = (character.MouthFrameCount - 1) * (id == "pelly" ? 1 : 2) + 1;
         for (int i = 0; i < positions; i++)
         {
             double level = i / (positions - 1d); Tick(.016, level); string asset = Face(); seen.Add(asset);
