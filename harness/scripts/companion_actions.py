@@ -34,8 +34,12 @@ def add_secondary(events, duration, side):
             transform=dict(target='body');events.append(dict(time=time,transform=transform))
         transform.update(rotation=round(turn,6), x=round((2.3 if side else 1.4)*envelope*math.sin(phase),6),
                          y=round((112 if side else 115)*squash,6),scaleX=round(1+squash*.55,7),scaleY=round(1-squash,7))
-        events.append(dict(time=time,transform=dict(target='head',rotation=round(-turn*.35+(2.0 if side else 2.8)*envelope*math.sin(phase-.6),6),
-                                                    y=round((1.1 if side else 1.7)*envelope*math.sin(phase-.4),6))))
+        head_turn=-turn*.35+(2.0 if side else 2.8)*envelope*math.sin(phase-.6)
+        # Nod around the neck seam, rather than orbiting the centre of the face.
+        nx,ny=(-12,85) if side else (0,45);a=math.radians(head_turn)
+        events.append(dict(time=time,transform=dict(target='head',rotation=round(head_turn,6),
+                         x=round(nx-nx*math.cos(a)+ny*math.sin(a),6),
+                         y=round(ny-nx*math.sin(a)-ny*math.cos(a)+(1.1 if side else 1.7)*envelope*math.sin(phase-.4),6))))
 
 
 WEAPONS = ['toy-gun', 'toy-sword', 'magic-wand', 'firearm', 'bow', 'one-hand', 'two-hand']

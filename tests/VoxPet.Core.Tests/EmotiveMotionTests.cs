@@ -64,7 +64,11 @@ public sealed class EmotiveMotionTests
         for (int ms = 220; ms <= 940; ms += 7)
         {
             runtime.Update(new(ms / 1000d, .007, 0));
-            var rig = runtime.CurrentRig.Animated; var contact = rig["rightHand"].Map(0, 23); var support = rig["leftHand"].Map(0, 0);
+            var rig = runtime.CurrentRig.Animated;
+            var headLocal = runtime.CurrentRig.Static["body"].Compose(rig["body"].Inverse()).Compose(rig["head"]).Compose(runtime.CurrentRig.Static["head"].Inverse());
+            double nx = id == "pelly" ? 270 : 256, ny = id == "pelly" ? 302 : 285;
+            var neck = headLocal.Map(nx, ny); Assert.InRange(Math.Abs(nx - neck.X), 0, .01); Assert.InRange(Math.Abs(neck.Y - ny), 0, 1.8);
+            var contact = rig["rightHand"].Map(0, 23); var support = rig["leftHand"].Map(0, 0);
             Assert.InRange(Math.Sqrt(Math.Pow(contact.X - support.X, 2) + Math.Pow(contact.Y - support.Y, 2)), 0, .35);
         }
     }
