@@ -30,8 +30,11 @@ public static class JointSkinning
         double bend = Math.Sqrt(Math.Max(0, restLength * restLength - distance * distance)) * .5 * (left ? 1 : -1);
         // A wing whose shoulder already points at the wrist folds lengthwise.
         // Adding a second elbow curve would turn its wide inner contour inside out.
-        double aimAngle = Math.Atan2(dy, dx) - Math.Atan2(ry, rx);
-        double aligned = Math.Atan2(Math.Sin(aimAngle - Math.Atan2(rootDelta.M12, rootDelta.M11)), Math.Cos(aimAngle - Math.Atan2(rootDelta.M12, rootDelta.M11)));
+        // Compare alignment in the shoulder frame. Body squash is anisotropic and
+        // changes world-space angles even for a perfectly straight wing.
+        var localEnd = rootDelta.Inverse().Map(end.X, end.Y);
+        double aligned = Math.Atan2(localEnd.Y - restStart.Y, localEnd.X - restStart.X) - Math.Atan2(ry, rx);
+        aligned = Math.Atan2(Math.Sin(aligned), Math.Cos(aligned));
         if (Math.Abs(aligned) < .001) bend = 0;
         var elbow = new RigPoint((start.X + end.X) * .5 - dy / distance * bend, (start.Y + end.Y) * .5 + dx / distance * bend);
         var control = new RigPoint(elbow.X * 2 - (start.X + end.X) * .5, elbow.Y * 2 - (start.Y + end.Y) * .5);

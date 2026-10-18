@@ -114,7 +114,8 @@ public static class PackageJson
         double derived = timeline.Length == 0 ? 1000 : timeline.Max(t => t.TimeMs + t.DurationMs); if (derived == 0) derived = 1000;
         var mode = S(playback, "mode", "once") switch { "once" => ActionPlaybackMode.Once, "loop" => ActionPlaybackMode.Loop, _ => throw new VoxPetPackageException("재생 mode를 확인하세요.") };
         var triggers = A(e, "triggers").Select((t, i) => ReadTrigger(t, id, i)).ToArray();
-        return new(id, S(e, "name", id)!, N(e, "duration", derived), timeline, I(e, "priority", 50), new(mode, B(playback, "interruptible", true), B(playback, "returnToIdle", true)), S(e, "compatibilityTag"), triggers, B(e, "interpolateTransforms"));
+        return new(id, S(e, "name", id)!, N(e, "duration", derived), timeline, I(e, "priority", 50), new(mode, B(playback, "interruptible", true), B(playback, "returnToIdle", true)), S(e, "compatibilityTag"), triggers, B(e, "interpolateTransforms"), S(e, "transformInterpolation", "smoothStep") switch
+        { "smoothStep" => ActionInterpolation.SmoothStep, "monotoneCubic" => ActionInterpolation.MonotoneCubic, _ => throw new VoxPetPackageException("transformInterpolation을 확인하세요.") });
     }
     private static TriggerDefinition ReadTrigger(JsonElement e, string action, int index)
     {
@@ -166,6 +167,7 @@ public static class PackageJson
         a.Priority,
         duration = a.DurationMs,
         a.InterpolateTransforms,
+        transformInterpolation = a.TransformInterpolation == ActionInterpolation.MonotoneCubic ? "monotoneCubic" : "smoothStep",
         a.CompatibilityTag,
         playback = new { mode = a.Playback.Mode.ToString().ToLowerInvariant(), a.Playback.Interruptible, a.Playback.ReturnToIdle },
         timeline = a.Timeline.Select(Event),

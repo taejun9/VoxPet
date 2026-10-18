@@ -76,6 +76,7 @@ internal static class NaturalCompanionQa
             foreach (var item in CharacterCatalog.All)
             {
                 check(await model.SelectCharacterAsync(item.Id, true), "natural_select_" + item.Id); Seams(item.Id, item.SideView, check);
+                check(model.Character.CompanionScene.Runtime.Definition.Actions.All(a => a.InterpolateTransforms && a.TransformInterpolation == VoxPet.Core.Actions.ActionInterpolation.MonotoneCubic), "emotive_companion_curve_" + item.Id);
                 double now = model.Character.CompanionScene.Runtime.Actions.LastTime;
                 void Tick(double dt = .1) { now = Math.Max(now, model.Character.CompanionScene.Runtime.Actions.LastTime) + dt; model.Hands.Update(now); model.Character.Update(new(0, 0, 0, 0, 1, MouthState.Closed), now); }
                 var phases = new List<object>();
@@ -87,7 +88,7 @@ internal static class NaturalCompanionQa
                     bool flash = scene.Frame.Layers.Any(l => l.Asset == "samples/muzzle-flash.png");
                     bool expectedFlash = expected.Actions.Current.Effects.Any(e => e.Asset == "samples/muzzle-flash.png");
                     bool valid = actual.State.ActionId == action && Math.Abs(actual.Actions.Current.Progress - expected.Actions.Current.Progress) < .00001 && flash == expectedFlash &&
-                        new[] { "leftHand", "rightHand", "body" }.All(a => Close(actual.CurrentRig.Animated[a], expected.CurrentRig.Animated[a]));
+                        new[] { "leftHand", "rightHand", "body", "head" }.All(a => Close(actual.CurrentRig.Animated[a], expected.CurrentRig.Animated[a]));
                     check(valid, $"natural_timeline_phase_{item.Id}_{action}_{(int)(seconds * 1000)}");
                     phases.Add(new
                     {

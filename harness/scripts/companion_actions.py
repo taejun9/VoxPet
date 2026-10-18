@@ -1,6 +1,43 @@
 """Continuous public companion choreography. No character pixels are read."""
 import math
 
+def sample(knots, time, column):
+    """C1 shape-preserving curve. Deliberate holds/reversals have zero velocity."""
+    i = max(i for i, key in enumerate(knots) if key[0] <= time)
+    if i == len(knots)-1:
+        return knots[i][column]
+    a, b = knots[i], knots[i+1]
+    h = b[0]-a[0]; t = (time-a[0])/h
+    d = (b[column]-a[column])/h
+    def tangent(d0, d1, h0, h1):
+        if d0*d1 <= 0:
+            return 0
+        w0, w1 = 2*h1+h0, h1+2*h0
+        return (w0+w1)/(w0/d0+w1/d1)
+    m0 = 0 if i == 0 else tangent((a[column]-knots[i-1][column])/(a[0]-knots[i-1][0]), d, a[0]-knots[i-1][0], h)
+    m1 = 0 if i+2 == len(knots) else tangent(d, (knots[i+2][column]-b[column])/(knots[i+2][0]-b[0]), h, knots[i+2][0]-b[0])
+    ease = t*t*(3-2*t)
+    return a[column]*(1-ease)+b[column]*ease+(t*t*t-2*t*t+t)*h*m0+(t*t*t-t*t)*h*m1
+
+
+def add_secondary(events, duration, side):
+    # Low-amplitude overlapping follow-through, with value/velocity zero at both ends.
+    # The body compresses around its lower pivot; compensate the feet to keep the baseline.
+    body = {e['time']:e['transform'] for e in events if e.get('transform',{}).get('target')=='body'}
+    for time in range(0, duration+1, 10):
+        u=time/duration; envelope=math.sin(math.pi*u)**2
+        phase=2*math.pi*u
+        squash=(.009 if side else .014)*envelope*math.sin(phase-.25)
+        turn=(.65 if side else .55)*body.get(time,{}).get('rotation',0)
+        transform=body.get(time)
+        if transform is None:
+            transform=dict(target='body');events.append(dict(time=time,transform=transform))
+        transform.update(rotation=round(turn,6), x=round((2.3 if side else 1.4)*envelope*math.sin(phase),6),
+                         y=round((112 if side else 115)*squash,6),scaleX=round(1+squash*.55,7),scaleY=round(1-squash,7))
+        events.append(dict(time=time,transform=dict(target='head',rotation=round(-turn*.35+(2.0 if side else 2.8)*envelope*math.sin(phase-.6),6),
+                                                    y=round((1.1 if side else 1.7)*envelope*math.sin(phase-.4),6))))
+
+
 WEAPONS = ['toy-gun', 'toy-sword', 'magic-wand', 'firearm', 'bow', 'one-hand', 'two-hand']
 
 
@@ -19,7 +56,7 @@ def build_actions(files, manifest, character_id, anchors):
         if action['id'] not in WEAPONS:
             kind = action['id']
             duration = 1000 if kind=='claw' else 1200
-            action.update(duration=duration, interpolateTransforms=True, timeline=[])
+            action.update(duration=duration, interpolateTransforms=True, transformInterpolation='monotoneCubic', timeline=[])
             events = action['timeline']
             rest = position('rightHand')
             aim = (310,355) if side else (300,350)
@@ -27,18 +64,28 @@ def build_actions(files, manifest, character_id, anchors):
             if side:
                 sx, sy = position('rightShoulder'); hx, hy = position('rightHand')
                 turn = math.degrees(math.atan2(aim[1]-sy, aim[0]-sx)-math.atan2(hy-sy,hx-sx))
-            for time, target, angle in [(0,rest,0),(180 if kind=='claw' else 220,aim,turn),(700 if kind=='claw' else 780,aim,turn),(duration,rest,0)]:
+            arrive = (190 if side else 240) if kind=='claw' else (270 if side else 320)
+            gesture = [(0,*rest,0),(80,rest[0]+(3 if side else -3),rest[1]+3,-3),
+                       (arrive,*aim,turn),(arrive+90,aim[0]-2,aim[1]-2,turn+2),
+                       (700 if kind=='claw' else 780,*aim,turn),
+                       (duration-110,rest[0]-2,rest[1]+1,-1),(duration,*rest,0)]
+            for time in range(0,duration+1,10):
+                target=(sample(gesture,time,1),sample(gesture,time,2));angle=sample(gesture,time,3)
+                if side:
+                    sx,sy=position('rightShoulder');hx,hy=rest
+                    angle=math.degrees(math.atan2(target[1]-sy,target[0]-sx)-math.atan2(hy-sy,hx-sx))
                 sx,sy = position('rightShoulder');hx,hy = rest;a = math.radians(angle)
                 dx,dy = target[0]-sx,target[1]-sy
                 events.extend([dict(time=time,transform=dict(target='rightShoulder',rotation=angle)),
                                dict(time=time,transform=dict(target='rightHand',x=round(dx*math.cos(a)+dy*math.sin(a)-(hx-sx),5),y=round(-dx*math.sin(a)+dy*math.cos(a)-(hy-sy),5),rotation=-angle))])
+            add_secondary(events,duration,side)
             events.append(dict(time=0,sprite=dict(target='arm-right',file='parts/arm-right-grip.png')))
             events.append(dict(time=0,effect=dict(anchor='rightHand',file='samples/grip-back-right.png',duration=duration,zIndex=1990,transform=dict(x=-rest[0],y=-rest[1]))))
             events.append(dict(time=160 if kind=='claw' else 0,effect=dict(anchor='rightHand',file='samples/'+kind+'.png',duration=620 if kind=='claw' else duration,zIndex=2010,transform=dict(x=-rest[0],y=-rest[1]))))
             events.sort(key=lambda e:e['time'])
             continue
         kind = action['id']
-        action.update(duration=1200, interpolateTransforms=True, timeline=[])
+        action.update(duration=1200, interpolateTransforms=True, transformInterpolation='monotoneCubic', timeline=[])
         events = action['timeline']
         for arm in ['right', 'left']:
             if arm == 'right' or kind in ['firearm', 'bow', 'two-hand']:
@@ -48,8 +95,8 @@ def build_actions(files, manifest, character_id, anchors):
             if side and kind=='two-hand' and 220 <= time <= 940:
                 rad = math.radians(angle)
                 l = (r[0]-23*math.sin(rad), r[1]+23*math.cos(rad))
-            if kind=='two-hand' and record:
-                knots.append((time, r, l or position('leftHand'), angle, left_angle, body, shoulder))
+            if record:
+                knots.append((time, *r, *(l or position('leftHand')), angle, left_angle, body, shoulder))
                 return
             if kind=='firearm': shoulder *= 1.2
             events.append(dict(time=time, transform=dict(target='body', rotation=body)))
@@ -79,6 +126,7 @@ def build_actions(files, manifest, character_id, anchors):
                 hx, hy = position(hand+'Hand')
                 events.append(dict(time=0, effect=dict(anchor=hand+'Hand', file='samples/grip-'+hand+'.png', duration=1200, zIndex=2010, transform=dict(x=-hx, y=-hy))))
         pose(0, rest)
+        pose(90 if side else 110, (rest[0]+(3 if side else -4),rest[1]+3), body=1 if side else -1, shoulder=-2)
         if kind in ['toy-gun', 'firearm']:
             aim = (292, 353) if side else (286, 354)
             support = (aim[0]+7, aim[1]+13) if kind=='firearm' else left_rest
@@ -87,7 +135,7 @@ def build_actions(files, manifest, character_id, anchors):
             pose(405, (aim[0]+9, aim[1]-7), (support[0]+9, support[1]-7) if kind=='firearm' else support, angle=9, left_angle=9 if kind=='firearm' else 0, body=1, shoulder=24)
             pose(510, aim, support, shoulder=18, body=-2)
             pose(720, aim, support, shoulder=18, body=-2)
-            pose(765, (aim[0]+7, aim[1]-5), support, angle=7, body=1, shoulder=22)
+            pose(765, (aim[0]+7, aim[1]-5), (support[0]+7, support[1]-5) if kind=='firearm' else support, angle=7, left_angle=7 if kind=='firearm' else 0, body=1, shoulder=22)
             pose(870, aim, support, shoulder=18, body=-2)
             for t in [360, 720]:
                 events.append(dict(time=t, effect=dict(anchor='rightHand', file='samples/muzzle-flash.png', duration=65, zIndex=2020, transform=dict(x=-rest[0], y=-rest[1]))))
@@ -124,20 +172,16 @@ def build_actions(files, manifest, character_id, anchors):
                 events.append(dict(time=t, transform=dict(target='arrow', x=x-256, y=hold[1]-3-350)))
             events.append(dict(time=720, effect=dict(anchor='arrow', file='samples/arrow.png', duration=180, zIndex=2003, transform=dict(scaleX=.30, scaleY=.6))))
         pose(1200, rest, left_rest)
-        if kind=='two-hand':
-            # Keep the supporting fist on the rotating long hilt between keys too.
-            # Dense keys preserve the relation through the general opt-in interpolator.
-            for t in sorted(set(range(0,1201,10)) | {k[0] for k in knots}):
-                a = max((k for k in knots if k[0]<=t), key=lambda k:k[0])
-                b = min((k for k in knots if k[0]>=t), key=lambda k:k[0])
-                f = 0 if a[0]==b[0] else (t-a[0])/(b[0]-a[0])
-                f = f*f*(3-2*f)
-                blend = lambda x,y:x*(1-f)+y*f
-                r = tuple(blend(x,y) for x,y in zip(a[1],b[1]))
-                l = tuple(blend(x,y) for x,y in zip(a[2],b[2]))
-                angle = blend(a[3],b[3])
-                if 220<=t<=940:
-                    rad = math.radians(angle)
-                    l = (r[0]-23*math.sin(rad),r[1]+23*math.cos(rad))
-                pose(t,r,l,angle,blend(a[4],b[4]),blend(a[5],b[5]),blend(a[6],b[6]),record=False)
+        # Character-specific settling before the exact rest key; no snap back to idle.
+        # Pelly settles quickly with a smaller counter-movement; Neulbo has a softer tail.
+        settle=1080 if side else 1090
+        rest_key=(settle,rest[0]-(1.2 if side else 2),rest[1]+.8,left_rest[0],left_rest[1],-1,0,-.3,0)
+        knots.insert(-1,rest_key)
+        for t in sorted(set(range(0,1201,10)) | {k[0] for k in knots}):
+            values=[sample(knots,t,i) for i in range(1,9)]
+            r,l=tuple(values[:2]),tuple(values[2:4]);angle=values[4]
+            if kind=='two-hand' and 220<=t<=940:
+                rad=math.radians(angle);l=(r[0]-23*math.sin(rad),r[1]+23*math.cos(rad))
+            pose(t,r,l,*values[4:],record=False)
+        add_secondary(events,1200,side)
         events.sort(key=lambda e:e['time'])

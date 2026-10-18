@@ -117,6 +117,7 @@ internal static class CharacterEditorQa
             editor.Page = 7; await editor.ValidateAsync(); check(editor.Status.StartsWith("검증 통과"), "editor_full_sprite_validate_export");
             editor.Page = 6; await editor.AddAsync(); string attachment = editor.Document.Package.Character.Attachments[0].Id;
             editor.Page = 5; await editor.AddAsync(); editor.Selected = editor.Rows.Last();
+            Set(editor, "interpolate", "True"); Set(editor, "curve", "MonotoneCubic"); await editor.ApplyAsync();
             foreach (var kind in Enum.GetValues<ActionEventKind>())
             {
                 editor.AddTriggerNext = false; await editor.AddDetailAsync(); editor.SelectedDetail = editor.Details.Last(r => r.Item is ActionTimelineEvent);
@@ -133,6 +134,8 @@ internal static class CharacterEditorQa
             editor.Page = 7; await editor.ValidateAsync(); check(editor.Status.StartsWith("검증 통과"), "editor_all_event_types_valid_package");
             var finalExport = Path.Combine(folder, "all-events.voxpet"); check(await editor.ExportAsync(finalExport), "editor_all_event_types_export");
             check(new VoxPetPackageLoader().Load(finalExport).Character.Actions[0].Timeline.Count == 8, "editor_all_event_types_reload");
+            var curve = new VoxPetPackageLoader().Load(finalExport).Character.Actions[0];
+            check(curve.InterpolateTransforms && curve.TransformInterpolation == ActionInterpolation.MonotoneCubic, "emotive_editor_curve_survives_event_edits_and_export");
             foreach (var size in new[] { new Size(1000, 730), new Size(960, 540), new Size(640, 480), new Size(480, 320) })
             {
                 window.Width = size.Width; window.Height = size.Height;

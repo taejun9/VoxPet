@@ -3,6 +3,8 @@ using VoxPet.Core.Triggers;
 
 namespace VoxPet.Core.Actions;
 
+public enum ActionInterpolation { SmoothStep, MonotoneCubic }
+
 public sealed record ActionDefinition
 {
     public string Id { get; }
@@ -11,17 +13,19 @@ public sealed record ActionDefinition
     public double DurationMs { get; }
     public string? CompatibilityTag { get; }
     public bool InterpolateTransforms { get; }
+    public ActionInterpolation TransformInterpolation { get; }
     public ActionPlayback Playback { get; }
     public IReadOnlyList<ActionTimelineEvent> Timeline { get; }
     public IReadOnlyList<TriggerDefinition> Triggers { get; }
     public ActionDefinition(string id, string name, double durationMs, IEnumerable<ActionTimelineEvent> timeline,
-        int priority = 50, ActionPlayback? playback = null, string? compatibilityTag = null, IEnumerable<TriggerDefinition>? triggers = null, bool interpolateTransforms = false)
+        int priority = 50, ActionPlayback? playback = null, string? compatibilityTag = null, IEnumerable<TriggerDefinition>? triggers = null, bool interpolateTransforms = false, ActionInterpolation transformInterpolation = ActionInterpolation.SmoothStep)
     {
         Id = DefinitionValidation.Id(id, nameof(id)); Name = DefinitionValidation.Text(name, nameof(name));
         DurationMs = DefinitionValidation.Positive(durationMs, nameof(durationMs));
         if (durationMs < 1) throw new ArgumentOutOfRangeException(nameof(durationMs), "동작 길이는1ms 이상이어야 합니다.");
         if (priority is < 0 or > 100) throw new ArgumentOutOfRangeException(nameof(priority));
-        InterpolateTransforms = interpolateTransforms;
+        if (!Enum.IsDefined(transformInterpolation)) throw new ArgumentOutOfRangeException(nameof(transformInterpolation));
+        InterpolateTransforms = interpolateTransforms; TransformInterpolation = transformInterpolation;
         Priority = priority; Playback = playback ?? new(); Playback.Validate();
         CompatibilityTag = compatibilityTag is null ? null : DefinitionValidation.Id(compatibilityTag, nameof(compatibilityTag));
         var events = DefinitionValidation.Copy(timeline, nameof(timeline));

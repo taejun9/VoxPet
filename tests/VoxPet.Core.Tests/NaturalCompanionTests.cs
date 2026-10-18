@@ -171,13 +171,14 @@ public sealed class NaturalCompanionTests
     {
         var p = Load(id); var runtime = p.CreateRuntime(); runtime.RequestAction("firearm"); runtime.Update(new(0, 0, 0));
         var before = runtime.Update(new(.35, .35, 0)); var aim = runtime.CurrentRig.Animated["rightHand"];
+        var aimLocal = runtime.CurrentRig.Animated["body"].Inverse().Compose(aim);
         var shot = runtime.Update(new(.38, .03, 0));
         Assert.DoesNotContain(before.Layers, l => l.Asset == "samples/muzzle-flash.png"); Assert.Contains(shot.Layers, l => l.Asset == "samples/muzzle-flash.png");
         runtime.Update(new(.405, .025, 0)); var recoil = runtime.CurrentRig.Animated["rightHand"];
         Assert.True(recoil.OffsetY < aim.OffsetY - 3); Assert.True(recoil.OffsetX > aim.OffsetX + 3);
         var recovered = runtime.Update(new(.52, .115, 0));
         Assert.DoesNotContain(recovered.Layers, l => l.Asset == "samples/muzzle-flash.png");
-        Assert.Equal(aim.OffsetX, runtime.CurrentRig.Animated["rightHand"].OffsetX, 1);
+        Assert.Equal(aimLocal.OffsetX, runtime.CurrentRig.Animated["body"].Inverse().Compose(runtime.CurrentRig.Animated["rightHand"]).OffsetX, 1);
         Assert.Equal(7, CompanionWeapon.All.Select(w => w.Asset).Distinct().Count());
     }
 }

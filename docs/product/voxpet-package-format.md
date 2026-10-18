@@ -65,3 +65,7 @@ part와 attachment layer의 `skinning`은 기존 rootY/fullY에 선택 `rootAnch
 attachment layer의 선택 `replacesParts:[ID…]`는 실제로 resolve되어 그려지는 동안에만 해당 원본 part 레이어를 대체한다. 필수 파츠/포즈/호환 태그 때문에 숨겨진 의상은 원본을 제거하지 않는다. 선택 해제·재생 종료에는 원본 part가 다시 보인다. 기본 신발은 양발을 각각 대체한다.
 
 effect의 선택 `endAnchor`와 `endTransform:{x,y}`는 시작 anchor/transform의 위치에서 끝 앵커의 위치까지 수평 PNG를 늘려 활시위·화살을 연결한다. PNG의 두께를 유지하고 양 끝을 현재 rig에서 계산한다. 두 점이 겹치면 해당 레이어를 생략한다. effect의 선택 `zIndex` 기본값2000은 기존 순서를 유지한다. 손바닥1990·무기2000·활시위2002·앞 손가락2010처럼 파지 앞뒤를 분리할 수 있다. 일반 effect의 기본 의미는 유지한다. 편집기에서 보간·앵커·대체 파츠·연결 끝점을 수정하고 export/load로 보존한다.
+
+## 연속 속도 동작 (plan048)
+
+`interpolateTransforms:true`에 선택 `transformInterpolation:"monotoneCubic"`를 함께 지정하면 같은 target의 양쪽 인접 키 기울기를 가중 조화 평균으로 연결한다. 같은 방향으로 지나가는 키는 속도가 이어지고 정지·방향 전환 키는 속도0이다. 처음/마지막 키의 기울기는0으로 두어 대기 자세로 천천히 들어오고 나간다. 키 구간을 넘어 overshoot하지 않는다. 필드를 생략하거나 `smoothStep`이면 이전 smoothstep 의미이며 false이면 기존 step이다. 같은 시각의 마지막 키가 적용되고 pose reset이나 반전 배율의 경계는 넘지 않는다. 알 수 없는 곡선 값은 거부한다. 편집기의 **움직임 연결 곡선**에서 선택하며 상세 변경·삭제·내보내기·재읽기에 보존한다. 2차 미분 연속은 보장하지 않는다.

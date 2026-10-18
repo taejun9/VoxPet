@@ -236,7 +236,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 Field(Fields, "id", "ID", e.Id); Field(Fields, "name", "이름", e.Name); Field(Fields, "open", "눈 뜸 PNG", e.EyesOpen, asset: true); Field(Fields, "closed", "눈 감음 PNG", e.EyesClosed, asset: true); Field(Fields, "brows", "눈썹 PNG (선택)", e.Brows, asset: true);
                 Field(Fields, "eyesAnchor", "눈 앵커", c.Face.EyesAnchor, anchorIds); Field(Fields, "browsAnchor", "눈썹 앵커", c.Face.BrowsAnchor, anchorIds); Field(Fields, "eyesZ", "눈 Z-index", c.Face.EyesZIndex); Field(Fields, "browsZ", "눈썹 Z-index", c.Face.BrowsZIndex); Field(Fields, "required", "얼굴 표시 파츠", c.Face.RequiredVisiblePart, ["", .. c.Parts.Select(p => p.Id)]); break;
             case 5 when Selected?.Item is ActionDefinition action:
-                Field(Fields, "id", "ID", action.Id); Field(Fields, "name", "이름", action.Name); Field(Fields, "priority", "우선순위 (0~100)", action.Priority); Field(Fields, "duration", "길이 (ms)", action.DurationMs); Field(Fields, "mode", "재생", action.Playback.Mode, Enum.GetNames<ActionPlaybackMode>()); Field(Fields, "interrupt", "중단 가능", action.Playback.Interruptible, Booleans); Field(Fields, "idle", "idle 복귀", action.Playback.ReturnToIdle, Booleans); Field(Fields, "tag", "호환 태그", action.CompatibilityTag); Field(Fields, "interpolate", "동작 사이 부드럽게 연결", action.InterpolateTransforms, Booleans);
+                Field(Fields, "id", "ID", action.Id); Field(Fields, "name", "이름", action.Name); Field(Fields, "priority", "우선순위 (0~100)", action.Priority); Field(Fields, "duration", "길이 (ms)", action.DurationMs); Field(Fields, "mode", "재생", action.Playback.Mode, Enum.GetNames<ActionPlaybackMode>()); Field(Fields, "interrupt", "중단 가능", action.Playback.Interruptible, Booleans); Field(Fields, "idle", "idle 복귀", action.Playback.ReturnToIdle, Booleans); Field(Fields, "tag", "호환 태그", action.CompatibilityTag); Field(Fields, "interpolate", "동작 사이 부드럽게 연결", action.InterpolateTransforms, Booleans); Field(Fields, "curve", "움직임 연결 곡선", action.TransformInterpolation, Enum.GetNames<ActionInterpolation>());
                 foreach (var evt in action.Timeline) Details.Add(new("event/" + eventIds.GetValue(evt, _ => Guid.NewGuid().ToString("N")), $"{evt.TimeMs:0.##}ms · {evt.Kind}", evt));
                 foreach (var trigger in action.Triggers) Details.Add(new("trigger/" + trigger.Id, "트리거 · " + trigger.Kind, trigger));
                 foreach (var pose in c.Poses) Details.Add(new("pose/" + pose.Id, "포즈 · " + pose.Name, pose)); break;
@@ -318,7 +318,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                     d.Motion = new(B(v, "blink"), N(v, "min"), N(v, "max"), N(v, "blinkDuration"), B(v, "idleMotion"), N(v, "breathing"), N(v, "sway"), N(v, "mouthWeight"), N(v, "bodyBounce"), N(v, "headBounce"), N(v, "headRotation"), N(v, "mouthTravel"), S(v, "bodyAnchor"), S(v, "headAnchor"), B(v, "viewport")); break;
                 case 4 when item is ExpressionDefinition e:
                     d.Expressions[d.Expressions.FindIndex(x => x.Id == e.Id)] = new(S(v, "id"), S(v, "open"), S(v, "closed"), Opt(v, "brows"), S(v, "name")); if (d.SpriteSheet is { } sheet) d.SpriteSheet = new(sheet.Part, sheet.Expressions.Select(b => b.Id == e.Id ? new SpriteSheetExpression(S(v, "id"), b.Open, b.Closed, b.Blink) : b), sheet.Curve); d.Face = new(S(v, "eyesAnchor"), S(v, "browsAnchor"), I(v, "eyesZ"), I(v, "browsZ"), Opt(v, "required")); break;
-                case 5 when item is ActionDefinition a: d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), N(v, "duration"), a.Timeline, I(v, "priority"), new(E<ActionPlaybackMode>(v, "mode"), B(v, "interrupt"), B(v, "idle")), Opt(v, "tag"), a.Triggers.Select(t => new TriggerDefinition(t.Id, S(v, "id"), t.Kind, t.Key, t.Button, t.Modifiers, t.Threshold, t.IntervalSeconds, t.StartImmediately, t.Enabled)), B(v, "interpolate")); break;
+                case 5 when item is ActionDefinition a: d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), N(v, "duration"), a.Timeline, I(v, "priority"), new(E<ActionPlaybackMode>(v, "mode"), B(v, "interrupt"), B(v, "idle")), Opt(v, "tag"), a.Triggers.Select(t => new TriggerDefinition(t.Id, S(v, "id"), t.Kind, t.Key, t.Button, t.Modifiers, t.Threshold, t.IntervalSeconds, t.StartImmediately, t.Enabled)), B(v, "interpolate"), E<ActionInterpolation>(v, "curve")); break;
                 case 6 when item is AttachmentDefinition a: d.Attachments[d.Attachments.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), S(v, "category"), a.Layers, Opt(v, "tag"), Opt(v, "group")); break;
             }
         }));
@@ -340,7 +340,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                         kind is ActionEventKind.Transform or ActionEventKind.Effect && B(v, "hasTransform") ? T(v) : null, B(v, "enabled"), kind == ActionEventKind.Effect ? N(v, "duration") : 0, kind == ActionEventKind.Effect ? Opt(v, "endAnchor") : null, new(x: N(v, "endX"), y: N(v, "endY")), kind == ActionEventKind.Effect ? I(v, "effectZ") : 2000);
                 }
                 if (item is TriggerDefinition tr) triggers[triggers.IndexOf(tr)] = new(S(v, "id"), a.Id, E<TriggerKind>(v, "kind"), Opt(v, "key"), Opt(v, "button"), Enum.Parse<TriggerModifiers>(S(v, "modifiers")), N(v, "threshold"), N(v, "interval"), B(v, "immediate"), B(v, "enabled"));
-                d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers, a.InterpolateTransforms);
+                d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers, a.InterpolateTransforms, a.TransformInterpolation);
             }
             if (owner is AttachmentDefinition attachment && item is AttachmentLayer l)
             {
@@ -427,7 +427,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
             {
                 var triggers = trigger ? a.Triggers.Append(new TriggerDefinition("trigger-" + Guid.NewGuid().ToString("N")[..8], a.Id, TriggerKind.Manual, a.Id)) : a.Triggers;
                 var events = trigger ? a.Timeline : a.Timeline.Append(new ActionTimelineEvent(0, ActionEventKind.Transform, d.Anchors.FirstOrDefault()?.Id ?? d.Parts[0].Id, transform: Transform2D.Identity));
-                d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers, a.InterpolateTransforms);
+                d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, events, a.Priority, a.Playback, a.CompatibilityTag, triggers, a.InterpolateTransforms, a.TransformInterpolation);
             }
             if (item is AttachmentDefinition outfit) d.Attachments[d.Attachments.FindIndex(x => x.Id == outfit.Id)] = new(outfit.Id, outfit.Name, outfit.Category, outfit.Layers.Append(new("layer-" + Guid.NewGuid().ToString("N")[..8], doc.Package.AssetPaths.First(), d.Anchors.First().Id)), outfit.CompatibilityTag, outfit.ExclusiveGroup);
         }));
@@ -439,7 +439,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
         await TransactionAsync(() => doc.Edit(d =>
         {
             if (item is PoseDefinition pose) d.Poses.RemoveAll(p => p.Id == pose.Id);
-            if (owner is ActionDefinition a) d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, a.Timeline.Where(e => !ReferenceEquals(e, item)), a.Priority, a.Playback, a.CompatibilityTag, a.Triggers.Where(t => !ReferenceEquals(t, item)), a.InterpolateTransforms);
+            if (owner is ActionDefinition a) d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(a.Id, a.Name, a.DurationMs, a.Timeline.Where(e => !ReferenceEquals(e, item)), a.Priority, a.Playback, a.CompatibilityTag, a.Triggers.Where(t => !ReferenceEquals(t, item)), a.InterpolateTransforms, a.TransformInterpolation);
             if (owner is AttachmentDefinition outfit) d.Attachments[d.Attachments.FindIndex(x => x.Id == outfit.Id)] = new(outfit.Id, outfit.Name, outfit.Category, outfit.Layers.Where(l => !ReferenceEquals(l, item)), outfit.CompatibilityTag, outfit.ExclusiveGroup);
         }));
     }

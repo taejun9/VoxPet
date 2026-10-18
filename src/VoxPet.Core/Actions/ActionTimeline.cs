@@ -4,11 +4,13 @@ namespace VoxPet.Core.Actions;
 
 internal static class ActionTimeline
 {
+    private readonly record struct Key(double Time, Transform2D Value, int Index = -1);
     public static ActionState Evaluate(ActionDefinition action, IReadOnlyDictionary<string, PoseDefinition> poses, double milliseconds, bool playing)
     {
         var transforms = new Dictionary<string, Transform2D>(StringComparer.Ordinal); var sprites = new Dictionary<string, string?>(StringComparer.Ordinal);
         var visibility = new Dictionary<string, bool>(StringComparer.Ordinal); var attachments = new Dictionary<string, bool>(StringComparer.Ordinal);
         var transformTimes = new Dictionary<string, double>(StringComparer.Ordinal);
+        var transformIndices = new Dictionary<string, int>(StringComparer.Ordinal);
         var effects = new List<ActionEffect>(); string? poseId = null, poseName = null, expression = null;
         for (int i = 0; i < action.Timeline.Count; i++)
         {
@@ -16,15 +18,15 @@ internal static class ActionTimeline
             switch (entry.Kind)
             {
                 case ActionEventKind.Pose:
-                    poseId = entry.Value; poseName = entry.Value; transforms.Clear(); transformTimes.Clear(); sprites.Clear(); visibility.Clear();
+                    poseId = entry.Value; poseName = entry.Value; transforms.Clear(); transformTimes.Clear(); transformIndices.Clear(); sprites.Clear(); visibility.Clear();
                     if (entry.Value != "idle")
                     {
                         var pose = poses[entry.Value!]; poseName = pose.Name;
-                        foreach (var pair in pose.Transforms) { transforms[pair.Key] = pair.Value; transformTimes[pair.Key] = entry.TimeMs; }
+                        foreach (var pair in pose.Transforms) { transforms[pair.Key] = pair.Value; transformTimes[pair.Key] = entry.TimeMs; transformIndices[pair.Key] = i; }
                         foreach (var pair in pose.Sprites) sprites[pair.Key] = pair.Value;
                     }
                     break;
-                case ActionEventKind.Transform: transforms[entry.Target!] = entry.Transform!; transformTimes[entry.Target!] = entry.TimeMs; break;
+                case ActionEventKind.Transform: transforms[entry.Target!] = entry.Transform!; transformTimes[entry.Target!] = entry.TimeMs; transformIndices[entry.Target!] = i; break;
                 case ActionEventKind.Sprite: sprites[entry.Target!] = entry.Value; break;
                 case ActionEventKind.Visibility: visibility[entry.Target!] = entry.Enabled; break;
                 case ActionEventKind.Expression: expression = entry.Value; break;
@@ -39,17 +41,36 @@ internal static class ActionTimeline
         if (action.InterpolateTransforms)
             foreach (string target in transforms.Keys.ToArray())
             {
-                // A pose event is a track reset; never interpolate across it.
-                var next = action.Timeline.SkipWhile(e => e.TimeMs <= milliseconds).TakeWhile(e => e.Kind != ActionEventKind.Pose)
-                    .FirstOrDefault(e => e.Kind == ActionEventKind.Transform && e.Target == target);
-                if (next?.Transform is not { } end || !transformTimes.TryGetValue(target, out double startTime)) continue;
-                double t = Math.Clamp((milliseconds - startTime) / (next.TimeMs - startTime), 0, 1); t = t * t * (3 - 2 * t);
-                var start = transforms[target];
-                double Blend(double a, double b) => a * (1 - t) + b * t;
-                // Mirroring is discrete: crossing a zero scale would make the rig singular.
-                double Scale(double a, double b) => Math.Sign(a) == Math.Sign(b) ? Blend(a, b) : a;
-                transforms[target] = new(Blend(start.X, end.X), Blend(start.Y, end.Y), Scale(start.ScaleX, end.ScaleX), Scale(start.ScaleY, end.ScaleY), Blend(start.Rotation, end.Rotation));
+                // A pose resets tracks. Equal-time keys resolve to the last authored value.
+                var next = Neighbor(target, transformIndices[target], 1, milliseconds);
+                if (next is not { } end || !transformTimes.TryGetValue(target, out double startTime)) continue;
+                var start = new Key(startTime, transforms[target]);
+                var previous = Neighbor(target, transformIndices[target], -1, startTime);
+                var following = Neighbor(target, end.Index, 1, end.Time);
+                transforms[target] = ActionTransformCurve.Interpolate(start.Time, start.Value, end.Time, end.Value, milliseconds,
+                    previous?.Time, previous?.Value, following?.Time, following?.Value, action.TransformInterpolation);
             }
+        Key? Neighbor(string target, int index, int direction, double boundary)
+        {
+            for (int j = index + direction; j >= 0 && j < action.Timeline.Count; j += direction)
+            {
+                var key = action.Timeline[j];
+                if (direction > 0 && key.Kind == ActionEventKind.Pose) return null;
+                if (direction < 0 && key.Kind == ActionEventKind.Pose)
+                    return key.TimeMs < boundary && key.Value != "idle" && poses[key.Value!].Transforms.TryGetValue(target, out var poseTransform)
+                        ? new(key.TimeMs, poseTransform, j) : null;
+                if (key.Kind != ActionEventKind.Transform || key.Target != target || (direction > 0 ? key.TimeMs <= boundary : key.TimeMs >= boundary)) continue;
+                // Match normal timeline evaluation when duplicate keys share a timestamp.
+                while (direction > 0 && j + 1 < action.Timeline.Count && action.Timeline[j + 1].TimeMs == key.TimeMs)
+                {
+                    j++; var duplicate = action.Timeline[j];
+                    if (duplicate.Kind == ActionEventKind.Pose) return null;
+                    if (duplicate.Kind == ActionEventKind.Transform && duplicate.Target == target) key = duplicate;
+                }
+                return new(key.TimeMs, key.Transform!, j);
+            }
+            return null;
+        }
         return new(action.Id, playing, action.Priority, Math.Clamp(milliseconds / action.DurationMs, 0, 1), poseId, poseName,
             transforms, sprites, visibility, effects, expression, attachments);
     }
