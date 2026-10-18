@@ -65,6 +65,7 @@ public sealed class HandMotionInputs : IDisposable
     }
     private IntPtr Mouse(int code, IntPtr message, IntPtr data)
     {
+        if (trace != null && code >= 0 && message.ToInt64() is >= 0x0200 and <= 0x020E) trace(1000 + (int)message.ToInt64());
         bool down = code >= 0 && message.ToInt64() == 0x0201;
         if (down) trace?.Invoke(1);
         if (!disposed && mouseHook != IntPtr.Zero && down && Interlocked.Exchange(ref pendingClick, 1) == 0)

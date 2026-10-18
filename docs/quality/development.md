@@ -172,3 +172,5 @@ plan043 `CardDisplayQa`는 실제 worker에서 만든 frozen PNG를 UI 카드에
 ## native 입력 단기 진단
 
 Windows workflow 수동 실행의 `native_input_probe:true`는 가짜 입력과 runner temp 설정으로 HandMotionQa만 실행한다. core/lint/build를 수행하지만 배포·서명·전체 화면·portable 검사를 생략하므로 release 합격이 아니다. 결과에 `probeOnly:true`를 기록한다. 정상 push/일반 수동 실행은 기존 전체 QA를 그대로 수행한다. 짧은 경로는 GITHUB_ACTIONS와검증된RUNNER_TEMP 내부QA폴더에서만활성화한다. hook trace의1=down진입,2=UI예약,3=전달,4=세대/해제거부,6=disposed,7=handle0,8=이미예약된신호병합이다.
+
+진단에는1000+WM_MOUSE 메시지정수와전용시험창의PreviewMouseDown 수도포함한다. 좌표와외부창내용은읽지않는다. 짧은재현도숫자데모를켜서UI타이머가활성화된상태를사용한다.

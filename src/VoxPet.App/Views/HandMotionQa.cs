@@ -156,6 +156,8 @@ internal static class HandMotionQa
                 };
                 try
                 {
+                    int targetDowns = 0;
+                    inputTarget.PreviewMouseDown += (_, e) => { if (e.ChangedButton == System.Windows.Input.MouseButton.Left) targetDowns++; };
                     inputTarget.Show(); inputTarget.UpdateLayout();
                     var point = inputTarget.PointToScreen(new Point(80, 60));
                     check(SetCursorPos((int)point.X, (int)point.Y), "motion_native_mouse_neutral_target");
@@ -166,7 +168,7 @@ internal static class HandMotionQa
                         using var probe = round == 1 ? inputs : new HandMotionInputs(source, _ => hits++, () => clicks++, stages.Add);
                         if (round > 1) { probe.Triggered += signals.Add; probe.Configure(HandMotionSettings.Default()); }
                         string suffix = round == 1 ? "" : "_round" + round;
-                        int initialClicks = clicks, initialSignals = signals.Count;
+                        int initialClicks = clicks, initialSignals = signals.Count, initialTargetDowns = targetDowns;
                         bool registeredBefore = probe.MouseRegistered;
                         int registrationError = registeredBefore ? 0 : Marshal.GetLastPInvokeError();
                         check(registeredBefore, "motion_native_mouse_hook_registered" + suffix);
@@ -186,14 +188,14 @@ internal static class HandMotionQa
                         double deliveryMs = delivery.Elapsed.TotalMilliseconds;
                         check(clicks - initialClicks == 1, "motion_native_left_down_signal" + suffix);
                         check(signals.Count - initialSignals == 1 && signals[^1].Kind == TriggerKind.Mouse && signals[^1].Button == "left", "motion_platform_neutral_mouse_pulse" + suffix);
-                        int clicksBeforeDispose = clicks, signalsBeforeDispose = signals.Count;
+                        int clicksBeforeDispose = clicks, signalsBeforeDispose = signals.Count, targetDownsBeforeDispose = targetDowns;
                         probe.Dispose(); uint insertedAfterDispose = InjectClick();
                         check(insertedAfterDispose == 2, "motion_native_disposed_mouse_injection_accepted" + suffix);
                         await Task.Delay(100);
                         await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                         check(clicks == clicksBeforeDispose && clicks - initialClicks == 1 && !probe.MouseRegistered, "motion_native_dispose_stops_mouse" + suffix);
                         check(signals.Count == signalsBeforeDispose && signals.Count - initialSignals == 1, "motion_platform_neutral_dispose_stops_events" + suffix);
-                        deliveries.Add(new { round, stages = stages.ToArray(), initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
+                        deliveries.Add(new { round, stages = stages.ToArray(), initialTargetDowns, targetDownsBeforeDispose, targetDownsAfterDispose = targetDowns, initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
                     }
                     if (Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } diagnostics)
                         File.WriteAllText(Path.Combine(diagnostics, "voxpet-runtime-hand-input-delivery.json"), JsonSerializer.Serialize(deliveries));

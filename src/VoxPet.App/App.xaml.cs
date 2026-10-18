@@ -127,6 +127,7 @@ public partial class App : Application
             await main.Ready;
             if (AppPaths.QaFolder != null && Environment.GetEnvironmentVariable("VOXPET_QA_INPUT_PROBE") == "1")
             {
+                main.Model.DemoCommand.Execute(null);
                 await HandMotionQa.RunAsync(main, Check); await main.ShutdownAsync();
                 File.WriteAllText(QaPath("voxpet-smoke-result.json"), JsonSerializer.Serialize(new { probeOnly = true, failures, failedChecks, passedChecks = passedChecks.Order().ToArray() }));
                 Shutdown(failures == 0 ? 0 : 1); return;
