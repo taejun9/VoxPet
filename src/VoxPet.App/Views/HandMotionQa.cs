@@ -31,6 +31,24 @@ internal static class HandMotionQa
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetCursorPos(int x, int y);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern uint RegisterWindowMessage(string name);
+    private static async Task<bool> OwnerReadyAsync(HwndSource source)
+    {
+        int message = (int)RegisterWindowMessage("VoxPet.Qa.HandInputReady");
+        if (message == 0) return false;
+        var ready = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        IntPtr Hook(IntPtr window, int id, IntPtr wParam, IntPtr lParam, ref bool handled)
+        { if (id == message) { handled = true; ready.TrySetResult(true); } return IntPtr.Zero; }
+        source.AddHook(Hook);
+        try
+        {
+            if (!PostMessage(source.Handle, message, IntPtr.Zero, IntPtr.Zero)) return false;
+            return await ready.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        }
+        catch (TimeoutException) { return false; }
+        finally { source.RemoveHook(Hook); }
+    }
     private static ImageSource Markers()
     {
         var pixels = new byte[512 * 512 * 4];
@@ -170,10 +188,12 @@ internal static class HandMotionQa
                         using var probe = round == 1 ? inputs : new HandMotionInputs(source, _ => hits++, () => clicks++, stages.Add, (code, message) => { if (native.Count < 256) native.Add(new { code, message }); });
                         if (round > 1) { probe.Triggered += signals.Add; probe.Configure(HandMotionSettings.Default()); }
                         string suffix = round == 1 ? "" : "_round" + round;
+                        bool ownerReady = await OwnerReadyAsync(source);
                         int initialClicks = clicks, initialSignals = signals.Count, initialTargetDowns = targetDowns;
                         bool registeredBefore = probe.MouseRegistered;
                         int registrationError = registeredBefore ? 0 : Marshal.GetLastPInvokeError();
                         check(registeredBefore, "motion_native_mouse_hook_registered" + suffix);
+                        check(ownerReady, "motion_native_mouse_owner_ready" + suffix);
                         var delivery = Stopwatch.StartNew();
                         uint inserted = InjectClick(); int injectionError = inserted == 2 ? 0 : Marshal.GetLastPInvokeError();
                         check(inserted == 2, "motion_native_mouse_injection_accepted" + suffix);
@@ -197,7 +217,7 @@ internal static class HandMotionQa
                         await source.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background);
                         check(clicks == clicksBeforeDispose && clicks - initialClicks == 1 && !probe.MouseRegistered, "motion_native_dispose_stops_mouse" + suffix);
                         check(signals.Count == signalsBeforeDispose && signals.Count - initialSignals == 1, "motion_platform_neutral_dispose_stops_events" + suffix);
-                        deliveries.Add(new { round, stages = stages.ToArray(), native = native.ToArray(), initialTargetDowns, targetDownsBeforeDispose, targetDownsAfterDispose = targetDowns, initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
+                        deliveries.Add(new { round, ownerReady, stages = stages.ToArray(), native = native.ToArray(), initialTargetDowns, targetDownsBeforeDispose, targetDownsAfterDispose = targetDowns, initialClicks, initialSignals, registeredBefore, registrationError, inserted, injectionError, insertedAfterDispose, clicksAt50, signalsAt50, deliveryMs, clicksBeforeDispose, signalsBeforeDispose, clicksAfterDispose = clicks, signalsAfterDispose = signals.Count, probe.MouseRegistered, injectedPressesBeforeDispose = 1, sameProcessNeutralTarget = true });
                     }
                     if (Environment.GetEnvironmentVariable("RUNNER_TEMP") is { } diagnostics)
                         File.WriteAllText(Path.Combine(diagnostics, "voxpet-runtime-hand-input-delivery.json"), JsonSerializer.Serialize(deliveries));
