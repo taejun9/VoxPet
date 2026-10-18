@@ -62,6 +62,8 @@ public sealed class CharacterViewModel : ObservableObject
     public bool HasCompanionSamples => companionSamples != null;
     internal void SetCompanionSamples(LoadedCharacterPackage? loaded, string characterId)
     {
+        if (CompanionCharacterId != characterId || (companionSamples == null) != (loaded == null))
+        { PreviousSprite = null; previousHeadSnapshot = null; legacy.ResetTransition(); }
         if (companionSamples != null) companionSelections[CompanionCharacterId] = legacyScene.Runtime.Attachments.EnabledIds.ToArray();
         legacyScene.Stop(); companionSamples = loaded; CompanionCharacterId = characterId; legacy.Samples = loaded?.Package.Character;
         legacy.PreserveForegroundWing = characterId == "pelly";
@@ -73,9 +75,12 @@ public sealed class CharacterViewModel : ObservableObject
     private void RebuildLegacyScene()
     {
         var engine = legacyScene.Runtime.Actions; var enabled = legacyScene.Runtime.Attachments.EnabledIds;
+        legacyScene.ReleaseFacePreparation();
         var definition = LegacySpriteSheetAdapter.Convert(sprites.GetLength(0), profile, companionSamples?.Package.Character);
         legacyScene = new(new CharacterRuntime(definition, processor: legacy, geometry: companionSamples == null ? null : legacy,
-            startedAt: Math.Max(now, engine.LastTime), actions: engine), legacyScene.Images, Math.Max(now, engine.LastTime));
+            startedAt: Math.Max(now, engine.LastTime), actions: engine), legacyScene.SourceImages, Math.Max(now, engine.LastTime),
+            interpolateFace: companionSamples != null, sideView: CompanionCharacterId == "pelly");
+        legacyScene.FacePreparationChanged += () => Notify(nameof(Motion));
         var valid = definition.Attachments.Select(a => a.Id).ToHashSet();
         legacyScene.Runtime.Attachments.Restore(enabled.Where(valid.Contains));
         Notify(nameof(CompanionScene));
@@ -90,7 +95,8 @@ public sealed class CharacterViewModel : ObservableObject
         string id = CompanionCharacterId; string displayName = defaultName;
         return await Task.Run(() =>
         {
-            var definition = LegacySpriteSheetAdapter.Convert(sheet.GetLength(0), expression, loaded.Package.Character);
+            var definition = LegacySpriteSheetAdapter.Convert(sheet.GetLength(0), expression, loaded.Package.Character,
+                id == "pelly" ? VoxPet.Core.Motion.CompanionActing.Pelly : VoxPet.Core.Motion.CompanionActing.Neulbo);
             var assets = loaded.Package.AssetPaths.ToDictionary(p => p, loaded.Package.ReadAsset);
             foreach (var part in separated) assets[part.Key] = CompanionPartImages.Encode(part.Value);
             for (int mouth = 0; mouth < sheet.GetLength(0); mouth++) for (int eye = 0; eye < 2; eye++)
@@ -106,10 +112,22 @@ public sealed class CharacterViewModel : ObservableObject
     }
     public VoxPet.Core.Actions.ActionEngine LegacyActions => legacyScene.Runtime.Actions;
     public CharacterRuntimeViewModel RuntimeScene => runtimeScene ?? legacyScene;
+    internal async Task CloseFacePreparationAsync()
+    {
+        legacyScene.ReleaseFacePreparation(); runtimeScene?.ReleaseFacePreparation();
+        await legacyScene.FacePreparation;
+        if (runtimeScene != null) await runtimeScene.FacePreparation;
+    }
     public void SetRuntimeScene(CharacterRuntimeViewModel? scene)
     {
+        if (!ReferenceEquals(runtimeScene, scene))
+        {
+            if (runtimeScene != null) runtimeScene.FacePreparationChanged -= NativeFacePrepared;
+            if (scene != null) scene.FacePreparationChanged += NativeFacePrepared;
+        }
         runtimeScene = scene; Notify(nameof(RuntimeScene)); Notify(nameof(OutputTransform));
     }
+    private void NativeFacePrepared() => Notify(nameof(RuntimeScene));
     private HandPlayback? playback;
     private HandMotionProfile? handProfile;
     public void SetMotion(CharacterRig rig, HandPlayback? hand, HandMotionProfile? selected)
@@ -123,7 +141,7 @@ public sealed class CharacterViewModel : ObservableObject
         SetLegacyImages(); legacyScene.Update(now, Math.Clamp(current.MouthOpen, 0, 1));
         Motion = legacy.Motion; Notify(nameof(Motion));
         Sprite = legacyScene.Images[legacy.Sprite]; Blend = legacy.Blend;
-        if (!legacy.HasPrevious) PreviousSprite = null;
+        if (!legacy.HasPrevious) { PreviousSprite = null; previousHeadSnapshot = null; }
         Bounce = -current.BodyBounce;
         if (HasCompanionSamples) Notify(nameof(OutputTransform));
         TearLeftY = legacy.TearLeftY; TearRightY = legacy.TearRightY;
@@ -152,7 +170,7 @@ public sealed class CharacterViewModel : ObservableObject
         if (PreviousSprite != null)
         {
             images.Add("legacy/previous.png", PreviousSprite);
-            if (companionSamples != null) images.Add("legacy/previous-head.png", CompanionPartImages.PreviousHead(PreviousSprite, sprites[0, 1], CompanionCharacterId == "pelly"));
+            if (companionSamples != null) images.Add("legacy/previous-head.png", previousHeadSnapshot ?? CompanionPartImages.PreviousHead(PreviousSprite, sprites[0, 1], CompanionCharacterId == "pelly"));
         }
         foreach (var item in CostumeLayers.Where(item => item.Enabled && item.Image != null)) images.Add("legacy/costume-" + item.Id.ToString("N") + ".png", item.Image!);
         if (ShowMotionGuides) images.Add("legacy/guides.png", LegacyDrawingAssets.Guides(Rig));
@@ -172,6 +190,7 @@ public sealed class CharacterViewModel : ObservableObject
     private string name = "Violet Cat · 기본 캐릭터";
     private ImageSource sprite;
     private ImageSource? previousSprite;
+    private ImageSource? previousHeadSnapshot;
     private double bounce, blend = 1, now;
     private double tearLeftY, tearRightY, tearLeftOpacity, tearRightOpacity;
 
@@ -280,6 +299,16 @@ public sealed class CharacterViewModel : ObservableObject
     public void Apply(ExpressionProfile expression, ImageSource[,]? sheet = null)
     {
         expression.Validate();
+        if (HasCompanionSamples)
+        {
+            var head = new DrawingVisual();
+            using (var drawing = head.RenderOpen())
+                foreach (var layer in legacyScene.Frame.Layers.Where(l => l.Id is "part-head" or "legacy-previous-head"))
+                {
+                    drawing.PushOpacity(layer.Opacity); drawing.DrawImage(legacyScene.Images[layer.Asset], new Rect(0, 0, 512, 512)); drawing.Pop();
+                }
+            var captured = new RenderTargetBitmap(512, 512, 96, 96, PixelFormats.Pbgra32); captured.Render(head); captured.Freeze(); previousHeadSnapshot = captured;
+        }
         var visual = new DrawingVisual();
         using (var drawing = visual.RenderOpen())
         {

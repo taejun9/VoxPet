@@ -2,6 +2,8 @@ using VoxPet.Core.Character;
 
 namespace VoxPet.Core.Motion;
 
+public enum CompanionActing { None, Neulbo, Pelly }
+
 public sealed record MotionProfile
 {
     public static MotionProfile Default { get; } = new();
@@ -21,10 +23,13 @@ public sealed record MotionProfile
     public string BodyAnchor { get; }
     public string HeadAnchor { get; }
     public bool ViewportMotion { get; }
+    public CompanionActing Acting { get; }
     public MotionProfile(bool blinkEnabled = true, double intervalMin = 2, double intervalMax = 6, double blinkDuration = .14,
         bool idleEnabled = true, double breathing = .4, double sway = .2, double mouth = 1, double bodyBounce = 5,
-        double headBounce = 2, double headRotation = 1.5, double mouthTravel = 0, string bodyAnchor = "body", string headAnchor = "head", bool viewportMotion = false)
+        double headBounce = 2, double headRotation = 1.5, double mouthTravel = 0, string bodyAnchor = "body", string headAnchor = "head", bool viewportMotion = false, CompanionActing acting = CompanionActing.None)
     {
+        if (!Enum.IsDefined(acting)) throw new ArgumentOutOfRangeException(nameof(acting));
+        Acting = acting;
         var voice = new VoiceMotion(mouth, bodyBounce, headBounce, headRotation); var idle = new IdleMotion(breathing, sway);
         IntervalMin = VoiceMotion.Amount(intervalMin, 3600, nameof(intervalMin)); IntervalMax = VoiceMotion.Amount(intervalMax, 3600, nameof(intervalMax));
         BlinkDuration = VoiceMotion.Amount(blinkDuration, 10, nameof(blinkDuration));
@@ -36,8 +41,8 @@ public sealed record MotionProfile
     }
     public MotionEngine CreateEngine(Random? random = null)
     {
-        var sources = new List<IMotionSource> { new VoiceMotion(Mouth, BodyBounce, HeadBounce, HeadRotation) };
-        if (IdleEnabled) sources.Add(new IdleMotion(Breathing, Sway));
+        var sources = new List<IMotionSource> { Acting == CompanionActing.None ? new VoiceMotion(Mouth, BodyBounce, HeadBounce, HeadRotation) : new VoiceMotion(Mouth, 0, 0, 0) };
+        if (IdleEnabled && Acting == CompanionActing.None) sources.Add(new IdleMotion(Breathing, Sway));
         if (BlinkEnabled) sources.Add(new BlinkMotion(random, IntervalMin, IntervalMax, BlinkDuration));
         return new(sources);
     }

@@ -566,6 +566,6 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
         // 진행 중인 Start/Stop 뒤에서 종료를 기다린다. UI에서 Wait/Result로 동기 대기하지 않는다.
         var expressionClose = Expressions.CloseAsync(); var handsClose = Hands.CloseAsync(); var runtimeClose = Runtime.CloseAsync();
         await session.DisposeAsync(); await expressionClose; await handsClose; await runtimeClose; await Equipment.CloseAsync(); await Packages.CloseAsync(); await Wardrobe.CloseAsync(); ResetLevels();
-        await FlushSettingsAsync();
+        await Character.CloseFacePreparationAsync(); await FlushSettingsAsync();
     }
 }

@@ -92,12 +92,14 @@ public sealed class AvatarPerformance
         foreach (string id in new[] { "leftFoot", "rightFoot" })
         {
             if (!solver.Static.ContainsKey(id)) continue;
-            var wanted = solver.Static[id].Map(0, 0);
             var local = solver.Static["body"].Inverse().Compose(solver.Static[id]);
-            var parent = animated.Animated["body"].Inverse().Map(wanted.X, wanted.Y);
-            var delta = local.Inverse().Map(parent.X, parent.Y);
-            var old = values.GetValueOrDefault(id) ?? Transform2D.Identity;
-            values[id] = new(delta.X, delta.Y, old.ScaleX, old.ScaleY, old.Rotation);
+            var planted = local.Inverse().Compose(animated.Animated["body"].Inverse()).Compose(solver.Static[id]);
+            double sx = Math.Sqrt(planted.M11 * planted.M11 + planted.M12 * planted.M12);
+            double sy = (planted.M11 * planted.M22 - planted.M12 * planted.M21) / sx;
+            double rotation = Math.Atan2(planted.M12, planted.M11) * 180 / Math.PI;
+            // Preserve the horizontal sole exactly. The tiny residual shear from
+            // torso squash is omitted rather than rotating or lifting the shoe.
+            values[id] = new(planted.OffsetX, planted.OffsetY, sx, sy, rotation);
         }
     }
 }

@@ -4,12 +4,46 @@ using VoxPet.Core.Models;
 using VoxPet.Core.Packages;
 using VoxPet.Core.Actions;
 using VoxPet.Core.Services;
+using VoxPet.Core.Motion;
 using Xunit;
 
 namespace VoxPet.Core.Tests;
 
 public sealed class AvatarPerformanceTests
 {
+    [Theory]
+    [InlineData("neulbo", CompanionActing.Neulbo)]
+    [InlineData("pelly", CompanionActing.Pelly)]
+    public void ExportedNativeDefinitionPreservesActingAndRetargeting(string id, CompanionActing acting)
+    {
+        var sample = new VoxPetPackageLoader().Load(Path.Combine(AppContext.BaseDirectory, "Samples", "companion-" + id + ".voxpet"));
+        var original = LegacySpriteSheetAdapter.Convert(3, samples: sample.Character, acting: acting);
+        var decoded = PackageJson.ReadCharacter(PackageJson.WriteCharacter(original), original.Actions, original.Attachments);
+        Assert.Equal(acting, decoded.Motion.Acting);
+        var runtime = new CharacterRuntime(decoded); runtime.RequestAction("one-hand"); runtime.Update(new(0, 0, 0));
+        runtime.Update(new(.5, .5, .5)); var before = runtime.CurrentRig.Animated["rightHand"];
+        runtime.StopActions(); runtime.Update(new(.5, 0, .5));
+        Assert.InRange(Distance(before, runtime.CurrentRig.Animated["rightHand"]), 0, .0000001);
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MotionProfile(acting: (CompanionActing)99));
+        var corrupt = System.Text.Encoding.UTF8.GetBytes(System.Text.Encoding.UTF8.GetString(PackageJson.WriteCharacter(original)).Replace(acting.ToString().ToLowerInvariant(), "unknown"));
+        Assert.Throws<VoxPetPackageException>(() => PackageJson.ReadCharacter(corrupt, original.Actions, original.Attachments));
+    }
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void BodyVoiceResponseIsIndependentOfFrameRate(bool side)
+    {
+        var samples = new VoxPetPackageLoader().Load(Path.Combine(AppContext.BaseDirectory, "Samples", "companion-" + (side ? "pelly" : "neulbo") + ".voxpet"));
+        var values = new List<double>();
+        foreach (int rate in new[] { 30, 60, 144 })
+        {
+            var actor = new AvatarPerformance(samples.Character.Rig);
+            actor.Update(new(0, 0, 0), ActionState.Idle, new Dictionary<string, Transform2D>(), side);
+            for (int i = 1; i <= rate; i++) actor.Update(new(i / (double)rate, 1d / rate, 1), ActionState.Idle, new Dictionary<string, Transform2D>(), side);
+            values.Add(actor.Voice);
+        }
+        Assert.All(values, value => Assert.Equal(values[0], value, 10));
+    }
     [Fact]
     public void DefaultInputUsesTheCompanionTimelineAndKeepsLegacyFallback()
     {
@@ -52,7 +86,12 @@ public sealed class AvatarPerformanceTests
         {
             live.Update(new(i / 60d, 1 / 60d, 0)); var rig = live.CurrentRig;
             moved |= Distance(first, rig.Animated["head"]) > .25;
-            foreach (string foot in new[] { "leftFoot", "rightFoot" }) Assert.InRange(Distance(rig.Static[foot], rig.Animated[foot]), 0, .0000001);
+            foreach (string foot in new[] { "leftFoot", "rightFoot" })
+            {
+                Assert.InRange(Distance(rig.Static[foot], rig.Animated[foot]), 0, .0000001);
+                Assert.Equal(rig.Static[foot].M11, rig.Animated[foot].M11, 7);
+                Assert.Equal(rig.Static[foot].M12, rig.Animated[foot].M12, 7);
+            }
             Assert.InRange(rig.Animated["head"].OffsetX, rig.Static["head"].OffsetX - 2, rig.Static["head"].OffsetX + 2);
             Assert.InRange(rig.Animated["head"].OffsetY, rig.Static["head"].OffsetY - 2, rig.Static["head"].OffsetY + 2);
         }
@@ -69,7 +108,12 @@ public sealed class AvatarPerformanceTests
             for (int i = 1; i <= 60; i++)
             {
                 var frame = live.Update(new(i * .02, .02, .6)); var rig = live.CurrentRig;
-                foreach (string foot in new[] { "leftFoot", "rightFoot" }) Assert.InRange(Distance(rig.Static[foot], rig.Animated[foot]), 0, .0000001);
+                foreach (string foot in new[] { "leftFoot", "rightFoot" })
+                {
+                    Assert.InRange(Distance(rig.Static[foot], rig.Animated[foot]), 0, .0000001);
+                    Assert.Equal(rig.Static[foot].M11, rig.Animated[foot].M11, 7);
+                    Assert.Equal(rig.Static[foot].M12, rig.Animated[foot].M12, 7);
+                }
                 if (action == "two-hand" && i is >= 12 and <= 46)
                 {
                     var support = rig.Animated["rightHand"].Map(0, 23); var hand = rig.Animated["leftHand"].Map(0, 0);

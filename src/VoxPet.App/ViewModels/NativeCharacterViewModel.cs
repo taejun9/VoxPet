@@ -63,10 +63,10 @@ public sealed class NativeCharacterViewModel : ObservableObject
                 return (Prepared: prepared, Scene: next);
             });
             var prepared = result.Prepared;
-            if (closing || request != revision) return false;
+            if (closing || request != revision) { result.Scene.ReleaseFacePreparation(); return false; }
             if (persistent) await Task.Run(() => library.Select(prepared.LibraryId));
-            if (closing || request != revision) return false;
-            scene?.Stop(); scene = result.Scene; Loaded = prepared; faulted = false;
+            if (closing || request != revision) { result.Scene.ReleaseFacePreparation(); return false; }
+            scene?.Stop(); scene?.ReleaseFacePreparation(); scene = result.Scene; Loaded = prepared; faulted = false;
             character.SetRuntimeLayers([], prepared.Package.Manifest.Name); character.SetRuntimeScene(scene);
             Status = prepared.Package.Manifest.Name + " · .voxpet 캐릭터 적용 완료";
             Notify(nameof(IsActive)); Notify(nameof(Loaded)); Notify(nameof(Scene)); InputsChanged?.Invoke(); return true;
@@ -122,12 +122,12 @@ public sealed class NativeCharacterViewModel : ObservableObject
     public void Expression(string id) { if (CanReceiveInput) scene!.Runtime.SetExpression(id); }
     public async Task DeactivateAsync()
     {
-        revision++; scene?.Stop(); scene = null; Loaded = null; character.SetRuntimeScene(null); character.SetRuntimeLayers(null);
+        revision++; scene?.Stop(); scene?.ReleaseFacePreparation(); scene = null; Loaded = null; character.SetRuntimeScene(null); character.SetRuntimeLayers(null);
         Notify(nameof(IsActive)); Notify(nameof(Loaded)); Notify(nameof(Scene)); InputsChanged?.Invoke();
         if (persistent && !closing) { await io.WaitAsync(); try { await Task.Run(() => library.Select(null)); } catch (Exception e) when (CharacterPackageLibrary.Expected(e)) { Status = "선택 설정 저장 실패 · " + e.Message; } finally { io.Release(); } }
     }
     public async Task CloseAsync()
     {
-        closing = true; revision++; scene?.Stop(); InputsChanged?.Invoke(); await io.WaitAsync(); io.Release();
+        closing = true; revision++; scene?.Stop(); scene?.ReleaseFacePreparation(); InputsChanged?.Invoke(); await io.WaitAsync(); io.Release();
     }
 }

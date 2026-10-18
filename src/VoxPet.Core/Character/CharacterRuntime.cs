@@ -20,6 +20,7 @@ public sealed class CharacterRuntime
     public int PendingAutomaticCount => automatic.Count;
     public RenderFrame Frame { get; private set; }
     private readonly MotionEngine motion;
+    private readonly AvatarPerformance? companionPerformance;
     private readonly RigMotionSolver rig;
     private readonly RenderComposer composer;
     private readonly IRuntimeFrameProcessor? processor;
@@ -37,6 +38,7 @@ public sealed class CharacterRuntime
         if (startedAt < 0) throw new ArgumentOutOfRangeException(nameof(startedAt));
         this.processor = processor; this.motion = motion ?? definition.Motion.CreateEngine(random); Actions = actions ?? new(definition.Poses); Attachments = new(definition.Attachments);
         rig = new(definition.Rig); CurrentRig = rig.Resolve(); composer = new(definition, dimensions, geometry);
+        companionPerformance = definition.Motion.Acting == CompanionActing.None ? null : new(definition.Rig);
         actionById = definition.Actions.ToDictionary(a => a.Id, StringComparer.Ordinal);
         expression = definition.Expressions.FirstOrDefault(e => e.Id == "neutral")?.Id ?? definition.Expressions.FirstOrDefault()?.Id ?? "neutral";
         var bindings = DefinitionValidation.Copy(triggers ?? definition.Actions.SelectMany(a => a.Triggers), nameof(triggers)).ToList();
@@ -97,7 +99,8 @@ public sealed class CharacterRuntime
         {
             var frame = mouth.FrameTransforms[MouthFrame]; mouthMotion = new(frame.X, frame.Y + Pose.MouthOpen * Definition.Motion.MouthTravel, frame.ScaleX, frame.ScaleY, frame.Rotation);
         }
-        var posed = processor is IRuntimePoseProcessor performer ? performer.ProcessPose(input, Actions.Current, transforms) : transforms;
+        var posed = companionPerformance == null && processor is IRuntimePoseProcessor performer ? performer.ProcessPose(input, Actions.Current, transforms) : transforms;
+        if (companionPerformance != null) posed = companionPerformance.Update(input, Actions.Current, posed, Definition.Motion.Acting == CompanionActing.Pelly);
         CurrentRig = rig.Resolve(posed, Definition.Mouth?.Anchor, mouthMotion);
         string chosenExpression = Actions.Current.ExpressionId ?? expression;
         var selected = Attachments.ForFrame(Actions.Current.Attachments);

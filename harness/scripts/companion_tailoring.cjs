@@ -3,6 +3,30 @@ const sharp=require('sharp');
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const uri=b=>'data:image/png;base64,'+b.toString('base64');
+async function isolateShoe(buffer){
+ const {data,info}=await sharp(buffer).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+ const n=info.width*info.height,labels=new Int32Array(n),queue=new Int32Array(n);let label=0,best=0,largest=0;
+ for(let seed=0;seed<n;seed++){
+  if(labels[seed]||data[seed*4+3]<32)continue;
+  label++;let read=0,write=1;queue[0]=seed;labels[seed]=label;
+  while(read<write){const at=queue[read++],x=at%info.width,y=Math.floor(at/info.width);
+   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=info.width||yy>=info.height)continue;
+    const j=yy*info.width+xx;if(!labels[j]&&data[j*4+3]>=32){labels[j]=label;queue[write++]=j;}
+   }
+  }
+  if(write>largest){largest=write;best=label;}
+ }
+ if(!best)throw Error('Empty shoe silhouette');
+ for(let at=0;at<n;at++){
+  if(labels[at]===best)continue;let edge=false;const x=at%info.width,y=Math.floor(at/info.width);
+  for(let dy=-2;dy<=2&&!edge;dy++)for(let dx=-2;dx<=2;dx++){
+   const xx=x+dx,yy=y+dy;if(xx>=0&&yy>=0&&xx<info.width&&yy<info.height&&labels[yy*info.width+xx]===best){edge=true;break;}
+  }
+  if(!edge)data.fill(0,at*4,at*4+4);
+ }
+ return sharp(data,{raw:info}).png().toBuffer();
+}
 module.exports=async function tailor(images,id,source){
  const side=id==='pelly';
  const svg=s=>Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">${s}</svg>`);
@@ -45,6 +69,7 @@ module.exports=async function tailor(images,id,source){
   const middle=side?296:256;
   for(const [i,part]of ['left','right'].entries()){
    let half=await sharp(original).extract({left:i?middle:0,top:0,width:i?512-middle:middle,height:meta.height}).png().toBuffer();
+   if(name==='shoes')half=await isolateShoe(half);
    const stats=await sharp(half).ensureAlpha().raw().toBuffer({resolveWithObject:true});let x0=stats.info.width,y0=512,x1=-1,y1=-1;
    for(let y=0;y<stats.info.height;y++)for(let x=0;x<stats.info.width;x++)if(stats.data[(y*stats.info.width+x)*4+3]>180){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
    if(x1<0)throw Error('Empty tailored '+name+' '+part);

@@ -136,6 +136,7 @@ internal static class CompanionSamplesQa
                 check(ReferenceEquals(broadcast.DataContext, model) && ReferenceEquals(model.Character.RuntimeScene, scene), "companion_broadcast_shares_original_scene_" + item.Id);
                 await ScreenEvidence.CaptureAsync(broadcast, "companion-" + item.Id + "-broadcast", check); broadcast.Close();
                 Tick(.1, 1, true);
+                Tick(.08, 1, true);
                 check(model.Character.MouthFrameCount == (item.SideView ? 3 : 8) && model.Character.IsBlinking && scene.Frame.Layers.Any(l => l.Asset == VoxPet.Core.Legacy.CompanionParts.Head(item.SideView ? 2 : 7, 0)), "companion_original_mouth_and_blink_" + item.Id);
                 var selected = scene.Runtime.Attachments.EnabledIds.ToArray();
                 model.Character.RestoreDefault(); Tick(); scene = model.Character.CompanionScene;

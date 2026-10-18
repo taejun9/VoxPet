@@ -52,7 +52,8 @@ public sealed class StudioShellViewModel : ObservableObject
     public CharacterCard? Selected { get => selected; set { if (Set(ref selected, value)) RefreshCommands(); } }
     public string Status { get => status; private set => Set(ref status, value); }
     private string LegacyActionName => Main.Character.CompanionScene.Runtime.State.ActionId is { } id && LiveActions.FirstOrDefault(a => a.Id == id) is { } action ? action.Name : Main.Character.Motion.Gesture is { } gesture ? Main.Hands.Gestures[(int)gesture] : "대기";
-    public string RuntimeState => Main.Packages.Scene is { } s ? $"표정 {s.Runtime.State.ExpressionId} · 입 {s.Runtime.MouthFrame + 1} · 동작 {s.Runtime.State.ActionId ?? "idle"} · 우선순위 {s.Runtime.Actions.Current.Priority}" : $"표정 {Main.Character.ExpressionKind} · 입 {Main.Character.MouthFrameCount}단계 · 동작 {LegacyActionName}";
+    private string FaceNotice => DisplayScene?.FaceError == null ? "" : " · 얼굴 전환 준비 실패 · 원본 프레임 표시";
+    public string RuntimeState => (Main.Packages.Scene is { } s ? $"표정 {s.Runtime.State.ExpressionId} · 입 {s.Runtime.MouthFrame + 1} · 동작 {s.Runtime.State.ActionId ?? "idle"} · 우선순위 {s.Runtime.Actions.Current.Priority}" : $"표정 {Main.Character.ExpressionKind} · 입 {Main.Character.MouthFrameCount}단계 · 동작 {LegacyActionName}") + FaceNotice;
     public AsyncCommand RefreshCommand { get; }
     public AsyncCommand ImportCommand { get; }
     public AsyncCommand NewCommand { get; }

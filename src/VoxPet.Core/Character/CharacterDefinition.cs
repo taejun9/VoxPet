@@ -59,6 +59,8 @@ public sealed record CharacterDefinition
             throw new ArgumentException("Anchor ID가 중복됩니다.", nameof(anchors));
 
         var byId = Anchors.ToDictionary(anchor => anchor.Id, StringComparer.Ordinal);
+        if (Motion.Acting != CompanionActing.None && new[] { "body", "head", "leftFoot", "rightFoot" }.Any(id => !byId.ContainsKey(id)))
+            throw new ArgumentException("기본 움직임에는 body/head/leftFoot/rightFoot 앵커가 필요합니다. 일반 리그는 기본 움직임을 없음으로 선택하세요.");
         if (Face.RequiredVisiblePart is not null && !Parts.Any(p => p.Id == Face.RequiredVisiblePart)) throw new ArgumentException("얼굴 표시 파츠 참조가 없습니다.");
         if (spriteSheet != null && (mouth != null || !Parts.Any(p => p.Id == spriteSheet.Part) || spriteSheet.Expressions.Any(e => !Expressions.Any(x => x.Id == e.Id))))
             throw new ArgumentException("full-sprite의 파츠/표정 참조를 확인하세요. 분리 mouth와 함께 사용하지 않습니다.");

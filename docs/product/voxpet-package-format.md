@@ -69,3 +69,10 @@ effect의 선택 `endAnchor`와 `endTransform:{x,y}`는 시작 anchor/transform�
 ## 연속 속도 동작 (plan048)
 
 `interpolateTransforms:true`에 선택 `transformInterpolation:"monotoneCubic"`를 함께 지정하면 같은 target의 양쪽 인접 키 기울기를 가중 조화 평균으로 연결한다. 같은 방향으로 지나가는 키는 속도가 이어지고 정지·방향 전환 키는 속도0이다. 처음/마지막 키의 기울기는0으로 두어 대기 자세로 천천히 들어오고 나간다. 키 구간을 넘어 overshoot하지 않는다. 필드를 생략하거나 `smoothStep`이면 이전 smoothstep 의미이며 false이면 기존 step이다. 새 곡선은 같은 시각의 마지막 키를 향해 보간하고, 기존 smoothstep의 중복 미래 키 선택은 유지한다. pose reset이나 반전 배율의 경계는 넘지 않는다. 알 수 없는 곡선 값은 거부한다. 편집기의 **움직임 연결 곡선**에서 선택하며 상세 변경·삭제·내보내기·재읽기에 보존한다. 2차 미분 연속은 보장하지 않는다.
+
+
+## 선택형 캐릭터 기본 연기 (plan049)
+
+`motion.companionPerformance`는 `none`(기본값), `neulbo`, `pelly`를 지원한다. 새 원본 의상 편집 내보내기는 캐릭터에 맞는 값을 저장한다. 해당 profile은 rig resolve 전에220ms 중단/재입력 연결·몸통 호흡/음성 관성·목 회전·양발 고정을 적용하며 기본 voice/idle의 전체 bounce와 중복 합성하지 않는다. 기존 파일과 `none`은 기존 타임라인/모션 의미를 유지한다. 알 수 없는 값은 거부한다. 편집기 얼굴 설정의 **기본 움직임**에서 선택하며 필드 수정·내보내기·재읽기에 보존한다. 앱의 해당 profile 미리보기는 현재 표정의 원본 head bank로 입/눈 중간 프레임을 준비한다. 파츠6개와 원본 PNG는 유지하고 생성 프레임은 실행 메모리에만 둔다.
+
+해당 기본 연기 profile은 body/head/leftFoot/rightFoot 앵커를 요구한다. 앵커 이름을 바꾸는 일반 리그를 제작할 때는 기본 움직임을 없음으로 선택한다.

@@ -10,10 +10,18 @@ namespace VoxPet.App.Views;
 /// <summary>최종 frame의 순서/affine/opacity/mesh를 그대로 그린다. 입·동작·상속을 결정하지 않는다.</summary>
 internal static class RenderFrameDrawing
 {
-    internal readonly record struct DrawStatistics(int CandidateTriangles, int DrawnTriangles, int NewClips, int AlphaScans);
+    internal readonly record struct DrawStatistics(int CandidateTriangles, int DrawnTriangles, int NewClips, int AlphaScans, int NewMatrices);
     private readonly record struct ClipKey(RigPoint A, RigPoint B, RigPoint C, bool Joined);
     private sealed record AlphaArea(Rect Bounds);
     private static readonly ConditionalWeakTable<BitmapSource, AlphaArea> alphaAreas = new();
+    private static readonly ConditionalWeakTable<AffineTransform2D, MatrixTransform> matrices = new();
+    private static MatrixTransform DrawingMatrix(AffineTransform2D value, bool optimize, ref int created)
+    {
+        if (!optimize) { created++; return new(Matrix(value)); }
+        if (matrices.TryGetValue(value, out var known)) return known;
+        created++;
+        return matrices.GetValue(value, static m => { var result = new MatrixTransform(Matrix(m)); result.Freeze(); return result; });
+    }
     [ThreadStatic] private static Dictionary<ClipKey, StreamGeometry>? clips;
     private static AlphaArea Scan(BitmapSource image)
     {
@@ -56,7 +64,7 @@ internal static class RenderFrameDrawing
     }
     internal static DrawStatistics Draw(DrawingContext drawing, RenderFrame frame, IReadOnlyDictionary<string, ImageSource> images, bool props = true, double width = 512, double height = 512, bool optimize = true)
     {
-        int candidates = 0, drawn = 0, created = 0, scans = 0;
+        int candidates = 0, drawn = 0, created = 0, scans = 0, matrixCount = 0;
         double scale = Math.Min(width / frame.CanvasWidth, height / frame.CanvasHeight);
         drawing.PushTransform(new TranslateTransform((width - scale * frame.CanvasWidth) / 2, (height - scale * frame.CanvasHeight) / 2));
         drawing.PushTransform(new ScaleTransform(scale, scale));
@@ -65,7 +73,7 @@ internal static class RenderFrameDrawing
         {
             if (!props && layer.Id.StartsWith("legacy-prop-", StringComparison.Ordinal)) continue;
             if (!images.TryGetValue(layer.Asset, out var image)) throw new InvalidOperationException("준비되지 않은 Runtime asset: " + layer.Asset);
-            Rect bounds = optimize ? SourceBounds(image, layer, ref scans) : new Rect(0, 0, frame.CanvasWidth, frame.CanvasHeight);
+            Rect bounds = optimize && layer.Mesh != null ? SourceBounds(image, layer, ref scans) : new Rect(0, 0, frame.CanvasWidth, frame.CanvasHeight);
             if (optimize && bounds.IsEmpty) continue;
             if (image is BitmapSource { PixelWidth: 1, PixelHeight: 1 } pixel && (pixel.Format == PixelFormats.Bgra32 || pixel.Format == PixelFormats.Pbgra32))
             {
@@ -75,7 +83,7 @@ internal static class RenderFrameDrawing
             drawing.PushOpacity(layer.Opacity);
             if (layer.Mesh is null)
             {
-                drawing.PushTransform(new MatrixTransform(Matrix(layer.Matrix)));
+                drawing.PushTransform(DrawingMatrix(layer.Matrix, optimize, ref matrixCount));
                 drawing.DrawImage(image, new Rect(0, 0, layer.Width, layer.Height)); drawing.Pop();
             }
             else foreach (var triangle in layer.Mesh.Triangles)
@@ -87,7 +95,7 @@ internal static class RenderFrameDrawing
                 if (optimize && !extent.IntersectsWith(bounds)) continue;
                 drawn++;
                 // mesh는 Canvas 좌표 clip/transform이다. layer matrix는 원본 이미지 배치다.
-                drawing.PushTransform(new MatrixTransform(Matrix(triangle.Matrix)));
+                drawing.PushTransform(DrawingMatrix(triangle.Matrix, optimize, ref matrixCount));
                 clips ??= [];
                 var key = new ClipKey(triangle.A, triangle.B, triangle.C, layer.Mesh.JoinEdges);
                 if (!optimize || !clips.TryGetValue(key, out var clip))
@@ -103,12 +111,12 @@ internal static class RenderFrameDrawing
                     clip.Freeze(); created++;
                     if (optimize) { if (clips.Count >= 4096) clips.Clear(); clips[key] = clip; }
                 }
-                drawing.PushClip(clip); drawing.PushTransform(new MatrixTransform(Matrix(layer.Matrix)));
+                drawing.PushClip(clip); drawing.PushTransform(DrawingMatrix(layer.Matrix, optimize, ref matrixCount));
                 drawing.DrawImage(image, new Rect(0, 0, layer.Width, layer.Height)); drawing.Pop(); drawing.Pop(); drawing.Pop();
             }
             drawing.Pop();
         }
         drawing.Pop(); drawing.Pop(); drawing.Pop();
-        return new(candidates, drawn, created, scans);
+        return new(candidates, drawn, created, scans, matrixCount);
     }
 }

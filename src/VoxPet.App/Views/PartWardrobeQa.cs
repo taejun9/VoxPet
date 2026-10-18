@@ -67,7 +67,8 @@ internal static class PartWardrobeQa
                         File.WriteAllBytes(Path.Combine(temp, "voxpet-part-" + entry.Id + "-" + part + ".png"), bytes);
                 }
                 var original = Pixels(d => d.DrawImage(scene.Images[LegacySpriteSheetAdapter.Asset(0, 1)], new Rect(0, 0, 512, 512)));
-                var rebuilt = Pixels(d => RenderFrameDrawing.Draw(d, new RenderFrame(scene.Frame.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal))), scene.Images));
+                var bindPose = new VoxPet.Core.Character.CharacterRuntime(scene.Runtime.Definition).Update(new(0, 0, 0, false));
+                var rebuilt = Pixels(d => RenderFrameDrawing.Draw(d, new RenderFrame(bindPose.Layers.Where(l => l.Id.StartsWith("part-", StringComparison.Ordinal))), scene.SourceImages));
                 int changed = Enumerable.Range(0, 512 * 512).Count(i => Enumerable.Range(0, 4).Any(c => Math.Abs(original[i * 4 + c] - rebuilt[i * 4 + c]) > 24));
                 check(changed < 512 * 512 / 100, "parts_rest_pixels_preserve_original_" + entry.Id);
                 if (entry.SideView) check(Math.Abs(BlueHeadCenter(scene.Images[CompanionParts.Head(0, 1)]) - BlueHeadCenter(scene.Images[CompanionParts.Head(model.Character.MouthFrameCount - 1, 1)])) < 1, "parts_head_stays_registered_when_bill_widens");

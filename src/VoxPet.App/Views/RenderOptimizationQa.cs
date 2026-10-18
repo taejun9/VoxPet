@@ -28,6 +28,7 @@ internal static class RenderOptimizationQa
             check(old.Pixels.SequenceEqual(current.Pixels) && old.Pixels.SequenceEqual(warm.Pixels), $"avatar_render_pixels_exact_{id}_{size}");
             check(current.Stats.CandidateTriangles > 0 && current.Stats.DrawnTriangles < current.Stats.CandidateTriangles, $"avatar_render_transparent_triangles_culled_{id}_{size}");
             check(warm.Stats.NewClips == 0 && warm.Stats.AlphaScans == 0, $"avatar_render_warm_cache_no_geometry_or_scan_{id}_{size}");
+            check(warm.Stats.NewMatrices == 0, $"avatar_render_warm_cache_no_matrix_allocation_{id}_{size}");
             records.Add(new { size, old = old.Stats, current = current.Stats, warm = warm.Stats });
         }
         double Measure(bool optimize)

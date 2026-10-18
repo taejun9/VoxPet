@@ -80,7 +80,8 @@ public static class PackageJson
         var motion = P(e, "motion"); var blink = P(motion, "blink"); var idle = P(motion, "idle"); var voice = P(motion, "voice");
         var profile = new MotionProfile(B(blink, "enabled", true), N(blink, "intervalMin", 2), N(blink, "intervalMax", 6), N(blink, "duration", .14),
             B(idle, "enabled", true), N(idle, "breathing", .4), N(idle, "sway", .2), N(voice, "mouth", 1), N(voice, "bodyBounce", 5),
-            N(voice, "headBounce", 2), N(voice, "headRotation", 1.5), N(voice, "mouthTravel"), S(motion, "bodyAnchor", "body")!, S(motion, "headAnchor", "head")!, B(motion, "viewportMotion"));
+            N(voice, "headBounce", 2), N(voice, "headRotation", 1.5), N(voice, "mouthTravel"), S(motion, "bodyAnchor", "body")!, S(motion, "headAnchor", "head")!, B(motion, "viewportMotion"),
+            S(motion, "companionPerformance", "none") switch { "none" => CompanionActing.None, "neulbo" => CompanionActing.Neulbo, "pelly" => CompanionActing.Pelly, _ => throw new VoxPetPackageException("companionPerformance를 확인하세요.") });
         var faceData = P(e, "face"); var face = new FaceDefinition(S(faceData, "eyesAnchor", "eyes")!, S(faceData, "browsAnchor", "face")!,
             I(faceData, "eyesZIndex", 280), I(faceData, "browsZIndex", 290), S(faceData, "requiredVisiblePart"));
         return new(parts, anchors, N(canvas, "width", 512), N(canvas, "height", 512), mouth: mouth, expressions: expressions, poses: poses,
@@ -102,6 +103,7 @@ public static class PackageJson
             c.Motion.BodyAnchor,
             c.Motion.HeadAnchor,
             c.Motion.ViewportMotion,
+            companionPerformance = c.Motion.Acting.ToString().ToLowerInvariant(),
             blink = new { enabled = c.Motion.BlinkEnabled, c.Motion.IntervalMin, c.Motion.IntervalMax, duration = c.Motion.BlinkDuration },
             idle = new { enabled = c.Motion.IdleEnabled, c.Motion.Breathing, c.Motion.Sway },
             voice = new { c.Motion.Mouth, c.Motion.BodyBounce, c.Motion.HeadBounce, c.Motion.HeadRotation, c.Motion.MouthTravel }

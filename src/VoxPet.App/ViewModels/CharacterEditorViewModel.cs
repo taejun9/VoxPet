@@ -26,7 +26,18 @@ public sealed class CharacterEditorViewModel : ObservableObject
     public ObservableCollection<EditorField> Fields { get; } = [];
     public ObservableCollection<EditorField> DetailFields { get; } = [];
     public CharacterDocument? Document { get; private set; }
-    public CharacterRuntimeViewModel? Scene { get; private set; }
+    private CharacterRuntimeViewModel? scene;
+    public CharacterRuntimeViewModel? Scene
+    {
+        get => scene;
+        private set
+        {
+            if (scene != null) scene.FacePreparationChanged -= FacePrepared;
+            scene = value;
+            if (scene != null) scene.FacePreparationChanged += FacePrepared;
+        }
+    }
+    private void FacePrepared() { if (!closing) Notify(nameof(Scene)); }
     public bool IsListPage => Page is > 0 and < 7;
     public bool IsDetailsPage => Page is 5 or 6;
     public bool IsInspectorPage => Page != 7;
@@ -146,7 +157,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                 return (Next: next, Scene: preview);
             });
             if (closing || request != revision) return false;
-            Scene?.Stop(); Document = result.Next; Scene = result.Scene; time = 0; playing = true; previewFaulted = false;
+            Scene?.Stop(); Scene?.ReleaseFacePreparation(); Document = result.Next; Scene = result.Scene; time = 0; playing = true; previewFaulted = false;
             if (resetForms || !Expressions.Any(e => e.Id == PreviewExpression)) PreviewExpression = Expressions.FirstOrDefault()?.Id;
             if (resetForms || !Actions.Any(a => a.Id == PreviewAction)) PreviewAction = Actions.FirstOrDefault()?.Id;
             if (resetForms || !Attachments.Any(a => a.Id == PreviewAttachment)) PreviewAttachment = Attachments.FirstOrDefault()?.Id;
@@ -248,7 +259,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     private void MotionFields(CharacterDefinition c)
     {
-        var m = c.Motion; Field(Fields, "blink", "눈 깜빡임", m.BlinkEnabled, Booleans); Field(Fields, "min", "최소 간격 (초)", m.IntervalMin); Field(Fields, "max", "최대 간격 (초)", m.IntervalMax); Field(Fields, "blinkDuration", "감는 시간 (초)", m.BlinkDuration);
+        var m = c.Motion; Field(Fields, "acting", "기본 움직임", m.Acting switch { CompanionActing.Neulbo => "늘보군", CompanionActing.Pelly => "펠리", _ => "없음" }, ["없음", "늘보군", "펠리"]); Field(Fields, "blink", "눈 깜빡임", m.BlinkEnabled, Booleans); Field(Fields, "min", "최소 간격 (초)", m.IntervalMin); Field(Fields, "max", "최대 간격 (초)", m.IntervalMax); Field(Fields, "blinkDuration", "감는 시간 (초)", m.BlinkDuration);
         Field(Fields, "idleMotion", "대기 움직임", m.IdleEnabled, Booleans); Field(Fields, "breathing", "숨쉬기", m.Breathing); Field(Fields, "sway", "좌우 흔들림", m.Sway); Field(Fields, "mouthWeight", "입 반응", m.Mouth); Field(Fields, "bodyBounce", "몸 이동", m.BodyBounce); Field(Fields, "headBounce", "머리 이동", m.HeadBounce); Field(Fields, "headRotation", "머리 회전", m.HeadRotation); Field(Fields, "mouthTravel", "입 이동", m.MouthTravel); Field(Fields, "bodyAnchor", "몸 앵커", m.BodyAnchor, c.Anchors.Select(a => a.Id)); Field(Fields, "headAnchor", "머리 앵커", m.HeadAnchor, c.Anchors.Select(a => a.Id)); Field(Fields, "viewport", "전체 출력 이동", m.ViewportMotion, Booleans);
     }
     private void LoadDetailFields()
@@ -315,7 +326,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
                     int index = item is int i ? i : 0;
                     if (d.Mouth is { } m) { var frames = m.Frames.ToArray(); var offsets = m.FrameTransforms.ToArray(); frames[index] = S(v, "asset"); offsets[index] = T(v); d.Mouth = new(frames, S(v, "anchor"), S(v, "curve"), offsets, I(v, "z")); }
                     if (d.SpriteSheet is { } bank) { var banks = bank.Expressions.ToArray(); int bi = Array.FindIndex(banks, e => e.Id == selectedBank); if (bi < 0) bi = 0; var a = banks[bi]; var open = a.Open.ToArray(); var closed = a.Closed.ToArray(); open[index] = S(v, "open"); closed[index] = S(v, "closed"); banks[bi] = new(a.Id, open, closed, B(v, "bankBlink")); d.SpriteSheet = new(S(v, "sheetPart"), banks, S(v, "curve")); }
-                    d.Motion = new(B(v, "blink"), N(v, "min"), N(v, "max"), N(v, "blinkDuration"), B(v, "idleMotion"), N(v, "breathing"), N(v, "sway"), N(v, "mouthWeight"), N(v, "bodyBounce"), N(v, "headBounce"), N(v, "headRotation"), N(v, "mouthTravel"), S(v, "bodyAnchor"), S(v, "headAnchor"), B(v, "viewport")); break;
+                    d.Motion = new(B(v, "blink"), N(v, "min"), N(v, "max"), N(v, "blinkDuration"), B(v, "idleMotion"), N(v, "breathing"), N(v, "sway"), N(v, "mouthWeight"), N(v, "bodyBounce"), N(v, "headBounce"), N(v, "headRotation"), N(v, "mouthTravel"), S(v, "bodyAnchor"), S(v, "headAnchor"), B(v, "viewport"), S(v, "acting") switch { "늘보군" => CompanionActing.Neulbo, "펠리" => CompanionActing.Pelly, "없음" => CompanionActing.None, _ => throw new ArgumentException("기본 움직임을 확인하세요.") }); break;
                 case 4 when item is ExpressionDefinition e:
                     d.Expressions[d.Expressions.FindIndex(x => x.Id == e.Id)] = new(S(v, "id"), S(v, "open"), S(v, "closed"), Opt(v, "brows"), S(v, "name")); if (d.SpriteSheet is { } sheet) d.SpriteSheet = new(sheet.Part, sheet.Expressions.Select(b => b.Id == e.Id ? new SpriteSheetExpression(S(v, "id"), b.Open, b.Closed, b.Blink) : b), sheet.Curve); d.Face = new(S(v, "eyesAnchor"), S(v, "browsAnchor"), I(v, "eyesZ"), I(v, "browsZ"), Opt(v, "required")); break;
                 case 5 when item is ActionDefinition a: d.Actions[d.Actions.FindIndex(x => x.Id == a.Id)] = new(S(v, "id"), S(v, "name"), N(v, "duration"), a.Timeline, I(v, "priority"), new(E<ActionPlaybackMode>(v, "mode"), B(v, "interrupt"), B(v, "idle")), Opt(v, "tag"), a.Triggers.Select(t => new TriggerDefinition(t.Id, S(v, "id"), t.Kind, t.Key, t.Button, t.Modifiers, t.Threshold, t.IntervalSeconds, t.StartImmediately, t.Enabled)), B(v, "interpolate"), E<ActionInterpolation>(v, "curve")); break;
@@ -498,7 +509,7 @@ public sealed class CharacterEditorViewModel : ObservableObject
     }
     private void ResetPreview()
     {
-        if (Document == null || Scene == null) return; var old = Scene; Scene = new(Document.Package.CreateRuntime(new Random(1)), old.Images); time = 0; previewFaulted = false;
+        if (Document == null || Scene == null) return; var old = Scene; old.ReleaseFacePreparation(); Scene = new(Document.Package.CreateRuntime(new Random(1)), old.SourceImages); time = 0; previewFaulted = false;
         if (PreviewExpression != null && Expressions.Any(e => e.Id == PreviewExpression)) Scene.Runtime.SetExpression(PreviewExpression);
         foreach (string id in old.Runtime.Attachments.EnabledIds) Scene.Runtime.Attachments.SetEnabled(id, true);
     }
@@ -523,5 +534,5 @@ public sealed class CharacterEditorViewModel : ObservableObject
     { double now = clock.Elapsed.TotalSeconds, dt = now - previous; previous = now; if (playing) { time += dt; Set(ref scrub, Math.Min(Duration, time * 1000), nameof(Scrub)); } UpdateFrame(); }
     public void StartPreview() { previous = clock.Elapsed.TotalSeconds; timer.Start(); }
     public void PausePreview() { timer.Stop(); }
-    public async Task CloseAsync() { closing = true; revision++; timer.Stop(); timer.Tick -= Tick; Scene?.Stop(); Refresh(); await worker.WaitAsync(); worker.Release(); }
+    public async Task CloseAsync() { closing = true; revision++; timer.Stop(); timer.Tick -= Tick; Scene?.Stop(); Scene?.ReleaseFacePreparation(); Refresh(); await worker.WaitAsync(); worker.Release(); }
 }

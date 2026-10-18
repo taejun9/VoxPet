@@ -77,6 +77,9 @@ for character in ['neulbo', 'pelly']:
     for weapon in ['claw', 'heart', 'toy-gun', 'toy-sword', 'magic-wand', 'firearm', 'bow', 'one-hand', 'two-hand']:
         for time in [260, 380, 405, 590, 760]: expected.add(f'natural-{character}-{weapon}-{time}')
 
+for character in ['neulbo', 'pelly']:
+    expected.update(f'avatar-{character}-{case}' for case in ['idle', 'voice', 'blink', 'transition'])
+
 records = []
 for name in sorted(expected):
     metadata = json.loads((args.folder / f'voxpet-screen-{name}.json').read_text())

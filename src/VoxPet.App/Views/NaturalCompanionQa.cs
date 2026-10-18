@@ -76,6 +76,7 @@ internal static class NaturalCompanionQa
             foreach (var item in CharacterCatalog.All)
             {
                 check(await model.SelectCharacterAsync(item.Id, true), "natural_select_" + item.Id); Seams(item.Id, item.SideView, check);
+                if (item.Id == "pelly") check(model.Character.CompanionScene.Frame.Layers.All(l => l.Id != "legacy-previous-head"), "avatar_character_switch_has_no_other_character_head");
                 check(model.Character.CompanionScene.Runtime.Definition.Actions.All(a => a.InterpolateTransforms && a.TransformInterpolation == VoxPet.Core.Actions.ActionInterpolation.MonotoneCubic), "emotive_companion_curve_" + item.Id);
                 double now = model.Character.CompanionScene.Runtime.Actions.LastTime;
                 void Tick(double dt = .1) { now = Math.Max(now, model.Character.CompanionScene.Runtime.Actions.LastTime) + dt; model.Hands.Update(now); model.Character.Update(new(0, 0, 0, 0, 1, MouthState.Closed), now); }
@@ -133,6 +134,7 @@ internal static class NaturalCompanionQa
                 selector.SelectedValue = "top"; await ScreenEvidence.CaptureAsync(window, "natural-" + item.Id + "-categories", check); selector.SelectedValue = "all";
                 foreach (string garment in new[] { "top", "bottom", "shoes" }) window.Studio.AttachmentCards.Single(c => c.Id == garment).ToggleCommand.Execute(null);
                 model.Equipment.WeaponIndex = 1; model.Equipment.HoldWeapon = true; Tick(.4);
+                now = await AvatarAppearanceQa.RunAsync(window, model, item.Id, check);
                 window.Studio.NavigationIndex = 2; window.UpdateLayout();
                 check(window.Studio.Page == 6 && window.Studio.IsExpressions && Find<ItemsControl>(window.StudioSurface).Any(c => c.IsVisible && System.Windows.Automation.AutomationProperties.GetName(c) == "표정 슬롯 선택"), "natural_expression_sidebar_visible_" + item.Id);
                 foreach (var slot in model.Expressions.Slots)
@@ -163,6 +165,7 @@ internal static class NaturalCompanionQa
                         "natural_expression_editor_same_shell_" + item.Id + (round == 1 ? "" : "_round" + round));
                 }
                 window.ShowStudio(3); model.Equipment.HoldWeapon = false;
+                await model.Character.CompanionScene.FacePreparation.WaitAsync(TimeSpan.FromSeconds(10));
                 check(!window.Studio.HasLegacyQuickActions && Find<Button>(window.StudioSurface).Where(b => b.Tag is string tag && int.TryParse(tag, out int n) && n is >= 0 and <= 4).All(b => !b.IsVisible), "natural_no_duplicate_legacy_gestures_" + item.Id);
                 window.Studio.AttachmentCards.Single(c => c.Id == "handAccessory").ToggleCommand.Execute(null);
                 foreach (var weapon in CompanionWeapon.All)

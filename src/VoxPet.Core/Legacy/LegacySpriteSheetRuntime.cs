@@ -85,6 +85,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
         profile.Validate(); _ = LegacySpriteSheetAdapter.Convert(mouthFrames);
         Profile = profile; MouthFrames = mouthFrames; transitionStart = now; HasPrevious = true; Blend = 0;
     }
+    public void ResetTransition() { HasPrevious = false; Blend = 1; }
     public RenderFrame Process(RuntimeRenderContext context, RenderFrame frame)
     {
         var now = context.Input.Time;
