@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -34,9 +34,9 @@ project_lead / harness_builder / quality_runner
 
 - [x] 현재9동작의 속도·시작/종료·파지와 두 체형의 연속 원본 프레임을 조사한다.
 - [x] 기존 호환을 보존하는 연속 보간과 캐릭터별 타이밍/겹침/복귀를 구현한다.
-- [ ] 머리/몸통과 팔·소매·양손/활 연결을 실제 원본9동작 연속 프레임에서 검토한다.
-- [ ] lint/Release/Core·Windows 실제 표시/portable/OBS 전체 QA를 수행한다.
-- [ ] QA 후 자체 리뷰·완료 문서·원본 포함 새 Windows ZIP·Git 수명을 완료한다.
+- [x] 머리/몸통과 팔·소매·양손/활 연결을 실제 원본9동작 연속 프레임에서 검토한다.
+- [x] lint/Release/Core·Windows 실제 표시/portable/OBS 전체 QA를 수행한다.
+- [x] QA 후 자체 리뷰·완료 문서·원본 포함 새 Windows ZIP·Git 수명을 완료한다.
 
 ## QA Plan
 
@@ -72,6 +72,8 @@ QA 이후 단일 에이전트 자체 리뷰를 별도 단계로 수행한다. �
 
 | 2026-10-18 | 새hook설치후owner HWND의native메시지ack를기다린뒤1회주입한다. | cf4c3c1전체실패의6/7/10/19/20회차모두창수신1회인데콜백에는code0/UP514만있다. 음수code/다른메시지/상위비트/UI예약지연을제외했다. 매회설치직후같은continuation에서주입하는시험순서를owner메시지루프확인후로바꿔등록준비경계를대조한다. 단순지연이나재주입은하지않는다. |
 
+| 2026-10-18 | 손동작 native hook를 전용 STA 메시지 루프로 옮기고 준비/해제를 비동기로 확인한다. | owner ACK만으로는42회차 누락이 남았다. UI 렌더링과 native 전달의 스레드 의존을 제거하며 정확한1회/해제후0 기준은 유지한다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -80,7 +82,15 @@ QA 이후 단일 에이전트 자체 리뷰를 별도 단계로 수행한다. �
 
 ## Completion Notes
 
-구현과 실제 QA/시각 검토 결과를 확인한 뒤 기록한다. 현재는 완료 상태가 아니다.
+앱1.4.0/companion pack5.0.0, 최종 앱·QA·자산 `e055e91c10b7bfcbcd60c99c6a1d78c4ea663c7e`다. 기존 step/smoothstep을 유지하고 두 캐릭터9동작에 opt-in monotoneCubic·준비/주동작/여운/복귀·목 pivot·몸통 squash와 발 기준선 보정을 적용했다. 양손 파지·활시위와 펠리 깃털 면적 회귀를 유지했다.
+
+[전체 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/39126972370): locked restore/format/analyzer/Release 경고0·오류0/Core451/skip0, WPF3296/실패0, desktop541장·실제 표시90시점, 일반/서명 각9시작·정상 종료·원본 저장 보존, SDK 없는 ZIP 도구2683/실패0 통과. 이전446 Core/3096 WPF 이름을 모두 유지했다. [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/39126972317): WGC/chroma/native alpha·같은 HWND 왕복·각7프레임 통과. [추가 입력100회](https://github.com/taejun9/VoxPet/actions/runs/39126983072)는 probeOnly이며 배포 판정과 구분한다. 전체/portable 각각20회도 등록·전용 owner thread·정확한 전달1/해제후0·실제 unhook 완료를 통과했다.
+
+개인 원본 로컬558프레임·18 contact page(162선별프레임)·512px full mesh6시점·18GIF와 최종 공개 Windows36화면/4page·OBS5캡처를 직접 검토했다. 현재 Core/안무/pack/렌더러는 직접 재내보내기558프레임과 byte-identical이며 SHA256 d0b84b540abb0f64f1bc1bacc001b725dae0b8ce86b983e2f52732edf8a939a6이다. 로컬 SVG proxy 합성은 실제 개인 Windows 실행으로 주장하지 않는다.
+
+새 `artifacts/VoxPet-Windows-test-plan048.zip`:54파일/104144125bytes, SHA256 4f2e1c18c1c6ebdb3090123861f48d347d6894c098b0cef11b346d39deee35e1, EXE SHA256 36dc64e51bae6ab97313d8ff4ff426b37d40334d98cd10d3be863e1e797e0fc3. 실제 시험한 공용41파일과 이전 개인13PNG를 byte-identical로 포함하며 CRC/PE x64/세 pack 소스 일치를 확인했다. 이전 ZIP/README/AGENTS/plan024 작업트리는 보존한다. 증거·실패 이력·최종 Git 수명 audit은 artifacts/test-results/plan048에 남긴다.
+
+QA 이후 별도 단일 에이전트 자체 리뷰를 수행했고 미해결 필수 수정 사항은 없다. 개인 PNG 외부 전송/자동 마이크/음성 저장·전송은 추가하지 않았다. 물리 마이크/권한/USB·사용자 GPU/혼합 DPI·개인 Windows 실행·새60분 실기는 별도이며 기존 layered BitBlt 제한은 유지한다. [자체 리뷰](../../reviews/plan-048-emotive-companion-motion-review.md)를 따른다.
 
 ## 중간 QA 기록
 
@@ -109,3 +119,5 @@ QA 이후 단일 에이전트 자체 리뷰를 별도 단계로 수행한다. �
 100회단기39125213445는모든회차등록/주입2개/전달1회/해제후0회/원시code0의Down513·Up514통과. 그러나동일앱코드의cf4c3c1전체39124528190은5회차누락으로20실패였다. 계측만으로해결됐다고보지않으며owner메시지루프의등록완료경계를추가대조한다. 이전77e1f41전체39123811785통과도보존한다.
 
 708436b의100회단기39126498488은42회차에서ownerReady=true·창수신1회인데nativeUP514만기록됐다. 준비ack만으로해결되지않았으며단순기다림/재주입으로회피하지않는다. Microsoft LowLevelMouseProc가권장하는전용메시지루프스레드로손동작hook를옮기고등록완료를비동기로알린다. UI는동기대기하지않으며callback은UI작업하나만예약한다. 종료는세대무효화후전용dispatcher를종료하고실제unhook완료도QA에서확인한다. 이전실패와확장진단을보존한다.
+
+최종 e055e91 전체/portable/100회 및 OBS 통과 원본과 회차 JSON을 보존했다. 원인 미확정인 이전 UP-only 현상을 단순 대기/계측으로 해결했다고 주장하지 않는다. 전용 owner loop를 실제로 사용한140회 등록/press/해제와 모든 기존 회귀가 통과했고 실제 해제 성공도 검증했다.

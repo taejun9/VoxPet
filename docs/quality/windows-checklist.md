@@ -409,3 +409,12 @@ Core97/97, format/analyzer, Release 경고/오류0, 자체 포함 publish와 실
 최종 개인 ZIP은 artifacts/VoxPet-Windows-test-plan046.zip,54파일/104527606bytes, SHA256 561b899f2b43f88bb0772b9b31bedc9bfcdf57dba08e32bd859149c2326c101f. 시험한 공용41파일과 동일하며 기존 개인13PNG는 byte-identical로 보존했다. [자체 리뷰](../reviews/plan-046-part-wardrobe-review.md)에 상세 근거와 한계를 기록했다.
 
 Windows 자동 실행은 공개 교정 자료이며 개인 그림은 로컬 정적 합성이다. 물리 마이크/권한/USB·사용자 GPU/혼합 DPI·새60분 실기는 위 수동 매트릭스대로 별도다. OBS32.2.2 WGC/크로마/native alpha/동일 HWND 왕복은 통과했고 BitBlt 제한은 유지한다. 음성 녹음/전송과 사용자 신뢰 저장소 변경은 없다.
+
+
+## plan048 두 캐릭터 연속 동작
+
+2026-10-18 앱1.4.0/pack5.0.0·코드 e055e91의 [Windows QA](https://github.com/taejun9/VoxPet/actions/runs/39126972370), [OBS QA](https://github.com/taejun9/VoxPet/actions/runs/39126972317), [추가 입력100회](https://github.com/taejun9/VoxPet/actions/runs/39126983072) 통과. Core451/451/skip0·format/analyzer·Release 경고0/오류0, WPF3296/실패0·이전3096 이름 보존, 실제 desktop541장/90시점 표시 픽셀 대조, 일반/서명 각9시작, SDK 없는 ZIP 도구2683/실패0이다. 전체/portable 각각20회와 추가100회에서 전용 native owner thread·정확한1회 전달/해제후0·실제 unhook을 확인했다.
+
+기존 step/smoothstep을 유지하고9동작의 연속 속도·준비/여운/복귀·목 pivot/몸통 squash·두 체형의 정착 타이밍을 개선했다. 개인 로컬558프레임/18page/162선별프레임·full512 mesh6시점·18GIF와 최종 공개 Windows36동작화면/4page·OBS5캡처를 직접 검토했다. 새 ZIP은 artifacts/VoxPet-Windows-test-plan048.zip,54파일/104144125bytes, SHA256 4f2e1c18c1c6ebdb3090123861f48d347d6894c098b0cef11b346d39deee35e1이다. 시험한 공용41파일과 기존 개인13PNG는 byte-identical이다.
+
+[자체 리뷰](../reviews/plan-048-emotive-companion-motion-review.md)에 실제 실패·수정·수명·개인정보 근거를 기록했다. 공개 합성 Windows와 개인 SVG proxy 합성을 구분하며 개인 PNG 외부 전송은 없다. 물리 마이크/권한/USB·실제 게임·사용자 GPU/혼합 DPI·개인 Windows 실행·새60분 실기와 layered BitBlt 제한은 기존 별도 항목으로 남는다.
