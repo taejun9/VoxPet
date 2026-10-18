@@ -18,11 +18,11 @@ def build(character_id):
         files = {n: json.loads(reference.read(n)) for n in reference.namelist() if n.endswith('.json')}
     definition = files['character.json']
     part_anchors = {'arm-left': 'leftShoulder', 'leg-left': 'leftFoot', 'leg-right': 'rightFoot', 'body': 'body', 'head': 'head', 'arm-right': 'rightShoulder'}
-    part_orders = {'arm-left': 90, 'leg-left': 20, 'leg-right': 30, 'body': 40, 'head': 80, 'arm-right': 100}
+    part_orders = {'arm-left': 90, 'leg-left': 20, 'leg-right': 30, 'body': 40, 'head': 120, 'arm-right': 100}
     definition['parts'] = [dict(id=part, type='arm' if part.startswith('arm-') else 'leg' if part.startswith('leg-') else part, file='samples/empty.png', anchor=anchor, zIndex=part_orders[part]) for part, anchor in part_anchors.items()]
     skinning = dict(rootAnchor='body', rootY=315 if character_id=='neulbo' else 302, fullY=422 if character_id=='neulbo' else 402)
     for part in definition['parts']:
-        if part['type'] == 'arm': part['skinning'] = dict(skinning, endAnchor='leftHand' if part['id']=='arm-left' else 'rightHand')
+        if part['type'] == 'arm': part['skinning'] = dict(skinning, endAnchor='leftHand' if part['id']=='arm-left' else 'rightHand', rootAnchor=part['anchor'])
     if character_id == 'pelly':
         for part in definition['parts']:
             if part['type']=='arm': part['skinning']['rootAnchor']=part['anchor']
@@ -64,7 +64,7 @@ def build(character_id):
     definition['motion'] = {'idle': {'breathing': 0, 'sway': 0}, 'voice': {'bodyBounce': 0, 'headBounce': 0, 'headRotation': 0}}
     manifest = files['manifest.json']
     manifest.update(id='voxpet.samples.' + character_id, name=('늘보군' if character_id == 'neulbo' else '펠리') + ' 의상 · 동작',
-                    version='5.0.0', description='여섯 신체 파츠에 연결하는17의상/9동작·헤어3종. 개인 그림은 포함하지 않습니다.', thumbnail='thumbnails/hat.png')
+                    version='6.0.0', description='여섯 신체 파츠에 연결하는17의상/9동작·헤어3종. 개인 그림은 포함하지 않습니다.', thumbnail='thumbnails/hat.png')
     for reference in manifest['actions']:
         files[reference]['name'] = files[reference]['name'].split(' · ')[0]
         action = files[reference]
@@ -90,7 +90,7 @@ def build(character_id):
         if kind in ['top', 'outerwear']:
             attachment['layers'] = [dict(id=part, file=f'samples/{kind}-{part}.png', anchor=anchor, zIndex=z, requiredVisibleParts=[required]) for part, anchor, z, required in [('left', 'leftShoulder', 91, 'arm-left'), ('body', 'body', 65 if kind=='outerwear' else 60, 'body'), ('right', 'rightShoulder', 101, 'arm-right')]]
             for layer in attachment['layers']:
-                if layer['id'] in ['left', 'right']: layer['skinning'] = dict(skinning, endAnchor='leftHand' if layer['id']=='left' else 'rightHand')
+                if layer['id'] in ['left', 'right']: layer['skinning'] = dict(skinning, endAnchor='leftHand' if layer['id']=='left' else 'rightHand', rootAnchor=layer['anchor'])
             if character_id == 'pelly':
                 attachment['layers'][0]['skinning'].update(rootY=360, fullY=427,rootAnchor='leftShoulder')
                 attachment['layers'][2]['skinning']['rootAnchor']='rightShoulder'
@@ -104,7 +104,7 @@ def build(character_id):
             if kind == 'shoes':
                 for layer in attachment['layers']: layer['replacesParts'] = layer['requiredVisibleParts']
         if kind == 'handAccessory':
-            attachment['layers'][0].update(anchor='rightShoulder', skinning=dict(skinning, endAnchor='rightHand',rootAnchor='rightShoulder' if character_id=='pelly' else 'body'), requiredVisibleParts=['arm-right'])
+            attachment['layers'][0].update(anchor='rightShoulder', skinning=dict(skinning, endAnchor='rightHand',rootAnchor='rightShoulder'), requiredVisibleParts=['arm-right'])
         if attachment['id'] == 'faceDecoration':
             attachment['layers'][0]['anchor'] = 'head'
             attachment['layers'][0]['inherit']['mouthMotion'] = False

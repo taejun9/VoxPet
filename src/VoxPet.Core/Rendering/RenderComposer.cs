@@ -31,6 +31,12 @@ public interface IRuntimeFrameProcessor
     RenderFrame Process(RuntimeRenderContext context, RenderFrame frame);
 }
 
+/// <summary>Optional live performance is resolved before skinning, grips and attachments.</summary>
+public interface IRuntimePoseProcessor
+{
+    IReadOnlyDictionary<string, Transform2D> ProcessPose(RuntimeInput input, ActionState action, IReadOnlyDictionary<string, Transform2D> transforms);
+}
+
 public sealed class RenderComposer
 {
     private readonly CharacterDefinition definition;

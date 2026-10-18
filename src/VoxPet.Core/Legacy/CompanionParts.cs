@@ -19,7 +19,7 @@ public static class CompanionParts
         _ => "body"
     };
     public static int Order(string id) => id switch
-    { "arm-left" => 90, "leg-left" => 20, "leg-right" => 30, "body" => 40, "head" => 80, _ => 100 };
+    { "arm-left" => 90, "leg-left" => 20, "leg-right" => 30, "body" => 40, "head" => 120, _ => 100 };
     public static IReadOnlyList<CharacterPart> Define(CharacterDefinition samples) => Ids.Select(id => new CharacterPart(id,
         id.StartsWith("arm-", StringComparison.Ordinal) ? "arm" : id.StartsWith("leg-", StringComparison.Ordinal) ? "leg" : id,
         id == "head" ? Head(0, 1) : Asset(id), Anchor(id), Order(id), skinning: samples.Parts.FirstOrDefault(p => p.Id == id)?.Skinning)).ToArray();
@@ -34,10 +34,10 @@ public static class CompanionParts
     public static string NeckContour(bool side) => side ? "M212,262 Q260,240 318,245 Q358,248 376,280 L366,319 H212 Z" : BodyContour(false);
     public static string Contour(string id, bool side) => (side, id) switch
     {
-        (false, "arm-left") => "M0,315 H163 C146,352 145,394 143,415 L150,455 L140,512 H0 Z",
-        (false, "arm-right") => "M349,315 H512 V512 H372 L362,455 L369,415 C367,394 366,352 349,315 Z",
-        (false, "leg-left") => "M146,460 L245,460 L241,512 L146,512 Z",
-        (false, "leg-right") => "M267,460 L366,460 L366,512 L271,512 Z",
+        (false, "arm-left") => "M0,285 H163 C170,311 158,335 151,363 C146,389 145,407 143,415 L150,455 L140,512 H0 Z",
+        (false, "arm-right") => "M349,285 H512 V512 H372 L362,455 L369,415 C367,407 366,389 361,363 C354,335 342,311 349,285 Z",
+        (false, "leg-left") => "M146,460 L256,460 L256,512 L146,512 Z",
+        (false, "leg-right") => "M256,460 L366,460 L366,512 L256,512 Z",
         (true, "arm-left") => "M0,0 Z",
         (true, "arm-right") => "M 280 240 H512 V452 H407 C 372 443 343 425 320 403 C 294 380 283 357 282 333 C 280 310 282 291 287 281 Z",
         (true, "leg-left") => "M228,435 H278 V463 L254,484 H180 V458 L215,443 Z",

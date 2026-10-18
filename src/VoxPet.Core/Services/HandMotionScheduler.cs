@@ -16,6 +16,7 @@ public sealed class HandMotionScheduler
     public const double Duration = 1.4;
     private readonly LegacyHandMotionSchedulerAdapter adapter;
     public HandMotionScheduler(VoxPet.Core.Actions.ActionEngine? engine = null) => adapter = new(engine);
+    public void UseActions(IReadOnlyDictionary<HandGesture, VoxPet.Core.Actions.ActionDefinition>? replacements) => adapter.UseActions(replacements);
     public void Configure(HandMotionSettings settings, double seconds) => adapter.Configure(settings, seconds);
     public bool Trigger(HandGesture gesture, double seconds, bool preview = false) => adapter.Trigger(gesture, seconds, preview);
     public HandPlayback? Update(double seconds) => adapter.Update(seconds);

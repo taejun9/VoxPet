@@ -9,7 +9,16 @@ public sealed class LegacyHandMotionSchedulerAdapter
 {
     private readonly ActionEngine engine;
     public LegacyHandMotionSchedulerAdapter(ActionEngine? engine = null) => this.engine = engine ?? new();
-    private readonly ActionDefinition[] actions = Enum.GetValues<HandGesture>().Select(g => new ActionDefinition(g.ToString(), g.ToString(), HandMotionScheduler.Duration * 1000, [])).ToArray();
+    private static readonly ActionDefinition[] legacyActions = Enum.GetValues<HandGesture>().Select(g => new ActionDefinition(g.ToString(), g.ToString(), HandMotionScheduler.Duration * 1000, [])).ToArray();
+    private ActionDefinition[] actions = legacyActions;
+    public void UseActions(IReadOnlyDictionary<HandGesture, ActionDefinition>? replacements)
+    {
+        var selected = replacements == null ? legacyActions : Enum.GetValues<HandGesture>().Select(g => replacements.TryGetValue(g, out var action) && action != null ? action : throw new ArgumentException("모든 손동작의 연결이 필요합니다.", nameof(replacements))).ToArray();
+        if (selected.Select(a => a.Id).Distinct(StringComparer.Ordinal).Count() != 5) throw new ArgumentException("손동작 연결ID는 서로 달라야 합니다.", nameof(replacements));
+        if (actions.SequenceEqual(selected)) return;
+        if (engine.Definition != null && actions.Contains(engine.Definition)) engine.Stop();
+        actions = selected;
+    }
     private HandMotionProfile[] profiles = [];
     private readonly double[] next = new double[5];
     private readonly bool[] pending = new bool[5];
@@ -30,7 +39,7 @@ public sealed class LegacyHandMotionSchedulerAdapter
             if (old == null || old.Enabled != ordered[i].Enabled || old.Mode != ordered[i].Mode || old.IntervalSeconds != ordered[i].IntervalSeconds)
             {
                 next[i] = seconds + ordered[i].IntervalSeconds; pending[i] = false;
-                if (engine.Current.ActionId == ordered[i].Gesture.ToString() && old != null) engine.Stop();
+                if (engine.Current.ActionId == actions[i].Id && old != null) engine.Stop();
             }
         }
         profiles = ordered;
@@ -63,7 +72,8 @@ public sealed class LegacyHandMotionSchedulerAdapter
             if (chosen >= 0) { pending[chosen] = false; engine.TryPlay(actions[chosen], seconds); state = engine.Current; cursor = (chosen + 1) % 5; }
         }
         // The same engine also owns the nine companion sample actions.
-        return state.IsPlaying && Enum.TryParse<HandGesture>(state.ActionId, out var gesture) && Enum.IsDefined(gesture) ? new(gesture, state.Progress) : null;
+        int index = Array.FindIndex(actions, action => action.Id == state.ActionId);
+        return state.IsPlaying && index >= 0 ? new((HandGesture)index, state.Progress) : null;
     }
     public void Stop() { stopped = true; engine.Stop(); Array.Clear(pending); }
     public void Cancel() { engine.Stop(); Array.Clear(pending); }

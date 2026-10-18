@@ -48,7 +48,7 @@ public sealed class CharacterViewModel : ObservableObject
         RuntimeLayers = layers; Notify(nameof(RuntimeLayers)); if (changed || displayName != null) Notify(nameof(Name));
     }
     private CharacterRuntimeViewModel? runtimeScene;
-    private readonly LegacySpriteSheetRuntime legacy = new();
+    private readonly LegacySpriteSheetRuntime legacy = new() { LivePerformance = true };
     private CharacterRuntimeViewModel legacyScene = null!;
     private LoadedCharacterPackage? companionSamples;
     private readonly Dictionary<string, string[]> companionSelections = [];
@@ -125,6 +125,7 @@ public sealed class CharacterViewModel : ObservableObject
         Sprite = legacyScene.Images[legacy.Sprite]; Blend = legacy.Blend;
         if (!legacy.HasPrevious) PreviousSprite = null;
         Bounce = -current.BodyBounce;
+        if (HasCompanionSamples) Notify(nameof(OutputTransform));
         TearLeftY = legacy.TearLeftY; TearRightY = legacy.TearRightY;
         TearLeftOpacity = legacy.TearLeftOpacity; TearRightOpacity = legacy.TearRightOpacity;
     }
@@ -258,6 +259,11 @@ public sealed class CharacterViewModel : ObservableObject
     {
         get
         {
+            if (runtimeScene == null && HasCompanionSamples)
+            {
+                var companion = AffineTransform2D.FromTransform(legacyScene.Frame.ViewportTransform);
+                return new MatrixTransform(companion.M11, companion.M12, companion.M21, companion.M22, companion.OffsetX, companion.OffsetY);
+            }
             if (runtimeScene?.UseViewportTransform != true) return new TranslateTransform(0, Bounce);
             var affine = AffineTransform2D.FromTransform(runtimeScene.Frame.ViewportTransform);
             return new MatrixTransform(affine.M11, affine.M12, affine.M21, affine.M22, affine.OffsetX, affine.OffsetY);

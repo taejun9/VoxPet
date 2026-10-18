@@ -75,9 +75,8 @@ def build_actions(files, manifest, character_id, anchors):
                        (duration-110,rest[0]-2,rest[1]+1,-1),(duration,*rest,0)]
             for time in range(0,duration+1,10):
                 target=(sample(gesture,time,1),sample(gesture,time,2));angle=sample(gesture,time,3)
-                if side:
-                    sx,sy=position('rightShoulder');hx,hy=rest
-                    angle=math.degrees(math.atan2(target[1]-sy,target[0]-sx)-math.atan2(hy-sy,hx-sx))
+                sx,sy=position('rightShoulder');hx,hy=rest
+                angle=math.degrees(math.atan2(target[1]-sy,target[0]-sx)-math.atan2(hy-sy,hx-sx))
                 sx,sy = position('rightShoulder');hx,hy = rest;a = math.radians(angle)
                 dx,dy = target[0]-sx,target[1]-sy
                 events.extend([dict(time=time,transform=dict(target='rightShoulder',rotation=angle)),
@@ -107,8 +106,10 @@ def build_actions(files, manifest, character_id, anchors):
             for hand, target, rotation, turn in [('right', r, angle, shoulder), ('left', l or position('leftHand'), left_angle, -shoulder*.35)]:
                 sx, sy = position(hand+'Shoulder')
                 hx, hy = position(hand+'Hand')
-                if side:
-                    turn = math.degrees(math.atan2(target[1]-sy,target[0]-sx)-math.atan2(hy-sy,hx-sx))
+                # A rotation bone owns the shoulder cap as well as its sleeve.
+                # Aim in Cartesian space before solving the wrist, avoiding a
+                # fixed horizontal root that kinks a reaching arm into a ribbon.
+                turn = math.degrees(math.atan2(target[1]-sy,target[0]-sx)-math.atan2(hy-sy,hx-sx))
                 a = math.radians(turn)
                 dx, dy = target[0]-sx, target[1]-sy
                 local_x = dx*math.cos(a)+dy*math.sin(a)-(hx-sx)

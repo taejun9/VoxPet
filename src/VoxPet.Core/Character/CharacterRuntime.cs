@@ -97,7 +97,8 @@ public sealed class CharacterRuntime
         {
             var frame = mouth.FrameTransforms[MouthFrame]; mouthMotion = new(frame.X, frame.Y + Pose.MouthOpen * Definition.Motion.MouthTravel, frame.ScaleX, frame.ScaleY, frame.Rotation);
         }
-        CurrentRig = rig.Resolve(transforms, Definition.Mouth?.Anchor, mouthMotion);
+        var posed = processor is IRuntimePoseProcessor performer ? performer.ProcessPose(input, Actions.Current, transforms) : transforms;
+        CurrentRig = rig.Resolve(posed, Definition.Mouth?.Anchor, mouthMotion);
         string chosenExpression = Actions.Current.ExpressionId ?? expression;
         var selected = Attachments.ForFrame(Actions.Current.Attachments);
         var context = new RuntimeRenderContext(input, Pose, Actions.Current, CurrentRig);

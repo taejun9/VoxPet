@@ -79,11 +79,26 @@ internal static class NaturalCompanionQa
                 check(model.Character.CompanionScene.Runtime.Definition.Actions.All(a => a.InterpolateTransforms && a.TransformInterpolation == VoxPet.Core.Actions.ActionInterpolation.MonotoneCubic), "emotive_companion_curve_" + item.Id);
                 double now = model.Character.CompanionScene.Runtime.Actions.LastTime;
                 void Tick(double dt = .1) { now = Math.Max(now, model.Character.CompanionScene.Runtime.Actions.LastTime) + dt; model.Hands.Update(now); model.Character.Update(new(0, 0, 0, 0, 1, MouthState.Closed), now); }
+                model.Hands.LeftClick(); Tick(0);
+                check(model.Character.LegacyActions.Current.ActionId == "claw" && model.Character.LegacyActions.Definition?.Timeline.Count > 0,
+                    "avatar_default_click_uses_companion_timeline_" + item.Id);
+                foreach (var gesture in Enum.GetValues<HandGesture>())
+                {
+                    model.Hands.StopCommand.Execute(null); Tick(.3);
+                    bool started = model.Hands.Trigger(gesture, true); Tick(0);
+                    string expectedId = new[] { "claw", "toy-gun", "heart", "toy-sword", "magic-wand" }[(int)gesture];
+                    check(started && model.Character.LegacyActions.Current.ActionId == expectedId && model.Character.LegacyActions.Definition!.Timeline.Count > 0,
+                        "avatar_input_uses_companion_timeline_" + item.Id + "_" + gesture);
+                }
+                model.Hands.StopCommand.Execute(null); Tick(.3);
                 var phases = new List<object>();
                 void Phase(string action, double seconds)
                 {
                     var scene = model.Character.CompanionScene; var actual = scene.Runtime;
-                    var expected = new CharacterRuntime(actual.Definition); expected.RequestAction(action); expected.Update(new(0, 0, 0)); expected.Update(new(seconds, seconds, 0));
+                    double started = now - seconds;
+                    var reference = new LegacySpriteSheetRuntime { Samples = actual.Definition, LivePerformance = true, PreserveForegroundWing = item.SideView, Rig = CharacterRig.Default(item.Id) };
+                    var expected = new CharacterRuntime(actual.Definition, processor: reference, startedAt: started);
+                    expected.RequestAction(action); expected.Update(new(started, 0, 0)); expected.Update(new(now, seconds, 0));
                     static bool Close(AffineTransform2D a, AffineTransform2D b) => new[] { a.M11 - b.M11, a.M12 - b.M12, a.M21 - b.M21, a.M22 - b.M22, a.OffsetX - b.OffsetX, a.OffsetY - b.OffsetY }.All(v => Math.Abs(v) < .00001);
                     bool flash = scene.Frame.Layers.Any(l => l.Asset == "samples/muzzle-flash.png");
                     bool expectedFlash = expected.Actions.Current.Effects.Any(e => e.Asset == "samples/muzzle-flash.png");
@@ -99,6 +114,7 @@ internal static class NaturalCompanionQa
                         flash,
                         expectedFlash,
                         valid,
+                        livePerformanceReference = true,
                         left = actual.CurrentRig.Animated["leftHand"],
                         right = actual.CurrentRig.Animated["rightHand"],
                         expectedLeft = expected.CurrentRig.Animated["leftHand"],
@@ -155,6 +171,7 @@ internal static class NaturalCompanionQa
                     foreach (double t in new[] { .26, .38, .405, .59, .76 })
                     {
                         Tick(t - previous); previous = t; Phase(weapon.Id, t);
+                        if (weapon.Id == "one-hand" && t == .405) RenderOptimizationQa.Run(model.Character.CompanionScene.Frame, model.Character.CompanionScene.Images, item.Id, check);
                         var scene = model.Character.CompanionScene; var matrix = scene.Frame.Layers.Single(l => l.Id == "companion-equipped-weapon").Matrix;
                         var rest = scene.Runtime.CurrentRig.Static[weapon.Anchor].Map(0, 0); var actual = matrix.Map(rest.X, rest.Y); var hand = scene.Runtime.CurrentRig.Animated[weapon.Anchor].Map(0, 0);
                         check(Math.Abs(actual.X - hand.X) < .01 && Math.Abs(actual.Y - hand.Y) < .01 && scene.Frame.Layers.Any(l => l.Asset == "samples/grip-" + (weapon.Anchor == "leftHand" ? "left" : "right") + ".png"), $"natural_grip_contact_{item.Id}_{weapon.Id}_{(int)(t * 1000)}");

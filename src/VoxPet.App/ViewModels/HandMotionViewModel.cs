@@ -64,6 +64,8 @@ public sealed class HandMotionViewModel : ObservableObject
     {
         scheduler = new(character.LegacyActions);
         this.character = character; this.persistent = persistent; this.seconds = seconds; store = new(Path.Combine(folder, "motion.json"));
+        character.PropertyChanged += CompanionChanged;
+        SynchronizeActions();
         PreviewCommand = new(() => Trigger((HandGesture)selected, true), () => CanEdit);
         StopCommand = new(() => { scheduler.Cancel(); character.SetMotion(Rig, null, null); }, () => CanEdit);
         ResetRigCommand = new(() => ChangeRig(CharacterRig.Default(characterId)), () => CanEdit);
@@ -81,7 +83,15 @@ public sealed class HandMotionViewModel : ObservableObject
     }
     public void SetCharacter(string id)
     {
-        if (id != characterId) scheduler.Cancel(); characterId = id; Update(seconds()); NotifyEditor();
+        if (id != characterId) scheduler.Cancel(); characterId = id; SynchronizeActions(); Update(seconds()); NotifyEditor();
+    }
+    private void CompanionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    { if (!closing && e.PropertyName is nameof(CharacterViewModel.CompanionScene) or nameof(CharacterViewModel.HasCompanionSamples)) SynchronizeActions(); }
+    private void SynchronizeActions()
+    {
+        string[] ids = ["claw", "toy-gun", "heart", "toy-sword", "magic-wand"];
+        var definitions = character.CompanionScene.Runtime.Definition.Actions;
+        scheduler.UseActions(character.HasCompanionSamples ? Enum.GetValues<HandGesture>().ToDictionary(g => g, g => definitions.Single(a => a.Id == ids[(int)g])) : null);
     }
     public bool Trigger(HandGesture gesture, bool preview = false) => !closing && scheduler.Trigger(gesture, seconds(), preview);
     public void LeftClick()
@@ -134,6 +144,7 @@ public sealed class HandMotionViewModel : ObservableObject
     public async Task CloseAsync()
     {
         closing = true; scheduler.Stop(); saveTimer.Stop(); saveTimer.Tick -= SaveTick;
+        character.PropertyChanged -= CompanionChanged;
         character.SetMotion(Rig, null, null); character.ShowMotionGuides = false;
         Notify(nameof(CanEdit)); PreviewCommand.Refresh(); StopCommand.Refresh(); ResetRigCommand.Refresh();
         await FlushAsync();

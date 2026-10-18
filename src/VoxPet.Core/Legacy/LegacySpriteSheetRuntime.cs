@@ -2,13 +2,17 @@ using VoxPet.Core.Character;
 using VoxPet.Core.Models;
 using VoxPet.Core.Rendering;
 using VoxPet.Core.Services;
+using VoxPet.Core.Motion;
+using VoxPet.Core.Actions;
 
 namespace VoxPet.Core.Legacy;
 
 public sealed record LegacyCostumeLayer(CostumeProfile Profile, string Asset);
 /// <summary>시트/표정/연결 의상 호환 정책. 모든 선택과 transform을 최종 RenderFrame으로 만든다.</summary>
-public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGeometryProvider
+public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGeometryProvider, IRuntimePoseProcessor
 {
+    private AvatarPerformance? performance;
+    public bool LivePerformance { get; set; }
     private VoxPet.Core.Character.CharacterDefinition? samples;
     private IReadOnlyDictionary<string, VoxPet.Core.Attachments.AttachmentLayer> placements = new Dictionary<string, VoxPet.Core.Attachments.AttachmentLayer>();
     private IReadOnlyDictionary<string, string> sampleCategories = new Dictionary<string, string>();
@@ -18,6 +22,7 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
         set
         {
             samples = value;
+            performance = value == null ? null : new AvatarPerformance(value.Rig);
             placements = value?.Attachments.SelectMany(a => a.Layers.Select(l => (Id: "attachment-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(a.Id)) + "-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(l.Id)), Layer: l))).ToDictionary(p => p.Id, p => p.Layer)
                 ?? new Dictionary<string, VoxPet.Core.Attachments.AttachmentLayer>();
             sampleCategories = value?.Attachments.SelectMany(a => a.Layers.Select(l => (Id: "attachment-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(a.Id)) + "-" + Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(l.Id)), a.Category))).ToDictionary(p => p.Id, p => p.Category)
@@ -73,6 +78,8 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
     }
     public RenderMesh? Compose(string layerId, bool garment, double follow, RuntimeRenderContext context)
     { UpdatePose(context); return Samples == null ? geometry.Compose(layerId, garment, follow, context) : null; }
+    public IReadOnlyDictionary<string, Transform2D> ProcessPose(RuntimeInput input, ActionState action, IReadOnlyDictionary<string, Transform2D> transforms)
+        => LivePerformance && performance != null ? performance.Update(input, action, transforms, PreserveForegroundWing) : transforms;
     public void Apply(ExpressionProfile profile, int mouthFrames, double now)
     {
         profile.Validate(); _ = LegacySpriteSheetAdapter.Convert(mouthFrames);
@@ -210,6 +217,6 @@ public sealed class LegacySpriteSheetRuntime : IRuntimeFrameProcessor, IRenderGe
             }
         }
         if (ShowGuides) layers.Add(new("legacy-guides", "legacy/guides.png", zIndex: 3000));
-        return new(layers, viewportTransform: new(y: -Parameters.BodyBounce));
+        return new(layers, viewportTransform: LivePerformance && separated ? Transform2D.Identity : new(y: -Parameters.BodyBounce));
     }
 }
