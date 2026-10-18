@@ -15,6 +15,7 @@ public sealed class HandMotionInputs : IDisposable
     private readonly Action click;
     private readonly MouseCallback callback;
     private readonly Action<int>? trace;
+    private readonly Action<int, long>? nativeObserved;
     private readonly Dictionary<int, HandMotionProfile> registered = [];
     private IntPtr mouseHook;
     private bool disposed;
@@ -41,8 +42,9 @@ public sealed class HandMotionInputs : IDisposable
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
     private static extern IntPtr GetModuleHandle(string? name);
     public HandMotionInputs(HwndSource source, Action<HandGesture> activate, Action click) : this(source, activate, click, null) { }
-    internal HandMotionInputs(HwndSource source, Action<HandGesture> activate, Action click, Action<int>? trace)
+    internal HandMotionInputs(HwndSource source, Action<HandGesture> activate, Action click, Action<int>? trace, Action<int, long>? nativeObserved = null)
     {
+        this.nativeObserved = nativeObserved;
         this.trace = trace;
         this.source = source; this.activate = activate; this.click = click; callback = Mouse;
         source.AddHook(Message);
@@ -65,6 +67,7 @@ public sealed class HandMotionInputs : IDisposable
     }
     private IntPtr Mouse(int code, IntPtr message, IntPtr data)
     {
+        nativeObserved?.Invoke(code, message.ToInt64());
         if (trace != null && code >= 0 && message.ToInt64() is >= 0x0200 and <= 0x020E) trace(1000 + (int)message.ToInt64());
         bool down = code >= 0 && message.ToInt64() == 0x0201;
         if (down) trace?.Invoke(1);

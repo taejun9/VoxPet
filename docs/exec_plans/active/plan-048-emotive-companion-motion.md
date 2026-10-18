@@ -66,6 +66,8 @@ QA 이후 단일 에이전트 자체 리뷰를 별도 단계로 수행한다. �
 
 | 2026-10-18 | native 메시지 종류와 전용 창 PreviewMouseDown을 함께 기록하고 짧은 재현에도 숫자 데모를 켠다. | 907f06f의전체13회차는stage[]·등록성공·입력2개수락·delta0이고분리20회는모두1/2/3이다. UI예약지연/거부단계에들어가지않았으므로그가설을제외하고hook이전/다른메시지/실제창수신을구분한다. |
 
+| 2026-10-18 | hook의nCode와전체wParam 정수를최대256개까지QA에만기록한다. | 3fefdd8의9/13회차는창수신1회·native trace는UP(1514)만있다. hook해제나UI예약지연은아니며DOWN의다른메시지/음수code/상위비트여부를구분해야한다. raw포인터data는읽지않는다. |
+
 ## Progress Log
 
 | date | role | note |
@@ -93,3 +95,7 @@ QA 이후 단일 에이전트 자체 리뷰를 별도 단계로 수행한다. �
 913efaa/39120552708:4실패가17회차로 정확히 분리됐다. registeredBefore=true, inserted=insertedAfterDispose=2, 두 Win32 오류0인데 클릭/신호 delta0이며 후속18~20회는정상이다. candidate-913efaa의JSON과실패화면을보존한다. 진단trace는좌표나data구조를읽지않고QA콜백에서작은정수만기록한다. 원래public3인수생성자와제품경로는trace=null을유지한다.
 
 907f06f: 전체39121666315는13회차4실패(stage[]), 짧은39121709720은20회모두stage[1,2,3]/실패0. 격리재현은probeOnly:true이며배포합격으로간주하지않는다. 두JSON을각candidate-907f06f와probe-907f06f에보존했다. raw trace는1000+WM 메시지정수이며lParam/좌표를읽지않는다. 전용창수신수는실제시험창의PreviewMouseDown만집계한다.
+
+3fefdd8: 분리39122819887은데모중20회모두Down/Up와창수신정상, 전체39122744491은9/13회차8실패. 두회차모두실제시험창은클릭1회를수신했고같은hook의UP는기록됐으나Down은없다. 전체입력누락이나hook자동해제라는가설로단정하지않는다. candidate-3fefdd8와probe-3fefdd8에근거를보존했다.
+
+짧은 재현에도 전체 입력 검사 직전의 표정 관리·트레이·의상 UI 상태를 준비한다. 단독 데모만으로는 누락이 재현되지 않아 전체 선행 조건을 좁혀 대조하는 진단이며 최종 전체 QA를 대체하지 않는다.
