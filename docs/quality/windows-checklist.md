@@ -418,3 +418,14 @@ Windows 자동 실행은 공개 교정 자료이며 개인 그림은 로컬 정�
 기존 step/smoothstep을 유지하고9동작의 연속 속도·준비/여운/복귀·목 pivot/몸통 squash·두 체형의 정착 타이밍을 개선했다. 개인 로컬558프레임/18page/162선별프레임·full512 mesh6시점·18GIF와 최종 공개 Windows36동작화면/4page·OBS5캡처를 직접 검토했다. 새 ZIP은 artifacts/VoxPet-Windows-test-plan048.zip,54파일/104144125bytes, SHA256 4f2e1c18c1c6ebdb3090123861f48d347d6894c098b0cef11b346d39deee35e1이다. 시험한 공용41파일과 기존 개인13PNG는 byte-identical이다.
 
 [자체 리뷰](../reviews/plan-048-emotive-companion-motion-review.md)에 실제 실패·수정·수명·개인정보 근거를 기록했다. 공개 합성 Windows와 개인 SVG proxy 합성을 구분하며 개인 PNG 외부 전송은 없다. 물리 마이크/권한/USB·실제 게임·사용자 GPU/혼합 DPI·개인 Windows 실행·새60분 실기와 layered BitBlt 제한은 기존 별도 항목으로 남는다.
+
+
+## plan049 원본 외형·실시간 연기와 종료 안전성
+
+2026-10-19 앱1.5.0/pack6.0.0·검증6e3b0d0의 [Windows 전체](https://github.com/taejun9/VoxPet/actions/runs/39151511538), [OBS](https://github.com/taejun9/VoxPet/actions/runs/39151511518), [추가 입력100회](https://github.com/taejun9/VoxPet/actions/runs/39151711356) 통과. formatter/analyzer·Release 경고0/오류0·Core465/skip0·WPF3385/0·portable2764/0·desktop549장/90시점 실제 픽셀이다. 이전451/3296/2683 검사 이름을 모두 보존했다. 일반/서명 각9시작, 전체/portable 각각20입력과 추가100입력도 통과했다.
+
+어깨/소매와 신발 잔여물,220ms 중단/재입력·음성 관성·호흡/목·양발 기준을 보정했다. 원본 입8/3단계·곡선과 눈4단계, native 편집 profile, worker UI 소유권/취소·종료 선택 경합과 머리 불투명 전환을 검사했다. 실제 head 전환3시점은 두 캐릭터 모두alpha255다. 렌더128/256/512px은 원래 경로와 byte-exact이며 warm clip/scan/matrix 생성0이다.
+
+개인790프레임/22overview·512px8상세·전후2page와 공개 Windows26화면/5page·OBS5캡처를 직접 검토했다. 최종 ZIP은 artifacts/VoxPet-Windows-test-plan049.zip,54파일/104157815bytes, SHA256 `92a02080f3063e9e470b022446b60f2434117c3b0ee21ac60f5fed4ca8f74040`. 시험한 공용41파일과 기존 개인13PNG는 byte-identical이다. [자체 리뷰](../reviews/plan-049-avatar-performance-review.md)와 완료 계획에 실패·수정과 측정 조건을 기록했다.
+
+물리 마이크/권한/USB·실제 게임·사용자 GPU/혼합 DPI·개인 그림의 Windows 실행·새60분 실기와 layered BitBlt 제한은 기존 별도 항목이다. 개인 PNG 외부 전송은 없다. composition callback 관측치를 일반 앱 FPS/60fps 보장으로 확대하지 않는다.

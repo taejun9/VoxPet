@@ -2,7 +2,7 @@
 
 ## Status
 
-active
+completed
 
 ## Owner
 
@@ -33,10 +33,10 @@ project_lead / harness_builder / quality_runner
 ## Implementation Plan
 
 - [x] 원본 연속 출력과 실시간 파이프라인에서 부자연스러운 외형·움직임의 원인을 재현한다.
-- [ ] 형태를 보존하는 파츠/관절·대기/말하기/눈·동작 전환과 캐릭터별 연기를 구현한다.
-- [ ] 두 원본의 기본/복장·9동작·전환/음성 입력 연속 전후 출력을 검토한다.
-- [ ] lint/Release/Core·Windows 실제 표시/portable/OBS 전체 QA를 수행한다.
-- [ ] QA 후 자체 리뷰·완료 문서·새 Windows ZIP·Git 수명을 마무리한다.
+- [x] 형태를 보존하는 파츠/관절·대기/말하기/눈·동작 전환과 캐릭터별 연기를 구현한다.
+- [x] 두 원본의 기본/복장·9동작·전환/음성 입력 연속 전후 출력을 검토한다.
+- [x] lint/Release/Core·Windows 실제 표시/portable/OBS 전체 QA를 수행한다.
+- [x] QA 후 자체 리뷰·완료 문서·새 Windows ZIP을 마무리하고 Git 통합용 검증본을 확정한다.
 
 ## QA Plan
 
@@ -50,12 +50,17 @@ QA 이후 단일 에이전트 자체 리뷰로 요구·외형과 연속 연기·
 
 | date | decision | reason |
 |---|---|---|
-| 2026-10-18 | 동작 키 보간에 국한하지 않고 기본 연기와 원본 파츠 변형/전환까지 조사한다. | 이전9동작 개선 뒤에도 사용자가 외형과 움직임의 부자연스러움을 지적했다. |
-
-| 2026-10-18 | 팔/소매의 root를 각 어깨 회전 bone에 연결하고 손의 Cartesian 목표로 회전을 푼다. | 기존 늘보군은 root가 body에 고정되어 손을 몸 앞에 올릴 때 소매 위쪽이 수평으로 남고 중간이 각지게 꺾인다. 원본 full mesh 출력에서도 확인했다. |
-
-| 2026-10-18 | 원본 시트 경로의 실시간 연기를 rig resolve 전에 적용하고 발을 고정한다. | 몸 전체의 즉시 음량 bounce 대신 호흡/머리의 지연 반응과 중단/재입력의220ms 연속 복귀를 파츠·의상·무기 모두에 공유해야 한다. |
-| 2026-10-18 | 기본 입력과 반복 scheduler의5개 연결을 실제 companion action 정의로 교체한다. | 같은 ActionEngine에 과거 빈 Claw/ToyGun 동작이 입력되어9종 개선을 우회하고 간이 geometry/props가 나오는 경로를 확인했다. 설정/호출 API와 옛 시트의1.4초 규칙은 보존한다. |
+| 2026-10-18 | 원본 full mesh로 외형과 실시간 경로를 함께 점검한다. | 키 보간만 바꾼 뒤에도 사용자가 부자연스러운 외형을 지적했다. |
+| 2026-10-18 | 어깨 root와 Cartesian 손 목표를 공유하고 source clip/투명 범위/행렬을 캐시한다. | 소매가 고정 cap 아래로 꺾이고 같은 삼각형 clip을 매번 만드는 문제를 확인했다. |
+| 2026-10-18 | 220ms 현재 자세/이전 속도 보정, 음성 관성·호흡·목 회전과 양발 고정을 rig resolve 전에 적용한다. | 전체 시트의 즉시 bounce와 중단/재입력의 자세 점프를 없애야 한다. |
+| 2026-10-18 | 기본/전역/반복 입력5개를 실제 companion timeline으로 연결한다. | 과거 빈 uppercase 동작이9개 authored 동작을 우회했다. 일반 legacy의1.4초 계약은 보존한다. |
+| 2026-10-19 | 원본 leg contour를 유지하고 신발 등록 PNG의 고립 잔여물만 제거한다. | 중앙 leg mask 확대가 원본 데이터 보존 검사를 실패시켰다. bind pose 원본 비교의1%/채널차24 기준은 유지한다. |
+| 2026-10-19 | 입은 원본8/3단계·기존 곡선을 유지하고 눈만4단계 frozen atlas로 준비한다. | 개인 원본의 mouth 혼합 시제품에서 이중 윤곽·코/입 흐림이 보였다. 최초 시제품60/20개 대신 출시 bank는32/12개다. |
+| 2026-10-19 | 기본 연기를 선택형 motion.companionPerformance로 native 편집/내보내기에 보존한다. | 기존 파일은 none으로 호환하고 두 캐릭터는 편집 후에도 같은 연기를 써야 한다. |
+| 2026-10-19 | 준비 완료는 명시적 UI Dispatcher에서 세대/종료를 재검사하고 적용한다. | 호출자의 SynchronizationContext에 의존하지 않고 worker의 UI 변경을 막는다. |
+| 2026-10-19 | Studio 종료를 시작한 즉시 Model 종료도 시작한다. | 편집기 종료 await 동안 캐릭터 선택이 유효하던 경합을 실제 Windows에서 확인했다. QA는 실제 Closed 신호와 즉시 입력 차단/대기 선택 취소를 검사한다. |
+| 2026-10-19 | 분리 캐릭터 표정 전환은 이전 얼굴 opacity1 위에 새 얼굴을 Blend로 그린다. | 두 얼굴을 함께 fade하면 중간 alpha가.75로 내려간다. 기존 전체 시트 fade는 유지하고 새 실제 픽셀 검사를 추가한다. |
+| 2026-10-19 | 개인13PNG는 로컬 원본 검토와 개인 ZIP에만 둔다. | 공개 합성 Windows/OBS와 로컬 SVG proxy를 구분하며 물리 마이크·사용자 GPU/DPI·Live2D/추적을 시험한 것으로 주장하지 않는다. |
 
 ## Progress Log
 
@@ -65,9 +70,19 @@ QA 이후 단일 에이전트 자체 리뷰로 요구·외형과 연속 연기·
 
 ## Completion Notes
 
-현재 조사/구현 단계이며 새 목표 완료를 주장하지 않는다.
+앱1.5.0/pack6.0.0·검증 소스6e3b0d0. 두 원본의 어깨 회전·소매 cap·신발 잔여물을 보정하고220ms 시작/중단/재입력 연결·음성 관성·호흡/목 회전·발 위치/밑창 고정을 적용했다. 기본 입력5경로도 실제9동작을 사용한다. 원본8/3입 단계와 곡선,4단계 눈, 불투명 표정 전환을 보존한다. UI Dispatcher 완료/취소·종료 선택 경합·native 편집/내보내기 호환과 렌더 캐시를 검증했다. 두 pack은 각각114파일/17착용항목/14분류/헤어3/9동작이다.
 
-## 추가 조사와 검증 기준
+2026-10-19 [전체 Windows QA](https://github.com/taejun9/VoxPet/actions/runs/39151511538): locked restore/format/analyzer·Release 경고0/오류0·Core465/465/skip0·WPF3385/실패0·desktop549장/90시점 실제 표시 픽셀·unsigned/signed 각9시작·SDK 없는 ZIP 도구2764/실패0이다. 이전451 Core/3296 WPF/2683 portable 이름을 모두 보존했다. [OBS](https://github.com/taejun9/VoxPet/actions/runs/39151511518) WGC/chroma/native alpha·같은 HWND 왕복/각7변화 프레임 통과. [추가 입력100회](https://github.com/taejun9/VoxPet/actions/runs/39151711356)1081검사/실패0이며 probeOnly로 전체 QA와 구분한다. 전체와 portable의20회씩도 통과했다.
+
+최종 head 전환3시점 alpha는 두 캐릭터 모두255다. 렌더128/256/512px은 최적화 전과 byte-exact이며 warm clip/scan/matrix 생성0,256px draw삼각형은 늘보군1440→416/펠리864→152였다. warm bitmap 합성·읽기8회 평균은76.96→33.42ms/46.70→20.53ms다. 실제 표시 합성 입력 실험의1.5초 composition callback 중앙값17.37/16.83ms·p95 31.82/31.92ms·tier2다. 이 구간은 callback마다 숫자 상태를 주입한 시험이며 일반 timer의 FPS나 사용자 GPU의60fps 보장으로 쓰지 않는다.
+
+개인 원본 로컬790연속 프레임을22 overview page(9동작의18page/576프레임+착용68+기본 연기146),512px8상세·전후2page로 직접 검토했다.20GIF도 준비했다. 원본12표정의 mouth 혼합 시제품을 직접 검사해 흐림/이중 윤곽을 채택하지 않았다. 마지막 Core로 다시 내보낸790프레임은 byte-identical, numeric SHA256 `73c91c50fa1d00fcf20eac0202b8c2c897eef604e0e1b7a5b5865e3d74f6ea84`다. 최종 공개 Windows26화면/5page와OBS5캡처를 직접 검토했다. 개인 SVG proxy와 실제 개인 Windows 실행을 구분한다.
+
+새 `artifacts/VoxPet-Windows-test-plan049.zip`:54파일/104157815bytes, SHA256 `92a02080f3063e9e470b022446b60f2434117c3b0ee21ac60f5fed4ca8f74040`, EXE SHA256 `e267cb17269a3e4d72e926e023811ab1296a89dad75fd6482db613e0ede5d61e`. 시험한 공용41파일·기존 개인13PNG의 byte equality와 ZIP CRC/PE x64/세 pack 소스 일치를 확인했다. Windows CMD는 checkout의CRLF를 그대로 보존하고 LF 소스와 줄바꿈 이외 내용이 같은지 검사했다. 이전 ZIP·README/AGENTS·plan024 작업트리를 보존했다. 개인 PNG/음성 외부 전송과 사용자 신뢰 저장소 변경은 없다.
+
+[QA 후 단일 에이전트 자체 리뷰](../../reviews/plan-049-avatar-performance-review.md)에서 미해결 필수 수정 사항은 없었다. 물리 마이크/권한/USB·실제 게임 입력·사용자 GPU/혼합 DPI·개인 그림의 실제 Windows 실행·새60분 실기는 [체크리스트](../../quality/windows-checklist.md)의 별도 항목이다. layered BitBlt 제한은 유지한다. 문서 커밋 후 표준 main ff/push→동일 HEAD detach→branch -d→worktree 제거를 수행한다. 실제 Git 종료/보존 확인은 로컬 `artifacts/test-results/plan049/final/git-lifecycle.json`에 기록한다.
+
+## 조사·실험 이력 (초기 후보와 채택하지 않은 시제품 포함)
 
 full512 원본 합성에서 늘보군 양팔 소매가 수평 shoulder cap 아래로 꺾여 리본처럼 보이고, 펠리는 날개 뿌리/가슴의 겹침이 보인다. 기존256 근사 합성만의 문제로 처리하지 않는다. 일반 시트 경로는 몸 전체를 음량에 바로 따라 움직이고 눈은 열림/닫힘이 즉시 바뀌며, action 중단/재입력은 즉시 idle/새 시작 키로 돌아간다. 이 세 경로도 새 목표에 포함한다.
 
