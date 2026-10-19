@@ -26,6 +26,7 @@ public sealed record CostumeProfile(Guid Id, string Name, CostumeCategory Catego
             CostumeCategory.FaceDecoration => 140,
             CostumeCategory.Earrings => 300,
             CostumeCategory.Cape => side ? 280 : 320,
+            CostumeCategory.OnePiece => side ? 220 : 260,
             _ => 230
         };
         double height = width * originalHeight / Math.Max(1, originalWidth);
@@ -38,9 +39,46 @@ public sealed record CostumeProfile(Guid Id, string Name, CostumeCategory Catego
             CostumeCategory.FaceDecoration => side ? 170 : 210,
             CostumeCategory.Bottom => side ? 355 : 370,
             CostumeCategory.Cape => side ? 170 : 180,
+            CostumeCategory.OnePiece => side ? 245 : 275,
             _ => side ? 260 : 280
         };
         return (centerX, y, width, height);
+    }
+
+    public static CostumeProfile CreateSuit(string? characterId = null, bool enabled = true)
+    {
+        var place = DefaultPlacement(CostumeCategory.OnePiece, characterId);
+        return new(Guid.Parse("11111111-2222-3333-4444-555555550001"), "클래식 정장", CostumeCategory.OnePiece, place.X, place.Y, place.Width, place.Height, Enabled: enabled, TargetCharacter: characterId);
+    }
+
+    public static CostumeProfile CreateDress(string? characterId = null, bool enabled = true)
+    {
+        var place = DefaultPlacement(CostumeCategory.OnePiece, characterId);
+        return new(Guid.Parse("11111111-2222-3333-4444-555555550002"), "우아한 이브닝 드레스", CostumeCategory.OnePiece, place.X, place.Y, place.Width, place.Height, Enabled: enabled, TargetCharacter: characterId);
+    }
+
+    public static CostumeProfile CreateTopHat(string? characterId = null, bool enabled = true)
+    {
+        var place = DefaultPlacement(CostumeCategory.Hat, characterId);
+        return new(Guid.Parse("11111111-2222-3333-4444-555555550003"), "실크 탑햇", CostumeCategory.Hat, place.X, place.Y, place.Width, place.Height, Enabled: enabled, TargetCharacter: characterId);
+    }
+
+    public static CostumeProfile CreateBowtie(string? characterId = null, bool enabled = true)
+    {
+        var place = DefaultPlacement(CostumeCategory.FaceDecoration, characterId);
+        return new(Guid.Parse("11111111-2222-3333-4444-555555550004"), "클래식 보타이", CostumeCategory.FaceDecoration, place.X, place.Y, place.Width, place.Height, Enabled: enabled, TargetCharacter: characterId);
+    }
+
+    public static CostumeProfile CreateTiara(string? characterId = null, bool enabled = true)
+    {
+        var place = DefaultPlacement(CostumeCategory.Hat, characterId);
+        return new(Guid.Parse("11111111-2222-3333-4444-555555550005"), "반짝이는 티아라", CostumeCategory.Hat, place.X, place.Y, place.Width, place.Height, Enabled: enabled, TargetCharacter: characterId);
+    }
+
+    public static CostumeProfile CreatePearlSet(string? characterId = null, bool enabled = true)
+    {
+        var place = DefaultPlacement(CostumeCategory.Earrings, characterId);
+        return new(Guid.Parse("11111111-2222-3333-4444-555555550006"), "진주 목걸이 & 귀걸이", CostumeCategory.Earrings, place.X, place.Y, place.Width, place.Height, Enabled: enabled, TargetCharacter: characterId);
     }
 
     public void Validate()

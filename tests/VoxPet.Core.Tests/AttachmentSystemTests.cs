@@ -111,4 +111,38 @@ public sealed class AttachmentSystemTests
         Assert.Throws<ArgumentException>(() => system.SetEnabled("missing", true)); Assert.Throws<ArgumentException>(() => system.Restore(["missing"]));
         var solver = new RigMotionSolver(Face()); Assert.Throws<ArgumentException>(() => solver.Resolve(new Dictionary<string, Transform2D> { ["missing"] = new() }));
     }
+    [Fact]
+    public void SuitAndDressOnePieceCanEquipMatchingAccessories()
+    {
+        var suit = Accessory("suit", "onePiece");
+        var dress = Accessory("dress", "onePiece");
+        var topHat = Accessory("topHat", "hat");
+        var bowtie = Accessory("bowtie", "faceDecoration");
+        var tiara = Accessory("tiara", "hat");
+        var pearl = Accessory("pearl", "earrings");
+        var top = Accessory("top", "top");
+        var bottom = Accessory("bottom", "bottom");
+
+        var system = new AttachmentSystem([suit, dress, topHat, bowtie, tiara, pearl, top, bottom]);
+        system.SetEnabled("top", true); system.SetEnabled("bottom", true);
+        Assert.Contains("top", system.EnabledIds); Assert.Contains("bottom", system.EnabledIds);
+
+        system.SetEnabled("suit", true);
+        system.SetEnabled("topHat", true);
+        system.SetEnabled("bowtie", true);
+        Assert.Contains("suit", system.EnabledIds);
+        Assert.Contains("topHat", system.EnabledIds);
+        Assert.Contains("bowtie", system.EnabledIds);
+        Assert.DoesNotContain("top", system.EnabledIds);
+        Assert.DoesNotContain("bottom", system.EnabledIds);
+
+        system.SetEnabled("dress", true);
+        system.SetEnabled("tiara", true);
+        system.SetEnabled("pearl", true);
+        Assert.Contains("dress", system.EnabledIds);
+        Assert.Contains("tiara", system.EnabledIds);
+        Assert.Contains("pearl", system.EnabledIds);
+        Assert.DoesNotContain("suit", system.EnabledIds);
+        Assert.DoesNotContain("topHat", system.EnabledIds);
+    }
 }

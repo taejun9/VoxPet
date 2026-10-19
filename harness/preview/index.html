@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VoxPet · 이모지 스타일 자연 모션 & 캐릭터 미리보기</title>
+<title>VoxPet · 이모지 스타일 자연 모션 & 캐릭터 의상 미리보기</title>
 <style>
   :root {
     --bg-main: #071722;
@@ -14,6 +14,8 @@
     --accent-hover: #4B90FF;
     --success: #45D5A0;
     --warning: #F59E0B;
+    --gold: #FBBF24;
+    --purple: #C026D3;
     --text-primary: #F1F4F8;
     --text-secondary: #94A3B8;
     --text-muted: #526778;
@@ -250,6 +252,12 @@
     gap: 8px;
     color: var(--text-primary);
   }
+  .sub-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin: 8px 0 6px 0;
+  }
   .pill-grid {
     display: flex;
     flex-wrap: wrap;
@@ -273,6 +281,16 @@
     background: var(--accent);
     color: white;
     border-color: var(--accent);
+  }
+  .pill.active-gold {
+    background: #D97706;
+    color: white;
+    border-color: var(--gold);
+  }
+  .pill.active-purple {
+    background: #9333EA;
+    color: white;
+    border-color: var(--purple);
   }
   .info-box {
     background: rgba(52, 127, 255, 0.08);
@@ -312,8 +330,8 @@
   <div class="brand">
     <div class="brand-badge">VOXPET</div>
     <div>
-      <h1>자연 모션 & 캐릭터 인터랙티브 미리보기</h1>
-      <span>이모티콘 스타일 바운스 · 호흡 스쿼시 · 캐릭터별 의상 검증</span>
+      <h1>자연 모션 & 의상(한벌옷/정장/드레스) 미리보기</h1>
+      <span>이모티콘 바운스 · 정장 수트 · 우아한 드레스 · 악세사리 실시간 시뮬레이션</span>
     </div>
   </div>
   <div class="header-actions">
@@ -334,7 +352,7 @@
       </div>
       <div class="stage-wrap">
         <canvas id="view" width="512" height="512"></canvas>
-        <div class="hud-badge" id="hud">FPS: 60 | Voice: 0.00 | Planted IK: OK</div>
+        <div class="hud-badge" id="hud">FPS: 60 | Voice: 0.00 | Outfit: Normal</div>
       </div>
     </div>
 
@@ -374,30 +392,59 @@
     </div>
   </div>
 
-  <!-- 오른쪽: 표정 / 의상 / 액션 구성 -->
+  <!-- 오른쪽: 의상(한벌옷/악세사리) / 표정 / 액션 구성 -->
   <div class="config-pane">
-    <!-- 캐릭터 특징 & 의상 최적화 설명 -->
+    <!-- 캐릭터 특성 및 가이드 -->
     <div class="section-card">
-      <div class="section-title">✨ 캐릭터 특성 및 가이드</div>
+      <div class="section-title">✨ 캐릭터 특성 및 의상 가이드</div>
       <div class="info-box" id="disp-guide">
-        <strong>늘보군 (정면 뷰):</strong> 포근하고 여유로운 호흡(4.8초)과 부드러운 상하 바운스를 선보입니다. 정면 기준의 모자, 셔츠, 코트, 바지, 신발, 양손 무기 의상에 완벽하게 맞춤 설계되었습니다.
+        <strong>늘보군 (정면 뷰):</strong> 포근하고 여유로운 호흡(4.8초)과 부드러운 상하 바운스를 선보입니다. 더블 브레스트 정장 수트, 벨라인 드레스, 실크 탑햇, 보타이, 지팡이에 최적화되었습니다.
       </div>
     </div>
 
-    <!-- 의상 토글 -->
+    <!-- 신규 한벌옷 (One-Piece) -->
     <div class="section-card">
-      <div class="section-title">👔 의상 및 액세서리 착용 (Wardrobe)</div>
-      <div class="pill-grid" id="costume-pills">
-        <!-- JS로 동적 생성 -->
+      <div class="section-title">👔 한벌옷 (One-Piece Outfits)</div>
+      <div class="sub-title">※ 한벌옷 착용 시 상의/하의는 자동으로 배타 처리됩니다.</div>
+      <div class="pill-grid">
+        <button class="pill" id="outfit-suit" onclick="setOnePiece('suit')">🎩 클래식 정장 (Classic Suit)</button>
+        <button class="pill" id="outfit-dress" onclick="setOnePiece('dress')">👗 우아한 드레스 (Evening Dress)</button>
+        <button class="pill active" id="outfit-casual" onclick="setOnePiece('casual')">👕 캐주얼 분리형 (Shirt & Pants)</button>
+        <button class="pill" id="outfit-none" onclick="setOnePiece('none')">🚫 의상 모두 해제</button>
+      </div>
+    </div>
+
+    <!-- 정장/드레스 맞춤 악세사리 -->
+    <div class="section-card">
+      <div class="section-title">🎩 정장 맞춤 악세사리 (Suit Accessories)</div>
+      <div class="pill-grid">
+        <button class="pill" id="acc-topHat" onclick="toggleAcc('topHat')">+ 실크 탑햇 (Top Hat)</button>
+        <button class="pill" id="acc-bowtie" onclick="toggleAcc('bowtie')">+ 클래식 보타이 (Bowtie)</button>
+        <button class="pill" id="acc-cane" onclick="toggleAcc('cane')">+ 황금 지팡이 (Gentleman Cane)</button>
+      </div>
+
+      <div class="section-title" style="margin-top:14px;">👑 드레스 맞춤 장식 (Dress Accessories)</div>
+      <div class="pill-grid">
+        <button class="pill" id="acc-tiara" onclick="toggleAcc('tiara')">+ 반짝이는 티아라 (Tiara)</button>
+        <button class="pill" id="acc-pearl" onclick="toggleAcc('pearl')">+ 진주 목걸이 & 귀걸이 (Pearls)</button>
+        <button class="pill" id="acc-sparkle" onclick="toggleAcc('sparkle')">+ 별빛 오라 이펙트 (Sparkles)</button>
+      </div>
+    </div>
+
+    <!-- 기본 및 기타 의상 -->
+    <div class="section-card">
+      <div class="section-title">🧥 기타 의상 및 신발 (Wardrobe Extras)</div>
+      <div class="pill-grid">
+        <button class="pill" id="acc-shoes" onclick="toggleAcc('shoes')">✓ 포멀 구두 (Shoes)</button>
+        <button class="pill" id="acc-cape" onclick="toggleAcc('cape')">+ 영웅 망토 (Cape)</button>
+        <button class="pill" id="acc-outerwear" onclick="toggleAcc('outerwear')">+ 덧입는 코트 (Outer)</button>
       </div>
     </div>
 
     <!-- 표정 선택 -->
     <div class="section-card">
-      <div class="section-title">🎭 기본 표정 12종 (240ms Smoothstep 전환)</div>
-      <div class="pill-grid" id="expr-pills">
-        <!-- JS로 생성 -->
-      </div>
+      <div class="section-title">🎭 기본 표정 12종 (240ms Smoothstep)</div>
+      <div class="pill-grid" id="expr-pills"></div>
     </div>
 
     <!-- 제스처 및 액션 -->
@@ -409,15 +456,6 @@
         <button class="pill" onclick="playAction('heart')">손하트 (Heart)</button>
         <button class="pill" onclick="playAction('toy-sword')">장난감 칼 (ToySword)</button>
         <button class="pill" onclick="playAction('magic-wand')">마법봉 (MagicWand)</button>
-      </div>
-    </div>
-
-    <!-- 윈도우 하네스 호환성 안내 -->
-    <div class="section-card">
-      <div class="section-title">🖥️ 윈도우 테스트 및 연동 안내</div>
-      <div class="info-box">
-        본 HTML 미리보기는 <strong>VoxPet.Core</strong>의 <code>AvatarPerformance</code>, <code>MotionProfile</code>, <code>CostumeProfile</code> 역학 공식을 정밀하게 시뮬레이션합니다.<br>
-        Windows 실기에서는 <code>TEST-SMOKE.cmd</code> 또는 <code>TEST-MOTION-PREVIEW.cmd</code>를 실행하여 합성 WPF 프로세스에서 동일한 모션을 확인할 수 있습니다.
       </div>
     </div>
   </div>
@@ -455,15 +493,19 @@ let currentAction = null;
 let actionProgress = 0;
 let actionStartTime = 0;
 
-// Costumes active
-const activeCostumes = {
-  hat: true,
-  top: true,
-  bottom: true,
-  outerwear: false,
-  cape: false,
+// Costume State (OnePiece vs Separates + Accessories)
+let onePieceMode = 'casual'; // 'suit', 'dress', 'casual', 'none'
+
+const activeAcc = {
+  topHat: false,
+  bowtie: false,
+  cane: false,
+  tiara: false,
+  pearl: false,
+  sparkle: false,
   shoes: true,
-  weapon: false
+  cape: false,
+  outerwear: false
 };
 
 const expressions = [
@@ -499,40 +541,55 @@ function selectCharacter(id) {
   if (id === 'neulbo') {
     title.textContent = '늘보군 (Neulbo)';
     badge.textContent = '여유로운 호흡 · 부드러운 바운스';
-    guide.innerHTML = '<strong>늘보군 (정면 뷰):</strong> 포근하고 여유로운 호흡(4.8초)과 부드러운 상하 바운스를 선보입니다. 정면 기준의 모자, 셔츠, 코트, 바지, 신발, 양손 무기 의상에 완벽하게 맞춤 설계되었습니다.';
+    guide.innerHTML = '<strong>늘보군 (정면 뷰):</strong> 포근하고 여유로운 호흡(4.8초)과 부드러운 상하 바운스를 선보입니다. 정면 기준 더블 브레스트 정장 수트, 벨라인 드레스, 실크 탑햇, 보타이, 지팡이에 최적화되었습니다.';
   } else {
     title.textContent = '펠리 (Pelly)';
     badge.textContent = '경쾌한 호흡 · 날개/부리 모션';
-    guide.innerHTML = '<strong>펠리 (측면 뷰):</strong> 활기찬 호흡(4.2초)과 음성에 맞춘 부리 끄덕임(-0.65°)을 자랑합니다. 측면 실루엣에 최적화된 포근한 니트 조끼, 산책 조끼, 날개 맞춤 장난감 총 의상에 최적화되었습니다.';
+    guide.innerHTML = '<strong>펠리 (측면 뷰):</strong> 활기찬 호흡(4.2초)과 음성에 맞춘 부리 끄덕임(-0.65°)을 자랑합니다. 측면 테일코트 정장, 슬릿 이브닝 드레스, 반짝이는 티아라, 진주 목걸이에 최적화되었습니다.';
   }
-  updateCostumePills();
 }
 
-function updateCostumePills() {
-  const container = document.getElementById('costume-pills');
-  container.innerHTML = '';
-  const isPelly = currentCharacter === 'pelly';
-
-  const list = [
-    { key: 'hat', name: isPelly ? '펠리 모자 (Hat)' : '모자 (Hat)' },
-    { key: 'top', name: isPelly ? '포근한 니트 조끼' : '정장 셔츠 (Top)' },
-    { key: 'outerwear', name: isPelly ? '산책 조끼 (Vest)' : '단정한 코트 (Outer)' },
-    { key: 'bottom', name: isPelly ? '펠리 하의' : '슬랙스 바지 (Bottom)' },
-    { key: 'shoes', name: isPelly ? '발 커버 (Shoes)' : '단화 (Shoes)' },
-    { key: 'cape', name: isPelly ? '측면 망토 (Cape)' : '영웅 망토 (Cape)' },
-    { key: 'weapon', name: isPelly ? '장난감 권총 (Gun)' : '용사의 검 (Sword)' }
-  ];
-
-  list.forEach(item => {
-    const btn = document.createElement('button');
-    btn.className = 'pill' + (activeCostumes[item.key] ? ' active' : '');
-    btn.textContent = (activeCostumes[item.key] ? '✓ ' : '+ ') + item.name;
-    btn.onclick = () => {
-      activeCostumes[item.key] = !activeCostumes[item.key];
-      updateCostumePills();
-    };
-    container.appendChild(btn);
+function setOnePiece(mode) {
+  onePieceMode = mode;
+  ['suit', 'dress', 'casual', 'none'].forEach(m => {
+    const el = document.getElementById('outfit-' + m);
+    if (el) el.classList.toggle('active', m === mode);
   });
+
+  // Smart accessory auto-match
+  if (mode === 'suit') {
+    activeAcc.bowtie = true;
+    activeAcc.topHat = true;
+    activeAcc.tiara = false;
+    activeAcc.pearl = false;
+  } else if (mode === 'dress') {
+    activeAcc.tiara = true;
+    activeAcc.pearl = true;
+    activeAcc.sparkle = true;
+    activeAcc.bowtie = false;
+    activeAcc.topHat = false;
+  }
+  updateAccButtons();
+}
+
+function toggleAcc(key) {
+  activeAcc[key] = !activeAcc[key];
+  // Mutual exclusion between headpieces
+  if (key === 'topHat' && activeAcc.topHat) activeAcc.tiara = false;
+  if (key === 'tiara' && activeAcc.tiara) activeAcc.topHat = false;
+  updateAccButtons();
+}
+
+function updateAccButtons() {
+  for (const [key, val] of Object.entries(activeAcc)) {
+    const el = document.getElementById('acc-' + key);
+    if (el) {
+      el.classList.toggle('active', val);
+      const prefix = val ? '✓ ' : '+ ';
+      const name = el.textContent.replace(/^[✓+]\s*/, '');
+      el.textContent = prefix + name;
+    }
+  }
 }
 
 function initExpressionPills() {
@@ -594,13 +651,11 @@ function playAction(id) {
 function updatePhysics(dt) {
   simTime += dt;
 
-  // 1. Voice Level Smoothing (Critically Damped Spring: omega=11 neulbo, omega=15 pelly)
   const isPelly = currentCharacter === 'pelly';
   const omega = isPelly ? 15.0 : 11.0;
 
   if (demoRunning) {
     demoTime += dt;
-    // Organic speech cadence simulation
     const speech = 0.5 + 0.5 * Math.sin(demoTime * 5.2) * Math.sin(demoTime * 2.1);
     const pause = Math.sin(demoTime * 1.3) > -0.2 ? 1 : 0;
     targetVoiceLevel = Math.max(0, Math.min(1, speech * pause * 0.9));
@@ -620,7 +675,6 @@ function updatePhysics(dt) {
   }
   voiceLevel = Math.max(0, Math.min(1, voiceLevel));
 
-  // 2. Blink Schedule (Soft smoothstep eyelid transition)
   if (simTime >= nextBlinkTime) {
     blinkEndTime = simTime + blinkDuration;
     nextBlinkTime = blinkEndTime + (isPelly ? 1.8 + Math.random() * 2.7 : 2.5 + Math.random() * 4.0);
@@ -629,19 +683,16 @@ function updatePhysics(dt) {
     eyeOpen = 1.0;
   } else {
     const p = Math.max(0, Math.min(1, (blinkEndTime - simTime) / blinkDuration));
-    // Easing: closing takes 20%, closed 60%, opening 20%
     const raw = p > 0.8 ? (p - 0.8) / 0.2 : p < 0.2 ? (1 - p / 0.2) : 0;
     eyeOpen = raw * raw * (3 - 2 * raw);
   }
 
-  // 3. Expression 240ms Smoothstep Transition
   const exprElapsed = simTime - exprStartTime;
   const t = Math.max(0, Math.min(1, exprElapsed / 0.24));
   exprBlend = t * t * (3 - 2 * t);
 
-  // 4. Action Timeline Progress
   if (currentAction) {
-    actionProgress = (simTime - actionStartTime) / 1.0; // 1.0 second actions
+    actionProgress = (simTime - actionStartTime) / 1.0;
     if (actionProgress >= 1.0) currentAction = null;
   }
 }
@@ -656,56 +707,37 @@ function render() {
   const period = isPelly ? 4.2 : 4.8;
   const breathFactor = isPelly ? 0.003 : 0.004;
 
-  // Idle Breath wave
   const breath = breathFactor * Math.sin((simTime % period) * Math.PI * 2 / period);
 
-  // Secondary body squash and stretch
   const bodyY = (isPelly ? -112 : -115) * breath - voiceLevel * 5.0;
   const scaleX = 1.0 - breath * 0.35 + voiceLevel * 0.015;
   const scaleY = 1.0 + breath - voiceLevel * 0.012;
 
-  // Head sway and voice nodding
   const headAngle = (isPelly ? 0.55 : 0.70) * Math.sin((simTime % 31) * Math.PI * 2 / 7.75) + voiceLevel * (isPelly ? -0.65 : 0.80);
 
-  // Mouth frame
   const mouthOpen = voiceLevel;
   const mouthState = mouthOpen < 0.2 ? 'Closed' : mouthOpen < 0.6 ? 'Half' : 'Open';
 
-  // Center coordinates (512x512 Canvas)
   const cx = 256 + (isPelly ? -18 : 0);
   const cy = 256 + (isPelly ? 17 : 0);
+
+  // Sparkle Aura Effect (Behind/Ambient)
+  if (activeAcc.sparkle) {
+    drawSparkles(ctx, cx, cy + bodyY, simTime);
+  }
 
   ctx.save();
   ctx.translate(cx, cy + bodyY);
 
   // --- Cape (Behind body) ---
-  if (activeCostumes.cape) {
-    ctx.save();
-    ctx.fillStyle = '#C026D3';
-    ctx.beginPath();
-    if (!isPelly) {
-      ctx.moveTo(-90, -40);
-      ctx.quadraticCurveTo(-120, 120, -100, 160);
-      ctx.lineTo(100, 160);
-      ctx.quadraticCurveTo(120, 120, 90, -40);
-    } else {
-      ctx.moveTo(-60, -30);
-      ctx.quadraticCurveTo(-110, 110, -90, 150);
-      ctx.lineTo(60, 150);
-      ctx.quadraticCurveTo(80, 110, 50, -30);
-    }
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#9333EA';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.restore();
+  if (activeAcc.cape) {
+    drawCape(ctx, isPelly);
   }
 
   // --- Feet / Shoes (Planted IK: cancels bodyY so feet stay grounded) ---
   ctx.save();
-  ctx.translate(0, -bodyY); // IK cancellation
-  drawFeet(ctx, isPelly, activeCostumes.shoes);
+  ctx.translate(0, -bodyY);
+  drawFeet(ctx, isPelly, activeAcc.shoes);
   ctx.restore();
 
   // --- Body (Torso with squash-and-stretch) ---
@@ -713,15 +745,24 @@ function render() {
   ctx.scale(scaleX, scaleY);
   drawBody(ctx, isPelly);
 
-  // Clothing: Top / Outerwear / Bottom
-  if (activeCostumes.bottom) drawBottom(ctx, isPelly);
-  if (activeCostumes.top) drawTop(ctx, isPelly);
-  if (activeCostumes.outerwear) drawOuterwear(ctx, isPelly);
+  // --- Outfits: OnePiece (Suit / Dress) vs Separates (Top / Bottom) ---
+  if (onePieceMode === 'suit') {
+    drawSuit(ctx, isPelly);
+  } else if (onePieceMode === 'dress') {
+    drawDress(ctx, isPelly);
+  } else if (onePieceMode === 'casual') {
+    drawCasualBottom(ctx, isPelly);
+    drawCasualTop(ctx, isPelly);
+  }
+
+  if (activeAcc.outerwear) {
+    drawOuterwear(ctx, isPelly);
+  }
 
   ctx.restore(); // end body scale
 
-  // --- Arms & Wings & Weapon ---
-  drawLimbs(ctx, isPelly, voiceLevel, simTime, currentAction, actionProgress, activeCostumes.weapon);
+  // --- Arms & Limbs & Cane ---
+  drawLimbs(ctx, isPelly, voiceLevel, simTime, currentAction, actionProgress, activeAcc.cane);
 
   // --- Head & Face (Rotated by headAngle) ---
   ctx.save();
@@ -733,89 +774,187 @@ function render() {
   drawHead(ctx, isPelly);
   drawFace(ctx, isPelly, eyeOpen, mouthOpen, currentExpression);
 
-  // Hat / Headwear
-  if (activeCostumes.hat) drawHat(ctx, isPelly);
+  // Accessories on Neck / Chest
+  if (activeAcc.bowtie) drawBowtie(ctx, isPelly);
+  if (activeAcc.pearl) drawPearl(ctx, isPelly);
+
+  // Headwear: Tiara or TopHat
+  if (activeAcc.tiara) {
+    drawTiara(ctx, isPelly);
+  } else if (activeAcc.topHat) {
+    drawTopHat(ctx, isPelly);
+  }
 
   ctx.restore(); // end head
 
   ctx.restore(); // end root translate
 
-  // Update UI Elements
   updateHUD(bodyY, scaleY, headAngle, mouthState, omega, period);
 }
 
 // -------------------------------------------------------------
-// Drawing Helpers
+// Drawing Helpers: Outfits (Suit & Dress) & Accessories
 // -------------------------------------------------------------
-function drawFeet(c, isPelly, hasShoes) {
-  c.fillStyle = hasShoes ? '#334155' : isPelly ? '#F97316' : '#78716C';
-  c.strokeStyle = '#1E293B';
+
+function drawSuit(c, isPelly) {
   c.lineWidth = 3;
-
-  if (!isPelly) {
-    // Neulbo Left Foot
-    c.beginPath();
-    c.roundRect(-66, 120, 48, 22, 10);
-    c.fill(); c.stroke();
-    // Neulbo Right Foot
-    c.beginPath();
-    c.roundRect(18, 120, 48, 22, 10);
-    c.fill(); c.stroke();
-  } else {
-    // Pelly Webbed Feet (Side profile)
-    c.beginPath();
-    c.moveTo(-35, 125);
-    c.lineTo(15, 125);
-    c.lineTo(35, 138);
-    c.lineTo(-45, 138);
-    c.closePath();
-    c.fill(); c.stroke();
-  }
-}
-
-function drawBody(c, isPelly) {
-  c.lineWidth = 4;
   c.strokeStyle = '#0F172A';
 
   if (!isPelly) {
-    // Neulbo: Soft rounded sloth body
-    c.fillStyle = '#A89F91';
+    // Neulbo Classic Tuxedo Suit (Charcoal Navy + Satin Black Lapels + Gold Buttons)
+    // Trousers
+    c.fillStyle = '#1E293B';
     c.beginPath();
-    c.ellipse(0, 30, 85, 100, 0, 0, Math.PI * 2);
+    c.roundRect(-66, 68, 132, 60, [0, 0, 10, 10]);
     c.fill(); c.stroke();
 
-    // Belly patch
-    c.fillStyle = '#D6CEBE';
+    // Suit Jacket Torso
+    c.fillStyle = '#0F172A';
     c.beginPath();
-    c.ellipse(0, 40, 55, 70, 0, 0, Math.PI * 2);
+    c.roundRect(-70, -12, 140, 88, [14, 14, 4, 4]);
+    c.fill(); c.stroke();
+
+    // White Formal Dress Shirt V-neck
+    c.fillStyle = '#FFFFFF';
+    c.beginPath();
+    c.moveTo(-24, -12);
+    c.lineTo(0, 36);
+    c.lineTo(24, -12);
+    c.closePath();
+    c.fill();
+
+    // Lapels (Satin Silk Gloss)
+    c.fillStyle = '#334155';
+    c.beginPath();
+    c.moveTo(-24, -12); c.lineTo(-44, 20); c.lineTo(-6, 36); c.lineTo(0, 36); c.lineTo(-18, -12);
+    c.closePath();
+    c.fill();
+    c.beginPath();
+    c.moveTo(24, -12); c.lineTo(44, 20); c.lineTo(6, 36); c.lineTo(0, 36); c.lineTo(18, -12);
+    c.closePath();
+    c.fill();
+
+    // Gold Buttons
+    c.fillStyle = '#F59E0B';
+    c.beginPath(); c.arc(0, 48, 3.5, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(0, 60, 3.5, 0, Math.PI * 2); c.fill();
+
+    // Pocket Handkerchief
+    c.fillStyle = '#EF4444';
+    c.beginPath();
+    c.moveTo(-52, 18); c.lineTo(-44, 10); c.lineTo(-36, 18);
+    c.closePath();
     c.fill();
   } else {
-    // Pelly: Pelican body silhouette
-    c.fillStyle = '#F8FAFC';
+    // Pelly Tailcoat Suit (Side Silhouette)
+    // Tailcoat Tails extending behind
+    c.fillStyle = '#0F172A';
     c.beginPath();
-    c.ellipse(0, 35, 80, 90, -0.15, 0, Math.PI * 2);
+    c.moveTo(20, 60);
+    c.quadraticCurveTo(65, 110, 50, 135);
+    c.lineTo(15, 80);
+    c.closePath();
+    c.fill();
+
+    // Tailored Trousers
+    c.fillStyle = '#1E293B';
+    c.beginPath();
+    c.roundRect(-55, 72, 105, 55, [0, 0, 12, 12]);
     c.fill(); c.stroke();
 
-    // Chest fluff
-    c.fillStyle = '#E2E8F0';
+    // Tailcoat Front Vest
+    c.fillStyle = '#0F172A';
     c.beginPath();
-    c.ellipse(-20, 30, 45, 60, -0.1, 0, Math.PI * 2);
+    c.roundRect(-62, -8, 118, 86, [14, 14, 8, 8]);
+    c.fill(); c.stroke();
+
+    // White Shirt front
+    c.fillStyle = '#FFFFFF';
+    c.beginPath();
+    c.moveTo(-35, -8); c.lineTo(-10, 30); c.lineTo(-10, -8);
+    c.closePath();
     c.fill();
+
+    // Golden chain watch detail
+    c.strokeStyle = '#F59E0B';
+    c.lineWidth = 2;
+    c.beginPath();
+    c.arc(5, 40, 14, 0.2, Math.PI - 0.2);
+    c.stroke();
   }
 }
 
-function drawBottom(c, isPelly) {
-  c.fillStyle = isPelly ? '#2563EB' : '#1E293B';
-  c.beginPath();
+function drawDress(c, isPelly) {
+  c.lineWidth = 3;
+  c.strokeStyle = '#4C0519';
+
   if (!isPelly) {
-    c.roundRect(-65, 75, 130, 52, [0, 0, 10, 10]);
+    // Neulbo Ballroom Gown (Royal Crimson with Gold Embroidery)
+    // Flared Skirt (wide bell shape)
+    c.fillStyle = '#BE185D';
+    c.beginPath();
+    c.moveTo(-45, 45);
+    c.quadraticCurveTo(-115, 100, -95, 138);
+    c.lineTo(95, 138);
+    c.quadraticCurveTo(115, 100, 45, 45);
+    c.closePath();
+    c.fill(); c.stroke();
+
+    // Skirt fold shadows
+    c.strokeStyle = 'rgba(159, 18, 57, 0.4)';
+    c.lineWidth = 4;
+    c.beginPath(); c.moveTo(-35, 60); c.quadraticCurveTo(-50, 100, -45, 135); c.stroke();
+    c.beginPath(); c.moveTo(35, 60); c.quadraticCurveTo(50, 100, 45, 135); c.stroke();
+
+    // Dress Bodice
+    c.fillStyle = '#9D174D';
+    c.beginPath();
+    c.roundRect(-58, -10, 116, 62, [14, 14, 6, 6]);
+    c.fill();
+
+    // Golden Waist Ribbon Sash & Bow
+    c.fillStyle = '#F59E0B';
+    c.fillRect(-48, 42, 96, 8);
+    c.beginPath(); c.arc(0, 46, 6, 0, Math.PI * 2); c.fill();
+
+    // Sweetheart Neckline Trim
+    c.strokeStyle = '#FBBF24';
+    c.lineWidth = 3;
+    c.beginPath();
+    c.moveTo(-30, -5); c.quadraticCurveTo(-15, 8, 0, 0); c.quadraticCurveTo(15, 8, 30, -5);
+    c.stroke();
   } else {
-    c.roundRect(-55, 75, 105, 52, [0, 0, 12, 12]);
+    // Pelly Elegant Side-Slit Evening Dress (Royal Sapphire Blue)
+    c.fillStyle = '#1D4ED8';
+    c.strokeStyle = '#1E3A8A';
+
+    // Flowing Skirt draping down the side
+    c.beginPath();
+    c.moveTo(-45, 45);
+    c.quadraticCurveTo(-100, 95, -75, 140);
+    c.lineTo(40, 140);
+    c.quadraticCurveTo(60, 90, 35, 45);
+    c.closePath();
+    c.fill(); c.stroke();
+
+    // Slit accent
+    c.strokeStyle = '#93C5FD';
+    c.lineWidth = 2;
+    c.beginPath(); c.moveTo(-20, 65); c.lineTo(-35, 138); c.stroke();
+
+    // Dress Top
+    c.fillStyle = '#1E40AF';
+    c.beginPath();
+    c.roundRect(-55, -6, 105, 58, [12, 12, 6, 6]);
+    c.fill();
+
+    // Golden waist belt
+    c.fillStyle = '#F59E0B';
+    c.fillRect(-45, 44, 85, 7);
   }
-  c.fill();
 }
 
-function drawTop(c, isPelly) {
+function drawCasualTop(c, isPelly) {
   c.fillStyle = isPelly ? '#38BDF8' : '#FFFFFF';
   c.strokeStyle = '#0F172A';
   c.lineWidth = 3;
@@ -823,7 +962,6 @@ function drawTop(c, isPelly) {
   if (!isPelly) {
     c.roundRect(-68, -10, 136, 92, [12, 12, 4, 4]);
   } else {
-    // Pelly vest
     c.roundRect(-60, -5, 115, 85, [14, 14, 6, 6]);
   }
   c.fill(); c.stroke();
@@ -833,6 +971,17 @@ function drawTop(c, isPelly) {
   c.beginPath();
   c.moveTo(-20, -10); c.lineTo(0, 15); c.lineTo(20, -10);
   c.closePath();
+  c.fill();
+}
+
+function drawCasualBottom(c, isPelly) {
+  c.fillStyle = isPelly ? '#2563EB' : '#1E293B';
+  c.beginPath();
+  if (!isPelly) {
+    c.roundRect(-65, 75, 130, 52, [0, 0, 10, 10]);
+  } else {
+    c.roundRect(-55, 75, 105, 52, [0, 0, 12, 12]);
+  }
   c.fill();
 }
 
@@ -849,7 +998,272 @@ function drawOuterwear(c, isPelly) {
   c.fill(); c.stroke();
 }
 
-function drawLimbs(c, isPelly, voice, time, action, actProg, hasWeapon) {
+function drawCape(c, isPelly) {
+  c.save();
+  c.fillStyle = '#C026D3';
+  c.beginPath();
+  if (!isPelly) {
+    c.moveTo(-90, -40);
+    c.quadraticCurveTo(-120, 120, -100, 160);
+    c.lineTo(100, 160);
+    c.quadraticCurveTo(120, 120, 90, -40);
+  } else {
+    c.moveTo(-60, -30);
+    c.quadraticCurveTo(-110, 110, -90, 150);
+    c.lineTo(60, 150);
+    c.quadraticCurveTo(80, 110, 50, -30);
+  }
+  c.closePath();
+  c.fill();
+  c.strokeStyle = '#9333EA';
+  c.lineWidth = 3;
+  c.stroke();
+  c.restore();
+}
+
+function drawTopHat(c, isPelly) {
+  c.save();
+  if (isPelly) {
+    c.translate(15, -140);
+    c.rotate(-0.1);
+  } else {
+    c.translate(0, -145);
+  }
+
+  // Hat Brim
+  c.fillStyle = '#0F172A';
+  c.strokeStyle = '#020617';
+  c.lineWidth = 3;
+  c.beginPath();
+  c.roundRect(-65, 0, 130, 12, 6);
+  c.fill(); c.stroke();
+
+  // Hat Cylinder Crown
+  c.beginPath();
+  c.roundRect(-42, -65, 84, 65, [4, 4, 0, 0]);
+  c.fill(); c.stroke();
+
+  // Silk Red Ribbon Band
+  c.fillStyle = '#DC2626';
+  c.fillRect(-42, -18, 84, 16);
+
+  // Gold Buckle
+  c.strokeStyle = '#F59E0B';
+  c.lineWidth = 2.5;
+  c.strokeRect(-9, -17, 18, 14);
+
+  c.restore();
+}
+
+function drawBowtie(c, isPelly) {
+  c.save();
+  c.translate(isPelly ? -18 : 0, -25);
+  c.fillStyle = '#DC2626';
+  c.strokeStyle = '#991B1B';
+  c.lineWidth = 2;
+
+  // Left wing
+  c.beginPath();
+  c.moveTo(0, 0); c.lineTo(-18, -10); c.lineTo(-18, 10);
+  c.closePath();
+  c.fill(); c.stroke();
+
+  // Right wing
+  c.beginPath();
+  c.moveTo(0, 0); c.lineTo(18, -10); c.lineTo(18, 10);
+  c.closePath();
+  c.fill(); c.stroke();
+
+  // Center knot
+  c.fillStyle = '#B91C1C';
+  c.beginPath();
+  c.roundRect(-5, -5, 10, 10, 3);
+  c.fill(); c.stroke();
+  c.restore();
+}
+
+function drawTiara(c, isPelly) {
+  c.save();
+  if (isPelly) {
+    c.translate(10, -130);
+    c.rotate(-0.1);
+  } else {
+    c.translate(0, -135);
+  }
+
+  c.fillStyle = '#F59E0B';
+  c.strokeStyle = '#B45309';
+  c.lineWidth = 2;
+
+  // Tiara Arched Base
+  c.beginPath();
+  c.ellipse(0, 5, 40, 6, 0, 0, Math.PI * 2);
+  c.fill(); c.stroke();
+
+  // 3 Royal Crest Peaks
+  c.beginPath();
+  c.moveTo(-35, 4);
+  c.lineTo(-20, -18);
+  c.lineTo(-10, -8);
+  c.lineTo(0, -30); // Center high peak
+  c.lineTo(10, -8);
+  c.lineTo(20, -18);
+  c.lineTo(35, 4);
+  c.closePath();
+  c.fill(); c.stroke();
+
+  // Sparkling Blue Diamond Jewels
+  c.fillStyle = '#38BDF8';
+  c.beginPath(); c.arc(0, -20, 3.5, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.arc(-20, -10, 2.5, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.arc(20, -10, 2.5, 0, Math.PI * 2); c.fill();
+
+  c.restore();
+}
+
+function drawPearl(c, isPelly) {
+  c.save();
+  c.translate(isPelly ? -16 : 0, -22);
+
+  // Pearl Necklace Arc
+  c.fillStyle = '#FEF3C7';
+  c.strokeStyle = '#D97706';
+  c.lineWidth = 1;
+
+  const count = 9;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.PI * 0.15 + (Math.PI * 0.7 * (i / (count - 1)));
+    const rx = 24, ry = 12;
+    const px = Math.cos(angle) * rx;
+    const py = Math.sin(angle) * ry;
+    c.beginPath();
+    c.arc(px, py, 3, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+  }
+
+  // Earring pearl stud on head/ear
+  if (!isPelly) {
+    c.beginPath(); c.arc(-55, -45, 3.5, 0, Math.PI * 2); c.fill(); c.stroke();
+    c.beginPath(); c.arc(55, -45, 3.5, 0, Math.PI * 2); c.fill(); c.stroke();
+  } else {
+    c.beginPath(); c.arc(38, -48, 3.5, 0, Math.PI * 2); c.fill(); c.stroke();
+  }
+  c.restore();
+}
+
+function drawCane(c, isPelly, time, wave) {
+  c.save();
+  const caneX = isPelly ? 40 : 105;
+  const caneY = isPelly ? 50 - wave * 0.8 : 55 - wave;
+
+  c.translate(caneX, caneY);
+  c.rotate(0.12);
+
+  // Cane Shaft (Polished Mahogany)
+  c.fillStyle = '#3E1F0A';
+  c.fillRect(-3, -20, 6, 120);
+
+  // Golden Lion/Orb Head Handle
+  c.fillStyle = '#F59E0B';
+  c.strokeStyle = '#78350F';
+  c.lineWidth = 2;
+  c.beginPath();
+  c.arc(0, -26, 9, 0, Math.PI * 2);
+  c.fill(); c.stroke();
+
+  // Golden Collar
+  c.fillRect(-5, -18, 10, 5);
+
+  // Silver Bottom Ferrule
+  c.fillStyle = '#CBD5E1';
+  c.fillRect(-4, 95, 8, 8);
+
+  c.restore();
+}
+
+function drawSparkles(c, cx, cy, time) {
+  c.save();
+  const particles = [
+    { x: -160, y: -90, s: 0.9, phase: 0 },
+    { x: 155, y: -70, s: 1.2, phase: 1.5 },
+    { x: -140, y: 70, s: 0.8, phase: 3.0 },
+    { x: 150, y: 90, s: 1.0, phase: 4.2 },
+    { x: 0, y: -190, s: 1.3, phase: 2.1 }
+  ];
+
+  particles.forEach(p => {
+    const alpha = 0.4 + 0.6 * Math.sin(time * 3 + p.phase);
+    if (alpha <= 0.05) return;
+    const size = 9 * p.s * (0.8 + 0.2 * Math.sin(time * 4 + p.phase));
+
+    c.save();
+    c.translate(cx + p.x, cy + p.y);
+    c.fillStyle = `rgba(251, 191, 36, ${alpha})`;
+
+    // 4-point Diamond Starburst
+    c.beginPath();
+    c.moveTo(0, -size);
+    c.quadraticCurveTo(0, 0, size, 0);
+    c.quadraticCurveTo(0, 0, 0, size);
+    c.quadraticCurveTo(0, 0, -size, 0);
+    c.quadraticCurveTo(0, 0, 0, -size);
+    c.fill();
+    c.restore();
+  });
+  c.restore();
+}
+
+function drawFeet(c, isPelly, hasShoes) {
+  c.fillStyle = hasShoes ? '#1E293B' : isPelly ? '#F97316' : '#78716C';
+  c.strokeStyle = '#0F172A';
+  c.lineWidth = 3;
+
+  if (!isPelly) {
+    c.beginPath();
+    c.roundRect(-66, 120, 48, 22, 10);
+    c.fill(); c.stroke();
+    c.beginPath();
+    c.roundRect(18, 120, 48, 22, 10);
+    c.fill(); c.stroke();
+  } else {
+    c.beginPath();
+    c.moveTo(-35, 125);
+    c.lineTo(15, 125);
+    c.lineTo(35, 138);
+    c.lineTo(-45, 138);
+    c.closePath();
+    c.fill(); c.stroke();
+  }
+}
+
+function drawBody(c, isPelly) {
+  c.lineWidth = 4;
+  c.strokeStyle = '#0F172A';
+
+  if (!isPelly) {
+    c.fillStyle = '#A89F91';
+    c.beginPath();
+    c.ellipse(0, 30, 85, 100, 0, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    c.fillStyle = '#D6CEBE';
+    c.beginPath();
+    c.ellipse(0, 40, 55, 70, 0, 0, Math.PI * 2);
+    c.fill();
+  } else {
+    c.fillStyle = '#F8FAFC';
+    c.beginPath();
+    c.ellipse(0, 35, 80, 90, -0.15, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    c.fillStyle = '#E2E8F0';
+    c.beginPath();
+    c.ellipse(-20, 30, 45, 60, -0.1, 0, Math.PI * 2);
+    c.fill();
+  }
+}
+
+function drawLimbs(c, isPelly, voice, time, action, actProg, hasCane) {
   c.strokeStyle = '#0F172A';
   c.lineWidth = 4;
 
@@ -857,47 +1271,28 @@ function drawLimbs(c, isPelly, voice, time, action, actProg, hasWeapon) {
   if (action === 'claw') wave += Math.sin(actProg * Math.PI * 4) * 18;
 
   if (!isPelly) {
-    // Neulbo Left Arm
+    // Left Arm
     c.fillStyle = '#A89F91';
     c.beginPath();
     c.ellipse(-95, 30 + wave, 18, 48, 0.2, 0, Math.PI * 2);
     c.fill(); c.stroke();
 
-    // Neulbo Right Arm
+    // Right Arm
     c.beginPath();
     c.ellipse(95, 30 - wave, 18, 48, -0.2, 0, Math.PI * 2);
     c.fill(); c.stroke();
 
-    // Weapon in Right Hand
-    if (hasWeapon) {
-      c.save();
-      c.translate(105, 45 - wave);
-      c.rotate(-0.3);
-      // Sword blade
-      c.fillStyle = '#CBD5E1';
-      c.fillRect(-4, -90, 8, 85);
-      // Hilt
-      c.fillStyle = '#EAB308';
-      c.fillRect(-14, -5, 28, 8);
-      c.fillStyle = '#78350F';
-      c.fillRect(-4, 3, 8, 20);
-      c.restore();
+    if (hasCane) {
+      drawCane(c, false, time, wave);
     }
   } else {
-    // Pelly Wing (Left folded wing, Right expressive wing)
     c.fillStyle = '#F8FAFC';
     c.beginPath();
     c.ellipse(45, 35 - wave * 0.8, 24, 60, 0.45, 0, Math.PI * 2);
     c.fill(); c.stroke();
 
-    if (hasWeapon) {
-      c.save();
-      c.translate(65, 40 - wave * 0.8);
-      // Toy Pistol
-      c.fillStyle = '#EF4444';
-      c.fillRect(0, -10, 35, 15);
-      c.fillRect(0, 5, 12, 20);
-      c.restore();
+    if (hasCane) {
+      drawCane(c, true, time, wave);
     }
   }
 }
@@ -907,19 +1302,16 @@ function drawHead(c, isPelly) {
   c.lineWidth = 4;
 
   if (!isPelly) {
-    // Neulbo Head: Cozy round face
     c.fillStyle = '#A89F91';
     c.beginPath();
     c.ellipse(0, -75, 88, 74, 0, 0, Math.PI * 2);
     c.fill(); c.stroke();
 
-    // Face Mask (cream white)
     c.fillStyle = '#F5F0E6';
     c.beginPath();
     c.ellipse(0, -68, 68, 52, 0, 0, Math.PI * 2);
     c.fill();
 
-    // Eye Patches (brown markings)
     c.fillStyle = '#786C5E';
     c.beginPath();
     c.ellipse(-32, -72, 18, 24, 0.35, 0, Math.PI * 2);
@@ -928,13 +1320,11 @@ function drawHead(c, isPelly) {
     c.ellipse(32, -72, 18, 24, -0.35, 0, Math.PI * 2);
     c.fill();
   } else {
-    // Pelly Head: Pelican profile with crest
     c.fillStyle = '#F8FAFC';
     c.beginPath();
     c.ellipse(15, -80, 68, 62, 0, 0, Math.PI * 2);
     c.fill(); c.stroke();
 
-    // Head crest
     c.fillStyle = '#E2E8F0';
     c.beginPath();
     c.moveTo(55, -110);
@@ -946,14 +1336,11 @@ function drawHead(c, isPelly) {
 }
 
 function drawFace(c, isPelly, eyes, mouth, expr) {
-  // --- Eyes ---
   const eyeH = Math.max(1, 14 * eyes);
   c.fillStyle = '#0F172A';
 
   if (!isPelly) {
-    // Neulbo Eyes
     if (expr === 'wink') {
-      // Left wink (arc), Right open
       c.lineWidth = 3;
       c.beginPath(); c.arc(-32, -72, 8, 0, Math.PI); c.stroke();
       c.beginPath(); c.ellipse(32, -72, 6, eyeH, 0, 0, Math.PI * 2); c.fill();
@@ -966,13 +1353,11 @@ function drawFace(c, isPelly, eyes, mouth, expr) {
       c.beginPath(); c.ellipse(32, -72, 6, eyeH, 0, 0, Math.PI * 2); c.fill();
     }
 
-    // Sloth Nose
     c.fillStyle = '#0F172A';
     c.beginPath();
     c.ellipse(0, -60, 9, 6, 0, 0, Math.PI * 2);
     c.fill();
 
-    // Sloth Mouth (responsive to voiceLevel)
     c.strokeStyle = '#0F172A';
     c.lineWidth = 3;
     const mouthH = mouth * 18;
@@ -987,19 +1372,16 @@ function drawFace(c, isPelly, eyes, mouth, expr) {
       c.fill(); c.stroke();
     }
   } else {
-    // Pelly Eye (Side Profile - facing Left)
     c.beginPath();
     c.ellipse(-15, -85, 7, eyeH, 0, 0, Math.PI * 2);
     c.fill();
 
-    // Pelican Beak & Pouch (Facing Left)
-    c.fillStyle = '#F59E0B'; // Rich beak orange
+    c.fillStyle = '#F59E0B';
     c.strokeStyle = '#B45309';
     c.lineWidth = 3;
 
-    const beakDrop = mouth * 16; // Mouth open rotates or drops lower pouch!
+    const beakDrop = mouth * 16;
 
-    // Upper beak
     c.beginPath();
     c.moveTo(-35, -80);
     c.lineTo(-130, -68);
@@ -1007,7 +1389,6 @@ function drawFace(c, isPelly, eyes, mouth, expr) {
     c.closePath();
     c.fill(); c.stroke();
 
-    // Lower expandable pouch
     c.fillStyle = '#FBBF24';
     c.beginPath();
     c.moveTo(-35, -60);
@@ -1017,7 +1398,6 @@ function drawFace(c, isPelly, eyes, mouth, expr) {
     c.fill(); c.stroke();
   }
 
-  // Tears effect
   if (expr === 'tears') {
     c.fillStyle = '#38BDF8';
     c.beginPath();
@@ -1026,39 +1406,9 @@ function drawFace(c, isPelly, eyes, mouth, expr) {
   }
 }
 
-function drawHat(c, isPelly) {
-  c.fillStyle = isPelly ? '#1E293B' : '#0284C7';
-  c.strokeStyle = '#0F172A';
-  c.lineWidth = 3;
-
-  if (!isPelly) {
-    // Cute Fedora / Beanie
-    c.beginPath();
-    c.ellipse(0, -145, 55, 30, 0, 0, Math.PI * 2);
-    c.fill(); c.stroke();
-    c.beginPath();
-    c.roundRect(-75, -135, 150, 12, 6);
-    c.fill(); c.stroke();
-  } else {
-    // Pelly sailor / captain cap
-    c.save();
-    c.translate(10, -145);
-    c.rotate(-0.1);
-    c.beginPath();
-    c.roundRect(-45, 0, 90, 32, 8);
-    c.fill(); c.stroke();
-    // Visor pointing left
-    c.fillStyle = '#0F172A';
-    c.beginPath();
-    c.ellipse(-35, 28, 25, 8, -0.2, 0, Math.PI * 2);
-    c.fill();
-    c.restore();
-  }
-}
-
 function updateHUD(bodyY, scaleY, headRot, mouthState, omega, period) {
   document.getElementById('hud').textContent =
-    `FPS: ${fps} | Voice: ${voiceLevel.toFixed(2)} | Planted IK: OK`;
+    `FPS: ${fps} | Voice: ${voiceLevel.toFixed(2)} | Outfit: ${onePieceMode.toUpperCase()}`;
 
   document.getElementById('level-val').textContent =
     `${Math.round(voiceLevel * 100)}% (${(-90 + voiceLevel * 80).toFixed(0)} dBFS)`;
@@ -1096,7 +1446,18 @@ function loop(now) {
 
 // Initialize
 initExpressionPills();
-updateCostumePills();
+const params = new URLSearchParams(window.location.search);
+if (params.get('char')) selectCharacter(params.get('char'));
+if (params.get('outfit')) setOnePiece(params.get('outfit'));
+['topHat', 'bowtie', 'cane', 'tiara', 'pearl', 'sparkle', 'shoes', 'cape', 'outerwear'].forEach(k => {
+  if (params.has(k)) activeAcc[k] = params.get(k) === '1' || params.get(k) === 'true';
+});
+if (params.get('voice')) {
+  voiceLevel = targetVoiceLevel = parseFloat(params.get('voice'));
+  document.getElementById('voice-slider').value = Math.round(voiceLevel * 100);
+}
+if (params.get('expr')) setExpression(params.get('expr'));
+updateAccButtons();
 requestAnimationFrame(loop);
 </script>
 

@@ -62,5 +62,37 @@ public sealed class CostumeTests : IDisposable
 
         Assert.Throws<ArgumentException>(() => (Profile() with { TargetCharacter = "invalid" }).Validate());
     }
+    [Fact]
+    public void FormalSuitAndDressPresetsAndMatchingAccessories()
+    {
+        var suit = CostumeProfile.CreateSuit("neulbo");
+        var dress = CostumeProfile.CreateDress("pelly");
+        var topHat = CostumeProfile.CreateTopHat("neulbo");
+        var bowtie = CostumeProfile.CreateBowtie("neulbo");
+        var tiara = CostumeProfile.CreateTiara("pelly");
+        var pearl = CostumeProfile.CreatePearlSet("pelly");
+
+        Assert.Equal(CostumeCategory.OnePiece, suit.Category);
+        Assert.Equal(CostumeCategory.OnePiece, dress.Category);
+        Assert.Equal(CostumeCategory.Hat, topHat.Category);
+        Assert.Equal(CostumeCategory.FaceDecoration, bowtie.Category);
+        Assert.Equal(CostumeCategory.Hat, tiara.Category);
+        Assert.Equal(CostumeCategory.Earrings, pearl.Category);
+
+        Assert.True(CostumeProfile.Conflicts(suit.Category, CostumeCategory.Top));
+        Assert.True(CostumeProfile.Conflicts(suit.Category, CostumeCategory.Bottom));
+        Assert.False(CostumeProfile.Conflicts(suit.Category, topHat.Category));
+        Assert.False(CostumeProfile.Conflicts(suit.Category, bowtie.Category));
+        Assert.False(CostumeProfile.Conflicts(dress.Category, tiara.Category));
+        Assert.False(CostumeProfile.Conflicts(dress.Category, pearl.Category));
+        Assert.False(CostumeProfile.Conflicts(dress.Category, CostumeCategory.Outerwear));
+
+        suit.Validate();
+        dress.Validate();
+        topHat.Validate();
+        bowtie.Validate();
+        tiara.Validate();
+        pearl.Validate();
+    }
     public void Dispose() { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
 }
