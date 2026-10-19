@@ -92,6 +92,31 @@ public sealed class MotionEngineTests
         var result = engine.Update(0, 0); Assert.Equal(.5, result.MouthOpen); Assert.Equal(0, result.EyeOpen);
         Assert.Equal(new Transform2D(6, 8, 1, 2, 8), result.Transforms["tail"]);
     }
+    [Fact]
+    public void EmojiMotionProfilesAndSquashEasedDynamics()
+    {
+        var neulbo = MotionProfile.Neulbo; var pelly = MotionProfile.Pelly;
+        Assert.Equal(CompanionActing.Neulbo, neulbo.Acting);
+        Assert.Equal(CompanionActing.Pelly, pelly.Acting);
+        Assert.Same(neulbo, MotionProfile.ForCharacter("neulbo"));
+        Assert.Same(pelly, MotionProfile.ForCharacter("pelly"));
+        Assert.Same(MotionProfile.Default, MotionProfile.ForCharacter("unknown"));
+
+        var idleSquash = new IdleMotion(.4, .2, squash: .1);
+        var pose = idleSquash.Update(new(Math.PI / 4, 0, 0));
+        Assert.True(pose.Transforms["body"].ScaleY > 1.0);
+        Assert.True(pose.Transforms["body"].ScaleX < 1.0);
+
+        var voiceSquash = new VoiceMotion(bodyBounce: 5, squash: .05);
+        var voicePose = voiceSquash.Update(new(0, 0, 1.0));
+        Assert.True(voicePose.Transforms["body"].ScaleX > 1.0);
+        Assert.True(voicePose.Transforms["body"].ScaleY < 1.0);
+
+        var smoothBlink = new BlinkMotion(new Random(2), 2, 2, .2, smooth: true);
+        Assert.Equal(1, smoothBlink.Update(new(1.99, 0, 0)).EyeOpen);
+        double mid = smoothBlink.Update(new(2.02, .03, 0)).EyeOpen;
+        Assert.InRange(mid, 0, 1);
+    }
     private sealed class Constant(CharacterPose pose) : IMotionSource
     {
         public CharacterPose Update(MotionInput input) => pose;

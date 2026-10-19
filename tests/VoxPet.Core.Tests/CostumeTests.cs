@@ -46,5 +46,21 @@ public sealed class CostumeTests : IDisposable
         Directory.CreateDirectory(Path.Combine(folder, "wardrobe.json")); var item = Profile(); var store = new CostumeStore(folder);
         Assert.NotNull(Record.Exception(() => store.Import([item], item.Id, new byte[64]))); Assert.Empty(Directory.GetFiles(folder));
     }
+    [Fact]
+    public void CharacterSpecificSuitabilityAndDefaultPlacement()
+    {
+        var item = Profile() with { TargetCharacter = "neulbo" };
+        Assert.True(item.FitsCharacter("neulbo"));
+        Assert.False(item.FitsCharacter("pelly"));
+        Assert.True(new CostumeProfile(Guid.NewGuid(), "universal", CostumeCategory.Hat, 0, 0, 100, 100).FitsCharacter("pelly"));
+
+        var neulboPlacement = CostumeProfile.DefaultPlacement(CostumeCategory.Hat, "neulbo");
+        var pellyPlacement = CostumeProfile.DefaultPlacement(CostumeCategory.Hat, "pelly");
+        Assert.True(double.IsFinite(neulboPlacement.X));
+        Assert.True(double.IsFinite(pellyPlacement.X));
+        Assert.NotEqual(neulboPlacement.X, pellyPlacement.X);
+
+        Assert.Throws<ArgumentException>(() => (Profile() with { TargetCharacter = "invalid" }).Validate());
+    }
     public void Dispose() { if (Directory.Exists(folder)) Directory.Delete(folder, true); }
 }

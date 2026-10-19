@@ -54,7 +54,13 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
           </Grid.RowDefinitions>
-          <StackPanel><TextBlock Text="01  캐릭터 미리보기" FontWeight="Bold" FontSize="16"/><TextBlock Text="{Binding Character.Name}" Foreground="{StaticResource TextSecondary}" FontSize="11" Margin="0,6,0,0"/></StackPanel>
+          <StackPanel>
+            <TextBlock Text="01  캐릭터 미리보기" FontWeight="Bold" FontSize="16"/>
+            <DockPanel Margin="0,4,0,0">
+              <TextBlock Text="{Binding Character.Name}" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding SelectedCharacter.Personality}" HorizontalAlignment="Right" Foreground="#45D5A0" FontSize="11"/>
+            </DockPanel>
+          </StackPanel>
           <Border Grid.Row="1" Background="{StaticResource Checkerboard}" BorderBrush="{StaticResource SurfaceBorder}" BorderThickness="1" CornerRadius="12" Margin="0,12,0,16" Padding="10">
             <local:CharacterView DataContext="{Binding Character}"/>
           </Border>
@@ -205,6 +211,13 @@
                 <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" Foreground="Black"/></DataTemplate></ComboBox.ItemTemplate>
               </ComboBox>
               <TextBlock Text="{Binding CharacterStatus}" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="8,0,8,8"/>
+              <Border Background="#EAF1F8" BorderBrush="{StaticResource SurfaceBorder}" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="8,0,8,8">
+                <StackPanel>
+                  <TextBlock Text="{Binding SelectedCharacter.Description}" FontWeight="SemiBold" FontSize="12" Foreground="#172A3A"/>
+                  <TextBlock Text="{Binding SelectedCharacter.Personality, StringFormat=특징 · {0}}" FontSize="11" Foreground="#4A5568" Margin="0,3,0,0"/>
+                  <TextBlock Text="{Binding SelectedCharacter.CostumeRecommendation, StringFormat=의상 · {0}}" FontSize="11" Foreground="{StaticResource Accent}" Margin="0,3,0,0"/>
+                </StackPanel>
+              </Border>
               <TabControl Background="#F1F4F8" BorderThickness="0" Foreground="#172A3A" Padding="0">
                 <TabItem Header="미리보기">
                   <StackPanel Margin="8,12,8,0">

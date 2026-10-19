@@ -144,11 +144,9 @@ public sealed class CostumeViewModel : ObservableObject
                 var bytes = new byte[(int)file.Length]; file.ReadExactly(bytes); return (Bytes: bytes, Decoded: CostumeImageLoader.Load(bytes));
             });
             if (closing) return false;
-            double width = category switch { CostumeCategory.Hat or CostumeCategory.Glasses => 200, CostumeCategory.FaceDecoration => 140, CostumeCategory.Earrings => 300, CostumeCategory.Cape => 320, _ => 230 };
-            double height = width * loaded.Decoded.Height / loaded.Decoded.Width;
-            if (height > 512) { width *= 512 / height; height = 512; }
+            var placement = CostumeProfile.DefaultPlacement(category, null, loaded.Decoded.Width, loaded.Decoded.Height);
             var profile = new CostumeProfile(Guid.NewGuid(), Path.GetFileNameWithoutExtension(path)[..Math.Min(60, Path.GetFileNameWithoutExtension(path).Length)], category,
-                (512 - width) / 2, category switch { CostumeCategory.Hat => 20, CostumeCategory.Glasses or CostumeCategory.Earrings => 140, CostumeCategory.FaceDecoration => 210, CostumeCategory.Bottom => 370, CostumeCategory.Cape => 180, _ => 280 }, width, height, BehindCharacter: category == CostumeCategory.Cape);
+                placement.X, placement.Y, placement.Width, placement.Height, BehindCharacter: category == CostumeCategory.Cape);
             var snapshot = Items.Select(item => item.Profile with { Enabled = item.Enabled && !CostumeProfile.Conflicts(category, item.Category) }).Append(profile).ToArray();
             CostumeStore.Validate(snapshot);
             if (persistent) await Task.Run(() => store.Import(snapshot, profile.Id, loaded.Bytes)); else memory.Add(profile.Id, loaded.Bytes);

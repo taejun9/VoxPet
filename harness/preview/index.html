@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxPet · 이모지 스타일 자연 모션 & 캐릭터 미리보기</title>
+<style>
+  :root {
+    --bg-main: #071722;
+    --bg-card: #0A1C29;
+    --bg-surface: #102636;
+    --border: #24465E;
+    --accent: #347FFF;
+    --accent-hover: #4B90FF;
+    --success: #45D5A0;
+    --warning: #F59E0B;
+    --text-primary: #F1F4F8;
+    --text-secondary: #94A3B8;
+    --text-muted: #526778;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-badge {
+    background: var(--accent);
+    color: white;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+  .brand h1 {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .brand span {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .char-switch {
+    display: flex;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px;
+  }
+  .char-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .char-btn.active {
+    background: var(--accent);
+    color: white;
+  }
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 460px 1fr;
+    gap: 20px;
+    padding: 20px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .preview-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .canvas-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+  .canvas-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .char-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .char-personality {
+    font-size: 12px;
+    color: var(--success);
+    background: rgba(69, 213, 160, 0.12);
+    padding: 2px 8px;
+    border-radius: 12px;
+  }
+  .stage-wrap {
+    width: 400px;
+    height: 400px;
+    background:
+      linear-gradient(45deg, #0d2130 25%, transparent 25%),
+      linear-gradient(-45deg, #0d2130 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #0d2130 75%),
+      linear-gradient(-45deg, transparent 75%, #0d2130 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    background-color: #081622;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    width: 400px;
+    height: 400px;
+    display: block;
+  }
+  .hud-badge {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(7, 23, 34, 0.85);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .controls-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .meter-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .meter-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .meter-bar {
+    height: 10px;
+    background: #111A27;
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+  }
+  .meter-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    transition: width 0.05s ease;
+  }
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  input[type=range] {
+    flex: 1;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn.secondary {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+  .btn.secondary:hover {
+    background: #19364B;
+  }
+  .btn.active {
+    background: var(--success);
+    color: #071722;
+  }
+  .config-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .section-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+  }
+  .pill-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .pill {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .pill:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+  .pill.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .info-box {
+    background: rgba(52, 127, 255, 0.08);
+    border: 1px solid rgba(52, 127, 255, 0.25);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .info-box strong { color: var(--text-primary); }
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .metrics-table {
+    width: 100%;
+    font-size: 11px;
+    font-family: monospace;
+    border-collapse: collapse;
+    margin-top: 8px;
+  }
+  .metrics-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid rgba(36, 70, 94, 0.4);
+  }
+  .metrics-table td:last-child {
+    text-align: right;
+    color: var(--success);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-badge">VOXPET</div>
+    <div>
+      <h1>자연 모션 & 캐릭터 인터랙티브 미리보기</h1>
+      <span>이모티콘 스타일 바운스 · 호흡 스쿼시 · 캐릭터별 의상 검증</span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="char-switch">
+      <button class="char-btn active" id="btn-neulbo" onclick="selectCharacter('neulbo')">늘보군 (나무늘보)</button>
+      <button class="char-btn" id="btn-pelly" onclick="selectCharacter('pelly')">펠리 (펠리컨)</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- 왼쪽: 렌더링 뷰 & 모션 조작 -->
+  <div class="preview-pane">
+    <div class="canvas-card">
+      <div class="canvas-header">
+        <div class="char-title" id="disp-title">늘보군 (Neulbo)</div>
+        <div class="char-personality" id="disp-badge">여유로운 호흡 · 부드러운 바운스</div>
+      </div>
+      <div class="stage-wrap">
+        <canvas id="view" width="512" height="512"></canvas>
+        <div class="hud-badge" id="hud">FPS: 60 | Voice: 0.00 | Planted IK: OK</div>
+      </div>
+    </div>
+
+    <div class="controls-card">
+      <div class="meter-wrap">
+        <div class="meter-label">
+          <span>VOICE LEVEL</span>
+          <span id="level-val">0% (-90 dBFS)</span>
+        </div>
+        <div class="meter-bar">
+          <div class="meter-fill" id="meter-fill"></div>
+        </div>
+      </div>
+
+      <div class="slider-row">
+        <input type="range" id="voice-slider" min="0" max="100" value="0" oninput="onSliderVoice(this.value)">
+        <button class="btn secondary" id="btn-demo" onclick="toggleDemo()">음성 데모 ▶</button>
+      </div>
+
+      <div class="grid-2">
+        <button class="btn secondary" onclick="triggerBlink()">눈 깜빡이기 ☺</button>
+        <button class="btn secondary" onclick="resetMotion()">모션 리셋 ↻</button>
+      </div>
+    </div>
+
+    <div class="controls-card">
+      <div class="section-title">📊 실시간 모션 역학 (Physics Metrics)</div>
+      <table class="metrics-table">
+        <tr><td>호흡 주기 (Period)</td><td id="m-period">4.80 s</td></tr>
+        <tr><td>감쇠 주파수 (Omega ω)</td><td id="m-omega">11 rad/s (임계 감쇠)</td></tr>
+        <tr><td>몸통 Y 오프셋 (Body Y)</td><td id="m-body-y">0.0 px</td></tr>
+        <tr><td>스쿼시 신축률 (Squash)</td><td id="m-squash">1.000 ×</td></tr>
+        <tr><td>머리 회전각 (Head Rot)</td><td id="m-head-rot">0.0°</td></tr>
+        <tr><td>입 상태 (Mouth State)</td><td id="m-mouth">Closed (0)</td></tr>
+        <tr><td>발 접지 IK (Planted)</td><td id="m-ik">100% Lock (수평 보존)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 오른쪽: 표정 / 의상 / 액션 구성 -->
+  <div class="config-pane">
+    <!-- 캐릭터 특징 & 의상 최적화 설명 -->
+    <div class="section-card">
+      <div class="section-title">✨ 캐릭터 특성 및 가이드</div>
+      <div class="info-box" id="disp-guide">
+        <strong>늘보군 (정면 뷰):</strong> 포근하고 여유로운 호흡(4.8초)과 부드러운 상하 바운스를 선보입니다. 정면 기준의 모자, 셔츠, 코트, 바지, 신발, 양손 무기 의상에 완벽하게 맞춤 설계되었습니다.
+      </div>
+    </div>
+
+    <!-- 의상 토글 -->
+    <div class="section-card">
+      <div class="section-title">👔 의상 및 액세서리 착용 (Wardrobe)</div>
+      <div class="pill-grid" id="costume-pills">
+        <!-- JS로 동적 생성 -->
+      </div>
+    </div>
+
+    <!-- 표정 선택 -->
+    <div class="section-card">
+      <div class="section-title">🎭 기본 표정 12종 (240ms Smoothstep 전환)</div>
+      <div class="pill-grid" id="expr-pills">
+        <!-- JS로 생성 -->
+      </div>
+    </div>
+
+    <!-- 제스처 및 액션 -->
+    <div class="section-card">
+      <div class="section-title">⚡ 제스처 액션 재생 (Timeline Actions)</div>
+      <div class="pill-grid">
+        <button class="pill" onclick="playAction('claw')">법규 (Claw)</button>
+        <button class="pill" onclick="playAction('toy-gun')">장난감 총 (ToyGun)</button>
+        <button class="pill" onclick="playAction('heart')">손하트 (Heart)</button>
+        <button class="pill" onclick="playAction('toy-sword')">장난감 칼 (ToySword)</button>
+        <button class="pill" onclick="playAction('magic-wand')">마법봉 (MagicWand)</button>
+      </div>
+    </div>
+
+    <!-- 윈도우 하네스 호환성 안내 -->
+    <div class="section-card">
+      <div class="section-title">🖥️ 윈도우 테스트 및 연동 안내</div>
+      <div class="info-box">
+        본 HTML 미리보기는 <strong>VoxPet.Core</strong>의 <code>AvatarPerformance</code>, <code>MotionProfile</code>, <code>CostumeProfile</code> 역학 공식을 정밀하게 시뮬레이션합니다.<br>
+        Windows 실기에서는 <code>TEST-SMOKE.cmd</code> 또는 <code>TEST-MOTION-PREVIEW.cmd</code>를 실행하여 합성 WPF 프로세스에서 동일한 모션을 확인할 수 있습니다.
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ==========================================
+// VoxPet Physics & Rendering Simulation
+// ==========================================
+
+const canvas = document.getElementById('view');
+const ctx = canvas.getContext('2d');
+
+let currentCharacter = 'neulbo'; // 'neulbo' or 'pelly'
+let voiceLevel = 0.0;
+let targetVoiceLevel = 0.0;
+let voiceVelocity = 0.0;
+let demoRunning = false;
+let demoTime = 0;
+
+// Blink state
+let eyeOpen = 1.0;
+let nextBlinkTime = 2.0;
+let blinkEndTime = 0.0;
+const blinkDuration = 0.14;
+
+// Expression state
+let currentExpression = 'neutral';
+let exprBlend = 1.0;
+let prevExpression = 'neutral';
+let exprStartTime = 0;
+
+// Action state
+let currentAction = null;
+let actionProgress = 0;
+let actionStartTime = 0;
+
+// Costumes active
+const activeCostumes = {
+  hat: true,
+  top: true,
+  bottom: true,
+  outerwear: false,
+  cape: false,
+  shoes: true,
+  weapon: false
+};
+
+const expressions = [
+  { id: 'neutral', name: '평상' },
+  { id: 'smile', name: '미소' },
+  { id: 'happy', name: '기쁨' },
+  { id: 'laugh', name: '웃음' },
+  { id: 'surprised', name: '놀람' },
+  { id: 'embarrassed', name: '당황' },
+  { id: 'sad', name: '슬픔' },
+  { id: 'tears', name: '눈물' },
+  { id: 'sleepy', name: '졸림' },
+  { id: 'angry', name: '화남' },
+  { id: 'wink', name: '윙크' },
+  { id: 'playful', name: '장난' }
+];
+
+let simTime = 0;
+let lastFrameTime = performance.now();
+let fps = 60;
+let frameCount = 0;
+let fpsTimer = 0;
+
+function selectCharacter(id) {
+  currentCharacter = id;
+  document.getElementById('btn-neulbo').classList.toggle('active', id === 'neulbo');
+  document.getElementById('btn-pelly').classList.toggle('active', id === 'pelly');
+
+  const title = document.getElementById('disp-title');
+  const badge = document.getElementById('disp-badge');
+  const guide = document.getElementById('disp-guide');
+
+  if (id === 'neulbo') {
+    title.textContent = '늘보군 (Neulbo)';
+    badge.textContent = '여유로운 호흡 · 부드러운 바운스';
+    guide.innerHTML = '<strong>늘보군 (정면 뷰):</strong> 포근하고 여유로운 호흡(4.8초)과 부드러운 상하 바운스를 선보입니다. 정면 기준의 모자, 셔츠, 코트, 바지, 신발, 양손 무기 의상에 완벽하게 맞춤 설계되었습니다.';
+  } else {
+    title.textContent = '펠리 (Pelly)';
+    badge.textContent = '경쾌한 호흡 · 날개/부리 모션';
+    guide.innerHTML = '<strong>펠리 (측면 뷰):</strong> 활기찬 호흡(4.2초)과 음성에 맞춘 부리 끄덕임(-0.65°)을 자랑합니다. 측면 실루엣에 최적화된 포근한 니트 조끼, 산책 조끼, 날개 맞춤 장난감 총 의상에 최적화되었습니다.';
+  }
+  updateCostumePills();
+}
+
+function updateCostumePills() {
+  const container = document.getElementById('costume-pills');
+  container.innerHTML = '';
+  const isPelly = currentCharacter === 'pelly';
+
+  const list = [
+    { key: 'hat', name: isPelly ? '펠리 모자 (Hat)' : '모자 (Hat)' },
+    { key: 'top', name: isPelly ? '포근한 니트 조끼' : '정장 셔츠 (Top)' },
+    { key: 'outerwear', name: isPelly ? '산책 조끼 (Vest)' : '단정한 코트 (Outer)' },
+    { key: 'bottom', name: isPelly ? '펠리 하의' : '슬랙스 바지 (Bottom)' },
+    { key: 'shoes', name: isPelly ? '발 커버 (Shoes)' : '단화 (Shoes)' },
+    { key: 'cape', name: isPelly ? '측면 망토 (Cape)' : '영웅 망토 (Cape)' },
+    { key: 'weapon', name: isPelly ? '장난감 권총 (Gun)' : '용사의 검 (Sword)' }
+  ];
+
+  list.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'pill' + (activeCostumes[item.key] ? ' active' : '');
+    btn.textContent = (activeCostumes[item.key] ? '✓ ' : '+ ') + item.name;
+    btn.onclick = () => {
+      activeCostumes[item.key] = !activeCostumes[item.key];
+      updateCostumePills();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function initExpressionPills() {
+  const container = document.getElementById('expr-pills');
+  expressions.forEach(e => {
+    const btn = document.createElement('button');
+    btn.className = 'pill' + (e.id === currentExpression ? ' active' : '');
+    btn.textContent = e.name;
+    btn.id = 'expr-' + e.id;
+    btn.onclick = () => setExpression(e.id);
+    container.appendChild(btn);
+  });
+}
+
+function setExpression(id) {
+  if (id === currentExpression) return;
+  prevExpression = currentExpression;
+  currentExpression = id;
+  exprStartTime = simTime;
+  document.querySelectorAll('#expr-pills .pill').forEach(p => p.classList.remove('active'));
+  document.getElementById('expr-' + id)?.classList.add('active');
+}
+
+function onSliderVoice(val) {
+  demoRunning = false;
+  document.getElementById('btn-demo').classList.remove('active');
+  targetVoiceLevel = val / 100.0;
+}
+
+function toggleDemo() {
+  demoRunning = !demoRunning;
+  document.getElementById('btn-demo').classList.toggle('active', demoRunning);
+}
+
+function triggerBlink() {
+  blinkEndTime = simTime + blinkDuration;
+}
+
+function resetMotion() {
+  voiceLevel = 0;
+  targetVoiceLevel = 0;
+  voiceVelocity = 0;
+  demoRunning = false;
+  document.getElementById('btn-demo').classList.remove('active');
+  document.getElementById('voice-slider').value = 0;
+  currentAction = null;
+  setExpression('neutral');
+}
+
+function playAction(id) {
+  currentAction = id;
+  actionStartTime = simTime;
+  actionProgress = 0;
+}
+
+// ==========================================
+// Core Physics Update Loop (60Hz)
+// ==========================================
+function updatePhysics(dt) {
+  simTime += dt;
+
+  // 1. Voice Level Smoothing (Critically Damped Spring: omega=11 neulbo, omega=15 pelly)
+  const isPelly = currentCharacter === 'pelly';
+  const omega = isPelly ? 15.0 : 11.0;
+
+  if (demoRunning) {
+    demoTime += dt;
+    // Organic speech cadence simulation
+    const speech = 0.5 + 0.5 * Math.sin(demoTime * 5.2) * Math.sin(demoTime * 2.1);
+    const pause = Math.sin(demoTime * 1.3) > -0.2 ? 1 : 0;
+    targetVoiceLevel = Math.max(0, Math.min(1, speech * pause * 0.9));
+    document.getElementById('voice-slider').value = Math.round(targetVoiceLevel * 100);
+  }
+
+  const displacement = voiceLevel - targetVoiceLevel;
+  const impulse = voiceVelocity + omega * displacement;
+  const decay = Math.exp(-omega * dt);
+
+  if (omega * dt > 64) {
+    voiceLevel = targetVoiceLevel;
+    voiceVelocity = 0;
+  } else {
+    voiceLevel = targetVoiceLevel + (displacement + impulse * dt) * decay;
+    voiceVelocity = (voiceVelocity - omega * impulse * dt) * decay;
+  }
+  voiceLevel = Math.max(0, Math.min(1, voiceLevel));
+
+  // 2. Blink Schedule (Soft smoothstep eyelid transition)
+  if (simTime >= nextBlinkTime) {
+    blinkEndTime = simTime + blinkDuration;
+    nextBlinkTime = blinkEndTime + (isPelly ? 1.8 + Math.random() * 2.7 : 2.5 + Math.random() * 4.0);
+  }
+  if (simTime >= blinkEndTime) {
+    eyeOpen = 1.0;
+  } else {
+    const p = Math.max(0, Math.min(1, (blinkEndTime - simTime) / blinkDuration));
+    // Easing: closing takes 20%, closed 60%, opening 20%
+    const raw = p > 0.8 ? (p - 0.8) / 0.2 : p < 0.2 ? (1 - p / 0.2) : 0;
+    eyeOpen = raw * raw * (3 - 2 * raw);
+  }
+
+  // 3. Expression 240ms Smoothstep Transition
+  const exprElapsed = simTime - exprStartTime;
+  const t = Math.max(0, Math.min(1, exprElapsed / 0.24));
+  exprBlend = t * t * (3 - 2 * t);
+
+  // 4. Action Timeline Progress
+  if (currentAction) {
+    actionProgress = (simTime - actionStartTime) / 1.0; // 1.0 second actions
+    if (actionProgress >= 1.0) currentAction = null;
+  }
+}
+
+// ==========================================
+// Rendering Pipeline
+// ==========================================
+function render() {
+  ctx.clearRect(0, 0, 512, 512);
+
+  const isPelly = currentCharacter === 'pelly';
+  const period = isPelly ? 4.2 : 4.8;
+  const breathFactor = isPelly ? 0.003 : 0.004;
+
+  // Idle Breath wave
+  const breath = breathFactor * Math.sin((simTime % period) * Math.PI * 2 / period);
+
+  // Secondary body squash and stretch
+  const bodyY = (isPelly ? -112 : -115) * breath - voiceLevel * 5.0;
+  const scaleX = 1.0 - breath * 0.35 + voiceLevel * 0.015;
+  const scaleY = 1.0 + breath - voiceLevel * 0.012;
+
+  // Head sway and voice nodding
+  const headAngle = (isPelly ? 0.55 : 0.70) * Math.sin((simTime % 31) * Math.PI * 2 / 7.75) + voiceLevel * (isPelly ? -0.65 : 0.80);
+
+  // Mouth frame
+  const mouthOpen = voiceLevel;
+  const mouthState = mouthOpen < 0.2 ? 'Closed' : mouthOpen < 0.6 ? 'Half' : 'Open';
+
+  // Center coordinates (512x512 Canvas)
+  const cx = 256 + (isPelly ? -18 : 0);
+  const cy = 256 + (isPelly ? 17 : 0);
+
+  ctx.save();
+  ctx.translate(cx, cy + bodyY);
+
+  // --- Cape (Behind body) ---
+  if (activeCostumes.cape) {
+    ctx.save();
+    ctx.fillStyle = '#C026D3';
+    ctx.beginPath();
+    if (!isPelly) {
+      ctx.moveTo(-90, -40);
+      ctx.quadraticCurveTo(-120, 120, -100, 160);
+      ctx.lineTo(100, 160);
+      ctx.quadraticCurveTo(120, 120, 90, -40);
+    } else {
+      ctx.moveTo(-60, -30);
+      ctx.quadraticCurveTo(-110, 110, -90, 150);
+      ctx.lineTo(60, 150);
+      ctx.quadraticCurveTo(80, 110, 50, -30);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#9333EA';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // --- Feet / Shoes (Planted IK: cancels bodyY so feet stay grounded) ---
+  ctx.save();
+  ctx.translate(0, -bodyY); // IK cancellation
+  drawFeet(ctx, isPelly, activeCostumes.shoes);
+  ctx.restore();
+
+  // --- Body (Torso with squash-and-stretch) ---
+  ctx.save();
+  ctx.scale(scaleX, scaleY);
+  drawBody(ctx, isPelly);
+
+  // Clothing: Top / Outerwear / Bottom
+  if (activeCostumes.bottom) drawBottom(ctx, isPelly);
+  if (activeCostumes.top) drawTop(ctx, isPelly);
+  if (activeCostumes.outerwear) drawOuterwear(ctx, isPelly);
+
+  ctx.restore(); // end body scale
+
+  // --- Arms & Wings & Weapon ---
+  drawLimbs(ctx, isPelly, voiceLevel, simTime, currentAction, actionProgress, activeCostumes.weapon);
+
+  // --- Head & Face (Rotated by headAngle) ---
+  ctx.save();
+  const headPivotY = isPelly ? -70 : -60;
+  ctx.translate(0, headPivotY);
+  ctx.rotate(headAngle * Math.PI / 180);
+  ctx.translate(0, -headPivotY);
+
+  drawHead(ctx, isPelly);
+  drawFace(ctx, isPelly, eyeOpen, mouthOpen, currentExpression);
+
+  // Hat / Headwear
+  if (activeCostumes.hat) drawHat(ctx, isPelly);
+
+  ctx.restore(); // end head
+
+  ctx.restore(); // end root translate
+
+  // Update UI Elements
+  updateHUD(bodyY, scaleY, headAngle, mouthState, omega, period);
+}
+
+// -------------------------------------------------------------
+// Drawing Helpers
+// -------------------------------------------------------------
+function drawFeet(c, isPelly, hasShoes) {
+  c.fillStyle = hasShoes ? '#334155' : isPelly ? '#F97316' : '#78716C';
+  c.strokeStyle = '#1E293B';
+  c.lineWidth = 3;
+
+  if (!isPelly) {
+    // Neulbo Left Foot
+    c.beginPath();
+    c.roundRect(-66, 120, 48, 22, 10);
+    c.fill(); c.stroke();
+    // Neulbo Right Foot
+    c.beginPath();
+    c.roundRect(18, 120, 48, 22, 10);
+    c.fill(); c.stroke();
+  } else {
+    // Pelly Webbed Feet (Side profile)
+    c.beginPath();
+    c.moveTo(-35, 125);
+    c.lineTo(15, 125);
+    c.lineTo(35, 138);
+    c.lineTo(-45, 138);
+    c.closePath();
+    c.fill(); c.stroke();
+  }
+}
+
+function drawBody(c, isPelly) {
+  c.lineWidth = 4;
+  c.strokeStyle = '#0F172A';
+
+  if (!isPelly) {
+    // Neulbo: Soft rounded sloth body
+    c.fillStyle = '#A89F91';
+    c.beginPath();
+    c.ellipse(0, 30, 85, 100, 0, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    // Belly patch
+    c.fillStyle = '#D6CEBE';
+    c.beginPath();
+    c.ellipse(0, 40, 55, 70, 0, 0, Math.PI * 2);
+    c.fill();
+  } else {
+    // Pelly: Pelican body silhouette
+    c.fillStyle = '#F8FAFC';
+    c.beginPath();
+    c.ellipse(0, 35, 80, 90, -0.15, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    // Chest fluff
+    c.fillStyle = '#E2E8F0';
+    c.beginPath();
+    c.ellipse(-20, 30, 45, 60, -0.1, 0, Math.PI * 2);
+    c.fill();
+  }
+}
+
+function drawBottom(c, isPelly) {
+  c.fillStyle = isPelly ? '#2563EB' : '#1E293B';
+  c.beginPath();
+  if (!isPelly) {
+    c.roundRect(-65, 75, 130, 52, [0, 0, 10, 10]);
+  } else {
+    c.roundRect(-55, 75, 105, 52, [0, 0, 12, 12]);
+  }
+  c.fill();
+}
+
+function drawTop(c, isPelly) {
+  c.fillStyle = isPelly ? '#38BDF8' : '#FFFFFF';
+  c.strokeStyle = '#0F172A';
+  c.lineWidth = 3;
+  c.beginPath();
+  if (!isPelly) {
+    c.roundRect(-68, -10, 136, 92, [12, 12, 4, 4]);
+  } else {
+    // Pelly vest
+    c.roundRect(-60, -5, 115, 85, [14, 14, 6, 6]);
+  }
+  c.fill(); c.stroke();
+
+  // Collar
+  c.fillStyle = isPelly ? '#0284C7' : '#E2E8F0';
+  c.beginPath();
+  c.moveTo(-20, -10); c.lineTo(0, 15); c.lineTo(20, -10);
+  c.closePath();
+  c.fill();
+}
+
+function drawOuterwear(c, isPelly) {
+  c.fillStyle = isPelly ? '#EA580C' : '#92400E';
+  c.strokeStyle = '#451A03';
+  c.lineWidth = 3;
+  c.beginPath();
+  if (!isPelly) {
+    c.roundRect(-75, -15, 150, 105, 12);
+  } else {
+    c.roundRect(-65, -10, 125, 95, 14);
+  }
+  c.fill(); c.stroke();
+}
+
+function drawLimbs(c, isPelly, voice, time, action, actProg, hasWeapon) {
+  c.strokeStyle = '#0F172A';
+  c.lineWidth = 4;
+
+  let wave = Math.sin(time * 2.5) * 5;
+  if (action === 'claw') wave += Math.sin(actProg * Math.PI * 4) * 18;
+
+  if (!isPelly) {
+    // Neulbo Left Arm
+    c.fillStyle = '#A89F91';
+    c.beginPath();
+    c.ellipse(-95, 30 + wave, 18, 48, 0.2, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    // Neulbo Right Arm
+    c.beginPath();
+    c.ellipse(95, 30 - wave, 18, 48, -0.2, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    // Weapon in Right Hand
+    if (hasWeapon) {
+      c.save();
+      c.translate(105, 45 - wave);
+      c.rotate(-0.3);
+      // Sword blade
+      c.fillStyle = '#CBD5E1';
+      c.fillRect(-4, -90, 8, 85);
+      // Hilt
+      c.fillStyle = '#EAB308';
+      c.fillRect(-14, -5, 28, 8);
+      c.fillStyle = '#78350F';
+      c.fillRect(-4, 3, 8, 20);
+      c.restore();
+    }
+  } else {
+    // Pelly Wing (Left folded wing, Right expressive wing)
+    c.fillStyle = '#F8FAFC';
+    c.beginPath();
+    c.ellipse(45, 35 - wave * 0.8, 24, 60, 0.45, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    if (hasWeapon) {
+      c.save();
+      c.translate(65, 40 - wave * 0.8);
+      // Toy Pistol
+      c.fillStyle = '#EF4444';
+      c.fillRect(0, -10, 35, 15);
+      c.fillRect(0, 5, 12, 20);
+      c.restore();
+    }
+  }
+}
+
+function drawHead(c, isPelly) {
+  c.strokeStyle = '#0F172A';
+  c.lineWidth = 4;
+
+  if (!isPelly) {
+    // Neulbo Head: Cozy round face
+    c.fillStyle = '#A89F91';
+    c.beginPath();
+    c.ellipse(0, -75, 88, 74, 0, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    // Face Mask (cream white)
+    c.fillStyle = '#F5F0E6';
+    c.beginPath();
+    c.ellipse(0, -68, 68, 52, 0, 0, Math.PI * 2);
+    c.fill();
+
+    // Eye Patches (brown markings)
+    c.fillStyle = '#786C5E';
+    c.beginPath();
+    c.ellipse(-32, -72, 18, 24, 0.35, 0, Math.PI * 2);
+    c.fill();
+    c.beginPath();
+    c.ellipse(32, -72, 18, 24, -0.35, 0, Math.PI * 2);
+    c.fill();
+  } else {
+    // Pelly Head: Pelican profile with crest
+    c.fillStyle = '#F8FAFC';
+    c.beginPath();
+    c.ellipse(15, -80, 68, 62, 0, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+
+    // Head crest
+    c.fillStyle = '#E2E8F0';
+    c.beginPath();
+    c.moveTo(55, -110);
+    c.lineTo(85, -125);
+    c.lineTo(65, -85);
+    c.closePath();
+    c.fill(); c.stroke();
+  }
+}
+
+function drawFace(c, isPelly, eyes, mouth, expr) {
+  // --- Eyes ---
+  const eyeH = Math.max(1, 14 * eyes);
+  c.fillStyle = '#0F172A';
+
+  if (!isPelly) {
+    // Neulbo Eyes
+    if (expr === 'wink') {
+      // Left wink (arc), Right open
+      c.lineWidth = 3;
+      c.beginPath(); c.arc(-32, -72, 8, 0, Math.PI); c.stroke();
+      c.beginPath(); c.ellipse(32, -72, 6, eyeH, 0, 0, Math.PI * 2); c.fill();
+    } else if (expr === 'sleepy' || expr === 'happy') {
+      c.lineWidth = 3;
+      c.beginPath(); c.arc(-32, -72, 8, 0, Math.PI); c.stroke();
+      c.beginPath(); c.arc(32, -72, 8, 0, Math.PI); c.stroke();
+    } else {
+      c.beginPath(); c.ellipse(-32, -72, 6, eyeH, 0, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.ellipse(32, -72, 6, eyeH, 0, 0, Math.PI * 2); c.fill();
+    }
+
+    // Sloth Nose
+    c.fillStyle = '#0F172A';
+    c.beginPath();
+    c.ellipse(0, -60, 9, 6, 0, 0, Math.PI * 2);
+    c.fill();
+
+    // Sloth Mouth (responsive to voiceLevel)
+    c.strokeStyle = '#0F172A';
+    c.lineWidth = 3;
+    const mouthH = mouth * 18;
+    if (mouthH < 3) {
+      c.beginPath();
+      c.arc(0, -50, 10, 0.2, Math.PI - 0.2);
+      c.stroke();
+    } else {
+      c.fillStyle = '#EF4444';
+      c.beginPath();
+      c.ellipse(0, -48, 10, mouthH, 0, 0, Math.PI * 2);
+      c.fill(); c.stroke();
+    }
+  } else {
+    // Pelly Eye (Side Profile - facing Left)
+    c.beginPath();
+    c.ellipse(-15, -85, 7, eyeH, 0, 0, Math.PI * 2);
+    c.fill();
+
+    // Pelican Beak & Pouch (Facing Left)
+    c.fillStyle = '#F59E0B'; // Rich beak orange
+    c.strokeStyle = '#B45309';
+    c.lineWidth = 3;
+
+    const beakDrop = mouth * 16; // Mouth open rotates or drops lower pouch!
+
+    // Upper beak
+    c.beginPath();
+    c.moveTo(-35, -80);
+    c.lineTo(-130, -68);
+    c.lineTo(-35, -60);
+    c.closePath();
+    c.fill(); c.stroke();
+
+    // Lower expandable pouch
+    c.fillStyle = '#FBBF24';
+    c.beginPath();
+    c.moveTo(-35, -60);
+    c.lineTo(-125, -66);
+    c.quadraticCurveTo(-75, -35 + beakDrop, -25, -50);
+    c.closePath();
+    c.fill(); c.stroke();
+  }
+
+  // Tears effect
+  if (expr === 'tears') {
+    c.fillStyle = '#38BDF8';
+    c.beginPath();
+    c.ellipse(-32, -50, 4, 8, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+}
+
+function drawHat(c, isPelly) {
+  c.fillStyle = isPelly ? '#1E293B' : '#0284C7';
+  c.strokeStyle = '#0F172A';
+  c.lineWidth = 3;
+
+  if (!isPelly) {
+    // Cute Fedora / Beanie
+    c.beginPath();
+    c.ellipse(0, -145, 55, 30, 0, 0, Math.PI * 2);
+    c.fill(); c.stroke();
+    c.beginPath();
+    c.roundRect(-75, -135, 150, 12, 6);
+    c.fill(); c.stroke();
+  } else {
+    // Pelly sailor / captain cap
+    c.save();
+    c.translate(10, -145);
+    c.rotate(-0.1);
+    c.beginPath();
+    c.roundRect(-45, 0, 90, 32, 8);
+    c.fill(); c.stroke();
+    // Visor pointing left
+    c.fillStyle = '#0F172A';
+    c.beginPath();
+    c.ellipse(-35, 28, 25, 8, -0.2, 0, Math.PI * 2);
+    c.fill();
+    c.restore();
+  }
+}
+
+function updateHUD(bodyY, scaleY, headRot, mouthState, omega, period) {
+  document.getElementById('hud').textContent =
+    `FPS: ${fps} | Voice: ${voiceLevel.toFixed(2)} | Planted IK: OK`;
+
+  document.getElementById('level-val').textContent =
+    `${Math.round(voiceLevel * 100)}% (${(-90 + voiceLevel * 80).toFixed(0)} dBFS)`;
+
+  document.getElementById('meter-fill').style.width = `${voiceLevel * 100}%`;
+
+  document.getElementById('m-period').textContent = `${period.toFixed(2)} s`;
+  document.getElementById('m-omega').textContent = `${omega} rad/s (임계 감쇠)`;
+  document.getElementById('m-body-y').textContent = `${bodyY.toFixed(1)} px`;
+  document.getElementById('m-squash').textContent = `${scaleY.toFixed(3)} ×`;
+  document.getElementById('m-head-rot').textContent = `${headRot.toFixed(1)}°`;
+  document.getElementById('m-mouth').textContent = `${mouthState} (${voiceLevel.toFixed(2)})`;
+}
+
+// ==========================================
+// Main Loop
+// ==========================================
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastFrameTime) / 1000.0);
+  lastFrameTime = now;
+
+  frameCount++;
+  fpsTimer += dt;
+  if (fpsTimer >= 0.5) {
+    fps = Math.round(frameCount / fpsTimer);
+    frameCount = 0;
+    fpsTimer = 0;
+  }
+
+  updatePhysics(dt);
+  render();
+
+  requestAnimationFrame(loop);
+}
+
+// Initialize
+initExpressionPills();
+updateCostumePills();
+requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>

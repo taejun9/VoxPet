@@ -23,4 +23,19 @@ public sealed class CharacterCatalogTests
     [InlineData("neulbo-man")]
     [InlineData("neulbo-girl")]
     public void UnknownIdsRecoverToExistingDefault(string? id) => Assert.Equal(CharacterCatalog.DefaultId, CharacterCatalog.NormalizeId(id));
+    [Fact]
+    public void CatalogEntriesHaveDescriptionsAndCostumeGuidance()
+    {
+        var neulbo = CharacterCatalog.Current("neulbo");
+        var pelly = CharacterCatalog.Current("pelly");
+        Assert.NotEmpty(neulbo.Description);
+        Assert.NotEmpty(neulbo.Personality);
+        Assert.NotEmpty(neulbo.CostumeRecommendation);
+        Assert.NotEmpty(pelly.Description);
+        Assert.NotEmpty(pelly.Personality);
+        Assert.NotEmpty(pelly.CostumeRecommendation);
+        Assert.Same(neulbo, CharacterCatalog.Find("neulbo"));
+        Assert.Same(pelly, CharacterCatalog.Find("pelly"));
+        Assert.Null(CharacterCatalog.Find("nonexistent"));
+    }
 }

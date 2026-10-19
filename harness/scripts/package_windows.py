@@ -34,7 +34,7 @@ def package_windows(published: Path, destination: Path) -> dict:
             raise ValueError("Expected an x64 PE executable")
     launchers = Path(__file__).resolve().parents[1] / "windows-test"
     files = [(p, p.relative_to(published).as_posix()) for p in sorted(published.rglob("*")) if p.is_file() and p.suffix.lower() != ".pdb"]
-    files += [(launchers / name, name) for name in ("START.cmd", "TEST-SMOKE.cmd", "TEST-SMOKE.ps1", "TEST-README.txt")]
+    files += [(launchers / name, name) for name in ("START.cmd", "TEST-SMOKE.cmd", "TEST-SMOKE.ps1", "TEST-README.txt", "TEST-MOTION-PREVIEW.cmd")]
     names = [name.casefold() for _, name in files]
     if len(names) != len(set(names)) or any(p.is_symlink() for p, _ in files):
         raise ValueError("Duplicate names or symbolic links in publish")

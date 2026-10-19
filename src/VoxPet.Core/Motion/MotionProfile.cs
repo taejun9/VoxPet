@@ -8,6 +8,9 @@ public sealed record MotionProfile
 {
     public static MotionProfile Default { get; } = new();
     public static MotionProfile LegacyImageSet { get; } = new(headBounce: 0, headRotation: 0, breathing: 1, sway: 0, bodyAnchor: "root", viewportMotion: true);
+    public static MotionProfile Neulbo { get; } = new(acting: CompanionActing.Neulbo, breathing: .35, sway: .15, bodyBounce: 4.5, headBounce: 1.8, headRotation: 1.2, intervalMin: 2.5, intervalMax: 6.5, blinkDuration: .15);
+    public static MotionProfile Pelly { get; } = new(acting: CompanionActing.Pelly, breathing: .45, sway: .22, bodyBounce: 6.0, headBounce: 2.5, headRotation: 2.0, intervalMin: 1.8, intervalMax: 4.5, blinkDuration: .12);
+    public static MotionProfile ForCharacter(string? characterId) => characterId switch { "pelly" => Pelly, "neulbo" => Neulbo, _ => Default };
     public bool BlinkEnabled { get; }
     public double IntervalMin { get; }
     public double IntervalMax { get; }
